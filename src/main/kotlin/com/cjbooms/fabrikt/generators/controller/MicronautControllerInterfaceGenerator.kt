@@ -20,6 +20,7 @@ import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.KotlinTypes
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
@@ -106,6 +107,18 @@ class MicronautControllerInterfaceGenerator(
                             .addAnnotation(
                                 AnnotationSpec
                                     .builder(MicronautImports.BODY).build(),
+                            )
+                            .maybeAddAnnotation(validationAnnotations.parameterValid())
+                            .build()
+
+                    is MultipartParameter ->
+                        it
+                            .toParameterSpecBuilder()
+                            .addAnnotation(
+                                AnnotationSpec
+                                    .builder(MicronautImports.PART)
+                                    .addMember("value = %S", it.partName)
+                                    .build(),
                             )
                             .maybeAddAnnotation(validationAnnotations.parameterValid())
                             .build()

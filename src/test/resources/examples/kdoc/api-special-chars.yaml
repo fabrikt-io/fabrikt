@@ -1,0 +1,14 @@
+openapi: 3.0.0
+info:
+  version: ''
+  title: ''
+paths: { }
+components:
+  schemas:
+    Demo:
+      description: "Special char \u00bb."
+      type: object
+      properties:
+        id:
+          type: string
+          description: "The ID field with special char \u00bb"

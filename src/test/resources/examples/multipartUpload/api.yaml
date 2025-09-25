@@ -1,0 +1,59 @@
+openapi: 3.0.1
+info:
+  description: Testing multipart/form-data requests
+  title: Multipart Upload Test
+  version: '1.0'
+paths:
+  /api/import:
+    post:
+      operationId: importMedia
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  $ref: '#/components/schemas/MediaFileDto'
+                mediaFile:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+              required:
+                - metadata
+                - mediaFile
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+
+components:
+  schemas:
+    MediaFileDto:
+      type: object
+      properties:
+        filename:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+      required:
+        - filename
+
+    UploadResponse:
+      type: object
+      properties:
+        uploadId:
+          type: string
+        status:
+          type: string
+        message:
+          type: string

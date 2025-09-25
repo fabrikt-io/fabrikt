@@ -1,0 +1,149 @@
+openapi: 3.0.1
+info:
+  title: Multipart File Upload API
+  description: End-to-end test API for multipart/form-data functionality
+  version: '1.0.0'
+servers:
+  - url: http://localhost:8080
+    description: Test server
+
+paths:
+  /api/upload:
+    post:
+      operationId: uploadFile
+      summary: Upload a file with metadata
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The file to upload
+                metadata:
+                  $ref: '#/components/schemas/FileMetadata'
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  description: Optional tags for the file
+              required:
+                - file
+                - metadata
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/upload-multiple:
+    post:
+      operationId: uploadMultipleFiles
+      summary: Upload multiple files with shared metadata
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Multiple files to upload
+                commonMetadata:
+                  $ref: '#/components/schemas/FileMetadata'
+                description:
+                  type: string
+                  description: Description for all files
+              required:
+                - files
+                - commonMetadata
+      responses:
+        '200':
+          description: Files uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UploadResult'
+
+components:
+  schemas:
+    FileMetadata:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Original filename
+        category:
+          type: string
+          enum: [document, image, video, other]
+        contentType:
+          type: string
+          description: MIME type of the file
+        size:
+          type: integer
+          format: int64
+          description: File size in bytes
+      required:
+        - name
+        - category
+
+    UploadResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the uploaded file
+        originalName:
+          type: string
+          description: Original filename
+        storedName:
+          type: string
+          description: Stored filename on server
+        url:
+          type: string
+          description: URL to access the file
+        uploadedAt:
+          type: string
+          format: date-time
+          description: Upload timestamp
+        size:
+          type: integer
+          format: int64
+          description: File size in bytes
+      required:
+        - id
+        - originalName
+        - storedName
+        - url
+        - uploadedAt
+        - size
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: integer
+          description: Error code
+      required:
+        - error
+        - code

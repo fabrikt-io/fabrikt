@@ -40,6 +40,7 @@ class OkHttpClientGeneratorTest {
         "pathLevelParameters",
         "parameterNameClash",
         "byteArrayStream",
+        "multipartUpload",
     )
 
     @BeforeEach

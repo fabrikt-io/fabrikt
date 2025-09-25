@@ -92,6 +92,16 @@ class BodyParameter(
 ) :
     IncomingParameter(oasName, description, type, isRequired)
 
+class MultipartParameter(
+    oasName: String,
+    description: String?,
+    type: TypeName,
+    val schema: Schema,
+    val partName: String,
+    val isBinaryFile: Boolean = false,
+    val contentType: String? = null
+) : IncomingParameter(oasName, description, type)
+
 class RequestParameter(
     oasName: String,
     description: String?,
