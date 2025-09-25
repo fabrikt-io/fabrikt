@@ -111,17 +111,20 @@ class MicronautControllerInterfaceGenerator(
                             .maybeAddAnnotation(validationAnnotations.parameterValid())
                             .build()
 
-                    is MultipartParameter ->
+                    is HeaderParam ->
                         it
                             .toParameterSpecBuilder()
                             .addAnnotation(
                                 AnnotationSpec
-                                    .builder(MicronautImports.PART)
-                                    .addMember("value = %S", it.partName)
+                                    .builder(MicronautImports.HEADER)
+                                    .addMember("value = %S", it.oasName)
                                     .build(),
                             )
                             .maybeAddAnnotation(validationAnnotations.parameterValid())
                             .build()
+
+                    is MultipartParameter ->
+                        throw UnsupportedOperationException("Multipart parameters are not supported for Micronaut controllers")
 
                     is RequestParameter ->
                         it
@@ -129,6 +132,8 @@ class MicronautControllerInterfaceGenerator(
                             .addValidationAnnotations(it)
                             .addMicronautParamAnnotation(it)
                             .build()
+
+                    else -> throw UnsupportedOperationException("${it::class} is not supported")
                 }
             }
             .forEach { funcSpec.addParameter(it) }

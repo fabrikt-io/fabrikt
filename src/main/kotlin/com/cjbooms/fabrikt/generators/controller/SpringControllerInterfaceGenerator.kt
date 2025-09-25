@@ -114,12 +114,19 @@ class SpringControllerInterfaceGenerator(
                             .maybeAddAnnotation(validationAnnotations.parameterValid())
                             .build()
 
-                    is MultipartParameter ->
+                    is HeaderParam ->
                         it
                             .toParameterSpecBuilder()
-                            .addAnnotation(SpringAnnotations.requestPartBuilder(it.partName).build())
+                            .addAnnotation(
+                                SpringAnnotations.requestHeaderBuilder()
+                                    .addMember("value = %S", it.oasName)
+                                    .build(),
+                            )
                             .maybeAddAnnotation(validationAnnotations.parameterValid())
                             .build()
+
+                    is MultipartParameter ->
+                        throw UnsupportedOperationException("Multipart parameters are not supported for Spring controllers")
 
                     is RequestParameter ->
                         it
@@ -127,6 +134,8 @@ class SpringControllerInterfaceGenerator(
                             .addValidationAnnotations(it)
                             .addSpringParamAnnotation(it)
                             .build()
+
+                    else -> throw UnsupportedOperationException("${it::class} is not supported")
                 }
             }
             .forEach { funcSpec.addParameter(it) }

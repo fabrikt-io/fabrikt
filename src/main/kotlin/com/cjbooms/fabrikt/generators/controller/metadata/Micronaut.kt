@@ -34,7 +34,6 @@ object MicronautImports {
 
     val CONTROLLER = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "Controller")
     val BODY = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "Body")
-    val PART = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "Part")
     val HEADER = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "Header")
     val QUERY_VALUE = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "QueryValue")
     val PATH_VARIABLE = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "PathVariable")
