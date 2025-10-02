@@ -2,8 +2,10 @@ package com.cjbooms.fabrikt.multipart
 
 import com.example.multipart.client.ApiUploadClient
 import com.example.multipart.client.ApiUploadMultipleClient
+import com.example.multipart.client.ApiUploadSimpleClient
 import com.example.multipart.models.FileMetadata
 import com.example.multipart.models.FileMetadataCategory
+import com.example.multipart.models.SimpleUploadResult
 import com.example.multipart.models.UploadResult
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
@@ -31,6 +33,7 @@ class MultipartUploadTest {
     private val httpClient = OkHttpClient.Builder().build()
     private val uploadClient = ApiUploadClient(mapper, "http://localhost:$port", httpClient)
     private val uploadMultipleClient = ApiUploadMultipleClient(mapper, "http://localhost:$port", httpClient)
+    private val uploadSimpleClient = ApiUploadSimpleClient(mapper, "http://localhost:$port", httpClient)
 
     @BeforeEach
     fun setUp() {
@@ -231,5 +234,49 @@ class MultipartUploadTest {
         // The multipart body should end with the boundary terminator
         // Some OkHttp versions may add additional whitespace or line breaks
         assertThat(body.trim()).endsWith("--$boundary--")
+    }
+
+    @Test
+    fun `simple single file upload without metadata works correctly`() {
+        // Arrange
+        val now = OffsetDateTime.now()
+        val expectedResponse = SimpleUploadResult(
+            id = "simple-123",
+            filename = "simple.txt",
+            size = 512L,
+            uploadedAt = now
+        )
+
+        wiremock.post {
+            urlPath like "/api/upload-simple"
+            headers contains "content-type" like "multipart/form-data.*"
+        } returns {
+            statusCode = 200
+            header = "Content-Type" to "application/json"
+            body = mapper.writeValueAsString(expectedResponse)
+        }
+
+        val fileContent = "Simple file content".toByteArray()
+
+        // Act
+        val result = uploadSimpleClient.uploadSingleFile(file = fileContent)
+
+        // Assert
+        assertThat(result.data).isNotNull
+        assertThat(result.data?.id).isEqualTo("simple-123")
+        assertThat(result.data?.filename).isEqualTo("simple.txt")
+        assertThat(result.data?.size).isEqualTo(512L)
+        assertThat(result.data?.uploadedAt).isNotNull
+
+        // Verify that the request was made with multipart content and only contains the file
+        wiremock.allServeEvents.forEach { event ->
+            val request = event.request
+            assertThat(request.getHeader("Content-Type")).startsWith("multipart/form-data")
+            assertThat(request.bodyAsString).contains("Content-Disposition: form-data; name=\"file\"")
+            assertThat(request.bodyAsString).contains("Simple file content")
+            // Should not contain metadata or tags fields
+            assertThat(request.bodyAsString).doesNotContain("Content-Disposition: form-data; name=\"metadata\"")
+            assertThat(request.bodyAsString).doesNotContain("Content-Disposition: form-data; name=\"tags\"")
+        }
     }
 }

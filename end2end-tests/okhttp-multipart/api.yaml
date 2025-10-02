@@ -47,6 +47,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/upload-simple:
+    post:
+      operationId: uploadSingleFile
+      summary: Upload a single file without metadata
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The file to upload
+              required:
+                - file
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleUploadResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/upload-multiple:
     post:
       operationId: uploadMultipleFiles
@@ -134,6 +165,29 @@ components:
         - url
         - uploadedAt
         - size
+
+    SimpleUploadResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the uploaded file
+        filename:
+          type: string
+          description: Name of the uploaded file
+        size:
+          type: integer
+          format: int64
+          description: File size in bytes
+        uploadedAt:
+          type: string
+          format: date-time
+          description: Upload timestamp
+      required:
+        - id
+        - filename
+        - size
+        - uploadedAt
 
     ErrorResponse:
       type: object
