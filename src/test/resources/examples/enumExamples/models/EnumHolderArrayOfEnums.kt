@@ -12,6 +12,8 @@ public enum class EnumHolderArrayOfEnums(
   ARRAY_ENUM_TWO("array_enum_two"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, EnumHolderArrayOfEnums> =
         entries.associateBy(EnumHolderArrayOfEnums::value)

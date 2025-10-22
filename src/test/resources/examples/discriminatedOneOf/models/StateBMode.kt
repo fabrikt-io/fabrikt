@@ -12,6 +12,8 @@ public enum class StateBMode(
   MODE2("mode2"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, StateBMode> = entries.associateBy(StateBMode::value)
 

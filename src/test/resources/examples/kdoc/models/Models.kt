@@ -46,6 +46,8 @@ public enum class PromotionType(
     FIXED_AMOUNT("FIXED_AMOUNT"),
     ;
 
+    override fun toString(): String = value
+
     public companion object {
         private val mapping: Map<String, PromotionType> = entries.associateBy(PromotionType::value)
 

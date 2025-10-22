@@ -15,6 +15,8 @@ public enum class ParentType(
   CHILD_TYPE_B("CHILD_TYPE_B"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, ParentType> = entries.associateBy(ParentType::value)
 

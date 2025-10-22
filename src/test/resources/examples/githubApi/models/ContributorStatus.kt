@@ -15,6 +15,8 @@ public enum class ContributorStatus(
   INACTIVE("inactive"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, ContributorStatus> =
         entries.associateBy(ContributorStatus::value)

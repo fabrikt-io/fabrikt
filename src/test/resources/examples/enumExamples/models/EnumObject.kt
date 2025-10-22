@@ -17,6 +17,8 @@ public enum class EnumObject(
   REALLY_LONG_ENUM_VALUE_GOES_HERE_AND_IT_IS_VERY_DESCRIPTIVE("really long enum value goes here and it is very descriptive"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, EnumObject> = entries.associateBy(EnumObject::value)
 

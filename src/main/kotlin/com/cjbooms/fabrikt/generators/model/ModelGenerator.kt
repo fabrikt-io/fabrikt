@@ -3,7 +3,6 @@ package com.cjbooms.fabrikt.generators.model
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF
-import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.ClassSettings
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toClassName
@@ -458,6 +457,14 @@ class ModelGenerator(
         val valuePropSpecBuilder = PropertySpec.builder("value", String::class).initializer("value")
         serializationAnnotations.addEnumPropertyAnnotation(valuePropSpecBuilder)
         classBuilder.addProperty(valuePropSpecBuilder.build())
+
+        // Add toString() override that returns the value property
+        val toStringBuilder = FunSpec.builder("toString")
+            .addModifiers(KModifier.OVERRIDE)
+            .returns(String::class)
+            .addStatement("return value")
+
+        classBuilder.addFunction(toStringBuilder.build())
 
         val companion = TypeSpec.companionObjectBuilder()
             .addProperty(

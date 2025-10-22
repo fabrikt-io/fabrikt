@@ -18,6 +18,8 @@ public enum class PetType(
   FINNED("finned"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, PetType> = entries.associateBy(PetType::value)
 

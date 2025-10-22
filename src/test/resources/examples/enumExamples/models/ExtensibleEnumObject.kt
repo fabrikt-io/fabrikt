@@ -12,6 +12,8 @@ public enum class ExtensibleEnumObject(
   INACTIVE("inactive"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, ExtensibleEnumObject> =
         entries.associateBy(ExtensibleEnumObject::value)

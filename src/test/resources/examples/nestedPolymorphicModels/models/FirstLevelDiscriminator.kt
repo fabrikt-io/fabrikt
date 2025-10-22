@@ -12,6 +12,8 @@ public enum class FirstLevelDiscriminator(
   SECOND_LEVEL_CHILD2("secondLevelChild2"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, FirstLevelDiscriminator> =
         entries.associateBy(FirstLevelDiscriminator::value)

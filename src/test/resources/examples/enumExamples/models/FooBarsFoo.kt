@@ -12,6 +12,8 @@ public enum class FooBarsFoo(
   Y("Y"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, FooBarsFoo> = entries.associateBy(FooBarsFoo::value)
 

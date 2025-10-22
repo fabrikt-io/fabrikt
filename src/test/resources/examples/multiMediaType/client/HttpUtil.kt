@@ -50,10 +50,9 @@ fun <T> Request.execute(client: OkHttpClient, objectMapper: ObjectMapper, typeRe
     }
 
 @Suppress("unused")
-fun String.pathParam(vararg params: Pair<String, Any>): String = params.asSequence()
-    .joinToString { param ->
-        this.replace(param.first, param.second.toString())
-    }
+fun String.pathParam(vararg params: Pair<String, Any>): String = params.fold(this) { acc, param ->
+    acc.replace(param.first, param.second.toString())
+}
 
 fun <T> ResponseBody.deserialize(objectMapper: ObjectMapper, typeRef: TypeReference<T>): T? =
     this.string().isNotBlankOrNull()?.let { objectMapper.readValue(it, typeRef) }

@@ -84,6 +84,8 @@ public enum class ExternalObjectThreeEnum(
     THREE("three"),
     ;
 
+    override fun toString(): String = value
+
     public companion object {
         private val mapping: Map<String, ExternalObjectThreeEnum> =
             entries.associateBy(ExternalObjectThreeEnum::value)
@@ -120,6 +122,8 @@ public enum class ExternalParameter(
     TWO("TWO"),
     THREE("THREE"),
     ;
+
+    override fun toString(): String = value
 
     public companion object {
         private val mapping: Map<String, ExternalParameter> =

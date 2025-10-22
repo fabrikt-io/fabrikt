@@ -12,6 +12,8 @@ public enum class PersonWithDefaultsEnumQuotedDefault(
   `2X`("2x"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, PersonWithDefaultsEnumQuotedDefault> =
         entries.associateBy(PersonWithDefaultsEnumQuotedDefault::value)

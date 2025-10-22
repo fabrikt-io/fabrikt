@@ -12,6 +12,8 @@ public enum class PersonWithDefaultsEnumDefault(
   SHORT("short"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, PersonWithDefaultsEnumDefault> =
         entries.associateBy(PersonWithDefaultsEnumDefault::value)

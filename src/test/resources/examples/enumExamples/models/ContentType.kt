@@ -13,6 +13,8 @@ public enum class ContentType(
   APPLICATION_X_SOME_OTHER_TYPE_JSON_VERSION_2("application/x.some-other-type+json;version=2"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, ContentType> = entries.associateBy(ContentType::value)
 

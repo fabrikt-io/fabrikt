@@ -15,6 +15,8 @@ public enum class PullRequestStatus(
   INACTIVE("inactive"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, PullRequestStatus> =
         entries.associateBy(PullRequestStatus::value)

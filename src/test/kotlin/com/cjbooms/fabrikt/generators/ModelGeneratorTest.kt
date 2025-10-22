@@ -148,7 +148,7 @@ class ModelGeneratorTest {
         val basePackage = "examples.modelSuffix"
         val apiLocation = javaClass.getResource("/examples/modelSuffix/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
-        val expectedModels = readFolder(Path.of("src/test/resources/examples/modelSuffix/models/"))
+        val expectedModelsPath = "/examples/modelSuffix/models/"
 
         val models = ModelGenerator(
             Packages(basePackage),
@@ -158,7 +158,7 @@ class ModelGeneratorTest {
         models.files.forEach { file ->
             val key = "${file.name}.kt"
             val content = file.toString()
-            assertThat(content).isEqualTo(expectedModels[key])
+            assertThatGenerated(content).isEqualTo("$expectedModelsPath${key}")
         }
     }
 
@@ -171,7 +171,7 @@ class ModelGeneratorTest {
         val basePackage = "examples.fileComment"
         val apiLocation = javaClass.getResource("/examples/fileComment/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
-        val expectedModels = readFolder(Path.of("src/test/resources/examples/fileComment/models/"))
+        val expectedModelsPath = "/examples/fileComment/models/"
 
         val models = ModelGenerator(
             Packages(basePackage),
@@ -181,7 +181,7 @@ class ModelGeneratorTest {
         models.files.forEach { file ->
             val key = "${file.name}.kt"
             val content = file.toString()
-            assertThat(content).isEqualTo(expectedModels[key])
+            assertThatGenerated(content).isEqualTo("$expectedModelsPath${key}")
         }
     }
 

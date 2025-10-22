@@ -13,6 +13,8 @@ public enum class ModeParameterDto(
   MODE3("mode3"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, ModeParameterDto> =
         entries.associateBy(ModeParameterDto::value)

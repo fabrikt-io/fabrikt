@@ -12,6 +12,8 @@ public enum class NullableEnum(
   BAR("bar"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, NullableEnum> = entries.associateBy(NullableEnum::value)
 

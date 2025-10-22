@@ -16,6 +16,8 @@ public enum class EnumObjectDto(
   _6("_6"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, EnumObjectDto> = entries.associateBy(EnumObjectDto::value)
 

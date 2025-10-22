@@ -14,6 +14,8 @@ public enum class ChildDiscriminator(
   OBJ_THREE("obj_three"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, ChildDiscriminator> =
         entries.associateBy(ChildDiscriminator::value)

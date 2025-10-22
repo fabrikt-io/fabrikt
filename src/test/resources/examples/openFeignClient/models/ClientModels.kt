@@ -73,6 +73,8 @@ public enum class ContentModelType(
     THIRD_MODEL("third_model"),
     ;
 
+    override fun toString(): String = value
+
     public companion object {
         private val mapping: Map<String, ContentModelType> =
             entries.associateBy(ContentModelType::value)
@@ -91,6 +93,8 @@ public enum class ContentThirdAttr(
     ENUM_TYPE_1("enum_type_1"),
     ENUM_TYPE_2("enum_type_2"),
     ;
+
+    override fun toString(): String = value
 
     public companion object {
         private val mapping: Map<String, ContentThirdAttr> =

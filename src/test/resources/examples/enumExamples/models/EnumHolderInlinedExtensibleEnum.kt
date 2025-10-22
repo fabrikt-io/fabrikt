@@ -13,6 +13,8 @@ public enum class EnumHolderInlinedExtensibleEnum(
   INLINED_THREE("inlined_three"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, EnumHolderInlinedExtensibleEnum> =
         entries.associateBy(EnumHolderInlinedExtensibleEnum::value)

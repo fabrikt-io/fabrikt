@@ -13,6 +13,8 @@ public enum class StatusQueryParam(
   ALL("all"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, StatusQueryParam> =
         entries.associateBy(StatusQueryParam::value)

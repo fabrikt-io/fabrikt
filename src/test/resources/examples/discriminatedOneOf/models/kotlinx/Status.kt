@@ -13,6 +13,8 @@ public enum class Status(
   B("b"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, Status> = entries.associateBy(Status::value)
 

@@ -73,6 +73,8 @@ public enum class DogBreed(
     SHEPHERD("Shepherd"),
     ;
 
+    override fun toString(): String = value
+
     public companion object {
         private val mapping: Map<String, DogBreed> = entries.associateBy(DogBreed::value)
 

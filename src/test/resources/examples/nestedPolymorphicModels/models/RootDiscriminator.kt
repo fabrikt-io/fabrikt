@@ -11,6 +11,8 @@ public enum class RootDiscriminator(
   FIRST_LEVEL_CHILD("firstLevelChild"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, RootDiscriminator> =
         entries.associateBy(RootDiscriminator::value)

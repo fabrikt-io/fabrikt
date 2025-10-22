@@ -8,7 +8,9 @@ import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
 import com.cjbooms.fabrikt.model.KotlinSourceSet
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
 import com.cjbooms.fabrikt.util.ModelNameRegistry
+import com.cjbooms.fabrikt.util.ResourceHelper.getFileNamesInFolder
 import com.cjbooms.fabrikt.util.ResourceHelper.readFolder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -54,7 +56,8 @@ class KotlinSerializationModelGeneratorTest {
         val basePackage = "examples.${testCaseName.replace("/", ".")}"
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
-        val expectedModels = readFolder(Path.of("src/test/resources/examples/$testCaseName/models/kotlinx/"))
+        val expectedModelsPath = "/examples/$testCaseName/models/kotlinx/"
+        val expectedModels = getFileNamesInFolder(Path.of("src/test/resources$expectedModelsPath"))
 
         val models = ModelGenerator(
             Packages(basePackage),
@@ -70,8 +73,9 @@ class KotlinSerializationModelGeneratorTest {
         val tempFolderContents =
             readFolder(tempDirectory.resolve(basePackage.replace(".", File.separator)).resolve("models"))
         tempFolderContents.forEach {
-            if (expectedModels.containsKey(it.key)) {
-                assertThat((it.value)).isEqualTo(expectedModels[it.key])
+            if (expectedModels.contains(it.key)) {
+                assertThatGenerated(it.value)
+                    .isEqualTo( "$expectedModelsPath${it.key}")
             } else {
                 assertThat(it.value).isEqualTo("File not found in expected models")
             }

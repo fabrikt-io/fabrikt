@@ -12,6 +12,8 @@ public enum class RepositoryVisibility(
   PUBLIC("Public"),
   ;
 
+  override fun toString(): String = value
+
   public companion object {
     private val mapping: Map<String, RepositoryVisibility> =
         entries.associateBy(RepositoryVisibility::value)
