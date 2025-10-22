@@ -114,7 +114,7 @@ class Okio3Test {
     fun `adds enum_query_param to the query`(testInfo: TestInfo) {
         wiremock.get {
             urlPath like "/example-path-1"
-            queryParams contains "enum_query_param" like "ENUM_VALUE_1"
+            queryParams contains "enum_query_param" like "enum_value_1"
         } returns {
             statusCode = 200
             body = mapper.writeValueAsString(

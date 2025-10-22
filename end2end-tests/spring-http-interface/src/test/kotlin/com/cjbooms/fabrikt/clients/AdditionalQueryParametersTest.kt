@@ -18,6 +18,8 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.springframework.core.convert.converter.Converter
+import org.springframework.core.convert.support.DefaultConversionService
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.support.RestClientAdapter
@@ -31,12 +33,23 @@ class AdditionalQueryParametersTest {
         WireMockConfiguration.options().port(port).notifier(ConsoleNotifier(true)))
     private val mapper = ObjectMapper()
     private val examplePath1Client: ExamplePath1Client = run {
+
+        // TODO - Consider whether should be included in docs, or if we just using String in this client
+        val customEnumConversionSvc = DefaultConversionService().apply {
+            this.addConverter(object : Converter<Enum<*>, String> {
+                override fun convert(source: Enum<*>): String {
+                    return source.toString()
+                }
+            })
+        }
         val restClient = RestClient.builder()
             .baseUrl("http://localhost:$port")
             .messageConverters(listOf(MappingJackson2HttpMessageConverter(mapper)))
             .build()
         val adapter = RestClientAdapter.create(restClient)
-        val factory = HttpServiceProxyFactory.builderFor(adapter).build()
+        val factory = HttpServiceProxyFactory.builderFor(adapter)
+            .conversionService(customEnumConversionSvc)
+            .build()
         factory.createClient()
     }
 
@@ -71,7 +84,7 @@ class AdditionalQueryParametersTest {
         val expectedResponse = QueryResult(listOf(FirstModel(id = "the parameter was there!")))
         wiremock.get {
             urlPath like "/example-path-1"
-            queryParams contains "enum_query_param" like "ENUM_VALUE_1"
+            queryParams contains "enum_query_param" like "enum_value_1"
         } returns {
             statusCode = 200
             header = "Content-Type" to "application/json"
