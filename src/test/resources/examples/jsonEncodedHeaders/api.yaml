@@ -1,0 +1,50 @@
+openapi: "3.1.0"
+info:
+  title: "API Example"
+  version: "1.0"
+paths:
+  /json-header:
+    get:
+      summary: "GET with json encoded header"
+      parameters:
+        - name: X-Json-Encoded-Header
+          in: header
+          description: Json Encoded header
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsonEncodedHeader"
+                example:
+                  headerProp1: value
+                  headerProp2: anotherValue
+                  nestedProp:
+                    nestedProp1: nestedValue
+      responses:
+        200:
+          description: "successful operation"
+          content:
+            application/vnd.custom.media+json:
+              schema:
+                $ref: "#/components/schemas/QueryParamsResult"
+
+components:
+  schemas:
+    QueryParamsResult:
+      type: "object"
+      properties:
+        title:
+          type: "string"
+    JsonEncodedHeader:
+      type: "object"
+      properties:
+        headerProp1:
+          type: string
+        headerProp2:
+          type: string
+        nestedProp:
+          $ref: "#/components/schemas/NestedProp"
+    NestedProp:
+      type: "object"
+      properties:
+        nestedProp1:
+          type: string

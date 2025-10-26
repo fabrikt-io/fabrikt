@@ -18,6 +18,7 @@ import com.reprezen.kaizen.oasparser.model3.Response
 import com.reprezen.kaizen.oasparser.model3.Schema
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.Dynamic.isNullable
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.PropertySpec
@@ -56,6 +57,12 @@ object GeneratorUtils {
                 isNullable = !this.isRequired && this.schema.default == null
             )
         ).build()
+
+    fun Parameter.getContentSchemaOrSchema() = if (hasContentMediaType("application/json")) {
+        getContentMediaType("application/json").schema
+    } else {
+        schema
+    }
 
     /**
      * It converts any string to a variable or function name by removing all non-letter-or-digit characters and transforms
@@ -188,7 +195,7 @@ object GeneratorUtils {
                 RequestParameter(
                     it.name,
                     it.description,
-                    toModelType(basePackage, KotlinTypeInfo.from(it.schema), isNullable(it)),
+                    toModelType(basePackage, KotlinTypeInfo.from(it.getContentSchemaOrSchema()), isNullable(it)),
                     it
                 )
             }

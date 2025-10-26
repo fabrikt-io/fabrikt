@@ -202,7 +202,11 @@ data class SimpleClientOperationStatement(
                     "\n.%T(%S, %L)",
                     "header".toClassName(packages.client),
                     it.originalName,
-                    it.name + if (it.typeInfo is KotlinTypeInfo.Enum) "?.value" else ""
+                    when {
+                        it.typeInfo is KotlinTypeInfo.Enum -> "${it.name}?.value"
+                        it.typeInfo.isComplexType -> "objectMapper.writeValueAsString(${it.name})"
+                        else -> it.name
+                    }
                 )
             }
         this.add("\nadditionalHeaders.forEach { headerBuilder.header(it.key, it.value) }")

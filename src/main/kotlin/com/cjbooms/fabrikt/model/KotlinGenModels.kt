@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.model
 
+import com.cjbooms.fabrikt.generators.GeneratorUtils.getContentSchemaOrSchema
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata
 import com.cjbooms.fabrikt.model.Destinations.clientPackage
 import com.cjbooms.fabrikt.model.Destinations.controllersPackage
@@ -96,7 +97,7 @@ class RequestParameter(
         description = description,
         type = type,
         originalName = parameter.name,
-        typeInfo = KotlinTypeInfo.from(parameter.schema, oasName),
+        typeInfo = KotlinTypeInfo.from(parameter.getContentSchemaOrSchema(), oasName),
         minimum = parameter.schema.minimum,
         maximum = parameter.schema.maximum,
         parameterLocation = RequestParameterLocation(parameter.`in`),

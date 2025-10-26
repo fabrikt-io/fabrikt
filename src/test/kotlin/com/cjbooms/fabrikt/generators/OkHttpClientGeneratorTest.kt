@@ -42,6 +42,7 @@ class OkHttpClientGeneratorTest {
         "pathLevelParameters",
         "parameterNameClash",
         "byteArrayStream",
+        "jsonEncodedHeaders"
     )
 
     @BeforeEach
