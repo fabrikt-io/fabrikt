@@ -2,6 +2,7 @@ package examples.inlinedAggregatedObjects.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
 import javax.validation.Valid
+import kotlin.Any
 import kotlin.collections.List
 
 public data class Container(
@@ -23,4 +24,7 @@ public data class Container(
   @get:Valid
   public val arrayWithAnyOfAggregationOfMany: List<ContainerArrayWithAnyOfAggregationOfMany>? =
       null,
+  @param:JsonProperty("arrayWithOneOf")
+  @get:JsonProperty("arrayWithOneOf")
+  public val arrayWithOneOf: List<Any>? = null,
 )

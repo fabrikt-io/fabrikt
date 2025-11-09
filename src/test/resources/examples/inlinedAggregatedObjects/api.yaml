@@ -38,6 +38,28 @@ components:
                   id:
                     type: string
                     description: The identifier of the chat message.
+        arrayWithOneOf:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/BModel"
+              - $ref: "#/components/schemas/CModel"
+
+    BModel:
+      type: object
+      allOf:
+        - type: object
+          properties:
+            b:
+              title: "<redacted>"
+              type: number
+
+    CModel:
+      type: object
+      properties:
+        c:
+          type: number
+
     SimpleObjOne:
       type: object
       required:

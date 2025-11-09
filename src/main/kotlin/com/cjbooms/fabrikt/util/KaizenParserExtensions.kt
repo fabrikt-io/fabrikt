@@ -287,8 +287,13 @@ object KaizenParserExtensions {
     private fun List<Schema>?.hasAnyDefinedProperties(): Boolean =
         this?.any { it.properties?.isNotEmpty() == true } == true
 
-    fun Schema.isOneOfPolymorphicTypes() =
-        this.oneOfSchemas?.firstOrNull()?.allOfSchemas?.firstOrNull() != null
+    fun Schema.isOneOfPolymorphicTypes(): Boolean {
+        val maybeAllOfInFirstOneOf = this.oneOfSchemas?.firstOrNull()?.allOfSchemas?.firstOrNull()
+        return if (maybeAllOfInFirstOneOf != null) {
+            this.oneOfSchemas.all { it.allOfSchemas.contains(maybeAllOfInFirstOneOf) }
+        } else false
+    }
+
 
     fun Schema.isInlinedOneOfSuperInterface() = isOneOfSuperInterfaceOnly() && isInlinedPropertySchema()
 
