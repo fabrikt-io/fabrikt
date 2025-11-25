@@ -1,7 +1,7 @@
 plugins {
     application
     kotlin("jvm")
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "8.3.9"
     id("com.palantir.git-version") version "3.0.0"
 }
 
