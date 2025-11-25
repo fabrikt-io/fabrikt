@@ -38,21 +38,22 @@ allprojects {
     }
 }
 
-val jacksonVersion by extra { "2.15.1" }
+val jacksonVersion by extra { "2.20.1" }
 val junitVersion by extra { "5.9.2" }
 val ktorVersion by extra { "3.0.1" }
 val kotlinxSerializationVersion by extra { "1.9.0" }
 val kotlinxDateTimeVersion by extra { "0.7.1-0.6.x-compat" }
 
 dependencies {
+    implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersion"))
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.github.jknack:handlebars:4.3.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.core:jackson-databind")
+    implementation("com.fasterxml.jackson.core:jackson-core")
+    implementation("com.fasterxml.jackson.core:jackson-annotations")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
     implementation("com.beust:jcommander:1.82")
     implementation("com.reprezen.kaizen:openapi-parser:4.0.4") { exclude(group = "junit") }
     implementation("com.reprezen.jsonoverlay:jsonoverlay:4.0.4")

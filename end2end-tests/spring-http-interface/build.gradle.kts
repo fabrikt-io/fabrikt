@@ -23,14 +23,15 @@ val jacksonVersion: String by rootProject.extra
 val junitVersion: String by rootProject.extra
 
 dependencies {
+    implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersion"))
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("org.springframework.boot:spring-boot-starter-web:3.4.3")
     implementation("jakarta.validation:jakarta.validation-api:3.0.2")
     implementation("javax.validation:validation-api:2.0.1.Final")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.core:jackson-databind")
+    implementation("com.fasterxml.jackson.core:jackson-core")
+    implementation("com.fasterxml.jackson.core:jackson-annotations")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")

@@ -24,14 +24,15 @@ val junitVersion: String by rootProject.extra
 val ktorVersion: String by rootProject.extra
 
 dependencies {
+    implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersion"))
     implementation("jakarta.validation:jakarta.validation-api:3.0.2")
     implementation("javax.validation:validation-api:2.0.1.Final")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.core:jackson-databind")
+    implementation("com.fasterxml.jackson.core:jackson-core")
+    implementation("com.fasterxml.jackson.core:jackson-annotations")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
     // ktor server
     implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
