@@ -50,7 +50,6 @@ dependencies {
 
     testImplementation("io.mockk:mockk:1.13.7")
 
-    // Junit-Platform-Launcher is needed for gradle 9.x compatibility
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
