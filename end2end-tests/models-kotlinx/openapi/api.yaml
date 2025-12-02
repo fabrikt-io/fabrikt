@@ -160,3 +160,27 @@ components:
           format: int32
         message:
           type: string
+    # Arrays
+    ArrayHolder:
+      type: object
+      properties:
+        unique_objects:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/BasicObject'
+        unique_ints:
+          type: array
+          uniqueItems: true
+          items:
+            type: integer
+        non_unique_objects:
+          type: array
+          uniqueItems: false
+          items:
+            $ref: '#/components/schemas/BasicObject'
+    BasicObject:
+      type: object
+      properties:
+        one:
+          type: string

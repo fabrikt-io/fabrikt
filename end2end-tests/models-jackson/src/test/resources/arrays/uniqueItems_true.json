@@ -1,0 +1,15 @@
+{
+  "unique_objects" : [ {
+    "one" : "first"
+  }, {
+    "one" : "second"
+  }, {
+    "one" : "third"
+  }, {
+    "one" : "fourth"
+  }, {
+    "one" : "fifth"
+  }, {
+    "one" : "sixth"
+  } ]
+}

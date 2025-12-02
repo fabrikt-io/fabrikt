@@ -1,0 +1,7 @@
+{
+  "non_unique_objects" : [ {
+    "one" : "first"
+  }, {
+    "one" : "second"
+  } ]
+}
