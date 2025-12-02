@@ -13,7 +13,7 @@ class ArrayTest {
     @Test
     fun `must serialize uniqueItems = true object array`() {
         val wrapper = ArrayHolder(
-            uniqueObjects = setOf(
+            uniqueObjects = linkedSetOf(
                 BasicObject(one = "first"),
                 BasicObject(one = "second"),
                 BasicObject(one = "third"),
@@ -31,7 +31,7 @@ class ArrayTest {
     @Test
     fun `must serialize uniqueItems = true int array`() {
         val wrapper = ArrayHolder(
-            uniqueInts = setOf(6,5,4,3,2,1)
+            uniqueInts = linkedSetOf(6,5,4,3,2,1)
         )
         val result = writer.writeValueAsString(wrapper)
 
@@ -45,7 +45,7 @@ class ArrayTest {
         val result = readArrayHolder("uniqueItems_true")
 
         val expected = ArrayHolder(
-            uniqueObjects = setOf(
+            uniqueObjects = linkedSetOf(
                 BasicObject(one = "first"),
                 BasicObject(one = "second"),
                 BasicObject(one = "third"),
@@ -63,7 +63,7 @@ class ArrayTest {
         val result = readArrayHolder("uniqueItems_true_ints")
 
         val expected = ArrayHolder(
-            uniqueInts = setOf(6,5,4,3,2,1)
+            uniqueInts = linkedSetOf(6,5,4,3,2,1)
         )
         assertThat(result).isEqualTo(expected)
         assertThat(result.uniqueInts?.toList()).isEqualTo(expected.uniqueInts?.toList())
@@ -88,7 +88,7 @@ class ArrayTest {
         val result = readArrayHolder("uniqueItems_true_with_duplicates")
 
         val expected = ArrayHolder(
-            uniqueObjects = setOf(
+            uniqueObjects = linkedSetOf(
                 BasicObject(one = "first"),
                 BasicObject(one = "second"),
                 BasicObject(one = "third")

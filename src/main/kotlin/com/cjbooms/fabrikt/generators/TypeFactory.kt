@@ -49,7 +49,7 @@ object TypeFactory {
         List::class.asClassName().parameterizedBy(clazz)
 
     fun createSet(clazz: TypeName) =
-        Set::class.asClassName().parameterizedBy(clazz)
+        LinkedHashSet::class.asClassName().parameterizedBy(clazz)
 
     fun TypeName.maybeMakeMapValueNullable(): TypeName =
         if (MutableSettings.modelOptions.contains(ModelCodeGenOptionType.NON_NULL_MAP_VALUES)) this

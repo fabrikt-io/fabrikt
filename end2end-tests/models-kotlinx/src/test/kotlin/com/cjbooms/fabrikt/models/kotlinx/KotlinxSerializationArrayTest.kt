@@ -14,7 +14,7 @@ class KotlinxSerializationArrayTest {
     @Test
     fun `must serialize uniqueItems = true array`() {
         val wrapper = ArrayHolder(
-            uniqueObjects = setOf(
+            uniqueObjects = linkedSetOf(
                 BasicObject(one = "first"),
                 BasicObject(one = "second"),
                 BasicObject(one = "third"),
@@ -35,7 +35,7 @@ class KotlinxSerializationArrayTest {
         val result = json.decodeFromString(ArrayHolder.serializer(), jsonString)
 
         val expected = ArrayHolder(
-            uniqueObjects = setOf(
+            uniqueObjects = linkedSetOf(
                 BasicObject(one = "first"),
                 BasicObject(one = "second"),
                 BasicObject(one = "third"),
@@ -65,7 +65,7 @@ class KotlinxSerializationArrayTest {
         val result = json.decodeFromString(ArrayHolder.serializer(), jsonString)
 
         val expected = ArrayHolder(
-            uniqueInts = setOf(6,5,4,3,2,1)
+            uniqueInts = linkedSetOf(6,5,4,3,2,1)
         )
         assertThat(result).isEqualTo(expected)
         assertThat(result.uniqueObjects?.toList()).isEqualTo(expected.uniqueObjects?.toList())
@@ -77,7 +77,7 @@ class KotlinxSerializationArrayTest {
         val result = json.decodeFromString(ArrayHolder.serializer(), jsonString)
 
         val expected = ArrayHolder(
-            uniqueObjects = setOf(
+            uniqueObjects = linkedSetOf(
                 BasicObject(one = "first"),
                 BasicObject(one = "second"),
                 BasicObject(one = "third")
