@@ -12,6 +12,8 @@ COPY .git ./.git
 
 # Copy source code
 COPY src ./src
+COPY end2end-tests ./end2end-tests
+COPY playground ./playground
 
 # Build the executable jar
 RUN ./gradlew clean shadowJar --no-daemon
