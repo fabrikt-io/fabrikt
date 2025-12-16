@@ -51,7 +51,7 @@ public interface InternalEventsController {
     )
     public fun post(
         @RequestBody @Valid bulkEntityDetails: BulkEntityDetails,
-    ): CompletionStage<ResponseEntity<EventResults>>
+    ): ResponseEntity<EventResults>
 }
 
 @Controller

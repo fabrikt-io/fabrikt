@@ -40,6 +40,13 @@ object ControllerGeneratorUtils {
             ?.value
             ?: throw IllegalStateException("Could not extract the response for $this")
 
+    fun Operation.isSseResponse(): Boolean {
+        val responseDetails = happyPathResponseObject()
+        return responseDetails.contentMediaTypes["text/event-stream"]
+            ?.let { it.schema.type == "array" && it.schema.format == "event-stream" }
+            ?: false
+    }
+
     fun controllerName(resourceName: String) = "$resourceName${ControllerType.SUFFIX}"
 
     fun methodName(op: Operation, verb: String, isSingleResource: Boolean) =
