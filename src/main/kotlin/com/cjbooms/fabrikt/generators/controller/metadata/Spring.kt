@@ -14,6 +14,8 @@ object SpringImports {
 
         const val WEB_BIND_ANNOTATION = "$SPRING_BASE.web.bind.annotation"
 
+        const val MVC_METHOD_ANNOTATION = "$SPRING_BASE.web.servlet.mvc.method.annotation"
+
         const val VALIDATION_ANNOTATION = "$SPRING_BASE.validation.annotation"
 
         const val DATE_TIME_FORMAT = "org.springframework.format.annotation"
@@ -36,6 +38,8 @@ object SpringImports {
     val PATH_VARIABLE = ClassName(Packages.WEB_BIND_ANNOTATION, "PathVariable")
 
     val REQUEST_MAPPING = ClassName(Packages.WEB_BIND_ANNOTATION, "RequestMapping")
+
+    val SSE_EMITTER = ClassName(Packages.MVC_METHOD_ANNOTATION, "SseEmitter")
 
     val VALIDATED = ClassName(Packages.VALIDATION_ANNOTATION, "Validated")
 

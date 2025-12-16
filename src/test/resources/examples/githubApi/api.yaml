@@ -36,7 +36,37 @@ paths:
       security:
         - oauth2:
             - uid
-            - fabric-event-scheduler.read  
+            - fabric-event-scheduler.read
+  /internal/events/{entity-id}/stream:
+    get:
+      tags:
+        - events
+      summary: Stream events for an entity
+      parameters:
+        - name: entity-id
+          in: path
+          required: true
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/event-stream:
+              schema:
+                type: array
+                format: event-stream
+                items:
+                  $ref: '#/components/schemas/Event'
+        default:
+          description: >-
+            error occurred - see status code and problem object for more information.
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'https://opensource.zalando.com/problem/schema.yaml#/Problem'
+      security:
+        - oauth2:
+            - uid
+            - fabric-event-scheduler.read
   /contributors:
     get:
       operationId: searchContributors

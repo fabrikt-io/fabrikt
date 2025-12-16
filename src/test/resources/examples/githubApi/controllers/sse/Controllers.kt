@@ -1,17 +1,16 @@
-package examples.completionStage.controllers
+package examples.sseEmitter.controllers
 
-import examples.completionStage.models.BulkEntityDetails
-import examples.completionStage.models.Contributor
-import examples.completionStage.models.ContributorQueryResult
-import examples.completionStage.models.Event
-import examples.completionStage.models.EventResults
-import examples.completionStage.models.Organisation
-import examples.completionStage.models.OrganisationQueryResult
-import examples.completionStage.models.PullRequest
-import examples.completionStage.models.PullRequestQueryResult
-import examples.completionStage.models.Repository
-import examples.completionStage.models.RepositoryQueryResult
-import examples.completionStage.models.StatusQueryParam
+import examples.sseEmitter.models.BulkEntityDetails
+import examples.sseEmitter.models.Contributor
+import examples.sseEmitter.models.ContributorQueryResult
+import examples.sseEmitter.models.EventResults
+import examples.sseEmitter.models.Organisation
+import examples.sseEmitter.models.OrganisationQueryResult
+import examples.sseEmitter.models.PullRequest
+import examples.sseEmitter.models.PullRequestQueryResult
+import examples.sseEmitter.models.Repository
+import examples.sseEmitter.models.RepositoryQueryResult
+import examples.sseEmitter.models.StatusQueryParam
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
@@ -22,8 +21,8 @@ import org.springframework.web.bind.`annotation`.RequestHeader
 import org.springframework.web.bind.`annotation`.RequestMapping
 import org.springframework.web.bind.`annotation`.RequestMethod
 import org.springframework.web.bind.`annotation`.RequestParam
+import org.springframework.web.servlet.mvc.method.`annotation`.SseEmitter
 import java.util.UUID
-import java.util.concurrent.CompletionStage
 import javax.validation.Valid
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
@@ -51,7 +50,7 @@ public interface InternalEventsController {
     )
     public fun post(
         @RequestBody @Valid bulkEntityDetails: BulkEntityDetails,
-    ): CompletionStage<ResponseEntity<EventResults>>
+    ): ResponseEntity<EventResults>
 }
 
 @Controller
@@ -70,7 +69,7 @@ public interface InternalEventsStreamController {
     )
     public fun `get`(
         @PathVariable(value = "entity-id", required = true) entityId: Any,
-    ): CompletionStage<ResponseEntity<List<Event>>>
+    ): SseEmitter
 }
 
 @Controller
@@ -103,7 +102,7 @@ public interface ContributorsController {
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestParam(value = "include_inactive", required = false) includeInactive: Boolean?,
         @RequestParam(value = "cursor", required = false) cursor: String?,
-    ): CompletionStage<ResponseEntity<ContributorQueryResult>>
+    ): ResponseEntity<ContributorQueryResult>
 
     /**
      * Create a new Contributor
@@ -131,7 +130,7 @@ public interface ContributorsController {
         @RequestBody @Valid contributor: Contributor,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: UUID?,
-    ): CompletionStage<ResponseEntity<Unit>>
+    ): ResponseEntity<Unit>
 
     /**
      * Get a Contributor by ID
@@ -159,7 +158,7 @@ public interface ContributorsController {
         status: StatusQueryParam,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "If-None-Match", required = false) ifNoneMatch: String?,
-    ): CompletionStage<ResponseEntity<Contributor>>
+    ): ResponseEntity<Contributor>
 
     /**
      * Update an existing Contributor
@@ -195,7 +194,7 @@ public interface ContributorsController {
         @RequestHeader(value = "If-Match", required = true) ifMatch: String,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: UUID?,
-    ): CompletionStage<ResponseEntity<Unit>>
+    ): ResponseEntity<Unit>
 }
 
 @Controller
@@ -228,7 +227,7 @@ public interface OrganisationsController {
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestParam(value = "include_inactive", required = false) includeInactive: Boolean?,
         @RequestParam(value = "cursor", required = false) cursor: String?,
-    ): CompletionStage<ResponseEntity<OrganisationQueryResult>>
+    ): ResponseEntity<OrganisationQueryResult>
 
     /**
      * Create a new Organisation
@@ -256,7 +255,7 @@ public interface OrganisationsController {
         @RequestBody @Valid organisation: Organisation,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: UUID?,
-    ): CompletionStage<ResponseEntity<Unit>>
+    ): ResponseEntity<Unit>
 
     /**
      * Get a Organisation by ID
@@ -284,7 +283,7 @@ public interface OrganisationsController {
         status: StatusQueryParam,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "If-None-Match", required = false) ifNoneMatch: String?,
-    ): CompletionStage<ResponseEntity<Organisation>>
+    ): ResponseEntity<Organisation>
 
     /**
      * Update an existing Organisation
@@ -320,7 +319,7 @@ public interface OrganisationsController {
         @RequestHeader(value = "If-Match", required = true) ifMatch: String,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: UUID?,
-    ): CompletionStage<ResponseEntity<Unit>>
+    ): ResponseEntity<Unit>
 }
 
 @Controller
@@ -356,7 +355,7 @@ public interface OrganisationsContributorsController {
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestParam(value = "include_inactive", required = false) includeInactive: Boolean?,
         @RequestParam(value = "cursor", required = false) cursor: String?,
-    ): CompletionStage<ResponseEntity<ContributorQueryResult>>
+    ): ResponseEntity<ContributorQueryResult>
 
     /**
      * Get a Contributor for this Organisation by ID
@@ -381,7 +380,7 @@ public interface OrganisationsContributorsController {
         @PathVariable(value = "id", required = true) id: String,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "If-None-Match", required = false) ifNoneMatch: String?,
-    ): CompletionStage<ResponseEntity<Contributor>>
+    ): ResponseEntity<Contributor>
 
     /**
      * Add an existing Contributor to this Organisation
@@ -416,7 +415,7 @@ public interface OrganisationsContributorsController {
         @RequestHeader(value = "If-Match", required = true) ifMatch: String,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: UUID?,
-    ): CompletionStage<ResponseEntity<Unit>>
+    ): ResponseEntity<Unit>
 
     /**
      * Remove Contributor from this Organisation. Does not delete the underlying Contributor.
@@ -436,7 +435,7 @@ public interface OrganisationsContributorsController {
         @PathVariable(value = "parent-id", required = true) parentId: String,
         @PathVariable(value = "id", required = true) id: String,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
-    ): CompletionStage<ResponseEntity<Unit>>
+    ): ResponseEntity<Unit>
 }
 
 @Controller
@@ -475,7 +474,7 @@ public interface RepositoriesController {
         @Valid @RequestParam(value = "name", required = false) name: List<String>?,
         @RequestParam(value = "include_inactive", required = false) includeInactive: Boolean?,
         @RequestParam(value = "cursor", required = false) cursor: String?,
-    ): CompletionStage<ResponseEntity<RepositoryQueryResult>>
+    ): ResponseEntity<RepositoryQueryResult>
 
     /**
      * Create a new Repository
@@ -503,7 +502,7 @@ public interface RepositoriesController {
         @RequestBody @Valid repository: Repository,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: UUID?,
-    ): CompletionStage<ResponseEntity<Unit>>
+    ): ResponseEntity<Unit>
 
     /**
      * Get a Repository by ID
@@ -531,7 +530,7 @@ public interface RepositoriesController {
         status: StatusQueryParam,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "If-None-Match", required = false) ifNoneMatch: String?,
-    ): CompletionStage<ResponseEntity<Repository>>
+    ): ResponseEntity<Repository>
 
     /**
      * Update an existing Repository
@@ -567,7 +566,7 @@ public interface RepositoriesController {
         @RequestHeader(value = "If-Match", required = true) ifMatch: String,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: UUID?,
-    ): CompletionStage<ResponseEntity<Unit>>
+    ): ResponseEntity<Unit>
 }
 
 @Controller
@@ -603,7 +602,7 @@ public interface RepositoriesPullRequestsController {
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestParam(value = "include_inactive", required = false) includeInactive: Boolean?,
         @RequestParam(value = "cursor", required = false) cursor: String?,
-    ): CompletionStage<ResponseEntity<PullRequestQueryResult>>
+    ): ResponseEntity<PullRequestQueryResult>
 
     /**
      * Create a new PullRequest for this parent Repository
@@ -633,7 +632,7 @@ public interface RepositoriesPullRequestsController {
         @PathVariable(value = "parent-id", required = true) parentId: String,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: UUID?,
-    ): CompletionStage<ResponseEntity<Unit>>
+    ): ResponseEntity<Unit>
 
     /**
      * Get a PullRequest for this Repository by ID
@@ -658,7 +657,7 @@ public interface RepositoriesPullRequestsController {
         @PathVariable(value = "id", required = true) id: String,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "If-None-Match", required = false) ifNoneMatch: String?,
-    ): CompletionStage<ResponseEntity<PullRequest>>
+    ): ResponseEntity<PullRequest>
 
     /**
      * Update the PullRequest owned by this Repository
@@ -696,5 +695,5 @@ public interface RepositoriesPullRequestsController {
         @RequestHeader(value = "If-Match", required = true) ifMatch: String,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "Idempotency-Key", required = false) idempotencyKey: UUID?,
-    ): CompletionStage<ResponseEntity<Unit>>
+    ): ResponseEntity<Unit>
 }
