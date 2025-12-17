@@ -32,6 +32,7 @@ import java.util.stream.Stream
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class KtorControllerInterfaceGeneratorTest {
     private val basePackage = "ie.zalando"
+    private val expectedControllers = 7
     private lateinit var generated: Collection<FileSpec>
 
     @Suppress("unused")
@@ -109,7 +110,7 @@ class KtorControllerInterfaceGeneratorTest {
     @Test
     fun `should contain correct number of controller classes`() {
         setupGithubApiTestEnv()
-        assertThat(generated.size).isEqualTo(6)
+        assertThat(generated.size).isEqualTo(expectedControllers)
     }
 
     @Test
@@ -118,6 +119,7 @@ class KtorControllerInterfaceGeneratorTest {
         assertThat(generated.map { it.name })
             .containsOnly(
                 "InternalEventsController",
+                "InternalEventsStreamController",
                 "ContributorsController",
                 "OrganisationsController",
                 "OrganisationsContributorsController",
@@ -141,7 +143,7 @@ class KtorControllerInterfaceGeneratorTest {
             api
         ).generate()
 
-        assertThat(controllers.files).size().isEqualTo(6)
+        assertThat(controllers.files).size().isEqualTo(expectedControllers)
         assertThat(controllers.files.map { it.name }).containsAll(
             listOf(
                 "ContributorsController",
@@ -182,7 +184,7 @@ class KtorControllerInterfaceGeneratorTest {
             api
         ).generate()
 
-        assertThat(controllers.files).size().isEqualTo(6)
+        assertThat(controllers.files).size().isEqualTo(expectedControllers)
         assertThat(
             controllers.files
                 .flatMap { file -> file.members }
