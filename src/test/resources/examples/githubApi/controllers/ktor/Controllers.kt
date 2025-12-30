@@ -3,7 +3,6 @@ package examples.githubApi.controllers
 import examples.githubApi.models.BulkEntityDetails
 import examples.githubApi.models.Contributor
 import examples.githubApi.models.ContributorQueryResult
-import examples.githubApi.models.Event
 import examples.githubApi.models.EventResults
 import examples.githubApi.models.Organisation
 import examples.githubApi.models.OrganisationQueryResult
@@ -63,103 +62,6 @@ public interface InternalEventsController {
             post("/internal/events") {
                 val bulkEntityDetails = call.receive<BulkEntityDetails>()
                 controller.post(bulkEntityDetails, TypedApplicationCall(call))
-            }
-        }
-
-        /**
-         * Gets parameter value associated with this name or null if the name is not present.
-         * Converting to type R using ConversionService.
-         *
-         * Throws:
-         *   ParameterConversionException - when conversion from String to R fails
-         */
-        private inline fun <reified R : Any> Parameters.getTyped(
-            name: String,
-            conversionService: ConversionService = DefaultConversionService,
-        ): R? {
-            val values = getAll(name) ?: return null
-            val typeInfo = typeInfo<R>()
-            return try {
-                @Suppress("UNCHECKED_CAST")
-                conversionService.fromValues(values, typeInfo) as R
-            } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
-            }
-        }
-
-        /**
-         * Gets parameter value associated with this name or throws if the name is not present.
-         * Converting to type R using ConversionService.
-         *
-         * Throws:
-         *   MissingRequestParameterException - when parameter is missing
-         *   ParameterConversionException - when conversion from String to R fails
-         */
-        private inline fun <reified R : Any> Parameters.getTypedOrFail(
-            name: String,
-            conversionService: ConversionService = DefaultConversionService,
-        ): R {
-            val values = getAll(name) ?: throw MissingRequestParameterException(name)
-            val typeInfo = typeInfo<R>()
-            return try {
-                @Suppress("UNCHECKED_CAST")
-                conversionService.fromValues(values, typeInfo) as R
-            } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
-            }
-        }
-
-        /**
-         * Gets first value from the list of values associated with a name.
-         *
-         * Throws:
-         *   BadRequestException - when the name is not present
-         */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
-    }
-}
-
-public interface InternalEventsStreamController {
-    /**
-     * Stream events for an entity
-     *
-     * Route is expected to respond with [kotlin.collections.List<examples.githubApi.models.Event>].
-     * Use [examples.githubApi.controllers.TypedApplicationCall.respondTyped] to send the response.
-     *
-     * @param entityId
-     * @param call Decorated ApplicationCall with additional typed respond methods
-     */
-    public suspend fun `get`(
-        entityId: Any,
-        call: TypedApplicationCall<List<Event>>,
-    )
-
-    public companion object {
-        /**
-         * Mounts all routes for the InternalEventsStream resource
-         *
-         * - GET /internal/events/{entity-id}/stream Stream events for an entity
-         */
-        public fun Route.internalEventsStreamRoutes(controller: InternalEventsStreamController) {
-            `get`("/internal/events/{entity-id}/stream") {
-                val entityId =
-                    call.parameters.getTypedOrFail<kotlin.Any>(
-                        "entity-id",
-                        call.application.conversionService,
-                    )
-                controller.get(entityId, TypedApplicationCall(call))
             }
         }
 

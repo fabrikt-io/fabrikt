@@ -3,7 +3,6 @@ package examples.githubApi.controllers
 import examples.githubApi.models.BulkEntityDetails
 import examples.githubApi.models.Contributor
 import examples.githubApi.models.ContributorQueryResult
-import examples.githubApi.models.Event
 import examples.githubApi.models.EventResults
 import examples.githubApi.models.Organisation
 import examples.githubApi.models.OrganisationQueryResult
@@ -26,7 +25,6 @@ import java.util.UUID
 import javax.validation.Valid
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
-import kotlin.Any
 import kotlin.Boolean
 import kotlin.Int
 import kotlin.String
@@ -51,25 +49,6 @@ public interface InternalEventsController {
     public fun post(
         @RequestBody @Valid bulkEntityDetails: BulkEntityDetails,
     ): ResponseEntity<EventResults>
-}
-
-@Controller
-@Validated
-@RequestMapping("")
-public interface InternalEventsStreamController {
-    /**
-     * Stream events for an entity
-     *
-     * @param entityId
-     */
-    @RequestMapping(
-        value = ["/internal/events/{entity-id}/stream"],
-        produces = ["text/event-stream", "application/problem+json"],
-        method = [RequestMethod.GET],
-    )
-    public fun `get`(
-        @PathVariable(value = "entity-id", required = true) entityId: Any,
-    ): ResponseEntity<List<Event>>
 }
 
 @Controller
