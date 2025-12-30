@@ -1,0 +1,58 @@
+openapi: 3.0.0
+info:
+  description: Some description
+  version: 1.0.0
+  title: The API title
+  contact:
+    name: cjbooms
+    email: api@cjbooms.com
+externalDocs:
+  description: The docs are great.
+  url: http://find.them.here
+
+paths:
+  /internal/events/{entity-id}/stream:
+    get:
+      tags:
+        - events
+      summary: Stream events for an entity
+      parameters:
+        - name: entity-id
+          in: path
+          required: true
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/event-stream:
+              schema:
+                type: array
+                format: event-stream
+                items:
+                  $ref: '#/components/schemas/Event'
+        default:
+          description: >-
+            error occurred - see status code and problem object for more information.
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'https://opensource.zalando.com/problem/schema.yaml#/Problem'
+      security:
+        - oauth2:
+            - uid
+            - fabric-event-scheduler.read
+components:
+  schemas:
+    Event:
+      type: object
+      additionalProperties: true
+      required:
+        - entity_id
+        - data
+      properties:
+        entity_id:
+          type: string
+          description: The id of the entity this event belongs to
+        data:
+          type: object
+          description: This unstructured event content must conform to the Nakadi Event Type's schema

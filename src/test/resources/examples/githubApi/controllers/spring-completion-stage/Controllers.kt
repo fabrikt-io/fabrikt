@@ -3,7 +3,6 @@ package examples.completionStage.controllers
 import examples.completionStage.models.BulkEntityDetails
 import examples.completionStage.models.Contributor
 import examples.completionStage.models.ContributorQueryResult
-import examples.completionStage.models.Event
 import examples.completionStage.models.EventResults
 import examples.completionStage.models.Organisation
 import examples.completionStage.models.OrganisationQueryResult
@@ -27,7 +26,6 @@ import java.util.concurrent.CompletionStage
 import javax.validation.Valid
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
-import kotlin.Any
 import kotlin.Boolean
 import kotlin.Int
 import kotlin.String
@@ -52,25 +50,6 @@ public interface InternalEventsController {
     public fun post(
         @RequestBody @Valid bulkEntityDetails: BulkEntityDetails,
     ): CompletionStage<ResponseEntity<EventResults>>
-}
-
-@Controller
-@Validated
-@RequestMapping("")
-public interface InternalEventsStreamController {
-    /**
-     * Stream events for an entity
-     *
-     * @param entityId
-     */
-    @RequestMapping(
-        value = ["/internal/events/{entity-id}/stream"],
-        produces = ["text/event-stream", "application/problem+json"],
-        method = [RequestMethod.GET],
-    )
-    public fun `get`(
-        @PathVariable(value = "entity-id", required = true) entityId: Any,
-    ): CompletionStage<ResponseEntity<List<Event>>>
 }
 
 @Controller

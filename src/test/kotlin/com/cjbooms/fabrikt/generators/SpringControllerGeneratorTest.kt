@@ -6,7 +6,6 @@ import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
-import com.cjbooms.fabrikt.generators.controller.KtorControllerInterfaceGenerator
 import com.cjbooms.fabrikt.generators.controller.SpringControllerInterfaceGenerator
 import com.cjbooms.fabrikt.generators.controller.SpringControllers
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringImports
@@ -35,7 +34,6 @@ import java.util.stream.Stream
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SpringControllerGeneratorTest {
     private val basePackage = "ie.zalando"
-    private val expectedControllers = 7
     private lateinit var generated: Collection<FileSpec>
 
     @Suppress("unused")
@@ -105,7 +103,7 @@ class SpringControllerGeneratorTest {
     @Test
     fun `should contain correct number of controller classes`() {
         setupGithubApiTestEnv()
-        assertThat(generated.size).isEqualTo(expectedControllers)
+        assertThat(generated.size).isEqualTo(6)
     }
 
     @Test
@@ -114,7 +112,6 @@ class SpringControllerGeneratorTest {
         assertThat(generated.map { it.name })
             .containsOnly(
                 "InternalEventsController",
-                "InternalEventsStreamController",
                 "ContributorsController",
                 "OrganisationsController",
                 "OrganisationsContributorsController",
@@ -174,7 +171,7 @@ class SpringControllerGeneratorTest {
         val controllers =
             SpringControllerInterfaceGenerator(Packages(basePackage), api, JavaxValidationAnnotations).generate()
 
-        assertThat(controllers.files).size().isEqualTo(expectedControllers)
+        assertThat(controllers.files).size().isEqualTo(6)
         assertThat(controllers.files.map { it.name }).containsAll(
             listOf(
                 "ContributorsController",
@@ -217,7 +214,7 @@ class SpringControllerGeneratorTest {
             setOf(ControllerCodeGenOptionType.SUSPEND_MODIFIER),
         ).generate()
 
-        assertThat(controllers.files).size().isEqualTo(expectedControllers)
+        assertThat(controllers.files).size().isEqualTo(6)
         assertThat(
             controllers.files
                 .flatMap { file -> file.members }
@@ -311,8 +308,8 @@ class SpringControllerGeneratorTest {
     @Test
     fun `sse controller functions return SseEmitter`() {
         val basePackage = "examples.sseEmitter"
-        val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
-        val expectedControllers = "/examples/githubApi/controllers/sse/Controllers.kt"
+        val api = SourceApi(readTextResource("/examples/springControllerSse/api.yaml"))
+        val expectedControllers = "/examples/springControllerSse/controllers/Controllers.kt"
 
         val controllers = SpringControllerInterfaceGenerator(
             Packages(basePackage),
@@ -327,8 +324,8 @@ class SpringControllerGeneratorTest {
     @Test
     fun `sse controller functions return array if disabled`() {
         val basePackage = "examples.sseEmitter"
-        val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
-        val expectedControllers = "/examples/githubApi/controllers/sse/ControllersDisabled.kt"
+        val api = SourceApi(readTextResource("/examples/springControllerSse/api.yaml"))
+        val expectedControllers = "/examples/springControllerSse/controllers/ControllersDisabled.kt"
 
         val controllers = SpringControllerInterfaceGenerator(
             Packages(basePackage),

@@ -35,7 +35,6 @@ import java.util.stream.Stream
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class MicronautControllerGeneratorTest {
     private val basePackage = "ie.zalando"
-    private val expectedControllers = 7
     private lateinit var generated: Collection<FileSpec>
 
     @Suppress("unused")
@@ -104,7 +103,7 @@ class MicronautControllerGeneratorTest {
     @Test
     fun `should contain correct number of controller classes`() {
         setupGithubApiTestEnv()
-        assertThat(generated.size).isEqualTo(expectedControllers)
+        assertThat(generated.size).isEqualTo(6)
     }
 
     @Test
@@ -113,7 +112,6 @@ class MicronautControllerGeneratorTest {
         assertThat(generated.map { it.name })
             .containsOnly(
                 "InternalEventsController",
-                "InternalEventsStreamController",
                 "ContributorsController",
                 "OrganisationsController",
                 "OrganisationsContributorsController",
@@ -171,7 +169,7 @@ class MicronautControllerGeneratorTest {
         val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
         val controllers = MicronautControllerInterfaceGenerator(Packages(basePackage), api, JavaxValidationAnnotations).generate()
 
-        assertThat(controllers.files).size().isEqualTo(expectedControllers)
+        assertThat(controllers.files).size().isEqualTo(6)
         assertThat(controllers.files.map { it.name }).containsAll(
             listOf(
                 "ContributorsController",
@@ -214,7 +212,7 @@ class MicronautControllerGeneratorTest {
             setOf(ControllerCodeGenOptionType.SUSPEND_MODIFIER),
         ).generate()
 
-        assertThat(controllers.files).size().isEqualTo(expectedControllers)
+        assertThat(controllers.files).size().isEqualTo(6)
         assertThat(
             controllers.files
                 .flatMap { file -> file.members }
