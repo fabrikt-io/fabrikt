@@ -60,8 +60,11 @@ class KtorControllerInterfaceGenerator(
     private val api: SourceApi,
     private val options: Set<ControllerCodeGenOptionType> = emptySet(),
 ) : ControllerInterfaceGenerator {
+    private val useTagBasedGrouping: Boolean
+        get() = options.any { it == ControllerCodeGenOptionType.TAG_GROUPING }
+
     override fun generate(): KtorControllers {
-        val controllerInterfaces = api.openApi3.routeToPaths().map { (resourceName, paths) ->
+        val controllerInterfaces = api.openApi3.routeToPaths(useTagBasedGrouping).map { (resourceName, paths) ->
             val controllerBuilder = TypeSpec.interfaceBuilder(ControllerGeneratorUtils.controllerName(resourceName))
 
             val routeFunBuilder = FunSpec.builder("${resourceName.camelCase()}Routes")

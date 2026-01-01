@@ -43,10 +43,12 @@ class SpringControllerInterfaceGenerator(
     private val EXTENSION_ASYNC_SUPPORT = "x-async-support"
     private val addAuthenticationParameter: Boolean
         get() = options.any { it == ControllerCodeGenOptionType.AUTHENTICATION }
+    private val useTagBasedGrouping: Boolean
+        get() = options.any { it == ControllerCodeGenOptionType.TAG_GROUPING }
 
     override fun generate(): SpringControllers =
         SpringControllers(
-            api.openApi3.routeToPaths().map { (resourceName, paths) ->
+            api.openApi3.routeToPaths(useTagBasedGrouping).map { (resourceName, paths) ->
                 buildController(resourceName, paths.values)
             }.toSet(),
         )

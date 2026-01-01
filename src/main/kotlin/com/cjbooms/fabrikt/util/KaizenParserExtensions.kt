@@ -361,6 +361,41 @@ object KaizenParserExtensions {
         .groupBy { it.first.uriToClassName() }
         .mapValues { it.value.toMap() }
 
+    /**
+     * Returns paths grouped either by tag or by URI path segment.
+     *
+     * @param tagGrouping if true, groups paths by their first operation tag;
+     *                    if false, groups by the first URI path segment (default behavior)
+     */
+    fun OpenApi3.routeToPaths(tagGrouping: Boolean): Map<String, Map<String, Path>> =
+        if (tagGrouping) routeToPathsByFirstTag() else routeToPaths()
+
+    /**
+     * Returns paths grouped by the first tag of their operations.
+     * The tag name is converted to PascalCase for use as a class name.
+     *
+     * If an operation has no tags, falls back to grouping by URI path segment.
+     * When multiple operations exist on a path, the first tag found (in order:
+     * GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD, TRACE) is used.
+     */
+    fun OpenApi3.routeToPathsByFirstTag(): Map<String, Map<String, Path>> = paths
+        .map { (route, path) -> route to path }
+        .groupBy { (route, path) ->
+            path.firstOperationTagOrNull()?.toModelClassName() ?: route.uriToClassName()
+        }
+        .mapValues { (_, entries) -> entries.toMap() }
+
+    private fun Path.firstOperationTagOrNull(): String? {
+        val opsInStableOrder = listOfNotNull(
+            get, post, put, patch, delete, options, head, trace
+        )
+
+        return opsInStableOrder
+            .asSequence()
+            .mapNotNull { op -> op.tags?.firstOrNull() }
+            .firstOrNull()
+    }
+
     private fun String.uriToClassName(): String = toResourceNames().joinToString("-").toModelClassName()
 
     private fun String.toResourceNames(): Collection<String> = split("/")

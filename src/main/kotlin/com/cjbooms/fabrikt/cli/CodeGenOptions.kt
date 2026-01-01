@@ -71,6 +71,7 @@ enum class ModelCodeGenOptionType(val description: String) {
 enum class ControllerCodeGenOptionType(val description: String) {
     SUSPEND_MODIFIER("This option adds the suspend modifier to the generated controller functions"),
     AUTHENTICATION("This option adds the authentication parameter to the generated controller functions"),
+    TAG_GROUPING("This option groups controllers based on the first tag rather than paths"),
     COMPLETION_STAGE("This option makes generated controller functions have Type CompletionStage<T> (works only with Spring Controller generator)");
 
     override fun toString() = "`${super.toString()}` - $description"
