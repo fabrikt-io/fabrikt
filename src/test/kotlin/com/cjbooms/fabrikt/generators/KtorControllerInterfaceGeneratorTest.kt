@@ -264,4 +264,120 @@ class KtorControllerInterfaceGeneratorTest {
 
         assertThatGenerated(fileStr).isEqualTo(expectedControllers)
     }
+
+    @Test
+    fun `ensure TAG_GROUPING produces controllers grouped by first tag`() {
+        val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
+        val controllers = KtorControllerInterfaceGenerator(
+            Packages(basePackage),
+            api,
+            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+        ).generate()
+
+        assertThat(controllers.files).size().isEqualTo(4)
+        assertThat(controllers.files.map { it.name }).containsExactlyInAnyOrder(
+            "EventsController",
+            "ContributorController",
+            "OrganisationController",
+            "RepositoryController",
+        )
+
+        // OrganisationController should contain 8 operations from both /organisations
+        // and /organisations/{parent-id}/contributors (first tag is "organisation")
+        val organisationFunctionNames = controllers.files
+            .filter { it.name == "OrganisationController" }
+            .flatMap { it.members }
+            .flatMap { (it as TypeSpec).funSpecs.map { t -> t.name } }
+
+        assertThat(organisationFunctionNames).hasSize(8)
+        assertThat(organisationFunctionNames).containsAll(listOf("get", "post", "getById", "putById", "deleteById"))
+
+        // RepositoryController should contain 8 operations from both /repositories
+        // and /repositories/{parent-id}/pull-requests (first tag is "repository")
+        val repositoryFunctionNames = controllers.files
+            .filter { it.name == "RepositoryController" }
+            .flatMap { it.members }
+            .flatMap { (it as TypeSpec).funSpecs.map { t -> t.name } }
+
+        assertThat(repositoryFunctionNames).hasSize(8)
+        assertThat(repositoryFunctionNames).containsAll(listOf("get", "post", "getById", "putById"))
+    }
+
+    @Test
+    fun `ensure TAG_GROUPING uses first tag when operation has multiple tags`() {
+        val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
+        val controllers = KtorControllerInterfaceGenerator(
+            Packages(basePackage),
+            api,
+            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+        ).generate()
+
+        // /organisations/{parent-id}/contributors has tags [organisation, contributor]
+        // Should go to OrganisationController (first tag), not ContributorController
+        val organisationOpCount = controllers.files
+            .filter { it.name == "OrganisationController" }
+            .flatMap { it.members }
+            .filterIsInstance<TypeSpec>()
+            .flatMap { it.funSpecs }
+            .size
+
+        // ContributorController should only have /contributors operations (4)
+        val contributorOpCount = controllers.files
+            .filter { it.name == "ContributorController" }
+            .flatMap { it.members }
+            .filterIsInstance<TypeSpec>()
+            .flatMap { it.funSpecs }
+            .size
+
+        assertThat(organisationOpCount).isEqualTo(8)
+        assertThat(contributorOpCount).isEqualTo(4)
+    }
+
+    @Test
+    fun `ensure TAG_GROUPING preserves total operation count`() {
+        val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
+
+        val pathBased = KtorControllerInterfaceGenerator(
+            Packages(basePackage), api, emptySet(),
+        ).generate()
+
+        val tagBased = KtorControllerInterfaceGenerator(
+            Packages(basePackage), api,
+            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+        ).generate()
+
+        fun countOps(c: KtorControllerInterfaceGenerator.KtorControllers) = c.files
+            .flatMap { it.members }
+            .filterIsInstance<TypeSpec>()
+            .flatMap { it.funSpecs }
+            .size
+
+        assertThat(countOps(tagBased)).isEqualTo(countOps(pathBased))
+    }
+
+    @Test
+    fun `ensure TAG_GROUPING falls back to path grouping when no tags present`() {
+        val api = SourceApi(readTextResource("/examples/tagGroupingNoTags/api.yaml"))
+        val controllers = KtorControllerInterfaceGenerator(
+            Packages(basePackage),
+            api,
+            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+        ).generate()
+
+        assertThat(controllers.files).size().isEqualTo(1)
+        assertThat(controllers.files.map { it.name }).containsExactly("UsersController")
+    }
+
+    @Test
+    fun `ensure TAG_GROUPING falls back to path grouping when tags array is empty`() {
+        val api = SourceApi(readTextResource("/examples/tagGroupingEmptyTags/api.yaml"))
+        val controllers = KtorControllerInterfaceGenerator(
+            Packages(basePackage),
+            api,
+            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+        ).generate()
+
+        assertThat(controllers.files).size().isEqualTo(1)
+        assertThat(controllers.files.map { it.name }).containsExactly("OrdersController")
+    }
 }

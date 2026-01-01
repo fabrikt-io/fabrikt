@@ -1,0 +1,12 @@
+openapi: 3.0.0
+info:
+  title: Empty Tags Test
+  version: 1.0.0
+paths:
+  /orders:
+    get:
+      tags: []
+      summary: Empty tags array
+      responses:
+        200:
+          description: OK

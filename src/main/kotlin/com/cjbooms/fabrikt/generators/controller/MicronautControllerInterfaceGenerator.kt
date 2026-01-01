@@ -47,9 +47,12 @@ class MicronautControllerInterfaceGenerator(
     private val addAuthenticationParameter: Boolean
         get() = options.any { it == ControllerCodeGenOptionType.AUTHENTICATION }
 
+    private val useTagBasedGrouping: Boolean
+        get() = options.any { it == ControllerCodeGenOptionType.TAG_GROUPING }
+
     override fun generate(): MicronautControllers =
         MicronautControllers(
-            api.openApi3.routeToPaths().map { (resourceName, paths) ->
+            api.openApi3.routeToPaths(useTagBasedGrouping).map { (resourceName, paths) ->
                 buildController(resourceName, paths.values)
             }.toSet(),
             addAuthenticationParameter,
