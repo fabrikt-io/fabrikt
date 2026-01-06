@@ -4,7 +4,9 @@ import com.beust.jcommander.ParameterException
 import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
 import com.cjbooms.fabrikt.cli.CodeGenerationType
+import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
+import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.io.File
 import java.nio.file.Files
@@ -203,6 +206,37 @@ class ModelGeneratorTest {
         val validationAnnotationsModel = models.files.first { it.name == "ValidationAnnotations" }
         assertThat(validationAnnotationsModel).isNotNull
         assertThatGenerated(Linter.lintString(validationAnnotationsModel.toString())).isEqualTo(expectedJakartaModel)
+    }
+
+    private fun jacksonNullabilityModes(): Stream<Arguments> =
+        Stream.of(
+            Arguments.of("none", JacksonNullabilityMode.NONE),
+            Arguments.of("optionalNonNull", JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL),
+            Arguments.of("requiredNullable", JacksonNullabilityMode.ENFORCE_REQUIRED_NULLABLE),
+            Arguments.of("strict", JacksonNullabilityMode.STRICT),
+        )
+
+    @ParameterizedTest
+    @MethodSource("jacksonNullabilityModes")
+    fun `generate models using jackson nullability`(name: String, mode: JacksonNullabilityMode) {
+        val basePackage = "examples.jacksonNullability.$name"
+        val spec = readTextResource("/examples/jacksonNullability/api.yaml")
+        val expectedBasePath = "/examples/jacksonNullability/$name/models"
+        MutableSettings.updateSettings(
+            serializationLibrary = SerializationLibrary.JACKSON,
+            jacksonNullabilityMode = mode
+        )
+        val models = ModelGenerator(
+            Packages(basePackage),
+            SourceApi(spec),
+        ).generate()
+
+        assertThat(models.files.size).isEqualTo(2)
+        models.files.forEach { generatedModel ->
+            assertThat(generatedModel).isNotNull
+            assertThatGenerated(Linter.lintString(generatedModel.toString()))
+                .isEqualTo("$expectedBasePath/${generatedModel.name}.kt")
+        }
     }
 
 

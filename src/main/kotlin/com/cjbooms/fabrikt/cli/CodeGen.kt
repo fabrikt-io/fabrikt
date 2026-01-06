@@ -33,6 +33,7 @@ object CodeGen {
             externalRefResolutionMode = codeGenArgs.externalRefResolutionMode,
             serializationLibrary = codeGenArgs.serializationLibrary,
             instantLibrary = codeGenArgs.instantLibrary,
+            jacksonNullabilityMode = codeGenArgs.jacksonNullabilityMode,
             outputOptions = codeGenArgs.outputOptions,
         )
         generate(
