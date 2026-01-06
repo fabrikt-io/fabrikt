@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.generators.model
 
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
+import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF
 import com.cjbooms.fabrikt.configurations.Packages
@@ -78,6 +79,7 @@ class ModelGenerator(
     private val validationAnnotations: ValidationAnnotations = MutableSettings.validationLibrary.annotations
     private val serializationAnnotations: SerializationAnnotations = MutableSettings.effectiveSerializationAnnotations
     private val externalRefResolutionMode: ExternalReferencesResolutionMode = MutableSettings.externalRefResolutionMode
+    private val jacksonNullabilityMode: JacksonNullabilityMode = MutableSettings.effectiveJacksonNullabilityMode
 
     companion object {
         private val logger = Logger.getGlobal()
@@ -819,6 +821,7 @@ class ModelGenerator(
                 classSettings = classType,
                 validationAnnotations = validationAnnotations,
                 serializationAnnotations = serializationAnnotations,
+                jacksonNullabilityMode = jacksonNullabilityMode
             )
         }
         if (constructorBuilder.parameters.isNotEmpty() && classBuilder.modifiers.isEmpty()) {

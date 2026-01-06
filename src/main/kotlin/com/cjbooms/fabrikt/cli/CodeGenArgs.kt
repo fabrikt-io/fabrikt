@@ -180,6 +180,13 @@ class CodeGenArgs {
         converter = InstantOptionConverter::class
     )
     var instantLibrary: InstantLibrary = InstantLibrary.KOTLINX_INSTANT
+
+    @Parameter(
+        names = ["--jackson-nullability-mode"],
+        description = "Configure advanced handling when serializing null values with Jackson. Default: NONE",
+        converter = JacksonNullabilityModeOptionConverter::class
+    )
+    var jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.NONE
 }
 
 class CodeGenerationTypesConverter : IStringConverter<CodeGenerationType> {
@@ -230,6 +237,10 @@ class ExternalReferencesResolutionModeConverter: IStringConverter<ExternalRefere
 
 class SerializationLibraryOptionConverter : IStringConverter<SerializationLibrary> {
     override fun convert(value: String): SerializationLibrary = convertToEnumValue(value)
+}
+
+class JacksonNullabilityModeOptionConverter : IStringConverter<JacksonNullabilityMode> {
+    override fun convert(value: String): JacksonNullabilityMode = convertToEnumValue(value)
 }
 
 class PackageNameValidator : IValueValidator<String> {

@@ -158,3 +158,16 @@ enum class SerializationLibrary(val description: String, val serializationAnnota
         val default = JACKSON
     }
 }
+
+enum class JacksonNullabilityMode(val description: String) {
+    NONE("Default Jackson behaviour"),
+    ENFORCE_OPTIONAL_NON_NULL("Omit null values for optional non-null fields"),
+    ENFORCE_REQUIRED_NULLABLE("Include null values for required nullable fields"),
+    STRICT("Combines `ENFORCE_OPTIONAL_NON_NULL` and `ENFORCE_REQUIRED_NULLABLE` for strictest contract enforcement");
+
+    override fun toString() = "`${super.toString()}` - $description"
+
+    companion object {
+        val default = NONE
+    }
+}
