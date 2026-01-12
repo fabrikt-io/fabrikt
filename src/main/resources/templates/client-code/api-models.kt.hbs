@@ -10,6 +10,14 @@ import okhttp3.Headers
 data class ApiResponse<T>(val statusCode: Int, val headers: Headers, val data: T? = null)
 
 /**
+ * Represents a file upload with optional filename.
+ *
+ * @param content The file content as a byte array
+ * @param filename Optional filename to use in the Content-Disposition header
+ */
+data class FileUpload(val content: ByteArray, val filename: String? = null)
+
+/**
  * API non-2xx failure responses returned by API call.
  */
 open class ApiException(override val message: String) : RuntimeException(message)

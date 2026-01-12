@@ -18,13 +18,17 @@ import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.reprezen.kaizen.oasparser.model3.Path
 import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.asTypeName
@@ -108,13 +112,50 @@ object ClientGeneratorUtils {
         )
     }
 
+    /**
+     * Transforms a ByteArray type to FileUpload type for client file parameters.
+     * For single files: ByteArray -> FileUpload
+     * For arrays: List<ByteArray> -> List<FileUpload>
+     */
+    fun transformToFileUploadType(type: TypeName, clientPackage: String): TypeName {
+        val fileUploadClass = ClassName(clientPackage, "FileUpload")
+        return when (type) {
+            // Handle nullable types
+            is ParameterizedTypeName -> {
+                if (type.rawType == List::class.asTypeName()) {
+                    // List<ByteArray> -> List<FileUpload>
+                    List::class.asTypeName().parameterizedBy(fileUploadClass).copy(nullable = type.isNullable)
+                } else {
+                    type
+                }
+            }
+            else -> {
+                // ByteArray -> FileUpload
+                if (type.copy(nullable = false) == ByteArray::class.asTypeName()) {
+                    fileUploadClass.copy(nullable = type.isNullable)
+                } else {
+                    type
+                }
+            }
+        }
+    }
+
     fun FunSpec.Builder.addIncomingParameters(
         parameters: List<IncomingParameter>,
         annotateRequestParameterWith: ((parameter: RequestParameter) -> AnnotationSpec?)? = null,
         annotateBodyParameterWith: ((parameter: BodyParameter) -> AnnotationSpec?)? = null,
+        annotateMultipartParameterWith: ((parameter: MultipartParameter) -> AnnotationSpec?)? = null,
+        useFileUploadType: String? = null,
     ): FunSpec.Builder {
         val specs = parameters.map {
-            val builder = it.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings = true)
+            // For multipart file parameters with FileUpload type, build a new ParameterSpec with transformed type
+            val builder = if (useFileUploadType != null && it is MultipartParameter && it.isFile) {
+                val fileUploadType = transformToFileUploadType(it.type, useFileUploadType)
+                ParameterSpec.builder(it.name, fileUploadType)
+            } else {
+                // Use toParameterSpecBuilder to properly handle treatAnyTypeHeadersAsStrings for headers
+                it.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings = true)
+            }
             if (it is RequestParameter) {
                 if (it.defaultValue != null) OasDefault.from(it.typeInfo, it.type, it.defaultValue)
                     ?.let { t -> builder.defaultValue(t.getDefault()) }
@@ -125,6 +166,12 @@ object ClientGeneratorUtils {
             }
             if (it is BodyParameter) {
                 annotateBodyParameterWith?.invoke(it)?.let { annotationSpec ->
+                    builder.addAnnotation(annotationSpec)
+                }
+            }
+            if (it is MultipartParameter) {
+                if (!it.isRequired) builder.defaultValue("null")
+                annotateMultipartParameterWith?.invoke(it)?.let { annotationSpec ->
                     builder.addAnnotation(annotationSpec)
                 }
             }

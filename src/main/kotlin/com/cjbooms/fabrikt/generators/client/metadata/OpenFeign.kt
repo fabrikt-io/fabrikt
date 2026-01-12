@@ -21,6 +21,8 @@ object OpenFeignImports {
     val PARAM = ClassName(Packages.FEIGN, "Param")
 
     val FEIGN_CLIENT = ClassName(Packages.SPRING_STARTER, "FeignClient")
+
+    val REQUEST_PART = ClassName("org.springframework.web.bind.annotation", "RequestPart")
 }
 
 object OpenFeignAnnotations {
@@ -49,4 +51,8 @@ object OpenFeignAnnotations {
     fun feignClientBuilder(): AnnotationSpec.Builder =
         AnnotationSpec
             .builder(OpenFeignImports.FEIGN_CLIENT)
+
+    fun requestPartBuilder(): AnnotationSpec.Builder =
+        AnnotationSpec
+            .builder(OpenFeignImports.REQUEST_PART)
 }

@@ -16,6 +16,7 @@ import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.KotlinTypes
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
@@ -40,10 +41,12 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
+import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import kotlin.reflect.KClass
 
 private const val TYPED_APPLICATION_CALL_CLASS_NAME = "TypedApplicationCall"
+private const val RECEIVED_FILE_CLASS_NAME = "ReceivedFile"
 
 /**
  * Generates controller interface and routing functions for Ktor.
@@ -140,6 +143,26 @@ class KtorControllerInterfaceGenerator(
 
         bodyParams.forEach { param ->
             builder.addParameter(param.toParameterSpecBuilder().build())
+        }
+
+        // Handle multipart parameters
+        val multipartParams = params.filterIsInstance<MultipartParameter>()
+        multipartParams.forEach { param ->
+            // Use ReceivedFile for file types - wraps content with originalFileName and contentType metadata
+            val receivedFileType = ClassName(packages.controllers, RECEIVED_FILE_CLASS_NAME)
+            val fileType = if (param.schema.type == "array") {
+                List::class.asClassName().parameterizedBy(receivedFileType)
+            } else {
+                receivedFileType
+            }
+
+            val paramType = if (param.isFile) {
+                if (param.isRequired) fileType else fileType.copy(nullable = true)
+            } else {
+                param.type
+            }
+
+            builder.addParameter(ParameterSpec.builder(param.name, paramType).build())
         }
 
         builder.addKdoc(buildControllerFunKdoc(operation, params))
@@ -260,8 +283,14 @@ class KtorControllerInterfaceGenerator(
             )
         }
 
+        // Handle multipart parameters
+        val multipartParams = params.filterIsInstance<MultipartParameter>()
+        if (multipartParams.isNotEmpty()) {
+            addMultipartHandling(builder, multipartParams)
+        }
+
         val methodParameters =
-            listOf(headerParams, pathParams, queryParams, bodyParams).asSequence().flatten().map { it.name }
+            listOf(headerParams, pathParams, queryParams, bodyParams, multipartParams).asSequence().flatten().map { it.name }
                 .joinToString(", ")
 
         if (operation.happyPathResponse(packages.base).isUnit()) {
@@ -292,6 +321,91 @@ class KtorControllerInterfaceGenerator(
         }
 
         return builder.build()
+    }
+
+    private fun addMultipartHandling(builder: CodeBlock.Builder, multipartParams: List<MultipartParameter>) {
+        val partDataFileItem = ClassName("io.ktor.http.content", "PartData", "FileItem")
+        val partDataFormItem = ClassName("io.ktor.http.content", "PartData", "FormItem")
+        val receivedFileType = ClassName(packages.controllers, RECEIVED_FILE_CLASS_NAME)
+        val readRemainingFun = MemberName("io.ktor.utils.io", "readRemaining")
+        val readByteArrayFun = MemberName("kotlinx.io", "readByteArray")
+
+        builder.addStatement(
+            "val multipartData = %M.%M()",
+            MemberName("io.ktor.server.application", "call"),
+            MemberName("io.ktor.server.request", "receiveMultipart"),
+        )
+
+        // Initialize variables for each multipart parameter
+        // For files, use ReceivedFile - wraps content with originalFileName and contentType metadata
+        for (param in multipartParams) {
+            if (param.isFile) {
+                if (param.schema.type == "array") {
+                    builder.addStatement("val ${param.name}Parts = mutableListOf<%T>()", receivedFileType)
+                } else {
+                    builder.addStatement("var ${param.name}Received: %T? = null", receivedFileType)
+                }
+            } else {
+                builder.addStatement("var ${param.name}Value: %T? = null", String::class)
+            }
+        }
+
+        // Process multipart data - read file content immediately as Ktor 3.0 disposes parts after iteration
+        val forEachPartFun = MemberName("io.ktor.http.content", "forEachPart")
+        builder.addStatement("multipartData.%M { part ->", forEachPartFun)
+        builder.indent()
+        builder.addStatement("when (part.name) {")
+        builder.indent()
+
+        for (param in multipartParams) {
+            if (param.isFile) {
+                if (param.schema.type == "array") {
+                    builder.addStatement(
+                        "%S -> if (part is %T) ${param.name}Parts.add(%T(part.provider().%M().%M(), part.originalFileName, part.contentType))",
+                        param.oasName, partDataFileItem, receivedFileType, readRemainingFun, readByteArrayFun
+                    )
+                } else {
+                    builder.addStatement(
+                        "%S -> if (part is %T) ${param.name}Received = %T(part.provider().%M().%M(), part.originalFileName, part.contentType)",
+                        param.oasName, partDataFileItem, receivedFileType, readRemainingFun, readByteArrayFun
+                    )
+                }
+            } else {
+                builder.addStatement("%S -> if (part is %T) ${param.name}Value = part.value", param.oasName, partDataFormItem)
+            }
+        }
+
+        builder.unindent()
+        builder.addStatement("}")
+        builder.unindent()
+        builder.addStatement("}")
+
+        // Assign final values
+        for (param in multipartParams) {
+            if (param.isFile) {
+                if (param.schema.type == "array") {
+                    builder.addStatement("val ${param.name} = ${param.name}Parts.toList()")
+                } else {
+                    if (param.isRequired) {
+                        builder.addStatement("val ${param.name} = ${param.name}Received ?: throw %M(%S)",
+                            MemberName("io.ktor.server.plugins", "BadRequestException"),
+                            "Missing required multipart part: ${param.oasName}"
+                        )
+                    } else {
+                        builder.addStatement("val ${param.name} = ${param.name}Received")
+                    }
+                }
+            } else {
+                if (param.isRequired) {
+                    builder.addStatement("val ${param.name} = ${param.name}Value ?: throw %M(%S)",
+                        MemberName("io.ktor.server.plugins", "BadRequestException"),
+                        "Missing required multipart part: ${param.oasName}"
+                    )
+                } else {
+                    builder.addStatement("val ${param.name} = ${param.name}Value")
+                }
+            }
+        }
     }
 
     private fun buildControllerFunKdoc(operation: Operation, parameters: List<IncomingParameter>): CodeBlock {
@@ -332,6 +446,7 @@ class KtorControllerInterfaceGenerator(
 
     override fun generateLibrary(): Collection<ControllerLibraryType> = setOf(
         buildTypedApplicationCall(),
+        buildReceivedFileClass(),
     )
 
     /**
@@ -410,6 +525,57 @@ class KtorControllerInterfaceGenerator(
                             )
                             .build()
                     )
+                    .build()
+            )
+            .build()
+
+        return ControllerLibraryType(spec, packages.base)
+    }
+
+    /**
+     * Builds a data class to wrap received file content with metadata from multipart uploads.
+     */
+    private fun buildReceivedFileClass(): ControllerLibraryType {
+        val contentType = ClassName("io.ktor.http", "ContentType")
+
+        val spec = TypeSpec.classBuilder(RECEIVED_FILE_CLASS_NAME)
+            .addModifiers(KModifier.DATA)
+            .primaryConstructor(
+                FunSpec.constructorBuilder()
+                    .addParameter("content", ByteArray::class)
+                    .addParameter(
+                        ParameterSpec.builder("originalFileName", String::class.asTypeName().copy(nullable = true))
+                            .defaultValue("null")
+                            .build()
+                    )
+                    .addParameter(
+                        ParameterSpec.builder("contentType", contentType.copy(nullable = true))
+                            .defaultValue("null")
+                            .build()
+                    )
+                    .build()
+            )
+            .addProperty(
+                PropertySpec.builder("content", ByteArray::class)
+                    .initializer("content")
+                    .build()
+            )
+            .addProperty(
+                PropertySpec.builder("originalFileName", String::class.asTypeName().copy(nullable = true))
+                    .initializer("originalFileName")
+                    .build()
+            )
+            .addProperty(
+                PropertySpec.builder("contentType", contentType.copy(nullable = true))
+                    .initializer("contentType")
+                    .build()
+            )
+            .addKdoc(
+                CodeBlock.builder()
+                    .add("Wrapper for received file content from multipart uploads.\n\n")
+                    .add("@property content The raw file content as a byte array\n")
+                    .add("@property originalFileName The original filename from the Content-Disposition header, if provided\n")
+                    .add("@property contentType The content type of the file, if provided\n")
                     .build()
             )
             .build()

@@ -1,0 +1,73 @@
+openapi: 3.0.3
+info:
+  title: Multipart Form Data API
+  description: API for testing multipart/form-data support
+  version: 1.0.0
+paths:
+  /files/upload:
+    post:
+      operationId: uploadFile
+      summary: Upload a single file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The file to upload
+                description:
+                  type: string
+                  description: Optional description of the file
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+  /files/upload-multiple:
+    post:
+      operationId: uploadMultipleFiles
+      summary: Upload multiple files
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - files
+                - category
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: The files to upload
+                category:
+                  type: string
+                  description: Category for the uploaded files
+      responses:
+        '200':
+          description: Files uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+components:
+  schemas:
+    UploadResponse:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the uploaded file

@@ -28,6 +28,7 @@ dependencies {
     implementation("io.github.openfeign:feign-core:13.3")
     implementation("io.github.openfeign:feign-jackson:13.3")
     implementation("io.github.openfeign:feign-okhttp:13.3")
+    implementation("io.github.openfeign.form:feign-form:4.0.0")
     implementation("jakarta.validation:jakarta.validation-api:3.0.2")
     implementation("javax.validation:validation-api:2.0.1.Final")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")

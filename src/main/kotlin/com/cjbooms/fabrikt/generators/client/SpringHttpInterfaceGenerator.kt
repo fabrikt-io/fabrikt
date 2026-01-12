@@ -22,6 +22,7 @@ import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
@@ -100,6 +101,11 @@ class SpringHttpInterfaceGenerator(
                 },
                 annotateBodyParameterWith = { _ ->
                     SpringHttpInterfaceAnnotations.requestBodyBuilder()
+                        .build()
+                },
+                annotateMultipartParameterWith = { parameter ->
+                    SpringHttpInterfaceAnnotations.requestPartBuilder()
+                        .addMember("value = %S", parameter.oasName)
                         .build()
                 }
             )

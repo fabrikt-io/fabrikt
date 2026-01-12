@@ -19,6 +19,7 @@ import com.reprezen.kaizen.oasparser.model3.Parameter
 import com.reprezen.kaizen.oasparser.model3.RequestBody
 import com.reprezen.kaizen.oasparser.model3.Response
 import com.reprezen.kaizen.oasparser.model3.Schema
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
@@ -130,6 +131,20 @@ object GeneratorUtils {
     fun Response.getPrimaryContentMediaType(): Map.Entry<String, MediaType>? =
         this.contentMediaTypes.entries.firstOrNull()
 
+    private const val MULTIPART_FORM_DATA = "multipart/form-data"
+
+    fun RequestBody.isMultipartFormData(): Boolean =
+        contentMediaTypes.keys.any { it.equals(MULTIPART_FORM_DATA, ignoreCase = true) }
+
+    fun RequestBody.getMultipartFormDataMediaType(): MediaType? =
+        contentMediaTypes.entries.firstOrNull { it.key.equals(MULTIPART_FORM_DATA, ignoreCase = true) }?.value
+
+    fun Operation.hasMultipartRequestBody(): Boolean =
+        requestBody?.isMultipartFormData() == true
+
+    fun Schema.isBinaryType(): Boolean =
+        type == "string" && format == "binary"
+
     fun Response.hasMultipleContentMediaTypes(): Boolean = this.contentMediaTypes.entries.size > 1
 
     fun Operation.firstResponse(): Response? = this.getBodyResponses().firstOrNull()
@@ -176,29 +191,57 @@ object GeneratorUtils {
         extraParameters: List<IncomingParameter>,
     ): List<IncomingParameter> {
 
-        val bodies = requestBody.contentMediaTypes.values
-            .map {
-                BodyParameter(
-                    it.schema.safeName().toKotlinParameterName().ifEmpty { it.schema.toVarName() },
-                    requestBody.description,
-                    toModelType(basePackage, KotlinTypeInfo.from(it.schema)),
-                    it.schema
-                )
-            }
-            .distinctBy { it.schema.safeName().toKotlinParameterName().ifEmpty { it.schema.toVarName() } }
+        val bodies = if (requestBody.isMultipartFormData()) {
+            toMultipartParameters(basePackage)
+        } else {
+            requestBody.contentMediaTypes.values
+                .map {
+                    BodyParameter(
+                        it.schema.safeName().toKotlinParameterName().ifEmpty { it.schema.toVarName() },
+                        requestBody.description,
+                        toModelType(basePackage, KotlinTypeInfo.from(it.schema), applySerializationAnnotations = false),
+                        it.schema
+                    )
+                }
+                .distinctBy { it.schema.safeName().toKotlinParameterName().ifEmpty { it.schema.toVarName() } }
+        }
 
         val parameters = mergeParameters(pathParameters, parameters)
             .map {
                 RequestParameter(
                     it.name,
                     it.description,
-                    toModelType(basePackage, KotlinTypeInfo.from(it.schema), isNullable(it)),
+                    toModelType(basePackage, KotlinTypeInfo.from(it.schema), isNullable(it), applySerializationAnnotations = false),
                     it
                 )
             }
             .sortedBy { it.type.isNullable }
 
         return detectAndAvoidNameClashes(bodies + parameters + extraParameters)
+    }
+
+    private fun Operation.toMultipartParameters(basePackage: String): List<MultipartParameter> {
+        val mediaType = requestBody.getMultipartFormDataMediaType() ?: return emptyList()
+        val schema = mediaType.schema ?: return emptyList()
+        val requiredFields = schema.requiredFields ?: emptyList()
+
+        return schema.properties.map { (propertyName, propertySchema) ->
+            val isFile = propertySchema.isBinaryType() ||
+                (propertySchema.type == "array" && propertySchema.itemsSchema?.isBinaryType() == true)
+            val isRequired = requiredFields.contains(propertyName)
+            val typeInfo = KotlinTypeInfo.from(propertySchema)
+            val type = toModelType(basePackage, typeInfo, isNullable = !isRequired, applySerializationAnnotations = false)
+
+            MultipartParameter(
+                oasName = propertyName,
+                description = propertySchema.description,
+                type = type,
+                schema = propertySchema,
+                isFile = isFile,
+                isRequired = isRequired,
+                contentType = null,
+            )
+        }
     }
 
     private fun List<IncomingParameter>.hasNameClashes(): Boolean =
@@ -216,6 +259,15 @@ object GeneratorUtils {
                     p.description,
                     p.type,
                     p.schema,
+                )
+                is MultipartParameter -> MultipartParameter(
+                    "multipart_${p.oasName}".toKotlinParameterName(),
+                    p.description,
+                    p.type,
+                    p.schema,
+                    p.isFile,
+                    p.isRequired,
+                    p.contentType,
                 )
                 is RequestParameter -> RequestParameter(
                     "${p.parameterLocation}_${p.oasName}".toKotlinParameterName(),
@@ -239,6 +291,7 @@ object GeneratorUtils {
         val queryParams: List<RequestParameter>,
         val headerParams: List<RequestParameter>,
         val bodyParams: List<BodyParameter>,
+        val multipartParams: List<MultipartParameter> = emptyList(),
     )
 
     fun List<IncomingParameter>.splitByType(): IncomingParametersByType {
@@ -248,7 +301,8 @@ object GeneratorUtils {
             pathParams = requestParams.filter { it.parameterLocation is PathParam },
             queryParams = requestParams.filter { it.parameterLocation is QueryParam },
             headerParams = requestParams.filter { it.parameterLocation is HeaderParam },
-            bodyParams = this.filterIsInstance<BodyParameter>()
+            bodyParams = this.filterIsInstance<BodyParameter>(),
+            multipartParams = this.filterIsInstance<MultipartParameter>(),
         )
     }
 

@@ -17,6 +17,7 @@ import com.cjbooms.fabrikt.model.ControllerLibraryType
 import com.cjbooms.fabrikt.model.ControllerType
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.KotlinTypes
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
@@ -33,6 +34,7 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.asClassName
 
 class MicronautControllerInterfaceGenerator(
     private val packages: Packages,
@@ -104,6 +106,9 @@ class MicronautControllerInterfaceGenerator(
                             )
                             .maybeAddAnnotation(validationAnnotations.parameterValid())
                             .build()
+
+                    is MultipartParameter ->
+                        it.toMultipartParameterSpec()
 
                     is RequestParameter ->
                         it
@@ -230,6 +235,28 @@ class MicronautControllerInterfaceGenerator(
             }
             this.addAnnotation(it.build())
         }
+
+    private fun MultipartParameter.toMultipartParameterSpec(): ParameterSpec {
+        val fileType = if (schema.type == "array") {
+            List::class.asClassName().parameterizedBy(MicronautImports.COMPLETED_FILE_UPLOAD)
+        } else {
+            MicronautImports.COMPLETED_FILE_UPLOAD
+        }
+
+        val paramType = if (isFile) {
+            if (isRequired) fileType else fileType.copy(nullable = true)
+        } else {
+            type
+        }
+
+        return ParameterSpec.builder(name, paramType)
+            .addAnnotation(
+                AnnotationSpec.builder(MicronautImports.PART)
+                    .addMember("value = %S", oasName)
+                    .build()
+            )
+            .build()
+    }
 }
 
 data class MicronautControllers(

@@ -6,6 +6,7 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.splitByType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKCodeName
 import com.cjbooms.fabrikt.generators.client.ClientGenerator
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.transformToFileUploadType
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.happyPathResponse
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
@@ -14,13 +15,16 @@ import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.HandlebarsTemplates
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.RequestParameter
+import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPaths
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.MemberName
@@ -28,6 +32,7 @@ import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.asTypeName
 import java.nio.file.Path
 
 class KtorClientGenerator(
@@ -60,7 +65,7 @@ class KtorClientGenerator(
                         packages.base, path.value.parameters, emptyList()
                     )
 
-                    val (pathParams, queryParams, headerParams, bodyParams) = params.splitByType()
+                    val (pathParams, queryParams, headerParams, bodyParams, multipartParams) = params.splitByType()
 
                     val responseType = operation.happyPathResponse(packages.base)
                     val returnType = networkResultClassName.parameterizedBy(responseType)
@@ -128,7 +133,9 @@ class KtorClientGenerator(
                                         "%M(\"Accept\", \"application/json\")",
                                         MemberName("io.ktor.client.request", "header")
                                     )
-                                    if (bodyParams.isNotEmpty()) {
+                                    if (multipartParams.isNotEmpty()) {
+                                        addMultipartBody(multipartParams)
+                                    } else if (bodyParams.isNotEmpty()) {
                                         addStatement(
                                             "%M(\"Content-Type\", \"application/json\")",
                                             MemberName("io.ktor.client.request", "header")
@@ -232,7 +239,21 @@ class KtorClientGenerator(
                                 .endControlFlow()
                                 .build()
                         )
-                    if (bodyParams.isNotEmpty()) {
+                    if (multipartParams.isNotEmpty()) {
+                        multipartParams.forEach { param ->
+                            val baseType = if (param.isFile) {
+                                transformToFileUploadType(param.type, packages.client)
+                            } else {
+                                param.type
+                            }
+                            val paramType = if (param.isRequired) baseType else baseType.copy(nullable = true)
+                            clientFunctionBuilder.addParameter(
+                                ParameterSpec.builder(param.name, paramType)
+                                    .apply { if (!param.isRequired) defaultValue("null") }
+                                    .build()
+                            )
+                        }
+                    } else if (bodyParams.isNotEmpty()) {
                         clientFunctionBuilder.addParameter(
                             ParameterSpec.builder(bodyParams.first().name, bodyParams.first().type)
                                 .build()
@@ -262,14 +283,156 @@ class KtorClientGenerator(
     override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> {
         val codeDir = srcPath.resolve(CodeGenerationUtils.packageToPath(packages.base))
         val clientDir = codeDir.resolve("client")
-        return setOf(
-            HandlebarsTemplates.applyTemplate(
-                template = HandlebarsTemplates.ktorClientApiModels,
-                input = packages,
-                path = clientDir,
-                fileName = "KtorApiModels.kt"
-            )
+
+        // Generate KtorApiModels.kt (NetworkResult, NetworkError)
+        val apiModelsFile = HandlebarsTemplates.applyTemplate(
+            template = HandlebarsTemplates.ktorClientApiModels,
+            input = packages,
+            path = clientDir,
+            fileName = "KtorApiModels.kt"
         )
+
+        // Generate FileUpload support class
+        val fileUploadType = TypeSpec.classBuilder("FileUpload")
+            .addModifiers(KModifier.DATA)
+            .primaryConstructor(
+                FunSpec.constructorBuilder()
+                    .addParameter("content", ByteArray::class)
+                    .addParameter(
+                        ParameterSpec.builder("filename", String::class.asTypeName().copy(nullable = true))
+                            .defaultValue("null")
+                            .build()
+                    )
+                    .build()
+            )
+            .addProperty(
+                PropertySpec.builder("content", ByteArray::class)
+                    .initializer("content")
+                    .build()
+            )
+            .addProperty(
+                PropertySpec.builder("filename", String::class.asTypeName().copy(nullable = true))
+                    .initializer("filename")
+                    .build()
+            )
+            .addKdoc(
+                """
+                |Represents a file upload with optional filename.
+                |
+                |@param content The file content as a byte array
+                |@param filename Optional filename to use in the Content-Disposition header
+                """.trimMargin()
+            )
+            .build()
+
+        val fileSpec = FileSpec.builder(packages.client, "FileUpload")
+            .addType(fileUploadType)
+            .build()
+
+        val fileUploadFile = SimpleFile(
+            clientDir.resolve("FileUpload.kt"),
+            fileSpec.toString()
+        )
+
+        return setOf(apiModelsFile, fileUploadFile)
+    }
+
+    private fun CodeBlock.Builder.addMultipartBody(multipartParams: List<MultipartParameter>) {
+        val multiPartFormDataContent = ClassName("io.ktor.client.request.forms", "MultiPartFormDataContent")
+        val formPart = MemberName("io.ktor.client.request.forms", "formData")
+        val appendFun = MemberName("io.ktor.client.request.forms", "append")
+        val headersOf = MemberName("io.ktor.http", "headersOf")
+        val contentDisposition = ClassName("io.ktor.http", "HttpHeaders")
+
+        addStatement(
+            "%M(%T(",
+            MemberName("io.ktor.client.request", "setBody"),
+            multiPartFormDataContent
+        )
+        addStatement("%M {", formPart)
+        indent()
+
+        for (param in multipartParams) {
+            if (param.isFile) {
+                if (param.schema.type == "array") {
+                    // Array of files - use FileUpload.filename if provided, otherwise default to index-based name
+                    if (param.isRequired) {
+                        addStatement("%N.forEachIndexed { index, fileUpload ->", param.name)
+                    } else {
+                        addStatement("%N?.forEachIndexed { index, fileUpload ->", param.name)
+                    }
+                    indent()
+                    addStatement(
+                        "val filename = fileUpload.filename ?: %S + \"_\" + index",
+                        param.oasName
+                    )
+                    addStatement(
+                        "%M(%S, fileUpload.content, %M(%T.ContentDisposition, %P))",
+                        appendFun,
+                        param.oasName,
+                        headersOf,
+                        contentDisposition,
+                        "filename=\"\$filename\""
+                    )
+                    unindent()
+                    addStatement("}")
+                } else {
+                    // Single file - use FileUpload.filename if provided, otherwise default to param name
+                    val filenameValueVar = "${param.oasName}FilenameValue"
+                    if (param.isRequired) {
+                        addStatement(
+                            "val %L = %N.filename ?: %S",
+                            filenameValueVar,
+                            param.name,
+                            param.oasName
+                        )
+                        addStatement(
+                            "%M(%S, %N.content, %M(%T.ContentDisposition, %P))",
+                            appendFun,
+                            param.oasName,
+                            param.name,
+                            headersOf,
+                            contentDisposition,
+                            "filename=\"\$${filenameValueVar}\""
+                        )
+                    } else {
+                        addStatement("%N?.let { fileUpload ->", param.name)
+                        indent()
+                        addStatement(
+                            "val %L = fileUpload.filename ?: %S",
+                            filenameValueVar,
+                            param.oasName
+                        )
+                        addStatement(
+                            "%M(%S, fileUpload.content, %M(%T.ContentDisposition, %P))",
+                            appendFun,
+                            param.oasName,
+                            headersOf,
+                            contentDisposition,
+                            "filename=\"\$${filenameValueVar}\""
+                        )
+                        unindent()
+                        addStatement("}")
+                    }
+                }
+            } else {
+                // Non-file part
+                if (param.isRequired) {
+                    addStatement(
+                        "%M(%S, %N.toString())",
+                        appendFun,
+                        param.oasName,
+                        param.name
+                    )
+                } else {
+                    addStatement("%N?.let { %M(%S, it.toString()) }", param.name, appendFun, param.oasName)
+                }
+            }
+        }
+
+        unindent()
+        addStatement("}")
+        addStatement("))")
     }
 
     private fun clientRequestFunctionName(op: Operation, verb: String, params: List<RequestParameter>) =

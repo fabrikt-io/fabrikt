@@ -13,6 +13,7 @@ object SpringHttpInterfaceImports {
     val REQUEST_HEADER = ClassName(Packages.BIND_ANNOTATION, "RequestHeader")
     val REQUEST_BODY = ClassName(Packages.BIND_ANNOTATION, "RequestBody")
     val PATH_VARIABLE = ClassName(Packages.BIND_ANNOTATION, "PathVariable")
+    val REQUEST_PART = ClassName(Packages.BIND_ANNOTATION, "RequestPart")
 
     val HTTP_EXCHANGE = ClassName(Packages.SERVICE_ANNOTATION, "HttpExchange")
 }
@@ -32,4 +33,7 @@ object SpringHttpInterfaceAnnotations {
 
     fun httpExchangeBuilder(): AnnotationSpec.Builder = AnnotationSpec
         .builder(SpringHttpInterfaceImports.HTTP_EXCHANGE)
+
+    fun requestPartBuilder(): AnnotationSpec.Builder = AnnotationSpec
+        .builder(SpringHttpInterfaceImports.REQUEST_PART)
 }

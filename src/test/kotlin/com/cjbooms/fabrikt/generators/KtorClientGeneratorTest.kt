@@ -25,6 +25,7 @@ class KtorClientGeneratorTest {
     private fun fullApiTestCases(): Stream<String> = Stream.of(
         "ktorClient",
         "parameterNameClash",
+        "multipartFormData",
     )
 
     @BeforeEach

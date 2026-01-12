@@ -90,6 +90,12 @@ tasks {
         listOf("--serialization-library", "KOTLINX_SERIALIZATION")
     )
 
+    val generateKtorMultipartCode = createCodeGenerationTask(
+        "generateKtorMultipartCode",
+        "src/test/resources/examples/multipartFormData/api.yaml",
+        listOf("--base-package", "com.example.multipart")
+    )
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
             optIn.add("kotlin.time.ExperimentalTime")
@@ -100,6 +106,7 @@ tasks {
         dependsOn(generateKtorInstantDateTimeCode)
         dependsOn(generateKtorQueryParametersCode)
         dependsOn(generateKtorPathParametersCode)
+        dependsOn(generateKtorMultipartCode)
     }
 
 
@@ -118,15 +125,21 @@ fun TaskContainer.createCodeGenerationTask(
     outputs.cacheIf { true }
     classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
     mainClass.set("com.cjbooms.fabrikt.cli.CodeGen")
+    val basePackage = if (opts.contains("--base-package")) {
+        opts[opts.indexOf("--base-package") + 1]
+    } else {
+        "com.example"
+    }
+    val filteredOpts = opts.filterNot { it == "--base-package" || it == basePackage }
     args = listOf(
         "--output-directory", generationDir,
-        "--base-package", "com.example",
+        "--base-package", basePackage,
         "--api-file", apiFile,
         "--targets", "http_models",
         "--targets", "controllers",
         "--http-controller-target", "ktor",
         "--instant-library", "KOTLINX_INSTANT",
-    ) + opts
+    ) + filteredOpts
     dependsOn(":jar")
     dependsOn(":shadowJar")
 }

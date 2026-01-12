@@ -31,6 +31,7 @@ class OpenFeignClientGeneratorTest {
         "multiMediaType",
         "pathLevelParameters",
         "parameterNameClash",
+        "multipartFormData",
     )
 
     @BeforeEach

@@ -23,6 +23,7 @@ import com.cjbooms.fabrikt.model.HandlebarsTemplates
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
@@ -61,7 +62,7 @@ class OkHttpSimpleClientGenerator(
                             AnnotationSpec.builder(Throws::class)
                                 .addMember("%T::class", "ApiException".toClassName(packages.client)).build()
                         )
-                        .addIncomingParameters(parameters)
+                        .addIncomingParameters(parameters, useFileUploadType = packages.client)
                         .addParameter(
                             ParameterSpec.builder(
                                 ADDITIONAL_HEADERS_PARAMETER_NAME,
@@ -239,15 +240,89 @@ data class SimpleClientOperationStatement(
     private fun CodeBlock.Builder.addRequestSerializerStatement(verb: String) {
         val requestBody = operation.requestBody
         val toRequestBody = "toRequestBody".toClassName("okhttp3.RequestBody.Companion")
-        parameters.filterIsInstance<BodyParameter>().firstOrNull()?.let {
-            this.add(
-                "\n.%N(objectMapper.writeValueAsString(%N).%T(%S.%T()))",
-                verb,
-                it.name,
-                toRequestBody,
-                requestBody.getPrimaryContentMediaType()?.key,
-                "toMediaType".toClassName("okhttp3.MediaType.Companion")
-            )
-        } ?: this.add("\n.%N(ByteArray(0).%T())", verb, toRequestBody)
+        val multipartParams = parameters.filterIsInstance<MultipartParameter>()
+
+        if (multipartParams.isNotEmpty()) {
+            addMultipartRequestBody(verb, multipartParams)
+        } else {
+            parameters.filterIsInstance<BodyParameter>().firstOrNull()?.let {
+                this.add(
+                    "\n.%N(objectMapper.writeValueAsString(%N).%T(%S.%T()))",
+                    verb,
+                    it.name,
+                    toRequestBody,
+                    requestBody.getPrimaryContentMediaType()?.key,
+                    "toMediaType".toClassName("okhttp3.MediaType.Companion")
+                )
+            } ?: this.add("\n.%N(ByteArray(0).%T())", verb, toRequestBody)
+        }
+    }
+
+    private fun CodeBlock.Builder.addMultipartRequestBody(verb: String, multipartParams: List<MultipartParameter>) {
+        val multipartBody = "MultipartBody".toClassName("okhttp3")
+        val toRequestBody = "toRequestBody".toClassName("okhttp3.RequestBody.Companion")
+        val toMediaType = "toMediaType".toClassName("okhttp3.MediaType.Companion")
+
+        this.add("\n.%N(%T.Builder()", verb, multipartBody)
+        this.add("\n.setType(%T.FORM)", multipartBody)
+
+        for (param in multipartParams) {
+            if (param.isFile) {
+                if (param.schema.type == "array") {
+                    // Array of files - use FileUpload.filename if provided, otherwise default to index-based name
+                    this.add(
+                        "\n.also { builder -> %N%L.forEachIndexed { index, fileUpload -> builder.addFormDataPart(%S, fileUpload.filename ?: \"%L_\$index\", fileUpload.content.%T(%S.%T())) } }",
+                        param.name,
+                        if (!param.isRequired) "?" else "",
+                        param.oasName,
+                        param.oasName,
+                        toRequestBody,
+                        "application/octet-stream",
+                        toMediaType
+                    )
+                } else {
+                    // Single file - use FileUpload.filename if provided, otherwise default to param name
+                    if (param.isRequired) {
+                        this.add(
+                            "\n.addFormDataPart(%S, %N.filename ?: %S, %N.content.%T(%S.%T()))",
+                            param.oasName,
+                            param.name,
+                            param.oasName,
+                            param.name,
+                            toRequestBody,
+                            "application/octet-stream",
+                            toMediaType
+                        )
+                    } else {
+                        this.add(
+                            "\n.also { builder -> %N?.let { builder.addFormDataPart(%S, it.filename ?: %S, it.content.%T(%S.%T())) } }",
+                            param.name,
+                            param.oasName,
+                            param.oasName,
+                            toRequestBody,
+                            "application/octet-stream",
+                            toMediaType
+                        )
+                    }
+                }
+            } else {
+                // Non-file part - serialize as JSON
+                if (param.isRequired) {
+                    this.add(
+                        "\n.addFormDataPart(%S, objectMapper.writeValueAsString(%N))",
+                        param.oasName,
+                        param.name
+                    )
+                } else {
+                    this.add(
+                        "\n.also { builder -> %N?.let { builder.addFormDataPart(%S, objectMapper.writeValueAsString(it)) } }",
+                        param.name,
+                        param.oasName
+                    )
+                }
+            }
+        }
+
+        this.add("\n.build())")
     }
 }

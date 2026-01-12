@@ -11,6 +11,7 @@ import examples.githubApi.models.PullRequestQueryResult
 import examples.githubApi.models.Repository
 import examples.githubApi.models.RepositoryQueryResult
 import examples.githubApi.models.StatusQueryParam
+import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
@@ -32,6 +33,7 @@ import io.ktor.util.converters.DefaultConversionService
 import io.ktor.util.reflect.typeInfo
 import kotlin.Any
 import kotlin.Boolean
+import kotlin.ByteArray
 import kotlin.Int
 import kotlin.String
 import kotlin.Suppress
@@ -1275,3 +1277,16 @@ public class TypedApplicationCall<R : Any>(
         respond(status, message)
     }
 }
+
+/**
+ * Wrapper for received file content from multipart uploads.
+ *
+ * @property content The raw file content as a byte array
+ * @property originalFileName The original filename from the Content-Disposition header, if provided
+ * @property contentType The content type of the file, if provided
+ */
+public data class ReceivedFile(
+    public val content: ByteArray,
+    public val originalFileName: String? = null,
+    public val contentType: ContentType? = null,
+)

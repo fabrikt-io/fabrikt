@@ -45,6 +45,7 @@ class KtorControllerInterfaceGeneratorTest {
         "modelSuffix",
         "queryParameters",
         "pathParameters",
+        "multipartFormData",
     )
 
     private fun setupGithubApiTestEnv() {

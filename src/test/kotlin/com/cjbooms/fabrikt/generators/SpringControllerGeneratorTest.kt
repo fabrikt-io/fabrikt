@@ -47,7 +47,8 @@ class SpringControllerGeneratorTest {
         "jakartaValidationAnnotations",
         "modelSuffix",
         "unsupportedInlinedDefinitions",
-        "httpStatusCodeRangeDefinition"
+        "httpStatusCodeRangeDefinition",
+        "multipartFormData",
     )
 
     private fun setupGithubApiTestEnv(annotations: ValidationAnnotations = JavaxValidationAnnotations) {

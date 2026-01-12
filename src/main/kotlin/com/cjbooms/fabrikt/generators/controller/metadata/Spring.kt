@@ -43,6 +43,10 @@ object SpringImports {
 
     val AUTHENTICATION = ClassName(Packages.SPRING_AUTHENTICATION, "Authentication")
 
+    val REQUEST_PART = ClassName(Packages.WEB_BIND_ANNOTATION, "RequestPart")
+
+    val MULTIPART_FILE = ClassName("org.springframework.web.multipart", "MultipartFile")
+
     val COMPLETION_STAGE = ClassName(Packages.JAVA_UTIL_CONCURRENT, "CompletionStage")
 
     object DateTimeFormat {
@@ -94,4 +98,8 @@ object SpringAnnotations {
     fun requestPathVariableBuilder(): AnnotationSpec.Builder =
         AnnotationSpec
             .builder(SpringImports.PATH_VARIABLE)
+
+    fun requestPartBuilder(): AnnotationSpec.Builder =
+        AnnotationSpec
+            .builder(SpringImports.REQUEST_PART)
 }

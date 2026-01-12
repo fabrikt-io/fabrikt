@@ -83,6 +83,16 @@ sealed class IncomingParameter(val oasName: String, val description: String?, va
 class BodyParameter(oasName: String, description: String?, type: TypeName, val schema: Schema) :
     IncomingParameter(oasName, description, type)
 
+class MultipartParameter(
+    oasName: String,
+    description: String?,
+    type: TypeName,
+    val schema: Schema,
+    val isFile: Boolean,
+    val isRequired: Boolean,
+    val contentType: String? = null,
+) : IncomingParameter(oasName, description, type)
+
 class RequestParameter(
     oasName: String,
     description: String?,

@@ -18,6 +18,7 @@ import com.cjbooms.fabrikt.model.Destinations
 import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.HandlebarsTemplates
 import com.cjbooms.fabrikt.model.IncomingParameter
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPaths
@@ -57,7 +58,7 @@ class OkHttpEnhancedClientGenerator(
                             AnnotationSpec.builder(Throws::class)
                                 .addMember("%T::class", "ApiException".toClassName(packages.client)).build()
                         )
-                        .addIncomingParameters(parameters)
+                        .addIncomingParameters(parameters, useFileUploadType = packages.client)
                         .addParameter(
                             ParameterSpec.builder(
                                 ADDITIONAL_HEADERS_PARAMETER_NAME,
@@ -187,10 +188,11 @@ class Resilience4jClientOperationStatement(
     }
 
     private fun CodeBlock.Builder.addClientCallStatement(parameters: List<IncomingParameter>): CodeBlock.Builder {
+        val paramNames = parameters.map { it.name } + ADDITIONAL_HEADERS_PARAMETER_NAME
         this.add(
             "apiClient.%N(%L)",
             functionName(operation, resource, verb),
-            (parameters.map { it.name } + ADDITIONAL_HEADERS_PARAMETER_NAME).joinToString(","),
+            paramNames.joinToString(","),
         )
         return this
     }

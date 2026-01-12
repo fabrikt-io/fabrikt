@@ -53,6 +53,12 @@ tasks {
         "src/test/resources/examples/ktorClient/api.yaml"
     )
 
+    val generateMultipartCode = createGenerateCodeTask(
+        "generateMultipartCode",
+        "src/test/resources/examples/multipartFormData/api.yaml",
+        listOf("--base-package", "com.example.multipart")
+    )
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
             optIn.add("kotlinx.serialization.ExperimentalSerializationApi")
@@ -60,12 +66,14 @@ tasks {
             jvmTarget.set(JvmTarget.JVM_17)
         }
         dependsOn(generateCode)
+        dependsOn(generateMultipartCode)
     }
 
     withType<Test> {
         useJUnitPlatform()
         jvmArgs = listOf("--add-opens=java.base/java.lang=ALL-UNNAMED", "--add-opens=java.base/java.util=ALL-UNNAMED")
         dependsOn(generateCode)
+        dependsOn(generateMultipartCode)
     }
 }
 
@@ -77,16 +85,22 @@ fun createGenerateCodeTask(name: String, apiFilePath: String, additionalArgs: Li
     outputs.cacheIf { true }
     classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
     mainClass.set("com.cjbooms.fabrikt.cli.CodeGen")
+    val basePackage = if (additionalArgs.contains("--base-package")) {
+        additionalArgs[additionalArgs.indexOf("--base-package") + 1]
+    } else {
+        "com.example"
+    }
+    val filteredAdditionalArgs = additionalArgs.filterNot { it == "--base-package" || it == basePackage }
     args = listOf(
         "--output-directory", generationDir,
-        "--base-package", "com.example",
+        "--base-package", basePackage,
         "--api-file", apiFile,
         "--targets", "http_models",
         "--targets", "client",
         "--http-client-target", "ktor",
         "--serialization-library", "kotlinx_serialization",
         "--validation-library", "no_validation"
-    ).plus(additionalArgs)
+    ).plus(filteredAdditionalArgs)
     dependsOn(":jar")
     dependsOn(":shadowJar")
 }

@@ -45,6 +45,7 @@ class MicronautControllerGeneratorTest {
         "parameterNameClash",
         "jakartaValidationAnnotations",
         "modelSuffix",
+        "multipartFormData",
     )
 
     private fun setupGithubApiTestEnv(validationAnnotations: ValidationAnnotations = JavaxValidationAnnotations) {

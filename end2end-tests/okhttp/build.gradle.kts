@@ -4,6 +4,7 @@ val fabrikt: Configuration by configurations.creating
 
 val generationDir = "$buildDir/generated"
 val apiFile = "${rootProject.projectDir}/src/test/resources/examples/okHttpClient/api.yaml"
+val multipartApiFile = "${rootProject.projectDir}/src/test/resources/examples/multipartFormData/api.yaml"
 
 sourceSets {
     main { java.srcDirs("$generationDir/src/main/kotlin") }
@@ -62,9 +63,28 @@ tasks {
         dependsOn(":shadowJar")
     }
 
+    val generateMultipartCode by creating(JavaExec::class) {
+        inputs.files(multipartApiFile)
+        outputs.dir(generationDir)
+        outputs.cacheIf { true }
+        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        mainClass.set("com.cjbooms.fabrikt.cli.CodeGen")
+        args = listOf(
+            "--output-directory", generationDir,
+            "--base-package", "com.example.multipart",
+            "--api-file", multipartApiFile,
+            "--targets", "http_models",
+            "--targets", "client",
+            "--http-client-opts", "resilience4j"
+        )
+        dependsOn(":jar")
+        dependsOn(":shadowJar")
+        dependsOn(generateCode)
+    }
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
-        dependsOn(generateCode)
+        dependsOn(generateMultipartCode)
     }
 
 

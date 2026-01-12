@@ -34,6 +34,7 @@ class SpringHttpInterfaceGeneratorTest {
         "multiMediaType",
         "pathLevelParameters",
         "parameterNameClash",
+        "multipartFormData",
     )
 
     @BeforeEach

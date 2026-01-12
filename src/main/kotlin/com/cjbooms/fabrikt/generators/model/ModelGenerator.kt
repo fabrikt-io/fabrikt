@@ -85,6 +85,7 @@ class ModelGenerator(
             basePackage: String,
             typeInfo: KotlinTypeInfo,
             isNullable: Boolean = false,
+            applySerializationAnnotations: Boolean = true,
         ): TypeName {
             val className =
                 toClassName(
@@ -96,10 +97,15 @@ class ModelGenerator(
                     val elementType = toModelType(
                         basePackage,
                         typeInfo.parameterizedType,
-                        typeInfo.isParameterizedTypeNullable
+                        typeInfo.isParameterizedTypeNullable,
+                        applySerializationAnnotations
                     )
-                    val annotatedElementType = MutableSettings.serializationLibrary.serializationAnnotations
-                        .annotateArrayElementType(elementType, typeInfo.parameterizedType)
+                    val annotatedElementType = if (applySerializationAnnotations) {
+                        MutableSettings.serializationLibrary.serializationAnnotations
+                            .annotateArrayElementType(elementType, typeInfo.parameterizedType)
+                    } else {
+                        elementType
+                    }
                     if (typeInfo.hasUniqueItems) {
                         createSet(annotatedElementType)
                     } else {
