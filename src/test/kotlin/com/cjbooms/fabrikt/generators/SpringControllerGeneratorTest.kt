@@ -6,7 +6,6 @@ import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
-import com.cjbooms.fabrikt.generators.controller.KtorControllerInterfaceGenerator
 import com.cjbooms.fabrikt.generators.controller.SpringControllerInterfaceGenerator
 import com.cjbooms.fabrikt.generators.controller.SpringControllers
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringImports
@@ -270,10 +269,13 @@ class SpringControllerGeneratorTest {
 
         assertThatGenerated(controllers.trim()).isEqualTo(expectedControllers)
     }
-    
-    fun `controller functions are wrapped by CompletionStage`() {
+
+    @Test
+    fun `controller functions with x-async-support=true extension are wrapped by CompletionStage`() {
         val basePackage = "examples.completionStage"
-        val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
+        val api = readTextResource("/examples/githubApi/api.yaml")
+            .replace("x-async-support: false", "x-async-support: true")
+            .let { SourceApi(it) }
         val expectedControllers = "/examples/githubApi/controllers/spring-completion-stage/Controllers.kt"
 
         val controllers = SpringControllerInterfaceGenerator(
@@ -290,13 +292,44 @@ class SpringControllerGeneratorTest {
     fun `controller functions with x-async-support=false extension are NOT wrapped by CompletionStage`() {
         val basePackage = "examples.completionStage"
         val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
-        val expectedControllers = "/examples/githubApi/controllers/spring-completion-stage/Controllers.kt"
+        val expectedControllers = "/examples/githubApi/controllers/spring-completion-stage/ControllersDisabled.kt"
 
         val controllers = SpringControllerInterfaceGenerator(
             Packages(basePackage),
             api,
             JavaxValidationAnnotations,
             setOf(ControllerCodeGenOptionType.COMPLETION_STAGE),
+        ).generate().toSingleFile()
+
+        assertThatGenerated(controllers).isEqualTo(expectedControllers)
+    }
+
+    @Test
+    fun `sse controller functions return SseEmitter`() {
+        val basePackage = "examples.sseEmitter"
+        val api = SourceApi(readTextResource("/examples/springControllerSse/api.yaml"))
+        val expectedControllers = "/examples/springControllerSse/controllers/Controllers.kt"
+
+        val controllers = SpringControllerInterfaceGenerator(
+            Packages(basePackage),
+            api,
+            JavaxValidationAnnotations,
+            setOf(ControllerCodeGenOptionType.SSE_EMITTER),
+        ).generate().toSingleFile()
+
+        assertThatGenerated(controllers).isEqualTo(expectedControllers)
+    }
+
+    @Test
+    fun `sse controller functions return array if disabled`() {
+        val basePackage = "examples.sseEmitter"
+        val api = SourceApi(readTextResource("/examples/springControllerSse/api.yaml"))
+        val expectedControllers = "/examples/springControllerSse/controllers/ControllersDisabled.kt"
+
+        val controllers = SpringControllerInterfaceGenerator(
+            Packages(basePackage),
+            api,
+            JavaxValidationAnnotations,
         ).generate().toSingleFile()
 
         assertThatGenerated(controllers).isEqualTo(expectedControllers)

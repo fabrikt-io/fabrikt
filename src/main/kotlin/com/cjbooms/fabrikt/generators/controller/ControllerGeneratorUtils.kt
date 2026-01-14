@@ -28,6 +28,13 @@ object ControllerGeneratorUtils {
             ?: Unit::class.asTypeName()
     }
 
+    fun Operation.isSseResponse(): Boolean {
+        val responseDetails = happyPathResponseObject()
+        return responseDetails.contentMediaTypes["text/event-stream"]
+            ?.let { it.schema.type == "array" && it.schema.format == "event-stream" }
+            ?: false
+    }
+
     private fun Operation.happyPathResponseObject(): Response {
         val toResponseMapping: Map<Int, Response> = responses
             .filter { it.key != "default" }
