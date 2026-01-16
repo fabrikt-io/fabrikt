@@ -35,6 +35,9 @@ object KaizenParserExtensions {
 
     private const val EXTENSIBLE_ENUM_KEY = "x-extensible-enum"
 
+    private fun isSealedInterfacesForOneOfEnabled(): Boolean = 
+        ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF in MutableSettings.modelOptions
+
     fun Schema.isPolymorphicSuperType(): Boolean = discriminator?.propertyName != null ||
         getDiscriminatorForInLinedObjectUnderAllOf()?.propertyName != null
 
@@ -173,7 +176,7 @@ object KaizenParserExtensions {
             }
 
     fun Schema.findOneOfSuperInterface(allSchemas: List<Schema>): Set<Schema> {
-        if (ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF !in MutableSettings.modelOptions) {
+        if (!isSealedInterfacesForOneOfEnabled()) {
             return emptySet()
         }
         return allSchemas
@@ -239,7 +242,8 @@ object KaizenParserExtensions {
 
     fun Schema.safeName(): String =
         when {
-            isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() -> this.oneOfSchemas.first().allOfSchemas.first().safeName()
+            isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !isSealedInterfacesForOneOfEnabled() -> 
+                this.oneOfSchemas.first().allOfSchemas.first().safeName()
             isInlinedAggregationOfExactlyOne() -> combinedAnyOfAndAllOfSchemas().first().safeName()
             name != null -> name
             else -> Overlay.of(this).pathFromRoot
@@ -289,9 +293,17 @@ object KaizenParserExtensions {
 
     fun Schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType(): Boolean {
         val maybeAllOfInFirstOneOf = this.oneOfSchemas?.firstOrNull()?.allOfSchemas?.firstOrNull()
-        return if (maybeAllOfInFirstOneOf != null && maybeAllOfInFirstOneOf.hasDiscriminator() && ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF !in MutableSettings.modelOptions)  {
+        // This identifies the OLD allOf-based polymorphism pattern where the BASE type has the discriminator
+        return if (maybeAllOfInFirstOneOf != null && maybeAllOfInFirstOneOf.hasDiscriminator())  {
             this.oneOfSchemas.all { it.allOfSchemas.contains(maybeAllOfInFirstOneOf) }
         } else false
+    }
+
+    fun Schema.isOneOfResolvingToAnyType(): Boolean {
+        // oneOf schemas with discriminators that resolve to Any when sealed interfaces are not enabled
+        return this.hasDiscriminator() && 
+               this.oneOfSchemas.isNotEmpty() && 
+               !isSealedInterfacesForOneOfEnabled()
     }
 
 
