@@ -110,3 +110,55 @@ components:
         oneOf:
           - $ref: '#/components/schemas/FirstOneB'
           - $ref: '#/components/schemas/SecondOneB'
+    
+    # Test: oneOf with discriminator should not trigger old allOf polymorphism generation (Items should have List<Any>, not List<BaseItem>)
+    Items:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemReference'
+    
+    ItemReference:
+      oneOf:
+        - $ref: '#/components/schemas/ProductItem'
+        - $ref: '#/components/schemas/OutfitItem'
+      discriminator:
+        propertyName: item_type
+        mapping:
+          PRODUCT: '#/components/schemas/ProductItem'
+          OUTFIT: '#/components/schemas/OutfitItem'
+    
+    BaseItem:
+      required:
+        - id
+        - item_type
+      type: object
+      properties:
+        id:
+          type: string
+        item_type:
+          type: string
+    
+    ProductItem:
+      allOf:
+        - $ref: '#/components/schemas/BaseItem'
+        - type: object
+          properties:
+            sku:
+              type: string
+          required:
+            - sku
+    
+    OutfitItem:
+      allOf:
+        - $ref: '#/components/schemas/BaseItem'
+        - type: object
+          properties:
+            outfit_id:
+              type: string
+          required:
+            - outfit_id
