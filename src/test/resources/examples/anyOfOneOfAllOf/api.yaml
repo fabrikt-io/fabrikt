@@ -34,6 +34,42 @@ components:
           properties:
             top_level_prop:
               type: number
+    
+    # Test case for top-level required with allOf (no duplicate in inline required)
+    TopLevelRequiredWithAllOf:
+      allOf:
+        - type: object
+          properties:
+            inline_prop:
+              type: string
+          required:
+            - inline_prop
+        - type: object
+          properties:
+            top_level_only_prop:
+              type: string
+            optional_prop:
+              type: string
+      required:
+        - top_level_only_prop
+    
+    # Test case for nested objects - required should NOT leak to nested properties
+    OuterWithNestedObject:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Outer name property
+        nested:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Nested name - different property, should NOT be required
+            id:
+              type: string
+      required:
+        - name
 
     ContainsNestedOneOf:
       oneOf:

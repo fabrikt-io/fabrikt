@@ -43,14 +43,18 @@ sealed class PropertyInfo {
         fun Schema.topLevelProperties(
             settings: Settings,
             api: OpenApi3,
-            enclosingSchema: Schema? = null
+            enclosingSchema: Schema? = null,
+            additionalRequiredFields: Collection<String> = emptySet()
         ): Collection<PropertyInfo> {
+            val combinedRequiredFields = this.requiredFields + additionalRequiredFields
+            
             val results = mutableListOf<PropertyInfo>() +
                 allOfSchemas.flatMap {
                     it.topLevelProperties(
                         settings = maybeMarkInherited(settings, enclosingSchema, it),
                         api = api,
-                        enclosingSchema = if (this.isInlinedObjectDefinition()) enclosingSchema else this
+                        enclosingSchema = if (this.isInlinedObjectDefinition()) enclosingSchema else this,
+                        additionalRequiredFields = combinedRequiredFields
                     )
                 } +
                 (if (oneOfSchemas.isEmpty()) emptyList() else listOf(OneOfAny(oneOfSchemas.first()))) +
@@ -61,7 +65,7 @@ sealed class PropertyInfo {
                         enclosingSchema = if (this.isInlinedObjectDefinition()) enclosingSchema else this
                     )
                 } +
-                getInLinedProperties(settings, api, enclosingSchema)
+                getInLinedProperties(settings, api, enclosingSchema, combinedRequiredFields)
             return results.distinctBy { it.oasKey }
         }
 
@@ -78,14 +82,15 @@ sealed class PropertyInfo {
         private fun Schema.getInLinedProperties(
             settings: Settings,
             api: OpenApi3,
-            enclosingSchema: Schema? = null
+            enclosingSchema: Schema? = null,
+            additionalRequiredFields: Collection<String> = emptySet()
         ): Collection<PropertyInfo> {
             val mainProperties: List<PropertyInfo> = properties.map { property ->
                 when (property.value.safeType()) {
                     OasType.Set.type ->
                         ListField(
                             isRequired = isRequired(
-                                api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional
+                                api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
                             ),
                             oasKey = property.key,
                             schema = property.value,
@@ -98,7 +103,7 @@ sealed class PropertyInfo {
                     OasType.Array.type ->
                         ListField(
                             isRequired = isRequired(
-                                api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional
+                                api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
                             ),
                             oasKey = property.key,
                             schema = property.value,
@@ -112,7 +117,7 @@ sealed class PropertyInfo {
                         if (property.value.isSimpleMapDefinition() || property.value.isSchemaLess())
                             MapField(
                                 isRequired = isRequired(
-                                    api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional
+                                    api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
                                 ),
                                 oasKey = property.key,
                                 schema = property.value,
@@ -122,7 +127,7 @@ sealed class PropertyInfo {
                         else if (property.value.isInlinedObjectDefinition())
                             ObjectInlinedField(
                                 isRequired = isRequired(
-                                    api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional
+                                    api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
                                 ),
                                 oasKey = property.key,
                                 schema = property.value,
@@ -133,7 +138,7 @@ sealed class PropertyInfo {
                         else
                             ObjectRefField(
                                 isRequired = isRequired(
-                                    api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional
+                                    api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
                                 ),
                                 oasKey = property.key,
                                 schema = property.value,
@@ -147,7 +152,7 @@ sealed class PropertyInfo {
                         } else {
                             Field(
                                 isRequired = isRequired(
-                                    api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional
+                                    api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
                                 ),
                                 oasKey = property.key,
                                 schema = property.value,

@@ -159,11 +159,14 @@ object KaizenParserExtensions {
         prop: Map.Entry<String, Schema>,
         markReadWriteOnlyOptional: Boolean,
         markAllOptional: Boolean,
+        additionalRequiredFields: Collection<String> = emptySet()
     ): Boolean =
         if (markAllOptional || (prop.value.isReadOnly && markReadWriteOnlyOptional) || (prop.value.isWriteOnly && markReadWriteOnlyOptional)) {
             false
         } else {
-            requiredFields.contains(prop.key) || isDiscriminatorProperty(api, prop) // A discriminator property should be required
+            requiredFields.contains(prop.key) || 
+                additionalRequiredFields.contains(prop.key) ||
+                isDiscriminatorProperty(api, prop) // A discriminator property should be required
         }
 
     fun Schema.getSchemaRefName() = Overlay.of(this).jsonReference.split("/").last()
