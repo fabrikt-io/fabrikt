@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.util
 
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.SHOULD_OVERWRITE_EXAMPLES
+import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.SHOULD_SKIP_ERRORS
 import com.cjbooms.fabrikt.util.ResourceHelper.readTextResource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -62,6 +63,7 @@ class OverWriteProtectionTest {
     @Test
     fun `should fail if the overwrite files is set to true to prevent accidental commit`() {
         assertThat(SHOULD_OVERWRITE_EXAMPLES).isFalse()
+        assertThat(SHOULD_SKIP_ERRORS).isFalse()
     }
 }
 
