@@ -41,7 +41,7 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedTypedAdditionalProperties
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfPolymorphicTypes
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isPolymorphicSubType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isPolymorphicSuperType
@@ -188,7 +188,7 @@ class ModelGenerator(
 
     private fun createModels(api: OpenApi3, schemas: List<SchemaInfo>) = schemas
         .filterNot { it.schema.isSimpleType() }
-        .filterNot { it.schema.isOneOfPolymorphicTypes() && SEALED_INTERFACES_FOR_ONE_OF !in options }
+        .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && SEALED_INTERFACES_FOR_ONE_OF !in options }
         .flatMap { schemaInfo ->
             val properties = schemaInfo.schema.topLevelProperties(HTTP_SETTINGS, api, schemaInfo.schema)
             when {

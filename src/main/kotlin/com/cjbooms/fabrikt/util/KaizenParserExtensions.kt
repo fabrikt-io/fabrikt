@@ -78,7 +78,7 @@ object KaizenParserExtensions {
     fun Schema.isSimpleMapDefinition() = hasAdditionalProperties() && properties?.isEmpty() == true
 
     fun Schema.isSimpleOneOfAnyDefinition() = oneOfSchemas?.isNotEmpty() == true &&
-        !isOneOfPolymorphicTypes() &&
+        !isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() &&
         anyOfSchemas?.isEmpty() == true &&
         allOfSchemas?.isEmpty() == true &&
         properties?.isEmpty() == true
@@ -239,7 +239,7 @@ object KaizenParserExtensions {
 
     fun Schema.safeName(): String =
         when {
-            isOneOfPolymorphicTypes() -> this.oneOfSchemas.first().allOfSchemas.first().safeName() // TODO - What a hack
+            isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() -> this.oneOfSchemas.first().allOfSchemas.first().safeName()
             isInlinedAggregationOfExactlyOne() -> combinedAnyOfAndAllOfSchemas().first().safeName()
             name != null -> name
             else -> Overlay.of(this).pathFromRoot
@@ -259,7 +259,7 @@ object KaizenParserExtensions {
         if (allOfSchemas.hasAnyDefinedProperties()) return "object"
         if (oneOfSchemas.hasAnyDefinedProperties()) return "object"
         if (anyOfSchemas.hasAnyDefinedProperties()) return "object"
-        if (isOneOfPolymorphicTypes()) return "object"
+        if (isOneOfWhereAllTypesInheritFromACommonAllOfSuperType()) return "object"
         if (isUnknownAdditionalProperties("")) return "object"
         if (Overlay.of(additionalPropertiesSchema).isPresent) return "object"
 
@@ -287,7 +287,7 @@ object KaizenParserExtensions {
     private fun List<Schema>?.hasAnyDefinedProperties(): Boolean =
         this?.any { it.properties?.isNotEmpty() == true } == true
 
-    fun Schema.isOneOfPolymorphicTypes(): Boolean {
+    fun Schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType(): Boolean {
         val maybeAllOfInFirstOneOf = this.oneOfSchemas?.firstOrNull()?.allOfSchemas?.firstOrNull()
         return if (maybeAllOfInFirstOneOf != null && maybeAllOfInFirstOneOf.hasDiscriminator() && ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF !in MutableSettings.modelOptions)  {
             this.oneOfSchemas.all { it.allOfSchemas.contains(maybeAllOfInFirstOneOf) }
