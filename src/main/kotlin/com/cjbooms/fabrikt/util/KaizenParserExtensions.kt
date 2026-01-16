@@ -239,7 +239,7 @@ object KaizenParserExtensions {
 
     fun Schema.safeName(): String =
         when {
-            isOneOfPolymorphicTypes() -> this.oneOfSchemas.first().allOfSchemas.first().safeName()
+            isOneOfPolymorphicTypes() -> this.oneOfSchemas.first().allOfSchemas.first().safeName() // TODO - What a hack
             isInlinedAggregationOfExactlyOne() -> combinedAnyOfAndAllOfSchemas().first().safeName()
             name != null -> name
             else -> Overlay.of(this).pathFromRoot
@@ -289,7 +289,7 @@ object KaizenParserExtensions {
 
     fun Schema.isOneOfPolymorphicTypes(): Boolean {
         val maybeAllOfInFirstOneOf = this.oneOfSchemas?.firstOrNull()?.allOfSchemas?.firstOrNull()
-        return if (maybeAllOfInFirstOneOf != null) {
+        return if (maybeAllOfInFirstOneOf != null && maybeAllOfInFirstOneOf.hasDiscriminator() && ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF !in MutableSettings.modelOptions)  {
             this.oneOfSchemas.all { it.allOfSchemas.contains(maybeAllOfInFirstOneOf) }
         } else false
     }

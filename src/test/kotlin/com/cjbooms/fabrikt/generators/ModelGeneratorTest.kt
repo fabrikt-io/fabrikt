@@ -12,6 +12,7 @@ import com.cjbooms.fabrikt.model.KotlinSourceSet
 import com.cjbooms.fabrikt.model.Models
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
+import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.failGenerated
 import com.cjbooms.fabrikt.util.Linter
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.ResourceHelper.getFileNamesInFolder
@@ -80,7 +81,7 @@ class ModelGeneratorTest {
     }
 
     @Test
-    fun `debug single test`() = `correct models are generated for different OpenApi Specifications`("arrays")
+    fun `debug single test`() = `correct models are generated for different OpenApi Specifications`("oneOfAllOfBug")
 
     @ParameterizedTest
     @MethodSource("testCases")
@@ -127,7 +128,7 @@ class ModelGeneratorTest {
                 assertThatGenerated(it.value)
                     .isEqualTo( "$expectedModelsPath${it.key}")
             } else {
-                assertThat(it.value).isEqualTo("File not found in expected models")
+                failGenerated(it.value).asFileNotFound("$expectedModelsPath${it.key}", "File not found in expected models")
             }
         }
         expectedModels.forEach {
