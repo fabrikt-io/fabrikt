@@ -65,11 +65,8 @@ object MutableSettings {
      * is used, returns [jacksonNullabilityMode], otherwise returns [JacksonNullabilityMode.NONE].
      */
     val effectiveJacksonNullabilityMode: JacksonNullabilityMode
-        get() = if (serializationLibrary == SerializationLibrary.JACKSON) {
-            jacksonNullabilityMode
-        } else {
-            JacksonNullabilityMode.NONE
-        }
+        get() = if (serializationLibrary == SerializationLibrary.JACKSON) jacksonNullabilityMode else JacksonNullabilityMode.NONE
+
 
     fun updateSettings(
         genTypes: Set<CodeGenerationType> = emptySet(),
@@ -111,5 +108,9 @@ object MutableSettings {
 
     fun addOption(override: CodeGenTypeOverride) {
         typeOverrides += override
+    }
+
+    fun addOption(mode: JacksonNullabilityMode) {
+        jacksonNullabilityMode = mode
     }
 }

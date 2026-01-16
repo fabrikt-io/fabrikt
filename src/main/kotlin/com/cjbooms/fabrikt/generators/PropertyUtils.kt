@@ -162,17 +162,15 @@ object PropertyUtils {
                 val constructorParameter: ParameterSpec.Builder = ParameterSpec.builder(name, wrappedType)
                 val oasDefault = getDefaultValue(this, parameterizedType)
 
-                val enforceNonNull = when (jacksonNullabilityMode) {
-                    JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL -> true
-                    JacksonNullabilityMode.STRICT -> true
-                    else -> false
-                }
+                val enforceNonNull = jacksonNullabilityMode in setOf(
+                    JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL,
+                    JacksonNullabilityMode.STRICT
+                )
 
-                val enforceRequiredNullable = when (jacksonNullabilityMode) {
-                    JacksonNullabilityMode.ENFORCE_REQUIRED_NULLABLE -> true
-                    JacksonNullabilityMode.STRICT -> true
-                    else -> false
-                }
+                val enforceRequiredNullable = jacksonNullabilityMode in setOf(
+                    JacksonNullabilityMode.ENFORCE_REQUIRED_NULLABLE,
+                    JacksonNullabilityMode.STRICT
+                )
 
                 if (enforceRequiredNullable && isRequired && schema.isNullable) {
                     property.addAnnotation(JacksonMetadata.JSON_INCLUDE_ALWAYS)
