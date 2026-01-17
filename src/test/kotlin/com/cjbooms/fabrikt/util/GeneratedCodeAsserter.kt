@@ -15,6 +15,7 @@ class GeneratedCodeAsserter(val generatedCode: String) {
     companion object {
         // Set this to true to overwrite the expected files with the generated code when they don't match
         const val SHOULD_OVERWRITE_EXAMPLES = false
+        // Set this to true to skip failures and fix multiple files
         const val SHOULD_SKIP_ERRORS = false
 
         fun assertThatGenerated(generatedCode: String): GeneratedCodeAsserter = GeneratedCodeAsserter(generatedCode)
@@ -49,7 +50,7 @@ class GeneratedCodeAsserter(val generatedCode: String) {
 
     fun asFileNotFound(expectedPath: String, failureMessage: String) {
         try {
-            fail(failureMessage)
+            fail(failureMessage + expectedPath)
         } catch (ex: AssertionError) {
             maybeGenerateMissingFile(expectedPath, generatedCode)
             if (!SHOULD_SKIP_ERRORS) {

@@ -1,12 +1,12 @@
 package examples.anyOfOneOfAllOf.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
+import java.util.LinkedHashSet
 import javax.validation.Valid
-import kotlin.collections.List
 
-public data class BatchAddItemResponseNonInlined(
+public data class SetWithInlinedAllOfItems(
   @param:JsonProperty("items")
   @get:JsonProperty("items")
   @get:Valid
-  public val items: List<RefAllOf>? = null,
+  public val items: LinkedHashSet<SetWithInlinedAllOfItemsItems>? = null,
 )

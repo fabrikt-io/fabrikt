@@ -140,23 +140,15 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
                 OasType.Int64 -> BigInt
                 OasType.Integer -> Integer
                 OasType.Boolean -> Boolean
-                OasType.Set ->
-                    Array(from(schema.itemsSchema, oasKey, enclosingSchema), schema.itemsSchema.isNullable, true)
+                OasType.Set -> {
+                    val parameterizedType = getParameterizedTypeForArray(schema, enclosingSchema, oasKey)
+                    Array(parameterizedType, schema.itemsSchema.isNullable, true)
+                }
 
-                OasType.Array ->
-                    if (schema.itemsSchema.isInlinedObjectDefinition() && !schema.itemsSchema.isUnsupportedComplexInlinedDefinition()) {
-                        Array(
-                            parameterizedType = Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema)),
-                            isParameterizedTypeNullable = schema.itemsSchema.isNullable,
-                            hasUniqueItems = schema.itemsSchema.isUniqueItems
-                        )
-                    } else {
-                        Array(
-                            parameterizedType = from(schema.itemsSchema, oasKey, enclosingSchema),
-                            isParameterizedTypeNullable = schema.itemsSchema.isNullable,
-                            hasUniqueItems = schema.itemsSchema.isUniqueItems
-                        )
-                    }
+                OasType.Array -> {
+                    val parameterizedType = getParameterizedTypeForArray(schema, enclosingSchema, oasKey)
+                    Array(parameterizedType, schema.itemsSchema.isNullable, schema.itemsSchema.isUniqueItems)
+                }
 
                 OasType.Object -> Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema))
                 OasType.Map ->
@@ -187,6 +179,16 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
                         AnyType
                     }
             }
+        }
+
+        private fun getParameterizedTypeForArray(
+            arraySchema: Schema,
+            enclosingSchema: Schema?,
+            oasKey: String
+        ): KotlinTypeInfo {
+            return if (arraySchema.itemsSchema.isInlinedObjectDefinition() && !arraySchema.itemsSchema.isUnsupportedComplexInlinedDefinition())
+                Object(ModelNameRegistry.getOrRegister(arraySchema, enclosingSchema))
+            else from(arraySchema.itemsSchema, oasKey, enclosingSchema)
         }
 
         private fun getOverridableByteArray(): KotlinTypeInfo {

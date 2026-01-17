@@ -1,7 +1,205 @@
 openapi: 3.0.0
 components:
   schemas:
-    BatchAddItemResponse:
+    SimpleOneOfs:
+      type: object
+      properties:
+        oneof_property:
+          $ref: '#/components/schemas/ContainsNestedOneOf'
+        primitive_oneof_property:
+          $ref: '#/components/schemas/ContainsPrimitiveOneOf'
+
+    SimpleTypeWithRequiredProps:
+      type: object
+      required:
+        - required_int
+        - required_string
+      properties:
+        required_string:
+          type: string
+        required_int:
+          type: integer
+
+    ComplexParent:
+      required:
+        - top_level_prop
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ContainsNestedOneOf'
+        - $ref: '#/components/schemas/ContainsNestedAnyOf'
+        - $ref: '#/components/schemas/SimpleTypeWithRequiredProps'
+        - type: object
+          required:
+            - top_level_prop
+          properties:
+            top_level_prop:
+              type: number
+
+    # Test case for top-level required with allOf (no duplicate in inline required)
+    TopLevelRequiredWithAllOf:
+      allOf:
+        - type: object
+          properties:
+            inline_prop:
+              type: string
+          required:
+            - inline_prop
+        - type: object
+          properties:
+            top_level_only_prop:
+              type: string
+            optional_prop:
+              type: string
+      required:
+        - top_level_only_prop
+
+    # Test case for nested objects - required should NOT leak to nested properties
+    OuterWithNestedObject:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Outer name property
+        nested:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Nested name - different property, should NOT be required
+            id:
+              type: string
+      required:
+        - name
+
+    ContainsNestedOneOf:
+      oneOf:
+        - $ref: "#/components/schemas/FirstOneA"
+        - $ref: "#/components/schemas/ComplexSecondOneA"
+        - type: string
+        - type: integer
+
+    ContainsPrimitiveOneOf:
+      oneOf:
+        - type: string
+        - type: integer
+
+    ContainsNestedAnyOf:
+      anyOf:
+        - $ref: "#/components/schemas/FirstAnyA"
+        - $ref: "#/components/schemas/SecondAnyA"
+
+    FirstOneA:
+      type: object
+      properties:
+        first_nested_one_of_prop:
+          type: string
+
+    ComplexSecondOneA:
+      allOf:
+        - $ref: '#/components/schemas/MoreNesting'
+
+    MoreNesting:
+      type: object
+      required:
+        - more_nested_prop_one
+      properties:
+        more_nested_prop_one:
+          type: string
+
+    FirstAnyA:
+      type: object
+      properties:
+        first_nested_any_of_prop:
+          type: string
+
+    SecondAnyA:
+      type: object
+      properties:
+        second_nested_any_of_prop:
+          type: string
+
+    FirstOneB:
+      type: object
+      properties:
+        first_property:
+          type: string
+
+    SecondOneB:
+      type: object
+      properties:
+        second_property:
+          type: string
+        third_property:
+          type: string
+        forth_property:
+          $ref: '#/components/schemas/AnyValue'
+
+    AnyValue:
+      description: Tests support for https://swagger.io/docs/specification/data-models/data-types/#any
+
+    OneOfAdditionalProps:
+      type: object
+      properties:
+        second_nested_any_of_prop:
+          type: string
+      additionalProperties:
+        oneOf:
+          - $ref: '#/components/schemas/FirstOneB'
+          - $ref: '#/components/schemas/SecondOneB'
+
+    # Test: oneOf with discriminator should not trigger old allOf polymorphism generation (Items should have List<Any>, not List<BaseItem>)
+    Items:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemReference'
+
+    ItemReference:
+      oneOf:
+        - $ref: '#/components/schemas/ProductItem'
+        - $ref: '#/components/schemas/OutfitItem'
+      discriminator:
+        propertyName: item_type
+        mapping:
+          PRODUCT: '#/components/schemas/ProductItem'
+          OUTFIT: '#/components/schemas/OutfitItem'
+
+    BaseItem:
+      required:
+        - id
+        - item_type
+      type: object
+      properties:
+        id:
+          type: string
+        item_type:
+          type: string
+
+    ProductItem:
+      allOf:
+        - $ref: '#/components/schemas/BaseItem'
+        - type: object
+          properties:
+            sku:
+              type: string
+          required:
+            - sku
+
+    OutfitItem:
+      allOf:
+        - $ref: '#/components/schemas/BaseItem'
+        - type: object
+          properties:
+            outfit_id:
+              type: string
+          required:
+            - outfit_id
+
+    ArrayWithInlinedAllOfItems:
       type: object
       properties:
         items:
@@ -21,9 +219,25 @@ components:
       properties:
         id:
           type: string
-      description: Contains a wardrobe item id.
 
-    BatchAddItemResponseNonInlined:
+    SetWithInlinedAllOfItems:
+      type: object
+      properties:
+        items:
+          type: array
+          uniqueItems: true
+          items:
+            required:
+              - id
+              - status_code
+            allOf:
+              - $ref: '#/components/schemas/ItemId'
+              - type: object
+                properties:
+                  status_code:
+                    type: integer
+
+    ArrayWithReferencedAllOfItems:
       type: object
       properties:
         items:
