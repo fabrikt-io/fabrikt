@@ -9,6 +9,7 @@ import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.OasType.Companion.toOasType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.getEnumValues
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isEnumDefinition
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isUnsupportedComplexInlinedDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedTypedAdditionalProperties
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isNotDefined
@@ -31,6 +32,7 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
     object KotlinxLocalDate : KotlinTypeInfo(kotlinx.datetime.LocalDate::class)
     object DateTime : KotlinTypeInfo(OffsetDateTime::class)
     object Instant : KotlinTypeInfo(java.time.Instant::class)
+
     @Suppress("DEPRECATION")
     object KotlinxInstant : KotlinTypeInfo(kotlinx.datetime.Instant::class)
     object KotlinInstant : KotlinTypeInfo(kotlin.time.Instant::class)
@@ -84,14 +86,13 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
         private val logger = Logger.getGlobal()
 
         fun from(schema: Schema, oasKey: String = "", enclosingSchema: Schema? = null): KotlinTypeInfo {
-            if (schema.isUnsupportedComplexInlinedDefinition()) {
+            return if (schema.isUnsupportedComplexInlinedDefinition() || schema.isNotDefined()) {
                 /*
                  * Defaults to Any for complex schemas inlined under the paths section.
                  * Necessary until support for generating inlined models like these is added.
                  */
-                return if (schema.isEnumDefinition()) Text else AnyType
-            }
-            return when (schema.toOasType(oasKey)) {
+                if (schema.isEnumDefinition()) Text else AnyType
+            } else when (schema.toOasType(oasKey)) {
                 OasType.Date -> {
                     if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.DATE_AS_STRING)) Text
                     else if (MutableSettings.serializationLibrary == KOTLINX_SERIALIZATION) KotlinxLocalDate
@@ -140,25 +141,20 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
                 OasType.Integer -> Integer
                 OasType.Boolean -> Boolean
                 OasType.Set ->
-                    if (schema.itemsSchema.isNotDefined())
-                        throw IllegalArgumentException("Property ${schema.name} cannot be parsed to a Schema. Check your input")
-                    else Array(from(schema.itemsSchema, oasKey, enclosingSchema), schema.itemsSchema.isNullable, true)
+                    Array(from(schema.itemsSchema, oasKey, enclosingSchema), schema.itemsSchema.isNullable, true)
 
                 OasType.Array ->
-                    if (schema.itemsSchema.isNotDefined())
-                        throw IllegalArgumentException("Property ${schema.name} cannot be parsed to a Schema. Check your input")
-                    else if (schema.itemsSchema.allOfSchemas.isNotEmpty()) {
-                        // When items has allOf, use array schema to match ModelGenerator pattern
+                    if (schema.itemsSchema.isInlinedObjectDefinition() && !schema.itemsSchema.isUnsupportedComplexInlinedDefinition()) {
                         Array(
-                            Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema)),
-                            schema.itemsSchema.isNullable,
-                            schema.itemsSchema.isUniqueItems
+                            parameterizedType = Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema)),
+                            isParameterizedTypeNullable = schema.itemsSchema.isNullable,
+                            hasUniqueItems = schema.itemsSchema.isUniqueItems
                         )
                     } else {
                         Array(
-                            from(schema.itemsSchema, oasKey, enclosingSchema),
-                            schema.itemsSchema.isNullable,
-                            schema.itemsSchema.isUniqueItems
+                            parameterizedType = from(schema.itemsSchema, oasKey, enclosingSchema),
+                            isParameterizedTypeNullable = schema.itemsSchema.isNullable,
+                            hasUniqueItems = schema.itemsSchema.isUniqueItems
                         )
                     }
 
