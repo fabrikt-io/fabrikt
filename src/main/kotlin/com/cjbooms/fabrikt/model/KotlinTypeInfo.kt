@@ -32,7 +32,6 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
     object KotlinxLocalDate : KotlinTypeInfo(kotlinx.datetime.LocalDate::class)
     object DateTime : KotlinTypeInfo(OffsetDateTime::class)
     object Instant : KotlinTypeInfo(java.time.Instant::class)
-
     @Suppress("DEPRECATION")
     object KotlinxInstant : KotlinTypeInfo(kotlinx.datetime.Instant::class)
     object KotlinInstant : KotlinTypeInfo(kotlin.time.Instant::class)
@@ -86,13 +85,14 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
         private val logger = Logger.getGlobal()
 
         fun from(schema: Schema, oasKey: String = "", enclosingSchema: Schema? = null): KotlinTypeInfo {
-            return if (schema.isUnsupportedComplexInlinedDefinition() || schema.isNotDefined()) {
+            if (schema.isUnsupportedComplexInlinedDefinition()) {
                 /*
                  * Defaults to Any for complex schemas inlined under the paths section.
                  * Necessary until support for generating inlined models like these is added.
                  */
-                if (schema.isEnumDefinition()) Text else AnyType
-            } else when (schema.toOasType(oasKey)) {
+                return if (schema.isEnumDefinition()) Text else AnyType
+            }
+            return when (schema.toOasType(oasKey)) {
                 OasType.Date -> {
                     if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.DATE_AS_STRING)) Text
                     else if (MutableSettings.serializationLibrary == KOTLINX_SERIALIZATION) KotlinxLocalDate
