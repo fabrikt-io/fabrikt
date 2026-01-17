@@ -121,3 +121,17 @@ components:
         properties:
           prop_one:
             type: string
+
+    ArrayWithUndefinedItems:
+      type: object
+      properties:
+        items_array:
+          type: array
+
+    ArrayMissingItemsRef:
+      type: object
+      properties:
+        broken_ref:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissingRef"

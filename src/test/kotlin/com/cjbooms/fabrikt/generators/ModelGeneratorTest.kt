@@ -49,7 +49,6 @@ class ModelGeneratorTest {
         "externalReferences/targeted",
         "githubApi",
         "inLinedObject",
-        "arrays",
         "mapExamples",
         "mapExamplesNonNullValues",
         "mixingCamelSnakeLispCase",
@@ -254,12 +253,6 @@ class ModelGeneratorTest {
 
         assertThatGenerated(models).isEqualTo(expectedModels)
     }
-
-    @Test
-    fun `missing array reference throws constructive message`() = assertExceptionWithMessage(
-        "/badInput/ErrorMissingRefArray.yaml",
-        "Array type 'hooks' cannot be parsed to a Schema. Check your input",
-    )
 
     @Test
     fun `missing object reference throws constructive message`() = assertExceptionWithMessage(

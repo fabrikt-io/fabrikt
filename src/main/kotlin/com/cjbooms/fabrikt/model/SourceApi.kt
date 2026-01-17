@@ -19,8 +19,6 @@ data class SourceApi(
     val baseDir: Path = Paths.get("").toAbsolutePath(),
 ) {
     companion object {
-        private val logger = Logger.getGlobal()
-
         fun create(
             baseApi: String,
             apiFragments: Collection<String>,
@@ -70,9 +68,7 @@ data class SourceApi(
             .fold(schemaErrors) { lst, entry ->
                 val name = entry.key
                 val schema = entry.value
-                if (schema.type == OasType.Array.type && schema.itemsSchema.isNotDefined()) {
-                    lst + listOf(ValidationError("Array type '$name' cannot be parsed to a Schema. Check your input"))
-                } else if (schema.isNotDefined()) {
+                if (schema.isNotDefined()) {
                     lst + listOf(ValidationError("Property '$name' cannot be parsed to a Schema. Check your input"))
                 } else {
                     lst
