@@ -1,12 +1,20 @@
 package examples.anyOfOneOfAllOf.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.Valid
-import kotlin.collections.List
+import javax.validation.constraints.NotNull
+import kotlin.Int
+import kotlin.String
 
 public data class ArrayWithInlinedAllOfItems(
-  @param:JsonProperty("items")
-  @get:JsonProperty("items")
-  @get:Valid
-  public val items: List<ArrayWithInlinedAllOfItemsItems>? = null,
+  @param:JsonProperty("id")
+  @get:JsonProperty("id")
+  @get:NotNull
+  public val id: String,
+  @param:JsonProperty(
+    "status_code",
+    required = true,
+  )
+  @get:JsonProperty("status_code")
+  @get:NotNull
+  public val statusCode: Int,
 )

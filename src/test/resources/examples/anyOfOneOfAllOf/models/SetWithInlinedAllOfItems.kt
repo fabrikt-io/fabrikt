@@ -1,12 +1,20 @@
 package examples.anyOfOneOfAllOf.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import java.util.LinkedHashSet
-import javax.validation.Valid
+import javax.validation.constraints.NotNull
+import kotlin.Int
+import kotlin.String
 
 public data class SetWithInlinedAllOfItems(
-  @param:JsonProperty("items")
-  @get:JsonProperty("items")
-  @get:Valid
-  public val items: LinkedHashSet<SetWithInlinedAllOfItemsItems>? = null,
+  @param:JsonProperty("id")
+  @get:JsonProperty("id")
+  @get:NotNull
+  public val id: String,
+  @param:JsonProperty(
+    "status_code",
+    required = true,
+  )
+  @get:JsonProperty("status_code")
+  @get:NotNull
+  public val statusCode: Int,
 )

@@ -199,7 +199,7 @@ components:
           required:
             - outfit_id
 
-    ArrayWithInlinedAllOfItems:
+    ArrayWithInlinedAllOf:
       type: object
       properties:
         items:
@@ -220,7 +220,7 @@ components:
         id:
           type: string
 
-    SetWithInlinedAllOfItems:
+    SetWithInlinedAllOf:
       type: object
       properties:
         items:
@@ -237,7 +237,7 @@ components:
                   status_code:
                     type: integer
 
-    ArrayWithReferencedAllOfItems:
+    ArrayWithReferencedAllOf:
       type: object
       properties:
         items:
