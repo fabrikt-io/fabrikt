@@ -371,11 +371,7 @@ class ModelGenerator(
                             enclosingSchema = enclosingSchema,
                             apiDocUrl = apiDocUrl,
                         ) + standardDataClass(
-                            // When items has allOf, use items as the schema for naming to avoid duplication
-                            modelName = if (items.allOfSchemas.isNotEmpty())
-                                ModelNameRegistry.getOrRegister(items, schema)
-                            else
-                                ModelNameRegistry.getOrRegister(schema, enclosingSchema),
+                            modelName = ModelNameRegistry.getOrRegister(schema, enclosingSchema),
                             schemaName = schemaName,
                             properties = props,
                             schema = schema,
