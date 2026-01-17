@@ -186,9 +186,12 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
             enclosingSchema: Schema?,
             oasKey: String
         ): KotlinTypeInfo {
-            return if (arraySchema.itemsSchema.isInlinedObjectDefinition() && !arraySchema.itemsSchema.isUnsupportedComplexInlinedDefinition())
-                Object(ModelNameRegistry.getOrRegister(arraySchema, enclosingSchema))
-            else from(arraySchema.itemsSchema, oasKey, enclosingSchema)
+            return when {
+                arraySchema.itemsSchema.isInlinedObjectDefinition() && !arraySchema.itemsSchema.isUnsupportedComplexInlinedDefinition() ->
+                    Object(ModelNameRegistry.getOrRegister(arraySchema, enclosingSchema))
+                arraySchema.itemsSchema.isNotDefined() -> AnyType
+                else -> from(arraySchema.itemsSchema, oasKey, enclosingSchema)
+            }
         }
 
         private fun getOverridableByteArray(): KotlinTypeInfo {
