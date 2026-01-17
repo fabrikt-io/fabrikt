@@ -147,11 +147,20 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
                 OasType.Array ->
                     if (schema.itemsSchema.isNotDefined())
                         throw IllegalArgumentException("Property ${schema.name} cannot be parsed to a Schema. Check your input")
-                    else Array(
-                        from(schema.itemsSchema, oasKey, enclosingSchema),
-                        schema.itemsSchema.isNullable,
-                        schema.itemsSchema.isUniqueItems
-                    )
+                    else if (schema.itemsSchema.allOfSchemas.isNotEmpty()) {
+                        // When items has allOf, use array schema to match ModelGenerator pattern
+                        Array(
+                            Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema)),
+                            schema.itemsSchema.isNullable,
+                            schema.itemsSchema.isUniqueItems
+                        )
+                    } else {
+                        Array(
+                            from(schema.itemsSchema, oasKey, enclosingSchema),
+                            schema.itemsSchema.isNullable,
+                            schema.itemsSchema.isUniqueItems
+                        )
+                    }
 
                 OasType.Object -> Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema))
                 OasType.Map ->
