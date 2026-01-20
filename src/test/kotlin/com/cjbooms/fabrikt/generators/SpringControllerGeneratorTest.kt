@@ -6,7 +6,6 @@ import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
-import com.cjbooms.fabrikt.generators.controller.KtorControllerInterfaceGenerator
 import com.cjbooms.fabrikt.generators.controller.SpringControllerInterfaceGenerator
 import com.cjbooms.fabrikt.generators.controller.SpringControllers
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringImports
@@ -335,7 +334,7 @@ class SpringControllerGeneratorTest {
             Packages(basePackage),
             api,
             JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         assertThat(controllers.files).size().isEqualTo(4)
@@ -374,7 +373,7 @@ class SpringControllerGeneratorTest {
             Packages(basePackage),
             api,
             JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         // /organisations/{parent-id}/contributors has tags [organisation, contributor]
@@ -408,7 +407,7 @@ class SpringControllerGeneratorTest {
 
         val tagBased = SpringControllerInterfaceGenerator(
             Packages(basePackage), api, JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         fun countOps(c: SpringControllers) = c.files
@@ -427,7 +426,7 @@ class SpringControllerGeneratorTest {
             Packages(basePackage),
             api,
             JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         assertThat(controllers.files).size().isEqualTo(1)
@@ -441,7 +440,7 @@ class SpringControllerGeneratorTest {
             Packages(basePackage),
             api,
             JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         assertThat(controllers.files).size().isEqualTo(1)

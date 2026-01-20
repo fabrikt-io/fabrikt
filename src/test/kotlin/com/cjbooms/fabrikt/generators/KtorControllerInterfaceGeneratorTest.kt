@@ -271,7 +271,7 @@ class KtorControllerInterfaceGeneratorTest {
         val controllers = KtorControllerInterfaceGenerator(
             Packages(basePackage),
             api,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         assertThat(controllers.files).size().isEqualTo(4)
@@ -309,7 +309,7 @@ class KtorControllerInterfaceGeneratorTest {
         val controllers = KtorControllerInterfaceGenerator(
             Packages(basePackage),
             api,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         // /organisations/{parent-id}/contributors has tags [organisation, contributor]
@@ -343,7 +343,7 @@ class KtorControllerInterfaceGeneratorTest {
 
         val tagBased = KtorControllerInterfaceGenerator(
             Packages(basePackage), api,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         fun countOps(c: KtorControllerInterfaceGenerator.KtorControllers) = c.files
@@ -361,7 +361,7 @@ class KtorControllerInterfaceGeneratorTest {
         val controllers = KtorControllerInterfaceGenerator(
             Packages(basePackage),
             api,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         assertThat(controllers.files).size().isEqualTo(1)
@@ -374,7 +374,7 @@ class KtorControllerInterfaceGeneratorTest {
         val controllers = KtorControllerInterfaceGenerator(
             Packages(basePackage),
             api,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         assertThat(controllers.files).size().isEqualTo(1)

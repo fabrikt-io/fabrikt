@@ -20,7 +20,7 @@ import com.cjbooms.fabrikt.model.HandlebarsTemplates
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPaths
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupByPathSegment
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
@@ -46,7 +46,7 @@ class OkHttpEnhancedClientGenerator(
         }
 
     private fun generateResilience4jClientCode(): Collection<ClientType> {
-        return api.openApi3.routeToPaths().map { (resourceName, paths) ->
+        return api.openApi3.groupByPathSegment().map { (resourceName, paths) ->
             val funSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
                 path.operations.map { (verb, operation) ->
                     val parameters = deriveClientParameters(path, operation, packages.base)

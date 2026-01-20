@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt.generators.controller
 
 import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.configurations.Packages
+import com.cjbooms.fabrikt.generators.GeneratorUtils.groupingStrategyFrom
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKdoc
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
@@ -21,8 +22,9 @@ import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
+import com.cjbooms.fabrikt.util.GroupingStrategy
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSingleResource
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPaths
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupedPaths
 import com.cjbooms.fabrikt.util.toUpperCase
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.reprezen.kaizen.oasparser.model3.Path
@@ -43,12 +45,12 @@ class SpringControllerInterfaceGenerator(
     private val EXTENSION_ASYNC_SUPPORT = "x-async-support"
     private val addAuthenticationParameter: Boolean
         get() = options.any { it == ControllerCodeGenOptionType.AUTHENTICATION }
-    private val useTagBasedGrouping: Boolean
-        get() = options.any { it == ControllerCodeGenOptionType.TAG_GROUPING }
+    private val groupingStrategy: GroupingStrategy
+        get() = groupingStrategyFrom(options)
 
     override fun generate(): SpringControllers =
         SpringControllers(
-            api.openApi3.routeToPaths(useTagBasedGrouping).map { (resourceName, paths) ->
+            api.openApi3.groupedPaths(groupingStrategy).map { (resourceName, paths) ->
                 buildController(resourceName, paths.values)
             }.toSet(),
         )

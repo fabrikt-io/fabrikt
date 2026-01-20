@@ -284,7 +284,7 @@ class MicronautControllerGeneratorTest {
             Packages(basePackage),
             api,
             JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         assertThat(controllers.files).size().isEqualTo(4)
@@ -323,7 +323,7 @@ class MicronautControllerGeneratorTest {
             Packages(basePackage),
             api,
             JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         // /organisations/{parent-id}/contributors has tags [organisation, contributor]
@@ -357,7 +357,7 @@ class MicronautControllerGeneratorTest {
 
         val tagBased = MicronautControllerInterfaceGenerator(
             Packages(basePackage), api, JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         fun countOps(c: MicronautControllers) = c.files
@@ -376,7 +376,7 @@ class MicronautControllerGeneratorTest {
             Packages(basePackage),
             api,
             JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         assertThat(controllers.files).size().isEqualTo(1)
@@ -390,7 +390,7 @@ class MicronautControllerGeneratorTest {
             Packages(basePackage),
             api,
             JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.TAG_GROUPING),
+            setOf(ControllerCodeGenOptionType.GROUP_BY_TAG),
         ).generate()
 
         assertThat(controllers.files).size().isEqualTo(1)
