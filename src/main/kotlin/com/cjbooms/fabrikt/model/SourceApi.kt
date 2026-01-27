@@ -47,21 +47,8 @@ data class SourceApi(
         val schemaErrors = api.schemas.entries.fold(emptyList<ValidationError>()) { errors, entry ->
             val name = entry.key
             val schema = entry.value
-            if (schema.type == OasType.Object.type && schema.properties?.isNotEmpty() == true && (
-                    schema.oneOfSchemas?.isNotEmpty() == true ||
-                        schema.allOfSchemas?.isNotEmpty() == true ||
-                        schema.anyOfSchemas?.isNotEmpty() == true
-                    )
-            ) {
-                errors + listOf(
-                    ValidationError(
-                        "'$name' schema contains an invalid combination of properties and `oneOf | anyOf | allOf`. " +
-                            "Do not use properties and a combiner at the same level.",
-                    ),
-                )
-            } else {
-                errors
-            }
+            // Properties alongside oneOf/anyOf/allOf are valid in OpenAPI 3.0
+            errors
         }
 
         return api.schemas.map { it.value.properties }.flatMap { it.entries }

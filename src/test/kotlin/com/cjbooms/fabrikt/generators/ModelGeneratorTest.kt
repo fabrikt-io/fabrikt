@@ -69,7 +69,8 @@ class ModelGeneratorTest {
         "binary",
         "oneOfMarkerInterface",
         "untypedObject",
-        "primitiveTypes"
+        "primitiveTypes",
+        "allOfWithProperties",
     )
 
     @BeforeEach
@@ -258,24 +259,6 @@ class ModelGeneratorTest {
     fun `missing object reference throws constructive message`() = assertExceptionWithMessage(
         "/badInput/ErrorMissingRefObject.yaml",
         "Property 'propB' cannot be parsed to a Schema. Check your input",
-    )
-
-    @Test
-    fun `mixing oneOf with object type throws constructive error`() = assertExceptionWithMessage(
-        "/badInput/ErrorMixingOneOfWithObject.yaml",
-        "schema contains an invalid combination of properties and `oneOf | anyOf | allOf`",
-    )
-
-    @Test
-    fun `mixing anyOf with object type throws constructive error`() = assertExceptionWithMessage(
-        "/badInput/ErrorMixingAnyOfWithObject.yaml",
-        "schema contains an invalid combination of properties and `oneOf | anyOf | allOf`",
-    )
-
-    @Test
-    fun `mixing allOf with object type throws constructive error`() = assertExceptionWithMessage(
-        "/badInput/ErrorMixingAllOfWithObject.yaml",
-        "schema contains an invalid combination of properties and `oneOf | anyOf | allOf`",
     )
 
     private fun assertExceptionWithMessage(path: String, expectedMessage: String) {

@@ -1,0 +1,40 @@
+openapi: 3.0.0
+info:
+  title: Test allOf with properties
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    # Discriminated polymorphism example
+    Animal:
+      type: object
+      discriminator:
+        propertyName: animalType
+        mapping:
+          dog: '#/components/schemas/Dog'
+          cat: '#/components/schemas/Cat'
+      properties:
+        animalType:
+          type: string
+        name:
+          type: string
+        age:
+          type: integer
+    
+    Dog:
+      allOf:
+        - $ref: '#/components/schemas/Animal'
+      properties:
+        breed:
+          type: string
+        barkVolume:
+          type: integer
+    
+    Cat:
+      allOf:
+        - $ref: '#/components/schemas/Animal'
+      properties:
+        indoor:
+          type: boolean
+        likesCatnip:
+          type: boolean

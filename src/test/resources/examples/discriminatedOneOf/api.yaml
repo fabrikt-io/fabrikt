@@ -43,6 +43,9 @@ components:
             - "$ref": "#/components/schemas/OneObject"
             - "$ref": "#/components/schemas/TwoObject"
     State:
+      properties:
+        extended_prop_one:
+          type: string
       oneOf:
         - $ref: '#/components/schemas/StateA'
         - $ref: '#/components/schemas/StateB'
