@@ -10,13 +10,28 @@ import com.fasterxml.jackson.databind.node.ObjectNode
  */
 object OpenApi31Downgrader {
     private val NULL_TYPE: JsonNode = YamlUtils.objectMapper.valueToTree("null")
+    private const val TARGET_MAJOR = 3
+    private const val TARGET_MINOR = 0
 
     /**
-     * Main entry point for converting an OpenAPI 3.1 schema to 3.0 compatibility.
+     * Main entry point for converting an OpenAPI schema to 3.0 compatibility.
      */
-    fun downgrade(root: JsonNode) {
-        downgradeNullableSyntax(root)
-        fillMissingArrayItems(root)
+    fun downgradeIncompatibleElements(root: JsonNode) {
+        if (shouldDowngradeSpecForCompatibility(root)) {
+            downgradeNullableSyntax(root)
+            fillMissingArrayItems(root)
+        }
+    }
+
+    private fun shouldDowngradeSpecForCompatibility(root: JsonNode): Boolean {
+        val versionString = root["openapi"]?.asText() ?: ""
+        if (versionString.isBlank()) return false
+
+        val parts = versionString.split(".")
+        val major = parts.getOrNull(0)?.toIntOrNull() ?: 0
+        val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
+
+        return major > TARGET_MAJOR || (major == TARGET_MAJOR && minor > TARGET_MINOR)
     }
 
     /**
@@ -34,6 +49,7 @@ object OpenApi31Downgrader {
                 }
                 objectNode.fields().forEach { (_, value) -> fillMissingArrayItems(value) }
             }
+
             node.isArray -> node.forEach { fillMissingArrayItems(it) }
         }
     }
@@ -88,11 +104,15 @@ object OpenApi31Downgrader {
                             // the field from 'required', which has the same effect on the generated code.
                             if (objectNode.has("\$ref")) {
                                 val requiredProperties = schemaObject?.get("required") as? ArrayNode
-                                val newRequiredProperties = requiredProperties?.filter { it.textValue() != propertyName }
+                                val newRequiredProperties =
+                                    requiredProperties?.filter { it.textValue() != propertyName }
                                 if (newRequiredProperties.isNullOrEmpty()) {
                                     schemaObject?.remove("required")
                                 } else {
-                                    schemaObject?.replace("required", YamlUtils.objectMapper.valueToTree(newRequiredProperties))
+                                    schemaObject?.replace(
+                                        "required",
+                                        YamlUtils.objectMapper.valueToTree(newRequiredProperties)
+                                    )
                                 }
                             }
                             return

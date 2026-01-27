@@ -52,10 +52,7 @@ object YamlUtils {
     fun parseOpenApi(input: String, inputDir: Path = Paths.get("").toAbsolutePath()): OpenApi3 =
         try {
             val root: JsonNode = objectMapper.readTree(input)
-            val openapiVersion = root["openapi"]?.asText() ?: ""
-            if (openapiVersion.startsWith("3.1.")) {
-                OpenApi31Downgrader.downgrade(root)
-            }
+            OpenApi31Downgrader.downgradeIncompatibleElements(root)
             cleanEmptyTypes(root)
             OpenApi3Parser().parse(root, inputDir.toUri().toURL())
         } catch (ex: NullPointerException) {
