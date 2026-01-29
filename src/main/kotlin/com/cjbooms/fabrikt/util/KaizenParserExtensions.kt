@@ -12,6 +12,15 @@ import com.reprezen.kaizen.oasparser.model3.Path
 import com.reprezen.kaizen.oasparser.model3.Schema
 import java.net.URI
 
+typealias GroupKey = String
+typealias Route = String
+typealias GroupedPaths = Map<GroupKey, Map<Route, Path>>
+
+enum class GroupingStrategy {
+    BY_FIRST_TAG,
+    BY_FIRST_PATH_SEGMENT
+}
+
 object KaizenParserExtensions {
 
     private val invalidNames =
@@ -356,14 +365,52 @@ object KaizenParserExtensions {
             .removeSuffix("/")
 
     /**
+     * Returns paths grouped by the specified strategy.
+     *
+     * @param groupingStrategy how to group paths:
+     *   - [GroupingStrategy.BY_FIRST_PATH_SEGMENT]: groups by the first URI path segment
+     *   - [GroupingStrategy.BY_FIRST_TAG]: groups by their first operation tag
+     */
+    fun OpenApi3.groupedPaths(groupingStrategy: GroupingStrategy): GroupedPaths = when (groupingStrategy) {
+        GroupingStrategy.BY_FIRST_PATH_SEGMENT -> groupByPathSegment()
+        GroupingStrategy.BY_FIRST_TAG -> routeToPathsByFirstTag()
+    }
+
+    /**
      * Returns a Map of String to list of openapi Path objects,
      * where the String is the uri, but in pascal case suitable
      * for naming classes for controllers and services.
      */
-    fun OpenApi3.routeToPaths(): Map<String, Map<String, Path>> = paths
+    fun OpenApi3.groupByPathSegment(): GroupedPaths = paths
         .map { (name, path) -> name to path }
         .groupBy { it.first.uriToClassName() }
         .mapValues { it.value.toMap() }
+
+    /**
+     * Returns paths grouped by the first tag of their operations.
+     * The tag name is converted to PascalCase for use as a class name.
+     *
+     * If an operation has no tags, falls back to grouping by URI path segment.
+     * When multiple operations exist on a path, the first tag found (in order:
+     * GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD, TRACE) is used.
+     */
+    fun OpenApi3.routeToPathsByFirstTag(): GroupedPaths = paths
+        .map { (route, path) -> route to path }
+        .groupBy { (route, path) ->
+            path.firstOperationTagOrNull()?.toModelClassName() ?: route.uriToClassName()
+        }
+        .mapValues { (_, entries) -> entries.toMap() }
+
+    private fun Path.firstOperationTagOrNull(): String? {
+        val opsInStableOrder = listOfNotNull(
+            get, post, put, patch, delete, options, head, trace
+        )
+
+        return opsInStableOrder
+            .asSequence()
+            .mapNotNull { op -> op.tags?.firstOrNull() }
+            .firstOrNull()
+    }
 
     private fun String.uriToClassName(): String = toResourceNames().joinToString("-").toModelClassName()
 
