@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.clients
 
+import com.example.client.ApiConfiguration
 import com.example.client.CatalogsItemsClient
 import com.example.client.CatalogsSearchClient
 import com.example.client.ItemsClient
@@ -50,6 +51,8 @@ class KtorClientJacksonTest {
         wiremock.resetAll()
     }
 
+    private fun apiConfig() = ApiConfiguration(basePath = wiremock.baseUrl())
+
     private fun createHttpClient() = HttpClient(CIO) {
         install(ContentNegotiation) {
             jackson()
@@ -78,7 +81,8 @@ class KtorClientJacksonTest {
                     item = Item(id = "id-1", name = "item-a", description = "description-a", price = 123.45),
                     catalogId = "catalog-a",
                     randomNumber = 123,
-                    xRequestID = "request-id"
+                    xRequestID = "request-id",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Success<Item>>(result)
@@ -103,7 +107,8 @@ class KtorClientJacksonTest {
                     item = Item(id = "id-1", name = "item-a", description = "description-a", price = 123.45),
                     catalogId = "catalog-a",
                     randomNumber = 123,
-                    xRequestID = "request-id"
+                    xRequestID = "request-id",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Success<Item>>(result)
@@ -136,7 +141,8 @@ class KtorClientJacksonTest {
                     query = "query",
                     page = 10,
                     sort = SortOrder.DESC,
-                    xTracingID = "request-id-123"
+                    xTracingID = "request-id-123",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Success<List<Item>>>(result)
@@ -167,7 +173,8 @@ class KtorClientJacksonTest {
                 val result = client.searchCatalogItems(
                     catalogId = "catalog-a",
                     query = "query",
-                    listParam = listOf("value1", "value2", "value3")
+                    listParam = listOf("value1", "value2", "value3"),
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Success<List<Item>>>(result)
@@ -194,7 +201,7 @@ class KtorClientJacksonTest {
             val client = ItemsClient(createHttpClient())
 
             runBlocking {
-                val result = client.getItems()
+                val result = client.getItems(apiConfiguration = apiConfig())
 
                 assertInstanceOf<NetworkResult.Success<List<Item>>>(result)
             }
@@ -223,7 +230,8 @@ class KtorClientJacksonTest {
                 val result = client.getItems(
                     category = "electronics",
                     limit = 50,
-                    priceLimit = 99.99
+                    priceLimit = 99.99,
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Success<List<Item>>>(result)
@@ -265,7 +273,7 @@ class KtorClientJacksonTest {
             val client = ItemsClient(createHttpClient())
 
             runBlocking {
-                val result = client.getItems()
+                val result = client.getItems(apiConfiguration = apiConfig())
 
                 assertInstanceOf<NetworkResult.Success<List<Item>>>(result)
                 val items = result.data
@@ -304,7 +312,8 @@ class KtorClientJacksonTest {
                     item = Item(id = "id-1", name = "item-a", description = "description-a", price = 123.45),
                     catalogId = "catalog-a",
                     randomNumber = 123,
-                    xRequestID = "request-id"
+                    xRequestID = "request-id",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Success<Item>>(result)
@@ -339,7 +348,8 @@ class KtorClientJacksonTest {
                     item = Item(id = "id-1", name = "item-a", description = "description-a", price = 123.45),
                     catalogId = "catalog-a",
                     randomNumber = 123,
-                    xRequestID = "request-id"
+                    xRequestID = "request-id",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Success<Item>>(result)
@@ -358,7 +368,7 @@ class KtorClientJacksonTest {
             val client = NoContentClient(createHttpClient())
 
             runBlocking {
-                val result = client.getNoContent()
+                val result = client.getNoContent(apiConfiguration = apiConfig())
 
                 assertInstanceOf<NetworkResult.Success<Unit>>(result)
             }
@@ -381,7 +391,8 @@ class KtorClientJacksonTest {
                     item = Item(id = "id-1", name = "item-a", description = "description-a", price = 123.45),
                     catalogId = "catalog-a",
                     randomNumber = 123,
-                    xRequestID = "request-id"
+                    xRequestID = "request-id",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Failure>(result)
@@ -406,7 +417,8 @@ class KtorClientJacksonTest {
                     item = Item(id = "id-1", name = "item-a", description = "description-a", price = 123.45),
                     catalogId = "catalog-a",
                     randomNumber = 123,
-                    xRequestID = "request-id"
+                    xRequestID = "request-id",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Failure>(result)
@@ -431,7 +443,8 @@ class KtorClientJacksonTest {
                     item = Item(id = "id-1", name = "item-a", description = "description-a", price = 123.45),
                     catalogId = "catalog-a",
                     randomNumber = 123,
-                    xRequestID = "request-id"
+                    xRequestID = "request-id",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Failure>(result)
@@ -456,7 +469,8 @@ class KtorClientJacksonTest {
                     item = Item(id = "id-1", name = "item-a", description = "description-a", price = 123.45),
                     catalogId = "catalog-a",
                     randomNumber = 123,
-                    xRequestID = "request-id"
+                    xRequestID = "request-id",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Failure>(result)
@@ -481,7 +495,8 @@ class KtorClientJacksonTest {
                     item = Item(id = "id-1", name = "item-a", description = "description-a", price = 123.45),
                     catalogId = "catalog-a",
                     randomNumber = 123,
-                    xRequestID = "request-id"
+                    xRequestID = "request-id",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Failure>(result)
@@ -506,7 +521,8 @@ class KtorClientJacksonTest {
                     item = Item(id = "id-1", name = "item-a", description = "description-a", price = 123.45),
                     catalogId = "catalog-a",
                     randomNumber = 123,
-                    xRequestID = "request-id"
+                    xRequestID = "request-id",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Failure>(result)
@@ -532,7 +548,8 @@ class KtorClientJacksonTest {
                     item = Item(id = "id-1", name = "item-a", description = "description-a", price = 123.45),
                     catalogId = "catalog-a",
                     randomNumber = 123,
-                    xRequestID = "request-id"
+                    xRequestID = "request-id",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Failure>(result)
@@ -559,7 +576,8 @@ class KtorClientJacksonTest {
                     item = Item(id = "id-1", name = "item-a", description = "description-a", price = 123.45),
                     catalogId = "catalog-a",
                     randomNumber = 123,
-                    xRequestID = "request-id"
+                    xRequestID = "request-id",
+                    apiConfiguration = apiConfig()
                 )
 
                 assertInstanceOf<NetworkResult.Failure>(result)
@@ -585,7 +603,7 @@ class KtorClientJacksonTest {
 
             runBlocking {
                 val result = CatalogsSearchClient(createHttpClient())
-                    .searchCatalogItems(catalogId = "catalog-a", query = "query")
+                    .searchCatalogItems(catalogId = "catalog-a", query = "query", apiConfiguration = apiConfig())
 
                 assertInstanceOf<NetworkResult.Failure>(result)
                 assertInstanceOf<NetworkError.Serialization>(result.error)
@@ -605,7 +623,7 @@ class KtorClientJacksonTest {
 
             runBlocking {
                 val result = CatalogsSearchClient(createHttpClient())
-                    .searchCatalogItems(catalogId = "catalog-a", query = "query")
+                    .searchCatalogItems(catalogId = "catalog-a", query = "query", apiConfiguration = apiConfig())
 
                 assertInstanceOf<NetworkResult.Failure>(result)
                 assertInstanceOf<NetworkError.Serialization>(result.error)
@@ -624,7 +642,7 @@ class KtorClientJacksonTest {
 
             runBlocking {
                 val result = CatalogsSearchClient(createHttpClient())
-                    .searchCatalogItems(catalogId = "catalog-a", query = "query")
+                    .searchCatalogItems(catalogId = "catalog-a", query = "query", apiConfiguration = apiConfig())
 
                 assertInstanceOf<NetworkResult.Failure>(result)
                 assertInstanceOf<NetworkError.Serialization>(result.error)
@@ -645,7 +663,11 @@ class KtorClientJacksonTest {
             val client = CatalogsSearchClient(unreachableClient)
 
             runBlocking {
-                val result = client.searchCatalogItems(catalogId = "catalog-a", query = "query")
+                val result = client.searchCatalogItems(
+                    catalogId = "catalog-a",
+                    query = "query",
+                    apiConfiguration = ApiConfiguration(basePath = "")
+                )
 
                 assertInstanceOf<NetworkResult.Failure>(result)
                 assertInstanceOf<NetworkError.Network>(result.error)
@@ -671,7 +693,7 @@ class KtorClientJacksonTest {
             org.junit.jupiter.api.assertThrows<kotlinx.coroutines.CancellationException> {
                 runBlocking {
                     kotlinx.coroutines.withTimeout(100) {
-                        client.searchCatalogItems(catalogId = "catalog-a", query = "query")
+                        client.searchCatalogItems(catalogId = "catalog-a", query = "query", apiConfiguration = apiConfig())
                     }
                 }
             }

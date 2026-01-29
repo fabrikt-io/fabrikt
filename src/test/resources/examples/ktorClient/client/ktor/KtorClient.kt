@@ -8,6 +8,7 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.request.`get`
 import io.ktor.client.request.`header`
+import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -42,9 +43,12 @@ public class ItemsClient(
         limit: Int? = null,
         category: String? = null,
         priceLimit: Double? = null,
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<List<Item>> {
+        val basePath = apiConfiguration.basePath.trimEnd('/')
         val url =
             buildString {
+                append(basePath)
                 append("""/items""")
                 val params =
                     buildList {
@@ -59,6 +63,12 @@ public class ItemsClient(
             val response =
                 httpClient.`get`(url) {
                     `header`("Accept", "application/json")
+                    headers {
+                        apiConfiguration.customHeaders.forEach { (name, value) ->
+                            remove(name)
+                            append(name, value)
+                        }
+                    }
                 }
 
             if (response.status.isSuccess()) {
@@ -114,9 +124,12 @@ public class CatalogsItemsClient(
         randomNumber: Int,
         xRequestID: String,
         xTracingID: String? = null,
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Item> {
+        val basePath = apiConfiguration.basePath.trimEnd('/')
         val url =
             buildString {
+                append(basePath)
                 append("""/catalogs/$catalogId/items""")
                 val params =
                     buildList {
@@ -133,6 +146,12 @@ public class CatalogsItemsClient(
                     setBody(item)
                     `header`("X-Request-ID", xRequestID)
                     `header`("X-Tracing-ID", xTracingID)
+                    headers {
+                        apiConfiguration.customHeaders.forEach { (name, value) ->
+                            remove(name)
+                            append(name, value)
+                        }
+                    }
                 }
 
             if (response.status.isSuccess()) {
@@ -182,13 +201,21 @@ public class ItemsSubitemsClient(
     public suspend fun getSubItem(
         itemId: String,
         subItemId: String,
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Item> {
-        val url = """/items/$itemId/subitems/$subItemId"""
+        val basePath = apiConfiguration.basePath.trimEnd('/')
+        val url = basePath + """/items/$itemId/subitems/$subItemId"""
 
         return try {
             val response =
                 httpClient.`get`(url) {
                     `header`("Accept", "application/json")
+                    headers {
+                        apiConfiguration.customHeaders.forEach { (name, value) ->
+                            remove(name)
+                            append(name, value)
+                        }
+                    }
                 }
 
             if (response.status.isSuccess()) {
@@ -247,9 +274,12 @@ public class CatalogsSearchClient(
         sort: SortOrder? = null,
         listParam: List<String>? = null,
         xTracingID: String? = null,
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<List<Item>> {
+        val basePath = apiConfiguration.basePath.trimEnd('/')
         val url =
             buildString {
+                append(basePath)
                 append("""/catalogs/$catalogId/search""")
                 val params =
                     buildList {
@@ -266,6 +296,12 @@ public class CatalogsSearchClient(
                 httpClient.`get`(url) {
                     `header`("Accept", "application/json")
                     `header`("X-Tracing-ID", xTracingID)
+                    headers {
+                        apiConfiguration.customHeaders.forEach { (name, value) ->
+                            remove(name)
+                            append(name, value)
+                        }
+                    }
                 }
 
             if (response.status.isSuccess()) {
@@ -315,13 +351,21 @@ public class CatalogsItemsAvailabilityClient(
     public suspend fun getByCatalogIdAndItemId(
         catalogId: String,
         itemId: String,
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
-        val url = """/catalogs/$catalogId/items/$itemId/availability"""
+        val basePath = apiConfiguration.basePath.trimEnd('/')
+        val url = basePath + """/catalogs/$catalogId/items/$itemId/availability"""
 
         return try {
             val response =
                 httpClient.`get`(url) {
                     `header`("Accept", "application/json")
+                    headers {
+                        apiConfiguration.customHeaders.forEach { (name, value) ->
+                            remove(name)
+                            append(name, value)
+                        }
+                    }
                 }
 
             if (response.status.isSuccess()) {
@@ -367,13 +411,21 @@ public class CatalogsItemsAvailabilityClient(
     public suspend fun putByCatalogIdAndItemId(
         catalogId: String,
         itemId: String,
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
-        val url = """/catalogs/$catalogId/items/$itemId/availability"""
+        val basePath = apiConfiguration.basePath.trimEnd('/')
+        val url = basePath + """/catalogs/$catalogId/items/$itemId/availability"""
 
         return try {
             val response =
                 httpClient.put(url) {
                     `header`("Accept", "application/json")
+                    headers {
+                        apiConfiguration.customHeaders.forEach { (name, value) ->
+                            remove(name)
+                            append(name, value)
+                        }
+                    }
                 }
 
             if (response.status.isSuccess()) {
@@ -417,13 +469,20 @@ public class UptimeClient(
      * 	[NetworkResult.Success] with [kotlin.String] if the request was successful.
      * 	[NetworkResult.Failure] with a [NetworkError] if the request failed.
      */
-    public suspend fun getSystemUptime(): NetworkResult<String> {
-        val url = """/uptime"""
+    public suspend fun getSystemUptime(apiConfiguration: ApiConfiguration = ApiConfiguration()): NetworkResult<String> {
+        val basePath = apiConfiguration.basePath.trimEnd('/')
+        val url = basePath + """/uptime"""
 
         return try {
             val response =
                 httpClient.`get`(url) {
                     `header`("Accept", "application/json")
+                    headers {
+                        apiConfiguration.customHeaders.forEach { (name, value) ->
+                            remove(name)
+                            append(name, value)
+                        }
+                    }
                 }
 
             if (response.status.isSuccess()) {
@@ -467,13 +526,20 @@ public class NoContentClient(
      * 	[NetworkResult.Success] with [kotlin.Unit] if the request was successful.
      * 	[NetworkResult.Failure] with a [NetworkError] if the request failed.
      */
-    public suspend fun getNoContent(): NetworkResult<Unit> {
-        val url = """/no-content"""
+    public suspend fun getNoContent(apiConfiguration: ApiConfiguration = ApiConfiguration()): NetworkResult<Unit> {
+        val basePath = apiConfiguration.basePath.trimEnd('/')
+        val url = basePath + """/no-content"""
 
         return try {
             val response =
                 httpClient.`get`(url) {
                     `header`("Accept", "application/json")
+                    headers {
+                        apiConfiguration.customHeaders.forEach { (name, value) ->
+                            remove(name)
+                            append(name, value)
+                        }
+                    }
                 }
 
             if (response.status.isSuccess()) {
