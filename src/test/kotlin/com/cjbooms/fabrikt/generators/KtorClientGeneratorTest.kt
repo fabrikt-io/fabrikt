@@ -108,7 +108,7 @@ class KtorClientGeneratorTest {
             .clients
             .toSingleFile()
 
-        assertThat(clientCode).contains("fun appGetApplicationApiUsage()")
+        assertThat(clientCode).contains("fun appGetApplicationApiUsage(")
         assertThat(clientCode).doesNotContain("app.GetApplicationApiUsage")
     }
 }

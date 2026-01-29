@@ -7,6 +7,7 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.request.`get`
 import io.ktor.client.request.`header`
+import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -32,9 +33,12 @@ public class ExampleClient(
     public suspend fun getByPathB(
         pathB: String,
         queryB: String,
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
+        val basePath = apiConfiguration.basePath.trimEnd('/')
         val url =
             buildString {
+                append(basePath)
                 append("""/example/$pathB""")
                 val params =
                     buildList {
@@ -47,6 +51,12 @@ public class ExampleClient(
             val response =
                 httpClient.`get`(url) {
                     `header`("Accept", "application/json")
+                    headers {
+                        apiConfiguration.customHeaders.forEach { (name, value) ->
+                            remove(name)
+                            append(name, value)
+                        }
+                    }
                 }
 
             if (response.status.isSuccess()) {
@@ -90,9 +100,12 @@ public class ExampleClient(
     public suspend fun post(
         bodySomeObject: SomeObject,
         querySomeObject: String,
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
+        val basePath = apiConfiguration.basePath.trimEnd('/')
         val url =
             buildString {
+                append(basePath)
                 append("""/example""")
                 val params =
                     buildList {
@@ -107,6 +120,12 @@ public class ExampleClient(
                     `header`("Accept", "application/json")
                     `header`("Content-Type", "application/json")
                     setBody(bodySomeObject)
+                    headers {
+                        apiConfiguration.customHeaders.forEach { (name, value) ->
+                            remove(name)
+                            append(name, value)
+                        }
+                    }
                 }
 
             if (response.status.isSuccess()) {
