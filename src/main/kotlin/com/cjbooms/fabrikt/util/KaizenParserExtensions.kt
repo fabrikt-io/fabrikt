@@ -185,7 +185,11 @@ object KaizenParserExtensions {
         return allSchemas
             .filter { it.oneOfSchemas.isNotEmpty() }
             .mapNotNull { schema ->
-                if (schema.oneOfSchemas.toList().contains(this)) schema else null
+                if (schema.oneOfSchemas.toList().contains(this) &&
+                    schema.oneOfSchemas.map { it.safeName() }.contains(this.safeName()) // Guard against identical inlined schemas
+                )
+                    schema
+                else null
             }
             .toSet()
     }
