@@ -1,9 +1,12 @@
 package com.cjbooms.fabrikt.generators.controller
 
+import com.cjbooms.fabrikt.generators.GeneratorUtils.getBodySuccessResponses
+import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipleSuccessResponseSchemas
 import com.cjbooms.fabrikt.generators.model.ModelGenerator.Companion.toModelType
 import com.cjbooms.fabrikt.model.ControllerType
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
+import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.reprezen.kaizen.oasparser.model3.Response
 import com.reprezen.kaizen.oasparser.model3.SecurityRequirement
@@ -15,8 +18,25 @@ object ControllerGeneratorUtils {
      * This maps the OpenAPI response code with a ClassName object.
      * Pulling out the first response. This assumes first is happy path
      * may need to revisit if we want to have conditional responses
+     * 
+     * If multiple different schemas exist in success responses (2xx codes only):
+     * - Returns JsonNode if all content types are JSON-based (application/json, application/<*>+json)
+     * - Returns Any if any non-JSON content types are present
+     * This allows runtime handling of different types while maintaining JSON-specific handling when appropriate.
      */
     fun Operation.happyPathResponse(basePackage: String): TypeName {
+        // Check if there are multiple different schemas in success responses only
+        if (hasMultipleSuccessResponseSchemas()) {
+            // Check if all success response content types are JSON-based
+            val allJsonBased = getBodySuccessResponses()
+                .flatMap { it.contentMediaTypes.keys }
+                .all { contentType -> 
+                    contentType.contains("json", ignoreCase = true)
+                }
+            
+            return if (allJsonBased) JsonNode::class.asTypeName() else Any::class.asTypeName()
+        }
+        
         // Map of response code to nullable name of schema
         val responseDetails = happyPathResponseObject()
         return responseDetails

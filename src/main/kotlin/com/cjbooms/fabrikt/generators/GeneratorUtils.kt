@@ -157,7 +157,7 @@ object GeneratorUtils {
     private fun Operation.getBodyResponses(): List<Response> =
         this.responses.filter { it.key != "default" }.values.filter(Response::hasContentMediaTypes)
 
-    private fun Operation.getBodySuccessResponses(): List<Response> =
+    fun Operation.getBodySuccessResponses(): List<Response> =
         getSuccessResponses().values.filter(Response::hasContentMediaTypes)
 
     private fun Operation.getSuccessResponses(): Map<String, Response> =

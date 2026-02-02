@@ -26,7 +26,8 @@ class GeneratedCodeAsserter(val generatedCode: String) {
             if (SHOULD_OVERWRITE_EXAMPLES) {
                 println("Mismatch found. Attempting to fix the source file.")
                 val sourceFilePath: Path = KPath("src", "test", "resources", resourcePath)
-                println("Overwriting existing file: $sourceFilePath")
+                println("Overwriting existing, or creating absent, file: $sourceFilePath")
+                sourceFilePath.parent?.let { java.nio.file.Files.createDirectories(it) }
                 sourceFilePath.writeText(generatedCode)
             }
         }
@@ -37,10 +38,10 @@ class GeneratedCodeAsserter(val generatedCode: String) {
      * @param resourcePath The path to the resource file to compare against.
      */
     fun isEqualTo(resourcePath: String) {
-        val expectedText = readTextResource(resourcePath)
         try {
+            val expectedText = readTextResource(resourcePath)
             assertThat(generatedCode).isEqualTo(expectedText)
-        } catch (ex: AssertionError) {
+        } catch (ex: Exception) {
             maybeGenerateMissingFile(resourcePath, generatedCode)
             if (!SHOULD_SKIP_ERRORS) {
                 throw ex

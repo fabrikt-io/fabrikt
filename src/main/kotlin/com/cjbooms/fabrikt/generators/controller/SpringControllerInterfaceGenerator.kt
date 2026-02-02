@@ -135,6 +135,7 @@ class SpringControllerInterfaceGenerator(
     private fun FunSpec.Builder.addSpringFunAnnotation(op: Operation, verb: String, path: String): FunSpec.Builder {
         val produces = op.responses
             .flatMap { it.value.contentMediaTypes.keys }
+            .distinct()
             .toTypedArray()
 
         val consumes = op.requestBody

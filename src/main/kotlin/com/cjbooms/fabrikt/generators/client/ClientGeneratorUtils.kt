@@ -3,6 +3,7 @@ package com.cjbooms.fabrikt.generators.client
 import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.GeneratorUtils
+import com.cjbooms.fabrikt.generators.GeneratorUtils.getBodySuccessResponses
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaTypeKey
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasAnySuccessResponseSchemas
@@ -51,14 +52,24 @@ object ClientGeneratorUtils {
      * Gives the Kotlin return type for an API call based on the Content-Types specified in the Operation.
      * If multiple media types are found, but their response schema is the same, then the first media type is used and
      * kotlin model for the schema is returned.
-     * If there are several possible response schemas, then the return type is JsonNode, so they are all covered.
+     *
+     * If there are several possible response schemas in success responses (2xx codes):
+     * - Returns JsonNode if all content types are JSON-based (application/json, application/<*>+json)
+     * - Returns Any if any non-JSON content types are present (text/csv, application/xml, etc.)
      * If no response body is found, Unit is returned.
      */
      fun Operation.getReturnType(): Any {
         return if (!hasAnySuccessResponseSchemas()) {
             Unit::class
         } else if (hasMultipleSuccessResponseSchemas()) {
-            JsonNode::class
+            // Check if all success response content types are JSON-based
+            val allJsonBased = getBodySuccessResponses()
+                .flatMap { it.contentMediaTypes.keys }
+                .all { contentType -> 
+                    contentType.contains("json", ignoreCase = true)
+                }
+            
+            if (allJsonBased) JsonNode::class else Any::class
         } else {
             this.getPrimaryContentMediaType()?.let {
                 KotlinTypeInfo.from(it.value.schema)
