@@ -8,6 +8,6 @@ public data class SingleRequiredFieldNullableObject(
   @param:JsonProperty("requiredNullableRef")
   @get:JsonProperty("requiredNullableRef")
   @get:Valid
-  @param:JsonInclude(JsonInclude.Include.NON_NULL)
-  public val requiredNullableRef: OneObject? = null,
+  @param:JsonInclude(JsonInclude.Include.ALWAYS)
+  public val requiredNullableRef: OneObject?,
 )

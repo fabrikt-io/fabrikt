@@ -26,6 +26,8 @@ data class ClassSettings(
 
     val isMergePatchPattern = extensions["x-json-merge-patch"] as? Boolean ?: false
     val addJsonIncludeNonNullAnnotation = extensions["x-jackson-include-non-null"] as? Boolean ?: false
+    val nullableObjectRefs: Set<String> = (extensions["x-FABRIKT-INTERNAL-nullable"] as? List<*>)?.map { it.toString() }?.toSet()
+        ?: emptySet()
 
     enum class PolymorphyType {
         NONE,
@@ -55,7 +57,7 @@ object PropertyUtils {
                 ClassName(
                     "org.openapitools.jackson.nullable",
                     "JsonNullable",
-                ).parameterizedBy(type.copy(nullable = this.schema.isNullable))
+                ).parameterizedBy(type.copy(nullable = isSchemaNullable(classSettings)))
             } else {
                 type
             }
@@ -122,18 +124,18 @@ object PropertyUtils {
                         serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
                     }
                     serializationAnnotations.addProperty(property, oasKey, typeInfo)
-                    property.addValidationAnnotations(this, validationAnnotations)
+                    property.addValidationAnnotations(this, validationAnnotations, classSettings)
                 }
 
                 ClassSettings.PolymorphyType.NONE -> {
                     serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
                     serializationAnnotations.addProperty(property, oasKey, typeInfo)
-                    property.addValidationAnnotations(this, validationAnnotations)
+                    property.addValidationAnnotations(this, validationAnnotations, classSettings)
                 }
 
                 ClassSettings.PolymorphyType.ONE_OF -> {
                     serializationAnnotations.addProperty(property, oasKey, typeInfo)
-                    property.addValidationAnnotations(this, validationAnnotations)
+                    property.addValidationAnnotations(this, validationAnnotations, classSettings)
                 }
             }
 
@@ -172,12 +174,14 @@ object PropertyUtils {
                     JacksonNullabilityMode.STRICT
                 )
 
-                if (enforceRequiredNullable && isRequired && schema.isNullable) {
+                val isSchemaNullable = isSchemaNullable(classSettings)
+
+                if (enforceRequiredNullable && isRequired && isSchemaNullable) {
                     property.addAnnotation(JacksonMetadata.JSON_INCLUDE_ALWAYS)
                 }
 
                 if (!isRequired) {
-                    if (classSettings.addJsonIncludeNonNullAnnotation || (enforceNonNull && !schema.isNullable)) {
+                    if (classSettings.addJsonIncludeNonNullAnnotation || (enforceNonNull && !isSchemaNullable)) {
                         property.addAnnotation(JacksonMetadata.JSON_INCLUDE_NON_NULL)
                     }
                     if (oasDefault != null) {
@@ -243,11 +247,14 @@ object PropertyUtils {
         }
     }
 
-    fun PropertyInfo.isNullable() = when (this) {
-        is PropertyInfo.Field -> !isRequired && schema.default == null || schema.isNullable
+    fun PropertyInfo.isSchemaNullable(classSettings: ClassSettings): Boolean =
+        schema.isNullable || classSettings.nullableObjectRefs.contains(name)
+
+    fun PropertyInfo.isNullable(classSettings: ClassSettings) = when (this) {
+        is PropertyInfo.Field -> !isRequired && schema.default == null || isSchemaNullable(classSettings)
         is PropertyInfo.ListField, is PropertyInfo.MapField,
         is PropertyInfo.ObjectRefField, is PropertyInfo.ObjectInlinedField ->
-            !isRequired || schema.isNullable
+            !isRequired || isSchemaNullable(classSettings)
         else -> !isRequired
     }
 
@@ -272,8 +279,9 @@ object PropertyUtils {
     private fun PropertySpec.Builder.addValidationAnnotations(
         info: PropertyInfo,
         validationAnnotations: ValidationAnnotations,
+        classSettings: ClassSettings,
     ) {
-        if (!info.isNullable()) maybeAddAnnotation(validationAnnotations.nonNullAnnotation)
+        if (!info.isNullable(classSettings)) maybeAddAnnotation(validationAnnotations.nonNullAnnotation)
         when (info) {
             is PropertyInfo.Field -> {
                 // Regex validation pattern to validate string input

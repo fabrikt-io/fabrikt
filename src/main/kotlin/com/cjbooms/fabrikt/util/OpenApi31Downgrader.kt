@@ -103,17 +103,11 @@ object OpenApi31Downgrader {
                             // referenced schema object or building a new nullable version of that object, we can remove
                             // the field from 'required', which has the same effect on the generated code.
                             if (objectNode.has("\$ref")) {
-                                val requiredProperties = schemaObject?.get("required") as? ArrayNode
-                                val newRequiredProperties =
-                                    requiredProperties?.filter { it.textValue() != propertyName }
-                                if (newRequiredProperties.isNullOrEmpty()) {
-                                    schemaObject?.remove("required")
-                                } else {
-                                    schemaObject?.replace(
-                                        "required",
-                                        YamlUtils.objectMapper.valueToTree(newRequiredProperties)
-                                    )
-                                }
+                                val nullableRefProperties = schemaObject?.get("x-FABRIKT-INTERNAL-nullable") as? ArrayNode
+                                    ?: schemaObject?.arrayNode().also {
+                                        schemaObject?.replace("x-FABRIKT-INTERNAL-nullable", it)
+                                    }
+                                nullableRefProperties?.add(propertyName)
                             }
                             return
                         }

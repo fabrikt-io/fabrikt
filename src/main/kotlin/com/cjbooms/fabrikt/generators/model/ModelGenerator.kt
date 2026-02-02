@@ -812,7 +812,7 @@ class ModelGenerator(
                 type = toModelType(
                     packages.base,
                     it.typeInfo,
-                    it.isNullable(),
+                    it.isNullable(classType),
                 ),
                 parameterizedType = toClassName(
                     packages.base,
