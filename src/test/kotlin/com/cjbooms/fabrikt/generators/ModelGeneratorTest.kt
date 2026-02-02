@@ -107,7 +107,7 @@ class ModelGeneratorTest {
         if (testCaseName == "arrays") {
             MutableSettings.addOption(JacksonNullabilityMode.ENFORCE_REQUIRED_NULLABLE)
         }
-        if (testCaseName == "optionalVsRequired") {
+        if (testCaseName == "optionalVsRequired" || testCaseName == "openapi310") {
             MutableSettings.addOption(JacksonNullabilityMode.STRICT)
         }
         val basePackage = "examples.${testCaseName.replace("/", ".")}"

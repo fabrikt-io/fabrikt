@@ -1,5 +1,6 @@
 package examples.openapi310.models
 
+import com.fasterxml.jackson.`annotation`.JsonInclude
 import com.fasterxml.jackson.`annotation`.JsonProperty
 import javax.validation.Valid
 import kotlin.Any
@@ -12,18 +13,22 @@ public data class NewNullableFormat(
    */
   @param:JsonProperty("simpleNullable")
   @get:JsonProperty("simpleNullable")
+  @param:JsonInclude(JsonInclude.Include.ALWAYS)
   public val simpleNullable: String?,
   @param:JsonProperty("objectNullable")
   @get:JsonProperty("objectNullable")
   @get:Valid
+  @param:JsonInclude(JsonInclude.Include.NON_NULL)
   public val objectNullable: OneObject? = null,
   @param:JsonProperty("requiredNullableRef")
   @get:JsonProperty("requiredNullableRef")
   @get:Valid
+  @param:JsonInclude(JsonInclude.Include.NON_NULL)
   public val requiredNullableRef: OneObject? = null,
   @param:JsonProperty("singleRequiredFieldNullableRef")
   @get:JsonProperty("singleRequiredFieldNullableRef")
   @get:Valid
+  @param:JsonInclude(JsonInclude.Include.NON_NULL)
   public val singleRequiredFieldNullableRef: SingleRequiredFieldNullableObject? = null,
   @param:JsonProperty("complexNullable")
   @get:JsonProperty("complexNullable")
