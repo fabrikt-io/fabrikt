@@ -5,7 +5,7 @@ import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKdoc
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
-import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.happyPathResponse
+import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.toSuccessResponseType
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.methodName
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.securitySupport
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringAnnotations
@@ -68,7 +68,7 @@ class SpringControllerInterfaceGenerator(
         verb: String,
     ): FunSpec {
         val methodName = methodName(op, verb, path.pathString.isSingleResource())
-        val returnType = op.happyPathResponse(packages.base)
+        val returnType = op.toSuccessResponseType(packages.base)
         val parameters = op.toIncomingParameters(packages.base, path.parameters, emptyList())
         val globalSecurity = api.openApi3.securityRequirements.securitySupport()
 

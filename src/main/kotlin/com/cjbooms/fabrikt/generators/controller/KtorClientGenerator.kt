@@ -7,7 +7,7 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKCodeName
 import com.cjbooms.fabrikt.generators.client.ClientGenerator
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
-import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.happyPathResponse
+import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.toSuccessResponseType
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
 import com.cjbooms.fabrikt.model.Destinations
@@ -63,7 +63,7 @@ class KtorClientGenerator(
 
                     val (pathParams, queryParams, headerParams, bodyParams) = params.splitByType()
 
-                    val responseType = operation.happyPathResponse(packages.base)
+                    val responseType = operation.toSuccessResponseType(packages.base)
                     val returnType = networkResultClassName.parameterizedBy(responseType)
 
                     // build client function with NetworkResult<T> return type
@@ -303,9 +303,9 @@ class KtorClientGenerator(
         }
 
         // document response
-        val happyPathResponse = operation.happyPathResponse(packages.base)
+        val toSuccessResponseType = operation.toSuccessResponseType(packages.base)
         kDoc.add("\nReturns:\n")
-        kDoc.add("\t[NetworkResult.Success] with [%L] if the request was successful.\n", happyPathResponse.toString())
+        kDoc.add("\t[NetworkResult.Success] with [%L] if the request was successful.\n", toSuccessResponseType.toString())
         kDoc.add("\t[NetworkResult.Failure] with a [NetworkError] if the request failed.\n")
 
         return kDoc.build()

@@ -7,7 +7,7 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.splitByType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKCodeName
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.SecuritySupport
-import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.happyPathResponse
+import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.toSuccessResponseType
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.securitySupport
 import com.cjbooms.fabrikt.model.BodyParameter
 import com.cjbooms.fabrikt.model.ControllerLibraryType
@@ -144,13 +144,13 @@ class KtorControllerInterfaceGenerator(
 
         builder.addKdoc(buildControllerFunKdoc(operation, params))
 
-        if (operation.happyPathResponse(packages.base).isUnit()) {
+        if (operation.toSuccessResponseType(packages.base).isUnit()) {
             builder.addParameter("call", ClassName("io.ktor.server.application", "ApplicationCall"))
         } else {
             builder.addParameter(
                 "call",
                 ClassName(packages.controllers, TYPED_APPLICATION_CALL_CLASS_NAME)
-                    .parameterizedBy(operation.happyPathResponse(packages.base))
+                    .parameterizedBy(operation.toSuccessResponseType(packages.base))
             )
         }
 
@@ -264,7 +264,7 @@ class KtorControllerInterfaceGenerator(
             listOf(headerParams, pathParams, queryParams, bodyParams).asSequence().flatten().map { it.name }
                 .joinToString(", ")
 
-        if (operation.happyPathResponse(packages.base).isUnit()) {
+        if (operation.toSuccessResponseType(packages.base).isUnit()) {
             builder.addStatement(
                 "controller.%L(%L%M)",
                 methodName,
@@ -305,14 +305,14 @@ class KtorControllerInterfaceGenerator(
         }
 
         // document the response
-        val happyPathResponse = operation.happyPathResponse(packages.base)
-        if (happyPathResponse.isUnit()) {
+        val toSuccessResponseType = operation.toSuccessResponseType(packages.base)
+        if (toSuccessResponseType.isUnit()) {
             kDoc.add("Route is expected to respond with status ${operation.responses.keys.first()}.\n")
             kDoc.add("Use [%M] to send the response.\n\n", MemberName("io.ktor.server.response", "respond", isExtension = true))
         } else {
             kDoc.add(
                 "Route is expected to respond with [%L].\nUse [%M] to send the response.\n\n",
-                happyPathResponse.toString(),
+                toSuccessResponseType.toString(),
                 MemberName(ClassName(packages.controllers, TYPED_APPLICATION_CALL_CLASS_NAME), "respondTyped")
             )
         }
@@ -321,7 +321,7 @@ class KtorControllerInterfaceGenerator(
         parameters.forEach {
             kDoc.add("@param %L %L\n", it.name.toKCodeName(), it.description?.trimIndent().orEmpty()).build()
         }
-        if (happyPathResponse.isUnit()) {
+        if (toSuccessResponseType.isUnit()) {
             kDoc.add("@param call The Ktor application call\n")
         } else {
             kDoc.add("@param call Decorated ApplicationCall with additional typed respond methods\n",)
