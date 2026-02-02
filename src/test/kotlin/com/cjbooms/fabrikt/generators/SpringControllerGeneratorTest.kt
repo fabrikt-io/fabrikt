@@ -48,7 +48,7 @@ class SpringControllerGeneratorTest {
         "modelSuffix",
         "unsupportedInlinedDefinitions",
         "httpStatusCodeRangeDefinition",
-        "multiMediaType"
+        "multiMediaType",
     )
 
     private fun setupGithubApiTestEnv(annotations: ValidationAnnotations = JavaxValidationAnnotations) {

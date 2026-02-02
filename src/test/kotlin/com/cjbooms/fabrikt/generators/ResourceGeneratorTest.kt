@@ -19,7 +19,7 @@ import java.util.stream.Stream
 class ResourceGeneratorTest {
 
     private fun testCases(): Stream<String> = Stream.of(
-        "githubApi"
+        "githubApi",
     )
 
     @BeforeEach

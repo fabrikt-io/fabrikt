@@ -69,7 +69,7 @@ class ModelGeneratorTest {
         "binary",
         "oneOfMarkerInterface",
         "untypedObject",
-        "primitiveTypes"
+        "primitiveTypes",
     )
 
     @BeforeEach
