@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt.generators.controller
 
 import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.configurations.Packages
+import com.cjbooms.fabrikt.generators.GeneratorUtils.groupingStrategyFrom
 import com.cjbooms.fabrikt.generators.GeneratorUtils.isUnit
 import com.cjbooms.fabrikt.generators.GeneratorUtils.splitByType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
@@ -21,8 +22,9 @@ import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
+import com.cjbooms.fabrikt.util.GroupingStrategy
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSingleResource
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPaths
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupedPaths
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.toUpperCase
 import com.reprezen.kaizen.oasparser.model3.Operation
@@ -60,8 +62,11 @@ class KtorControllerInterfaceGenerator(
     private val api: SourceApi,
     private val options: Set<ControllerCodeGenOptionType> = emptySet(),
 ) : ControllerInterfaceGenerator {
+    private val groupingStrategy: GroupingStrategy
+        get() = groupingStrategyFrom(options)
+
     override fun generate(): KtorControllers {
-        val controllerInterfaces = api.openApi3.routeToPaths().map { (resourceName, paths) ->
+        val controllerInterfaces = api.openApi3.groupedPaths(groupingStrategy).map { (resourceName, paths) ->
             val controllerBuilder = TypeSpec.interfaceBuilder(ControllerGeneratorUtils.controllerName(resourceName))
 
             val routeFunBuilder = FunSpec.builder("${resourceName.camelCase()}Routes")

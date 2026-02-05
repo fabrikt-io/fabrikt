@@ -17,8 +17,8 @@ import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPaths
 import com.github.javaparser.utils.CodeGenerationUtils
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupByPathSegment
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -41,7 +41,7 @@ class KtorClientGenerator(
     private val networkErrorClassName = ClassName(packages.client, "NetworkError")
 
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
-        val resources: List<TypeSpec> = api.openApi3.routeToPaths().flatMap { (resourceName, paths) ->
+        val resources: List<TypeSpec> = api.openApi3.groupByPathSegment().flatMap { (resourceName, paths) ->
             val clientClassBuilder = TypeSpec.classBuilder(resourceName + "Client")
                 .addProperty(
                     PropertySpec.builder("httpClient", ClassName("io.ktor.client", "HttpClient"))

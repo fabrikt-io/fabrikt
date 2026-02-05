@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.generators
 
+import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.generators.model.ModelGenerator.Companion.toModelType
 import com.cjbooms.fabrikt.model.BodyParameter
 import com.cjbooms.fabrikt.model.HeaderParam
@@ -8,6 +9,7 @@ import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
+import com.cjbooms.fabrikt.util.GroupingStrategy
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeName
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.NormalisedString.toKotlinParameterName
@@ -289,4 +291,11 @@ object GeneratorUtils {
     }
 
     fun TypeName.isUnit(): Boolean = this == Unit::class.asTypeName()
+
+    fun groupingStrategyFrom(options: Set<ControllerCodeGenOptionType>): GroupingStrategy =
+        if (ControllerCodeGenOptionType.GROUP_BY_TAG in options) {
+            GroupingStrategy.BY_FIRST_TAG
+        } else {
+            GroupingStrategy.BY_FIRST_PATH_SEGMENT
+        }
 }
