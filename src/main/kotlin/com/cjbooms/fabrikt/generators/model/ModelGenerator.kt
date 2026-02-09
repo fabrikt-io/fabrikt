@@ -147,6 +147,7 @@ class ModelGenerator(
                         typeInfo.parameterizedType,
                     ),
                 )
+
                 is KotlinTypeInfo.SimpleTypedAdditionalProperties -> createMutableMapOfStringToType(
                     toModelType(
                         basePackage,
@@ -197,12 +198,14 @@ class ModelGenerator(
             val properties = schemaInfo.schema.topLevelProperties(HTTP_SETTINGS, api, schemaInfo.schema)
             when {
                 properties.isNotEmpty() ||
-                schemaInfo.typeInfo is KotlinTypeInfo.Enum ||
-                schemaInfo.schema.findOneOfSuperInterface(schemas.map { it.schema }).isNotEmpty() -> {
+                    schemaInfo.typeInfo is KotlinTypeInfo.Enum ||
+                    schemaInfo.schema.findOneOfSuperInterface(schemas.map { it.schema }).isNotEmpty() -> {
                     val primaryModel = buildPrimaryModel(api, schemaInfo, properties, schemas)
-                    val inlinedModels = buildInLinedModels(properties, schemaInfo.schema, schemaInfo.schema.getDocumentUrl())
+                    val inlinedModels =
+                        buildInLinedModels(properties, schemaInfo.schema, schemaInfo.schema.getDocumentUrl())
                     listOf(primaryModel) + inlinedModels
                 }
+
                 schemaInfo.typeInfo is KotlinTypeInfo.Array -> {
                     buildInlinedListDefinition(
                         schema = schemaInfo.schema,
@@ -211,6 +214,7 @@ class ModelGenerator(
                         apiDocUrl = schemaInfo.schema.getDocumentUrl(),
                     )
                 }
+
                 else -> {
                     emptyList()
                 }
@@ -276,8 +280,6 @@ class ModelGenerator(
         }
     }
 
-
-
     private fun buildInLinedModels(
         topLevelProperties: Collection<PropertyInfo>,
         enclosingSchema: Schema,
@@ -293,6 +295,7 @@ class ModelGenerator(
                         it.isInherited -> {
                             emptySet() // Rely on the parent definition
                         }
+
                         it.schema.isOneOfSuperInterface() && SEALED_INTERFACES_FOR_ONE_OF in options -> {
                             setOf(
                                 oneOfSuperInterface(
@@ -304,6 +307,7 @@ class ModelGenerator(
                                 )
                             )
                         }
+
                         else -> {
                             val props = it.schema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, enclosingSchema)
                             val currentModel = standardDataClass(
@@ -327,9 +331,16 @@ class ModelGenerator(
                     if (it.schema.isComplexTypedAdditionalProperties("additionalProperties")) {
                         setOf(
                             standardDataClass(
-                                modelName = ModelNameRegistry.getOrRegister(it.schema, valueSuffix = it.schema.isInlinedTypedAdditionalProperties()),
+                                modelName = ModelNameRegistry.getOrRegister(
+                                    it.schema,
+                                    valueSuffix = it.schema.isInlinedTypedAdditionalProperties()
+                                ),
                                 schemaName = it.name,
-                                properties = it.schema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, enclosingSchema),
+                                properties = it.schema.topLevelProperties(
+                                    HTTP_SETTINGS,
+                                    sourceApi.openApi3,
+                                    enclosingSchema
+                                ),
                                 schema = it.schema,
                                 oneOfInterfaces = emptySet(),
                             ),
@@ -351,6 +362,7 @@ class ModelGenerator(
                     } else {
                         buildInlinedListDefinition(it.schema, it.name, enclosingSchema, apiDocUrl)
                     }
+
                 is PropertyInfo.OneOfAny -> emptySet()
             }
         }
@@ -498,9 +510,15 @@ class ModelGenerator(
         if (mapField.schema.additionalPropertiesSchema.isComplexTypedAdditionalProperties("additionalProperties")) {
             val schema = mapField.schema.additionalPropertiesSchema
             standardDataClass(
-                modelName = ModelNameRegistry.getOrRegister(schema, valueSuffix = schema.isInlinedTypedAdditionalProperties()),
+                modelName = ModelNameRegistry.getOrRegister(
+                    schema,
+                    valueSuffix = schema.isInlinedTypedAdditionalProperties()
+                ),
                 schemaName = schema.safeName(),
-                properties = mapField.schema.additionalPropertiesSchema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3),
+                properties = mapField.schema.additionalPropertiesSchema.topLevelProperties(
+                    HTTP_SETTINGS,
+                    sourceApi.openApi3
+                ),
                 schema = schema,
                 oneOfInterfaces = emptySet(),
             )
@@ -616,7 +634,7 @@ class ModelGenerator(
         if (discriminator != null && discriminator.propertyName != null) {
             serializationAnnotations.addBasePolymorphicTypeAnnotation(interfaceBuilder, discriminator.propertyName)
 
-            val mappings = getDiscriminatorMappingsOrDefault(discriminator, members, allSchemas, modelName)
+            val mappings = getFlattenedDiscriminatorMappings(discriminator, members, allSchemas, modelName)
 
             val kotlinMappings = mappings.mapValues { (_, schema) ->
                 toModelType(
@@ -637,6 +655,38 @@ class ModelGenerator(
             .addMicronautReflectionAnnotation()
 
         return interfaceBuilder.build()
+    }
+
+    private fun getFlattenedDiscriminatorMappings(
+        discriminator: Discriminator,
+        members: List<Schema>,
+        allSchemas: List<SchemaInfo>,
+        modelName: String
+    ): Map<String, SchemaInfo> {
+        val directMappings = getDiscriminatorMappingsOrDefault(discriminator, members, allSchemas, modelName)
+
+        // Expand mappings for members that are themselves oneOf sealed interfaces
+        val expandedMappings = directMappings.flatMap { (key, schemaInfo) ->
+            val schema = schemaInfo.schema
+            if (schema.isOneOfSuperInterface() &&
+                schema.discriminator != null &&
+                schema.discriminator.propertyName == discriminator.propertyName
+            ) {
+                val nestedMappings = getDiscriminatorMappingsOrDefault(
+                    discriminator = schema.discriminator,
+                    members = schema.oneOfSchemas,
+                    allSchemas = allSchemas,
+                    modelName = schema.name
+                )
+                nestedMappings.entries.map { (nestedKey, nestedSchema) ->
+                    nestedKey to nestedSchema
+                }
+            } else {
+                listOf(key to schemaInfo)
+            }
+        }.toMap()
+
+        return expandedMappings
     }
 
     private fun getDiscriminatorMappingsOrDefault(
@@ -908,7 +958,12 @@ class ModelGenerator(
     private fun List<SchemaInfo>.filterByExternalRefResolutionMode(
         externalReferences: Map.Entry<String, MutableSet<String>>,
     ) = when (externalRefResolutionMode) {
-            ExternalReferencesResolutionMode.TARGETED -> this.filter { apiSchema -> externalReferences.value.contains(apiSchema.name) }
-            else -> this
+        ExternalReferencesResolutionMode.TARGETED -> this.filter { apiSchema ->
+            externalReferences.value.contains(
+                apiSchema.name
+            )
         }
+
+        else -> this
+    }
 }

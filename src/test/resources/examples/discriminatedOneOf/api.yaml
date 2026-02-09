@@ -114,3 +114,69 @@ components:
       properties:
         type:
           type: string
+    
+    # Auto-flattened nested oneOf pattern (like wardrobeApi)
+    # Test has no explicit mapping, will auto-flatten YTest -> YTest1, YTest2
+    SomeRequest:
+      type: object
+      properties:
+        id:
+          type: number
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/Test"
+      required:
+        - id
+    Test:
+      oneOf:
+        - $ref: "#/components/schemas/XTest"
+        - $ref: "#/components/schemas/YTest"
+      discriminator:
+        propertyName: type
+        mapping:
+          X: '#/components/schemas/XTest'
+          Y1: '#/components/schemas/YTest1'
+          Y2: '#/components/schemas/YTest2'
+    XTest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - X
+        alt:
+          type: string
+      required:
+        - type
+    YTest:
+      oneOf:
+        - $ref: "#/components/schemas/YTest1"
+        - $ref: "#/components/schemas/YTest2"
+      discriminator:
+        propertyName: type
+        mapping:
+          Y1: '#/components/schemas/YTest1'
+          Y2: '#/components/schemas/YTest2'
+    YTest1:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - Y1
+        alt:
+          type: string
+      required:
+        - type
+    YTest2:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - Y2
+        alt:
+          type: string
+      required:
+        - type

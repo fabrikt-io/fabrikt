@@ -91,4 +91,26 @@ class NestedOneOfTest {
         assertThat(result.state).isEqualTo(StateB1(mode = StateB1Mode.MODE1, status = Status.B1))
         assertThat(result.state).isInstanceOf(StateB::class.java)
     }
+
+    @Test
+    fun `auto-flatten - must deserialize YTest1 from Test interface`() {
+        // Key test: Test auto-flattened to include YTest1 directly
+        // JSON uses discriminator value "YTest1" which maps to concrete type
+        val json = """{"type": "Y1", "alt": "test"}"""
+        
+        val result = objectMapper.readValue(json, com.example.oneof.models.Test::class.java)
+        assertThat(result).isInstanceOf(YTest1::class.java)
+        assertThat(result).isInstanceOf(YTest::class.java)
+    }
+    
+    @Test
+    fun `auto-flatten - SomeRequest has List of Test not Any`() {
+        val json = """{"id": 123, "events": [{"type": "Y1", "alt": "test"}]}"""
+        
+        val result = objectMapper.readValue(json, SomeRequest::class.java)
+        assertThat(result.events).isNotNull
+        assertThat(result.events).hasSize(1)
+        assertThat(result.events!![0]).isInstanceOf(YTest1::class.java)
+        assertThat(result.events!![0]).isInstanceOf(YTest::class.java)
+    }
 }

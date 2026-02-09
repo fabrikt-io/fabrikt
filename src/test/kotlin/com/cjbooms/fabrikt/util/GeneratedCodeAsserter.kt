@@ -1,7 +1,6 @@
 package com.cjbooms.fabrikt.util
 
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.SHOULD_OVERWRITE_EXAMPLES
-import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.SHOULD_SKIP_ERRORS
 import com.cjbooms.fabrikt.util.ResourceHelper.readTextResource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -15,8 +14,6 @@ class GeneratedCodeAsserter(val generatedCode: String) {
     companion object {
         // Set this to true to overwrite the expected files with the generated code when they don't match
         const val SHOULD_OVERWRITE_EXAMPLES = false
-        // Set this to true to skip failures and fix multiple files
-        const val SHOULD_SKIP_ERRORS = false
 
         fun assertThatGenerated(generatedCode: String): GeneratedCodeAsserter = GeneratedCodeAsserter(generatedCode)
 
@@ -43,7 +40,7 @@ class GeneratedCodeAsserter(val generatedCode: String) {
             assertThat(generatedCode).isEqualTo(expectedText)
         } catch (ex: Throwable) {
             maybeGenerateMissingFile(resourcePath, generatedCode)
-            if (!SHOULD_SKIP_ERRORS) {
+            if (!SHOULD_OVERWRITE_EXAMPLES) {
                 throw ex
             }
         }
@@ -54,7 +51,7 @@ class GeneratedCodeAsserter(val generatedCode: String) {
             fail(failureMessage + expectedPath)
         } catch (ex: AssertionError) {
             maybeGenerateMissingFile(expectedPath, generatedCode)
-            if (!SHOULD_SKIP_ERRORS) {
+            if (!SHOULD_OVERWRITE_EXAMPLES) {
                 throw ex
             }
         }
@@ -65,7 +62,6 @@ class OverWriteProtectionTest {
     @Test
     fun `should fail if the overwrite files is set to true to prevent accidental commit`() {
         assertThat(SHOULD_OVERWRITE_EXAMPLES).isFalse()
-        assertThat(SHOULD_SKIP_ERRORS).isFalse()
     }
 }
 

@@ -1,4 +1,4 @@
-package examples.wardrobeApi.models
+package examples.discriminatedOneOf.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
 import java.math.BigDecimal
