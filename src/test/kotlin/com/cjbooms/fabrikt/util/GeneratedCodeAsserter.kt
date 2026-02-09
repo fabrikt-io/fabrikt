@@ -41,7 +41,7 @@ class GeneratedCodeAsserter(val generatedCode: String) {
         try {
             val expectedText = readTextResource(resourcePath)
             assertThat(generatedCode).isEqualTo(expectedText)
-        } catch (ex: Exception) {
+        } catch (ex: Throwable) {
             maybeGenerateMissingFile(resourcePath, generatedCode)
             if (!SHOULD_SKIP_ERRORS) {
                 throw ex
