@@ -79,12 +79,19 @@ tasks {
             "--type-overrides", "DATETIME_AS_STRING"
         )
     )
+    val generateOneOfMarkerInterfaceCodeTask = createGenerateCodeTask(
+        "generateOneOfMarkerInterfaceCode",
+        "${rootProject.projectDir}/src/test/resources/examples/discriminatedOneOf/api.yaml",
+        "com.example.oneof",
+        listOf("--http-model-opts", "SEALED_INTERFACES_FOR_ONE_OF")
+    )
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         dependsOn(generateCodeTask)
         dependsOn(generatePrimitiveTypesCodeTask)
         dependsOn(generateStringFormatOverrideCodeTask)
+        dependsOn(generateOneOfMarkerInterfaceCodeTask)
     }
 
     withType<Test> {
