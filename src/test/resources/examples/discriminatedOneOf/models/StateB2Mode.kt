@@ -4,19 +4,19 @@ import com.fasterxml.jackson.`annotation`.JsonValue
 import kotlin.String
 import kotlin.collections.Map
 
-public enum class StateBMode(
+public enum class StateB2Mode(
   @JsonValue
   public val `value`: String,
 ) {
-  MODE1("mode1"),
-  MODE2("mode2"),
+  MODE3("mode3"),
+  MODE4("mode4"),
   ;
 
   override fun toString(): String = value
 
   public companion object {
-    private val mapping: Map<String, StateBMode> = entries.associateBy(StateBMode::value)
+    private val mapping: Map<String, StateB2Mode> = entries.associateBy(StateB2Mode::value)
 
-    public fun fromValue(`value`: String): StateBMode? = mapping[value]
+    public fun fromValue(`value`: String): StateB2Mode? = mapping[value]
   }
 }

@@ -1,14 +1,14 @@
 package examples.discriminatedOneOf.models
 
-import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.constraints.NotNull
+import com.fasterxml.jackson.`annotation`.JsonSubTypes
+import com.fasterxml.jackson.`annotation`.JsonTypeInfo
 
-public data class StateB(
-  @get:JsonProperty("mode")
-  @get:NotNull
-  public val mode: StateBMode,
-  @get:JsonProperty("status")
-  @get:NotNull
-  @param:JsonProperty("status")
-  public val status: Status = Status.B,
-) : State
+@JsonTypeInfo(
+  use = JsonTypeInfo.Id.NAME,
+  include = JsonTypeInfo.As.EXISTING_PROPERTY,
+  property = "status",
+  visible = true,
+)
+@JsonSubTypes(JsonSubTypes.Type(value = StateB1::class, name = "b1"),JsonSubTypes.Type(value =
+    StateB2::class, name = "b2"))
+public sealed interface StateB : State

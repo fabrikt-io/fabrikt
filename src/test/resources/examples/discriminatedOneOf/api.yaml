@@ -50,12 +50,14 @@ components:
         propertyName: status
         mapping:
           a: '#/components/schemas/StateA'
-          b: '#/components/schemas/StateB'
+          b1: '#/components/schemas/StateB1'
+          b2: '#/components/schemas/StateB2'
     Status:
       type: string
       enum:
         - a
-        - b
+        - b1
+        - b2
     StateA:
       type: object
       required:
@@ -64,6 +66,15 @@ components:
         status:
           $ref: '#/components/schemas/Status'
     StateB:
+      oneOf:
+        - $ref: '#/components/schemas/StateB1'
+        - $ref: '#/components/schemas/StateB2'
+      discriminator:
+        propertyName: status
+        mapping:
+          b1: '#/components/schemas/StateB1'
+          b2: '#/components/schemas/StateB2'
+    StateB1:
       type: object
       required:
         - status
@@ -76,6 +87,19 @@ components:
           enum:
             - mode1
             - mode2
+    StateB2:
+      type: object
+      required:
+        - status
+        - mode
+      properties:
+        status:
+          $ref: '#/components/schemas/Status'
+        mode:
+          type: string
+          enum:
+            - mode3
+            - mode4
     OneObject:
       description: One Object
       required:
