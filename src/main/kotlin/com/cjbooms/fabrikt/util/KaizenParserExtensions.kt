@@ -57,6 +57,9 @@ object KaizenParserExtensions {
     private fun Schema.isAggregatedObject(): Boolean =
         combinedAnyOfAndAllOfSchemas().size > 1
 
+    private fun Schema.isOneOfDefinitionOnly(): Boolean =
+        properties.isEmpty() && !isAggregatedObject() && oneOfSchemas?.isNotEmpty() == true
+
     fun Schema.isInlinedTypedAdditionalProperties() =
         isObjectType() && !isSchemaLess() && Overlay.of(this).pathFromRoot.contains("additionalProperties")
 
@@ -319,11 +322,11 @@ object KaizenParserExtensions {
     // Not part of any other aggregations
     fun Schema.isOneOfSuperInterfaceOnly() =
         oneOfSchemas.isNotEmpty() && allOfSchemas.isEmpty() && anyOfSchemas.isEmpty() && properties.isEmpty() &&
-            oneOfSchemas.all { it.isObjectType() }
+            oneOfSchemas.all { it.isObjectType() || it.isOneOfDefinitionOnly() }
 
     fun Schema.isOneOfSuperInterface() =
         oneOfSchemas.isNotEmpty() && allOfSchemas.isEmpty() && anyOfSchemas.isEmpty() && properties.isEmpty() &&
-            oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() }
+            oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() || it.isOneOfDefinitionOnly() }
 
     fun Schema.isOneOfSuperInterfaceWithDiscriminator() =
         discriminator != null && discriminator.propertyName != null && isOneOfSuperInterface()
