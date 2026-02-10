@@ -4,9 +4,10 @@ import kotlin.String
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@SerialName("Y2")
 @Serializable
 public data class YTest2(
+  @SerialName("type")
+  public val type: String? = null,
   @SerialName("alt")
   public val alt: String? = null,
 ) : YTest

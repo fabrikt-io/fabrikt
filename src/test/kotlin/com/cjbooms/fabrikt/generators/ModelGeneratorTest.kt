@@ -12,6 +12,7 @@ import com.cjbooms.fabrikt.generators.model.ModelGenerator
 import com.cjbooms.fabrikt.model.KotlinSourceSet
 import com.cjbooms.fabrikt.model.Models
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatExpectedFiles
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.failGenerated
 import com.cjbooms.fabrikt.util.Linter
@@ -140,11 +141,8 @@ class ModelGeneratorTest {
                 failGenerated(it.value).asFileNotFound("$expectedModelsPath${it.key}", "File not found in expected models")
             }
         }
-        expectedModels.forEach {
-            assertThat(tempFolderContents.contains(it))
-                .withFailMessage { "Expected model file $it not found in generated models" }
-                .isTrue()
-        }
+        assertThatExpectedFiles(Path.of("src/test/resources$expectedModelsPath"))
+            .areContainedInGenerated(tempFolderContents)
 
         tempDirectory.toFile().deleteRecursively()
     }

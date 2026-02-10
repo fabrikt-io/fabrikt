@@ -8,6 +8,7 @@ import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
 import com.cjbooms.fabrikt.model.KotlinSourceSet
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatExpectedFiles
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.failGenerated
 import com.cjbooms.fabrikt.util.ModelNameRegistry
@@ -81,6 +82,8 @@ class KotlinSerializationModelGeneratorTest {
                 failGenerated(it.value).asFileNotFound("$expectedModelsPath${it.key}", "File not found in expected models")
             }
         }
+        assertThatExpectedFiles(Path.of("src/test/resources$expectedModelsPath"))
+            .areContainedInGenerated(tempFolderContents)
 
         tempDirectory.toFile().deleteRecursively()
     }

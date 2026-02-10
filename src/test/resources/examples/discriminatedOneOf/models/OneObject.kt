@@ -4,9 +4,6 @@ import com.fasterxml.jackson.`annotation`.JsonProperty
 import javax.validation.constraints.NotNull
 import kotlin.String
 
-/**
- * One Object
- */
 public data class OneObject(
   /**
    * Type Property

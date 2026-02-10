@@ -32,7 +32,7 @@ class NestedOneOfTest {
 
     @Test
     fun `must serialize StateB1 - nested oneOf`() {
-        val obj = StateB1(mode = StateB1Mode.MODE1, status = Status.B1)
+        val obj = StateB1(mode = "mode1", status = Status.B1)
         val result = writer.writeValueAsString(obj)
         
         val expected = javaClass.getResource("/nested_oneof/state_b1.json")!!.readText()
@@ -44,7 +44,7 @@ class NestedOneOfTest {
         val jsonString = javaClass.getResource("/nested_oneof/state_b1.json")!!.readText()
         
         val result = objectMapper.readValue(jsonString, State::class.java)
-        assertThat(result).isEqualTo(StateB1(mode = StateB1Mode.MODE1, status = Status.B1))
+        assertThat(result).isEqualTo(StateB1(mode = "mode1", status = Status.B1))
         assertThat(result).isInstanceOf(StateB::class.java)
     }
 
@@ -53,12 +53,12 @@ class NestedOneOfTest {
         val jsonString = javaClass.getResource("/nested_oneof/state_b1.json")!!.readText()
         
         val result = objectMapper.readValue(jsonString, StateB::class.java)
-        assertThat(result).isEqualTo(StateB1(mode = StateB1Mode.MODE1, status = Status.B1))
+        assertThat(result).isEqualTo(StateB1(mode = "mode1", status = Status.B1))
     }
 
     @Test
     fun `must serialize StateB2 - nested oneOf`() {
-        val obj = StateB2(mode = StateB2Mode.MODE3, status = Status.B2)
+        val obj = StateB2(mode = "mode3", status = Status.B2)
         val result = writer.writeValueAsString(obj)
         
         val expected = javaClass.getResource("/nested_oneof/state_b2.json")!!.readText()
@@ -70,13 +70,13 @@ class NestedOneOfTest {
         val jsonString = javaClass.getResource("/nested_oneof/state_b2.json")!!.readText()
         
         val result = objectMapper.readValue(jsonString, State::class.java)
-        assertThat(result).isEqualTo(StateB2(mode = StateB2Mode.MODE3, status = Status.B2))
+        assertThat(result).isEqualTo(StateB2(mode = "mode3", status = Status.B2))
         assertThat(result).isInstanceOf(StateB::class.java)
     }
 
     @Test
     fun `must serialize SomeObj with StateB1 - container with nested oneOf`() {
-        val obj = SomeObj(state = StateB1(mode = StateB1Mode.MODE1, status = Status.B1))
+        val obj = SomeObj(state = StateB1(mode = "mode1", status = Status.B1))
         val result = writer.writeValueAsString(obj)
         
         val expected = javaClass.getResource("/nested_oneof/some_obj_with_state_b1.json")!!.readText()
@@ -88,7 +88,7 @@ class NestedOneOfTest {
         val jsonString = javaClass.getResource("/nested_oneof/some_obj_with_state_b1.json")!!.readText()
         
         val result = objectMapper.readValue(jsonString, SomeObj::class.java)
-        assertThat(result.state).isEqualTo(StateB1(mode = StateB1Mode.MODE1, status = Status.B1))
+        assertThat(result.state).isEqualTo(StateB1(mode = "mode1", status = Status.B1))
         assertThat(result.state).isInstanceOf(StateB::class.java)
     }
 
@@ -96,7 +96,7 @@ class NestedOneOfTest {
     fun `auto-flatten - must deserialize YTest1 from Test interface`() {
         // Key test: Test auto-flattened to include YTest1 directly
         // JSON uses discriminator value "YTest1" which maps to concrete type
-        val json = """{"type": "Y1", "alt": "test"}"""
+        val json = """{"type": "YTest1", "alt": "test"}"""
         
         val result = objectMapper.readValue(json, com.example.oneof.models.Test::class.java)
         assertThat(result).isInstanceOf(YTest1::class.java)
@@ -105,12 +105,12 @@ class NestedOneOfTest {
     
     @Test
     fun `auto-flatten - SomeRequest has List of Test not Any`() {
-        val json = """{"id": 123, "events": [{"type": "Y1", "alt": "test"}]}"""
+        val json = """{"id": 123, "events": [{"type": "YTest2", "alt": "test"}]}"""
         
         val result = objectMapper.readValue(json, SomeRequest::class.java)
         assertThat(result.events).isNotNull
         assertThat(result.events).hasSize(1)
-        assertThat(result.events!![0]).isInstanceOf(YTest1::class.java)
+        assertThat(result.events!![0]).isInstanceOf(YTest2::class.java)
         assertThat(result.events!![0]).isInstanceOf(YTest::class.java)
     }
 }

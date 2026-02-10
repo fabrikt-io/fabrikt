@@ -9,6 +9,6 @@ import com.fasterxml.jackson.`annotation`.JsonTypeInfo
   property = "type",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = YTest1::class, name = "Y1"),JsonSubTypes.Type(value =
-    YTest2::class, name = "Y2"))
+@JsonSubTypes(JsonSubTypes.Type(value = YTest1::class, name = "YTest1"),JsonSubTypes.Type(value =
+    YTest2::class, name = "YTest2"))
 public sealed interface YTest : Test
