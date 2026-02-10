@@ -448,6 +448,8 @@ class ModelGenerator(
 
     private fun buildEnumClass(schema: Schema, enum: KotlinTypeInfo.Enum): TypeSpec {
         val enumType = generatedType(packages.base, enum.enumClassName)
+        val isFaultTolerant = options.contains(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS)
+        
         val classBuilder = TypeSpec
             .enumBuilder(enumType)
             .apply { schema.toKDoc()?.let { addKdoc(it) } }
@@ -470,6 +472,17 @@ class ModelGenerator(
             )
         }
 
+        // Add UNRECOGNIZED fallback entry for fault-tolerant enums
+        if (isFaultTolerant) {
+            val unrecognizedConstantBuilder = TypeSpec.anonymousClassBuilder()
+                .addSuperclassConstructorParameter("%S", "UNRECOGNIZED")
+            serializationAnnotations.addEnumConstantAnnotation(unrecognizedConstantBuilder, "UNRECOGNIZED")
+            classBuilder.addEnumConstant(
+                "UNRECOGNIZED",
+                unrecognizedConstantBuilder.build(),
+            )
+        }
+
         val valuePropSpecBuilder = PropertySpec.builder("value", String::class).initializer("value")
         serializationAnnotations.addEnumPropertyAnnotation(valuePropSpecBuilder)
         classBuilder.addProperty(valuePropSpecBuilder.build())
@@ -482,21 +495,34 @@ class ModelGenerator(
 
         classBuilder.addFunction(toStringBuilder.build())
 
-        val companion = TypeSpec.companionObjectBuilder()
+        val companionBuilder = TypeSpec.companionObjectBuilder()
             .addProperty(
                 PropertySpec.builder("mapping", createMapOfStringToNonNullType(enumType))
                     .initializer("entries.associateBy(%T::value)", enumType)
                     .addModifiers(KModifier.PRIVATE)
                     .build(),
             )
-            .addFunction(
+
+        // Modify fromValue to return UNRECOGNIZED for fault-tolerant enums, or nullable for regular enums
+        if (isFaultTolerant) {
+            companionBuilder.addFunction(
+                FunSpec.builder("fromValue")
+                    .addParameter(ParameterSpec.builder("value", String::class).build())
+                    .returns(enumType)
+                    .addStatement("return mapping[value] ?: UNRECOGNIZED")
+                    .build(),
+            )
+        } else {
+            companionBuilder.addFunction(
                 FunSpec.builder("fromValue")
                     .addParameter(ParameterSpec.builder("value", String::class).build())
                     .returns(enumType.copy(nullable = true))
                     .addStatement("return mapping[value]")
                     .build(),
             )
-            .build()
+        }
+
+        val companion = companionBuilder.build()
 
         // Only Micronaut Serde needs @Serdeable on enums; Jackson and kotlinx don't annotate enum classes
         if (options.contains(ModelCodeGenOptionType.MICRONAUT_SERDEABLE)) {
