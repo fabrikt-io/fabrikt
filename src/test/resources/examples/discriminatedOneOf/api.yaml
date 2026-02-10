@@ -50,12 +50,12 @@ components:
         propertyName: status
         mapping:
           a: '#/components/schemas/StateA'
-          b1: '#/components/schemas/StateB1'
-          b2: '#/components/schemas/StateB2'
+          b: '#/components/schemas/StateB'
     Status:
       type: string
       enum:
         - a
+        - b
         - b1
         - b2
     StateA:

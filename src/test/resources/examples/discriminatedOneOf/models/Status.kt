@@ -9,6 +9,7 @@ public enum class Status(
   public val `value`: String,
 ) {
   A("a"),
+  B("b"),
   B1("b1"),
   B2("b2"),
   ;
