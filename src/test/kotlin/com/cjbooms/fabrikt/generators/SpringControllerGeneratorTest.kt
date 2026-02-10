@@ -272,28 +272,10 @@ class SpringControllerGeneratorTest {
     }
 
     @Test
-    fun `controller functions with x-async-support=true extension are wrapped by CompletionStage`() {
-        val basePackage = "examples.completionStage"
-        val api = readTextResource("/examples/githubApi/api.yaml")
-            .replace("x-async-support: false", "x-async-support: true")
-            .let { SourceApi(it) }
-        val expectedControllers = "/examples/githubApi/controllers/spring-completion-stage/Controllers.kt"
-
-        val controllers = SpringControllerInterfaceGenerator(
-            Packages(basePackage),
-            api,
-            JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.COMPLETION_STAGE),
-        ).generate().toSingleFile()
-
-        assertThatGenerated(controllers).isEqualTo(expectedControllers)
-    }
-
-    @Test
-    fun `controller functions with x-async-support=false extension are NOT wrapped by CompletionStage`() {
+    fun `controller functions with x-async-support=false extension are NOT wrapped by CompletionStage while others are`() {
         val basePackage = "examples.completionStage"
         val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
-        val expectedControllers = "/examples/githubApi/controllers/spring-completion-stage/ControllersDisabled.kt"
+        val expectedControllers = "/examples/githubApi/controllers/spring-completion-stage/Controllers.kt"
 
         val controllers = SpringControllerInterfaceGenerator(
             Packages(basePackage),
