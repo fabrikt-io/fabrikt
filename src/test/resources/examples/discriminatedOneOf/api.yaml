@@ -156,3 +156,52 @@ components:
           type: string
         alt:
           type: string
+
+    Poly1:
+      discriminator:
+        propertyName: type
+        mapping:
+          obj1: "#/components/schemas/Obj1"
+          obj2: "#/components/schemas/Obj2"
+      oneOf:
+        - $ref: "#/components/schemas/Obj1"
+        - $ref: "#/components/schemas/Obj2"
+    Poly2:
+      discriminator:
+        propertyName: type
+        mapping:
+          obj3: '#/components/schemas/Obj3'
+          obj1: '#/components/schemas/Obj1'
+      oneOf:
+        - $ref: '#/components/schemas/Obj3'
+        - $ref: '#/components/schemas/Obj1'
+    Obj1:
+      required:
+        - id1
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+        id1:
+          type: string
+    Obj2:
+      required:
+        - id2
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+        id2:
+          type: string
+    Obj3:
+      required:
+        - id3
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+        id3:
+          type: string

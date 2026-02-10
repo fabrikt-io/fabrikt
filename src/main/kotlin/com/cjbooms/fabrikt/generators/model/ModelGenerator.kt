@@ -560,7 +560,7 @@ class ModelGenerator(
         }
 
         if (!generateObject) {
-            if (oneOfInterfaces.size == 1) {
+            if (oneOfInterfaces.isNotEmpty()) {
                 properties.addToClass(
                     schemaName = schemaName,
                     classBuilder = classBuilder,
