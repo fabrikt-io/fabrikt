@@ -226,6 +226,7 @@ This section documents the available CLI parameters for controlling what gets ge
 |                                |   `SUSPEND_MODIFIER` - This option adds the suspend modifier to the generated controller functions |
 |                                |   `AUTHENTICATION` - This option adds the authentication parameter to the generated controller functions |
 |                                |   `COMPLETION_STAGE` - This option makes generated controller functions have Type CompletionStage<T> (works only with Spring Controller generator) |
+|                                |   `SSE_EMITTER` - This option makes generated controller functions have Type SseEmitter (works only with Spring Controller generator) |
 |   `--http-controller-target`   | Optionally select the target framework for the controllers that you want to be generated. Defaults to Spring Controllers |
 |                                | CHOOSE ONE OF: |
 |                                |   `SPRING` - Generate for Spring framework. |

@@ -41,7 +41,7 @@ object ControllerGeneratorUtils {
             ?: throw IllegalStateException("Could not extract the response for $this")
 
     fun Operation.isSseResponse(): Boolean {
-        val responseDetails = happyPathResponseObject()
+        val responseDetails = primarySuccessResponse()
         return responseDetails.contentMediaTypes["text/event-stream"]
             ?.let { it.schema.type == "array" && it.schema.format == "event-stream" }
             ?: false
