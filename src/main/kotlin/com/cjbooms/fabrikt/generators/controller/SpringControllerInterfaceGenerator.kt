@@ -41,7 +41,10 @@ class SpringControllerInterfaceGenerator(
     private val options: Set<ControllerCodeGenOptionType> = emptySet(),
 ) : ControllerInterfaceGenerator, AnnotationBasedControllerInterfaceGenerator(packages, api, validationAnnotations) {
 
-    private val EXTENSION_ASYNC_SUPPORT = "x-async-support"
+    companion object {
+        private const val EXTENSION_ASYNC_SUPPORT = "x-async-support"
+    }
+
     private val addAuthenticationParameter: Boolean
         get() = options.any { it == ControllerCodeGenOptionType.AUTHENTICATION }
 
@@ -85,16 +88,15 @@ class SpringControllerInterfaceGenerator(
         val asyncSupport = explicitAsyncSupport ?: options.contains(ControllerCodeGenOptionType.COMPLETION_STAGE)
         val springSseSupport = options.contains(ControllerCodeGenOptionType.SSE_EMITTER)
 
-        val funcSpec = if (springSseSupport && op.isSseResponse()) {
-            baseFunSpec.returns(SpringImports.SSE_EMITTER)
-        } else if (asyncSupport) {
-            baseFunSpec.returns(
+        val funcSpec = when {
+            springSseSupport && op.isSseResponse() -> baseFunSpec.returns(SpringImports.SSE_EMITTER)
+            asyncSupport -> baseFunSpec.returns(
                 SpringImports.COMPLETION_STAGE.parameterizedBy(
                     SpringImports.RESPONSE_ENTITY.parameterizedBy(returnType)
                 )
             )
-        } else {
-            baseFunSpec.returns(SpringImports.RESPONSE_ENTITY.parameterizedBy(returnType))
+
+            else -> baseFunSpec.returns(SpringImports.RESPONSE_ENTITY.parameterizedBy(returnType))
         }
 
         parameters
