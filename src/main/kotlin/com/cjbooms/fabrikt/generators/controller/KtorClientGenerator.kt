@@ -85,11 +85,13 @@ class KtorClientGenerator(
                                         }
                                     }
 
+                                    addStatement("val basePath = apiConfiguration.basePath.trimEnd('/')")
                                     if (queryParams.isEmpty()) {
-                                        addStatement("val url = %P", urlBuilder)
+                                        addStatement("val url = basePath + %P", urlBuilder)
                                     } else {
                                         add("val url = buildString {\n")
                                         indent()
+                                        addStatement("append(basePath)")
                                         addStatement("append(%P)", urlBuilder)
                                         addStatement("val params = buildList {")
                                         indent()
@@ -148,6 +150,17 @@ class KtorClientGenerator(
                                             it.name
                                         )
                                     }
+
+                                    addStatement("%M {", MemberName("io.ktor.client.request", "headers"))
+                                    indent()
+                                    addStatement("apiConfiguration.customHeaders.forEach { (name, value) ->")
+                                    indent()
+                                    addStatement("remove(name)")
+                                    addStatement("append(name, value)")
+                                    unindent()
+                                    addStatement("}")
+                                    unindent()
+                                    addStatement("}")
                                 }
                                 .unindent()
                                 .addStatement("}")
@@ -248,6 +261,13 @@ class KtorClientGenerator(
                         )
                     }
 
+                    val apiConfigurationClassName = ClassName(packages.client, "ApiConfiguration")
+                    clientFunctionBuilder.addParameter(
+                        ParameterSpec.builder("apiConfiguration", apiConfigurationClassName)
+                            .defaultValue("%T()", apiConfigurationClassName)
+                            .build()
+                    )
+
                     clientFunctionBuilder.addKdoc(buildFunKdoc(operation, params))
 
                     clientClassBuilder.addFunction(clientFunctionBuilder.build())
@@ -263,12 +283,28 @@ class KtorClientGenerator(
     override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> {
         val codeDir = srcPath.resolve(CodeGenerationUtils.packageToPath(packages.base))
         val clientDir = codeDir.resolve("client")
+
+        val templateInput: Map<String, Any?> = mapOf(
+            "base" to packages.base,
+            "client" to packages.client,
+            "models" to packages.models,
+            "controllers" to packages.controllers,
+
+            "basePath" to (api.openApi3.servers.firstOrNull()?.url ?: ""),
+        )
+
         return setOf(
             HandlebarsTemplates.applyTemplate(
                 template = HandlebarsTemplates.ktorClientApiModels,
-                input = packages,
+                input = templateInput,
                 path = clientDir,
                 fileName = "KtorApiModels.kt"
+            ),
+            HandlebarsTemplates.applyTemplate(
+                template = HandlebarsTemplates.ktorClientApiConfiguration,
+                input = templateInput,
+                path = clientDir,
+                fileName = "KtorApiConfiguration.kt"
             )
         )
     }
