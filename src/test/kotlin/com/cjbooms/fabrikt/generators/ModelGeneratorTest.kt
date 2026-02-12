@@ -48,6 +48,7 @@ class ModelGeneratorTest {
         "enumExamples",
         "enumPolymorphicDiscriminator",
         "externalReferences/targeted",
+        "faultTolerantEnums",
         "githubApi",
         "inLinedObject",
         "mapExamples",
@@ -82,7 +83,7 @@ class ModelGeneratorTest {
     }
 
     @Test
-    fun `debug single test`() = `correct models are generated for different OpenApi Specifications`("discriminatedOneOf")
+    fun `debug single test`() = `correct models are generated for different OpenApi Specifications`("enumExamples")
 
     @ParameterizedTest
     @MethodSource("testCases")
@@ -101,6 +102,9 @@ class ModelGeneratorTest {
         }
         if (testCaseName == "byteArrayStream") {
             MutableSettings.addOption(CodeGenTypeOverride.BYTEARRAY_AS_INPUTSTREAM)
+        }
+        if (testCaseName == "faultTolerantEnums") {
+            MutableSettings.addOption(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS)
         }
         if (testCaseName == "defaultValues") {
             MutableSettings.addOption(JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL)
