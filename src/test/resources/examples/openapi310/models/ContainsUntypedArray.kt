@@ -1,7 +1,7 @@
 package examples.openapi310.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.constraints.NotNull
+import jakarta.validation.constraints.NotNull
 import kotlin.Any
 import kotlin.collections.List
 

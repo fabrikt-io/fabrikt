@@ -1,9 +1,9 @@
 package examples.githubApi.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import java.time.OffsetDateTime
-import javax.validation.Valid
-import javax.validation.constraints.NotNull
 import kotlin.String
 
 public data class PullRequest(

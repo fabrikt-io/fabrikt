@@ -1,8 +1,8 @@
 package examples.discriminatedOneOf.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
+import jakarta.validation.Valid
 import java.math.BigDecimal
-import javax.validation.Valid
 import kotlin.collections.List
 
 public data class SomeRequest(

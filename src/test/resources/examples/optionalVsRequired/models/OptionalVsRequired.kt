@@ -2,8 +2,8 @@ package examples.optionalVsRequired.models
 
 import com.fasterxml.jackson.`annotation`.JsonInclude
 import com.fasterxml.jackson.`annotation`.JsonProperty
+import jakarta.validation.constraints.NotNull
 import java.util.UUID
-import javax.validation.constraints.NotNull
 import kotlin.Any
 import kotlin.String
 import kotlin.collections.Map

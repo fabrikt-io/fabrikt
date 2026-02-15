@@ -155,10 +155,10 @@ class CodeGenArgs {
 
     @Parameter(
         names = ["--validation-library"],
-        description = "Specify which validation library to use for annotations in generated model classes. Default: JAVAX_VALIDATION",
+        description = "Specify which validation library to use for annotations in generated model classes. Default: JAKARTA_VALIDATION",
         converter = ValidationLibraryOptionConverter::class
     )
-    var validationLibrary: ValidationLibrary = ValidationLibrary.JAVAX_VALIDATION
+    var validationLibrary: ValidationLibrary = ValidationLibrary.JAKARTA_VALIDATION
 
     @Parameter(
         names = ["--external-ref-resolution"],
