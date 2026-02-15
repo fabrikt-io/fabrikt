@@ -112,16 +112,16 @@ enum class OutputOptionType(val description: String) {
 
 enum class ValidationLibrary(val description: String, val annotations: ValidationAnnotations) {
     JAVAX_VALIDATION(
-        "Use `javax.validation` annotations in generated model classes (default)",
+        "Use `javax.validation` annotations in generated model classes",
         JavaxValidationAnnotations
     ),
-    JAKARTA_VALIDATION("Use `jakarta.validation` annotations in generated model classes", JakartaAnnotations),
+    JAKARTA_VALIDATION("Use `jakarta.validation` annotations in generated model classes (default)", JakartaAnnotations),
     NO_VALIDATION("Use no validation annotations in generated model classes", NoValidationAnnotations);
 
     override fun toString() = "`${super.toString()}` - $description"
 
     companion object {
-        val default = JAVAX_VALIDATION
+        val default = JAKARTA_VALIDATION
     }
 }
 

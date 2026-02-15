@@ -283,10 +283,10 @@ This section documents the available CLI parameters for controlling what gets ge
 |                                |   `DATE_AS_STRING` - Ignore string format `date` and use `String` as the type |
 |                                |   `DATETIME_AS_STRING` - Ignore string format `date-time` and use `String` as the type |
 |                                |   `BYTEARRAY_AS_INPUTSTREAM` - Use `InputStream` as ByteArray type. Defaults to `ByteArray` |
-|   `--validation-library`       | Specify which validation library to use for annotations in generated model classes. Default: JAVAX_VALIDATION |
+|   `--validation-library`       | Specify which validation library to use for annotations in generated model classes. Default: JAKARTA_VALIDATION |
 |                                | CHOOSE ONE OF: |
-|                                |   `JAVAX_VALIDATION` - Use `javax.validation` annotations in generated model classes (default) |
-|                                |   `JAKARTA_VALIDATION` - Use `jakarta.validation` annotations in generated model classes |
+|                                |   `JAVAX_VALIDATION` - Use `javax.validation` annotations in generated model classes |
+|                                |   `JAKARTA_VALIDATION` - Use `jakarta.validation` annotations in generated model classes (default) |
 |                                |   `NO_VALIDATION` - Use no validation annotations in generated model classes |
 
 ## Original Motivation

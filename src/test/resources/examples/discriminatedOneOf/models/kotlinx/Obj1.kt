@@ -1,6 +1,6 @@
 package examples.discriminatedOneOf.models
 
-import javax.validation.constraints.NotNull
+import jakarta.validation.constraints.NotNull
 import kotlin.String
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
