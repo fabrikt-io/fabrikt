@@ -7,8 +7,8 @@ import com.fasterxml.jackson.`annotation`.JsonProperty
 import com.fasterxml.jackson.`annotation`.JsonSubTypes
 import com.fasterxml.jackson.`annotation`.JsonTypeInfo
 import com.fasterxml.jackson.`annotation`.JsonValue
-import javax.validation.Valid
-import javax.validation.constraints.NotNull
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import kotlin.String
 import kotlin.collections.List
 import kotlin.collections.Map
