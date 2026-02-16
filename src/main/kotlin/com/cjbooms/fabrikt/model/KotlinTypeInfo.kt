@@ -172,7 +172,8 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
                 OasType.Any -> AnyType
                 OasType.OneOfAny ->
                     if (schema.isOneOfSuperInterfaceWithDiscriminator() &&
-                        ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF in MutableSettings.modelOptions
+                        ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF in MutableSettings.modelOptions &&
+                        ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF !in MutableSettings.modelOptions
                     ) {
                         Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema))
                     } else {

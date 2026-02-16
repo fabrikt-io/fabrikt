@@ -47,7 +47,7 @@ class OkHttpClientGeneratorTest {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.CLIENT),
             clientTarget = ClientCodeGenTargetType.OK_HTTP,
-            modelOptions = setOf(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS),
+            modelOptions = setOf(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS, ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
             typeOverrides = setOf(CodeGenTypeOverride.BYTEARRAY_AS_INPUTSTREAM)
         )
         ModelNameRegistry.clear()
@@ -143,6 +143,7 @@ class OkHttpClientGeneratorTest {
         val expectedClient = "/examples/externalReferences/aggressive/client/ApiClient.kt"
         val expectedClientCode = "/examples/externalReferences/aggressive/client/ApiService.kt"
         MutableSettings.updateSettings(
+            modelOptions = setOf(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
             externalRefResolutionMode = ExternalReferencesResolutionMode.AGGRESSIVE,
         )
 

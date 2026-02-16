@@ -89,7 +89,7 @@ class ModelGeneratorTest {
     @MethodSource("testCases")
     fun `correct models are generated for different OpenApi Specifications`(testCaseName: String) {
         print("Testcase: $testCaseName")
-        MutableSettings.updateSettings()
+        MutableSettings.updateSettings(modelOptions = setOf(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF))
         MutableSettings.addOption(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS)
         if (testCaseName == "instantDateTime") {
             MutableSettings.addOption(CodeGenTypeOverride.DATETIME_AS_INSTANT)
@@ -244,7 +244,7 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/javaSerializableModels/api.yaml")
         val expectedModels = "/examples/javaSerializableModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(ModelCodeGenOptionType.JAVA_SERIALIZATION),
+            modelOptions = setOf(ModelCodeGenOptionType.JAVA_SERIALIZATION, ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
         )
         val models = ModelGenerator(
             Packages(basePackage),
@@ -296,7 +296,7 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/quarkusReflectionModels/api.yaml")
         val expectedModels = "/examples/quarkusReflectionModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(ModelCodeGenOptionType.QUARKUS_REFLECTION),
+            modelOptions = setOf(ModelCodeGenOptionType.QUARKUS_REFLECTION, ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
         )
 
         val models = ModelGenerator(
@@ -315,7 +315,7 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/micronautIntrospectedModels/api.yaml")
         val expectedModels = "/examples/micronautIntrospectedModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(ModelCodeGenOptionType.MICRONAUT_INTROSPECTION),
+            modelOptions = setOf(ModelCodeGenOptionType.MICRONAUT_INTROSPECTION, ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
         )
 
         val models = ModelGenerator(
@@ -334,7 +334,7 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/micronautSerdeModels/api.yaml")
         val expectedModels = "/examples/micronautSerdeModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(ModelCodeGenOptionType.MICRONAUT_SERDEABLE),
+            modelOptions = setOf(ModelCodeGenOptionType.MICRONAUT_SERDEABLE, ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
         )
 
         val models = ModelGenerator(
@@ -353,7 +353,7 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/micronautReflectionModels/api.yaml")
         val expectedModels = "/examples/micronautReflectionModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(ModelCodeGenOptionType.MICRONAUT_REFLECTION),
+            modelOptions = setOf(ModelCodeGenOptionType.MICRONAUT_REFLECTION, ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
         )
 
         val models = ModelGenerator(

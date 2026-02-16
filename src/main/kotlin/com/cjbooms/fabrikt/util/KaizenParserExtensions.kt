@@ -36,7 +36,8 @@ object KaizenParserExtensions {
     private const val EXTENSIBLE_ENUM_KEY = "x-extensible-enum"
 
     private fun isSealedInterfacesForOneOfEnabled(): Boolean = 
-        ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF in MutableSettings.modelOptions
+        ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF in MutableSettings.modelOptions &&
+        ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF !in MutableSettings.modelOptions
 
     fun Schema.isPolymorphicSuperType(): Boolean = discriminator?.propertyName != null ||
         getDiscriminatorForInLinedObjectUnderAllOf()?.propertyName != null

@@ -49,7 +49,8 @@ fun createGenerateCodeTask(name: String, apiFilePath: String, basePackage: Strin
             "--output-directory", generationDir,
             "--base-package", basePackage,
             "--api-file", apiFilePath,
-            "--targets", "http_models"
+            "--targets", "http_models",
+            "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF"
         ).plus(additionalArgs)
         dependsOn(":jar")
         dependsOn(":shadowJar")
