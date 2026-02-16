@@ -1,5 +1,6 @@
 package examples.faultTolerantEnums.models
 
+import com.fasterxml.jackson.`annotation`.JsonEnumDefaultValue
 import com.fasterxml.jackson.`annotation`.JsonValue
 import kotlin.String
 import kotlin.collections.Map
@@ -10,6 +11,7 @@ public enum class EnumContainerInlinedEnum(
 ) {
   INLINED_A("inlined_a"),
   INLINED_B("inlined_b"),
+  @JsonEnumDefaultValue
   UNRECOGNIZED("UNRECOGNIZED"),
   ;
 

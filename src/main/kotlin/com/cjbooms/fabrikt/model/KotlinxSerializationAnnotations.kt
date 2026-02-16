@@ -109,4 +109,7 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
 
     override fun addEnumConstantAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String) =
         enumSpecBuilder.addAnnotation(AnnotationSpec.builder(SerialName::class).addMember("%S", enumValue).build())
+
+    override fun addEnumDefaultAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String) =
+        enumSpecBuilder // not applicable
 }

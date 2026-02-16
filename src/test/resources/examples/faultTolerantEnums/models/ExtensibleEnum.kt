@@ -1,5 +1,6 @@
 package examples.faultTolerantEnums.models
 
+import com.fasterxml.jackson.`annotation`.JsonEnumDefaultValue
 import com.fasterxml.jackson.`annotation`.JsonValue
 import kotlin.String
 import kotlin.collections.Map
@@ -10,6 +11,7 @@ public enum class ExtensibleEnum(
 ) {
   EXTENSIBLE_ONE("extensible_one"),
   EXTENSIBLE_TWO("extensible_two"),
+  @JsonEnumDefaultValue
   UNRECOGNIZED("UNRECOGNIZED"),
   ;
 

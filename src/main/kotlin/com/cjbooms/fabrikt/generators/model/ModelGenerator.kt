@@ -449,7 +449,7 @@ class ModelGenerator(
     private fun buildEnumClass(schema: Schema, enum: KotlinTypeInfo.Enum): TypeSpec {
         val enumType = generatedType(packages.base, enum.enumClassName)
         val isFaultTolerant = options.contains(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS)
-        
+
         val classBuilder = TypeSpec
             .enumBuilder(enumType)
             .apply { schema.toKDoc()?.let { addKdoc(it) } }
@@ -477,6 +477,7 @@ class ModelGenerator(
             val unrecognizedConstantBuilder = TypeSpec.anonymousClassBuilder()
                 .addSuperclassConstructorParameter("%S", "UNRECOGNIZED")
             serializationAnnotations.addEnumConstantAnnotation(unrecognizedConstantBuilder, "UNRECOGNIZED")
+            serializationAnnotations.addEnumDefaultAnnotation(unrecognizedConstantBuilder, "UNRECOGNIZED")
             classBuilder.addEnumConstant(
                 "UNRECOGNIZED",
                 unrecognizedConstantBuilder.build(),

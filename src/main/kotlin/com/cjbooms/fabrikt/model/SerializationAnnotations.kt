@@ -33,5 +33,6 @@ sealed interface SerializationAnnotations {
     fun addSubtypeMappingAnnotation(typeSpecBuilder: TypeSpec.Builder, mapping: String): TypeSpec.Builder
     fun addEnumPropertyAnnotation(propSpecBuilder: PropertySpec.Builder): PropertySpec.Builder
     fun addEnumConstantAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String): TypeSpec.Builder
+    fun addEnumDefaultAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String): TypeSpec.Builder
     fun annotateArrayElementType(elementType: TypeName, elementTypeInfo: KotlinTypeInfo): TypeName
 }
