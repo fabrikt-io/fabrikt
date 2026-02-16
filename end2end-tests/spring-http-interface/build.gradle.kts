@@ -56,6 +56,7 @@ tasks {
             "--targets", "http_models",
             "--targets", "client",
             "--http-client-target", "SPRING_HTTP_INTERFACE",
+            "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF"
         )
         dependsOn(":jar")
         dependsOn(":shadowJar")

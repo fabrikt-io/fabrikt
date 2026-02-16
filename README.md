@@ -241,7 +241,8 @@ This section documents the available CLI parameters for controlling what gets ge
 |                                |   `MICRONAUT_REFLECTION` - This option adds @ReflectiveAccess to the generated models. Requires dependency "'io.micronaut:micronaut-core:+" |
 |                                |   `MICRONAUT_SERDEABLE` - This option adds @Serdeable to the generated models. Requires dependency "'io.micronaut.serde:micronaut-serde-jackson:+" |
 |                                |   `INCLUDE_COMPANION_OBJECT` - This option adds a companion object to the generated models. |
-|                                |   `SEALED_INTERFACES_FOR_ONE_OF` - This option enables the generation of interfaces for discriminated oneOf types |
+|                                |   `SEALED_INTERFACES_FOR_ONE_OF` - This option is deprecated. Sealed interfaces are enabled by default in v26+. Use DISABLE_SEALED_INTERFACES_FOR_ONE_OF to disable. |
+|                                |   `DISABLE_SEALED_INTERFACES_FOR_ONE_OF` - This option disables the default sealed interfaces for oneOf behavior in v26+ |
 |                                |   `NON_NULL_MAP_VALUES` - This option makes map values non-null. The default (since v15) and most spec compliant is make map values nullable |
 |                                |   `FAULT_TOLERANT_ENUMS` - This option adds an UNRECOGNIZED enum entry as a fallback for unmapped values, preventing deserialization exceptions. If jackson is used, the deserialization option **READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE** will need to be enabled as well |
 |   `--http-model-suffix`        | Specify custom suffix for all generated model classes. Defaults to no suffix. |

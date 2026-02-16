@@ -52,8 +52,8 @@ class KotlinSerializationModelGeneratorTest {
     @MethodSource("testCases")
     fun `correct models are generated for different OpenApi Specifications`(testCaseName: String) {
         print("Testcase: $testCaseName")
-        if (testCaseName == "discriminatedOneOf" || testCaseName == "oneOfMarkerInterface") {
-            MutableSettings.addOption(ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF)
+        if (testCaseName !in listOf("discriminatedOneOf", "oneOfMarkerInterface")) {
+            MutableSettings.addOption(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF)
         }
         val basePackage = "examples.${testCaseName.replace("/", ".")}"
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!

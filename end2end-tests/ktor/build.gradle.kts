@@ -126,6 +126,7 @@ fun TaskContainer.createCodeGenerationTask(
         "--targets", "controllers",
         "--http-controller-target", "ktor",
         "--instant-library", "KOTLINX_INSTANT",
+        "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF"
     ) + opts
     dependsOn(":jar")
     dependsOn(":shadowJar")

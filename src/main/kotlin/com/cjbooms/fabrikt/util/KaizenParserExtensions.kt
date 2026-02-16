@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt.util
 
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.generators.MutableSettings
+import com.cjbooms.fabrikt.generators.MutableSettings.isSealedInterfacesForOneOfEnabled
 import com.cjbooms.fabrikt.model.OasType
 import com.cjbooms.fabrikt.model.PropertyInfo
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
@@ -34,9 +35,6 @@ object KaizenParserExtensions {
     )
 
     private const val EXTENSIBLE_ENUM_KEY = "x-extensible-enum"
-
-    private fun isSealedInterfacesForOneOfEnabled(): Boolean = 
-        ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF in MutableSettings.modelOptions
 
     fun Schema.isPolymorphicSuperType(): Boolean = discriminator?.propertyName != null ||
         getDiscriminatorForInLinedObjectUnderAllOf()?.propertyName != null

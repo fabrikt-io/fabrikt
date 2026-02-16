@@ -3,13 +3,13 @@ package com.cjbooms.fabrikt.generators.model
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
-import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.ClassSettings
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toClassName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKDoc
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toObjectTypeSpec
 import com.cjbooms.fabrikt.generators.MutableSettings
+import com.cjbooms.fabrikt.generators.MutableSettings.isSealedInterfacesForOneOfEnabled
 import com.cjbooms.fabrikt.generators.PropertyUtils.addToClass
 import com.cjbooms.fabrikt.generators.PropertyUtils.isNullable
 import com.cjbooms.fabrikt.generators.TypeFactory.createList
@@ -192,7 +192,7 @@ class ModelGenerator(
 
     private fun createModels(api: OpenApi3, schemas: List<SchemaInfo>) = schemas
         .filterNot { it.schema.isSimpleType() }
-        .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && SEALED_INTERFACES_FOR_ONE_OF !in options }
+        .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !isSealedInterfacesForOneOfEnabled() }
         .filterNot { it.schema.isOneOfResolvingToAnyType() }
         .flatMap { schemaInfo ->
             val properties = schemaInfo.schema.topLevelProperties(HTTP_SETTINGS, api, schemaInfo.schema)
@@ -230,7 +230,7 @@ class ModelGenerator(
         val modelName = ModelNameRegistry.getOrRegister(schemaInfo)
         val schemaName = schemaInfo.schema.getSchemaRefName()
         return when {
-            schemaInfo.schema.isOneOfSuperInterface() && SEALED_INTERFACES_FOR_ONE_OF in options -> oneOfSuperInterface(
+            schemaInfo.schema.isOneOfSuperInterface() && isSealedInterfacesForOneOfEnabled() -> oneOfSuperInterface(
                 modelName = modelName,
                 discriminator = schemaInfo.schema.discriminator,
                 allSchemas = allSchemas,
@@ -296,7 +296,7 @@ class ModelGenerator(
                             emptySet() // Rely on the parent definition
                         }
 
-                        it.schema.isOneOfSuperInterface() && SEALED_INTERFACES_FOR_ONE_OF in options -> {
+                        it.schema.isOneOfSuperInterface() && isSealedInterfacesForOneOfEnabled() -> {
                             setOf(
                                 oneOfSuperInterface(
                                     modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
@@ -399,7 +399,7 @@ class ModelGenerator(
                         ),
                     )
 
-                items.isInlinedOneOfSuperInterface() && SEALED_INTERFACES_FOR_ONE_OF in options ->
+                items.isInlinedOneOfSuperInterface() && isSealedInterfacesForOneOfEnabled() ->
                     setOf(
                         oneOfSuperInterface(
                             modelName = ModelNameRegistry.getOrRegister(schema, enclosingSchema),
