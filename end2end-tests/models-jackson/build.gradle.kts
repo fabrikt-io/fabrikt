@@ -50,7 +50,6 @@ fun createGenerateCodeTask(name: String, apiFilePath: String, basePackage: Strin
             "--base-package", basePackage,
             "--api-file", apiFilePath,
             "--targets", "http_models",
-            "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF"
         ).plus(additionalArgs)
         dependsOn(":jar")
         dependsOn(":shadowJar")
@@ -84,7 +83,6 @@ tasks {
         "generateOneOfMarkerInterfaceCode",
         "${rootProject.projectDir}/src/test/resources/examples/discriminatedOneOf/api.yaml",
         "com.example.oneof",
-        listOf("--http-model-opts", "SEALED_INTERFACES_FOR_ONE_OF")
     )
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

@@ -89,13 +89,12 @@ class ModelGeneratorTest {
     @MethodSource("testCases")
     fun `correct models are generated for different OpenApi Specifications`(testCaseName: String) {
         print("Testcase: $testCaseName")
-        MutableSettings.updateSettings(modelOptions = setOf(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF))
+        if (testCaseName !in listOf("discriminatedOneOf", "oneOfMarkerInterface", "polymorphicModels")) {
+            MutableSettings.updateSettings(modelOptions = setOf(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF))
+        }
         MutableSettings.addOption(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS)
         if (testCaseName == "instantDateTime") {
             MutableSettings.addOption(CodeGenTypeOverride.DATETIME_AS_INSTANT)
-        }
-        if (testCaseName == "discriminatedOneOf" || testCaseName == "oneOfMarkerInterface" || testCaseName == "polymorphicModels") {
-            MutableSettings.addOption(ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF)
         }
         if (testCaseName == "mapExamplesNonNullValues") {
             MutableSettings.addOption(ModelCodeGenOptionType.NON_NULL_MAP_VALUES)

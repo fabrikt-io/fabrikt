@@ -88,12 +88,7 @@ object MutableSettings {
         this.generationTypes = genTypes
         this.controllerOptions = controllerOptions
         this.controllerTarget = controllerTarget
-        // In v26+, SEALED_INTERFACES_FOR_ONE_OF is enabled by default unless explicitly disabled
-        this.modelOptions = if (ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF in modelOptions) {
-            modelOptions - ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF
-        } else {
-            modelOptions + ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF
-        }
+        this.modelOptions = modelOptions - ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF
         this.modelSuffix = modelSuffix
         this.clientOptions = clientOptions
         this.clientTarget = clientTarget
@@ -118,4 +113,7 @@ object MutableSettings {
     fun addOption(mode: JacksonNullabilityMode) {
         jacksonNullabilityMode = mode
     }
+
+    fun isSealedInterfacesForOneOfEnabled(): Boolean =
+        ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF !in modelOptions
 }
