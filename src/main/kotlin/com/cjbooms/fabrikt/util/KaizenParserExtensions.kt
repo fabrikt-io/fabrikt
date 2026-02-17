@@ -184,7 +184,7 @@ object KaizenParserExtensions {
             return emptySet()
         }
         return allSchemas
-            .filter { it.oneOfSchemas.isNotEmpty() }
+            .filter { it.oneOfSchemas.isNotEmpty() && it.isOneOfSuperInterface() }
             .mapNotNull { schema ->
                 if (schema.oneOfSchemas.toList().contains(this) &&
                     schema.oneOfSchemas.map { it.safeName() }.contains(this.safeName()) // Guard against identical inlined schemas

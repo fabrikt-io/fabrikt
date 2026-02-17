@@ -17,4 +17,4 @@ public data class ProductItem(
   @get:JsonProperty("sku")
   @get:NotNull
   public val sku: String,
-)
+) : ItemReference

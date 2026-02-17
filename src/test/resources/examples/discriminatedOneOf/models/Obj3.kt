@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull
 import kotlin.String
 
 public data class Obj3(
+  @param:JsonProperty("id3")
   @get:JsonProperty("id3")
   @get:NotNull
   public val id3: String,

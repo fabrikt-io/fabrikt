@@ -83,14 +83,14 @@ class ModelGeneratorTest {
     }
 
     @Test
-    fun `debug single test`() = `correct models are generated for different OpenApi Specifications`("enumExamples")
+    fun `debug single test`() = `correct models are generated for different OpenApi Specifications`("anyOfOneOfAllOf")
 
     @ParameterizedTest
     @MethodSource("testCases")
     fun `correct models are generated for different OpenApi Specifications`(testCaseName: String) {
         print("Testcase: $testCaseName")
-        if (testCaseName !in listOf("discriminatedOneOf", "oneOfMarkerInterface", "polymorphicModels")) {
-            MutableSettings.updateSettings(modelOptions = setOf(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF))
+        if (testCaseName !in listOf("discriminatedOneOf", "oneOfMarkerInterface", "polymorphicModels", "anyOfOneOfAllOf")) {
+           MutableSettings.updateSettings(modelOptions = setOf(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF))
         }
         MutableSettings.addOption(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS)
         if (testCaseName == "instantDateTime") {
