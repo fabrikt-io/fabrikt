@@ -4,7 +4,7 @@ import com.fasterxml.jackson.`annotation`.JsonProperty
 import com.fasterxml.jackson.`annotation`.JsonSubTypes
 import com.fasterxml.jackson.`annotation`.JsonTypeInfo
 import com.fasterxml.jackson.`annotation`.JsonValue
-import javax.validation.constraints.NotNull
+import jakarta.validation.constraints.NotNull
 import kotlin.Boolean
 import kotlin.Int
 import kotlin.Long

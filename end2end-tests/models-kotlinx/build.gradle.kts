@@ -49,7 +49,6 @@ fun createGenerateCodeTask(name: String, apiFilePath: String, basePackage: Strin
             "--targets", "http_models",
             "--serialization-library", "KOTLINX_SERIALIZATION",
             "--instant-library", "KOTLIN_TIME_INSTANT",
-            "--http-model-opts", "SEALED_INTERFACES_FOR_ONE_OF",
         ).plus(additionalArgs)
         dependsOn(":jar")
         dependsOn(":shadowJar")

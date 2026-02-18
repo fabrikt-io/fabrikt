@@ -1,7 +1,7 @@
 package examples.anyOfOneOfAllOf.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.constraints.NotNull
+import jakarta.validation.constraints.NotNull
 import kotlin.String
 
 public data class OutfitItem(
@@ -17,4 +17,4 @@ public data class OutfitItem(
   @get:JsonProperty("outfit_id")
   @get:NotNull
   public val outfitId: String,
-)
+) : ItemReference

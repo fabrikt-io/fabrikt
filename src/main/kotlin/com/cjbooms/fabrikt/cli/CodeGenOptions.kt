@@ -61,7 +61,9 @@ enum class ModelCodeGenOptionType(val description: String) {
     MICRONAUT_REFLECTION("This option adds @ReflectiveAccess to the generated models. Requires dependency \"'io.micronaut:micronaut-core:+\""),
     MICRONAUT_SERDEABLE("This option adds @Serdeable to the generated models. Requires dependency \"'io.micronaut.serde:micronaut-serde-jackson:+\""),
     INCLUDE_COMPANION_OBJECT("This option adds a companion object to the generated models."),
-    SEALED_INTERFACES_FOR_ONE_OF("This option enables the generation of interfaces for discriminated oneOf types"),
+    @Deprecated("Sealed interfaces are enabled by default in v26+. Use DISABLE_SEALED_INTERFACES_FOR_ONE_OF to disable.")
+    SEALED_INTERFACES_FOR_ONE_OF("This option is deprecated. Sealed interfaces are enabled by default in v26+. Use DISABLE_SEALED_INTERFACES_FOR_ONE_OF to disable."),
+    DISABLE_SEALED_INTERFACES_FOR_ONE_OF("This option disables the default sealed interfaces for oneOf behavior in v26+"),
     NON_NULL_MAP_VALUES("This option makes map values non-null. The default (since v15) and most spec compliant is make map values nullable"),
     FAULT_TOLERANT_ENUMS("This option adds an UNRECOGNIZED enum entry as a fallback for unmapped values, preventing deserialization exceptions. If jackson is used, the deserialization option **READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE** will need to be enabled as well"),
     ;
@@ -112,16 +114,16 @@ enum class OutputOptionType(val description: String) {
 
 enum class ValidationLibrary(val description: String, val annotations: ValidationAnnotations) {
     JAVAX_VALIDATION(
-        "Use `javax.validation` annotations in generated model classes (default)",
+        "Use `javax.validation` annotations in generated model classes",
         JavaxValidationAnnotations
     ),
-    JAKARTA_VALIDATION("Use `jakarta.validation` annotations in generated model classes", JakartaAnnotations),
+    JAKARTA_VALIDATION("Use `jakarta.validation` annotations in generated model classes (default)", JakartaAnnotations),
     NO_VALIDATION("Use no validation annotations in generated model classes", NoValidationAnnotations);
 
     override fun toString() = "`${super.toString()}` - $description"
 
     companion object {
-        val default = JAVAX_VALIDATION
+        val default = JAKARTA_VALIDATION
     }
 }
 

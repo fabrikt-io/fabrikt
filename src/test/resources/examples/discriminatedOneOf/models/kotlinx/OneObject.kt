@@ -1,16 +1,8 @@
 package examples.discriminatedOneOf.models
 
-import javax.validation.constraints.NotNull
-import kotlin.String
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@SerialName("char_location")
 @Serializable
-public data class OneObject(
-  /**
-   * Type Property
-   */
-  @SerialName("type")
-  @get:NotNull
-  public val type: String,
-)
+public object OneObject : SomeObjInlinedArray, SomeObjInlinedObject, SomeObjInlinedObjectNoMappings

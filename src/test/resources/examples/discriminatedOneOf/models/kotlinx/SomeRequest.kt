@@ -1,7 +1,7 @@
 package examples.discriminatedOneOf.models
 
+import jakarta.validation.Valid
 import java.math.BigDecimal
-import javax.validation.Valid
 import kotlin.collections.List
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName

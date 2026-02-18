@@ -134,6 +134,9 @@ object PropertyUtils {
                 }
 
                 ClassSettings.PolymorphyType.ONE_OF -> {
+                    if (!isDiscriminatorFieldWithSingleKnownValue(classSettings, schemaName)) {
+                        serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
+                    }
                     serializationAnnotations.addProperty(property, oasKey, typeInfo)
                     property.addValidationAnnotations(this, validationAnnotations, classSettings)
                 }

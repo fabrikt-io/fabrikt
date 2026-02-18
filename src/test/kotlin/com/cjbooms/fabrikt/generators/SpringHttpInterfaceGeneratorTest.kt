@@ -41,7 +41,7 @@ class SpringHttpInterfaceGeneratorTest {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.CLIENT),
             clientTarget = ClientCodeGenTargetType.SPRING_HTTP_INTERFACE,
-            modelOptions = setOf(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS),
+            modelOptions = setOf(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS, ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
         )
         ModelNameRegistry.clear()
     }

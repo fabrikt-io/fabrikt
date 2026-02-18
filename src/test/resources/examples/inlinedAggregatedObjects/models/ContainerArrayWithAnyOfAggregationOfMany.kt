@@ -1,7 +1,7 @@
 package examples.inlinedAggregatedObjects.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.Valid
+import jakarta.validation.Valid
 import kotlin.String
 import kotlin.collections.List
 

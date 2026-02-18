@@ -2,8 +2,7 @@ package examples.openapi310.models
 
 import com.fasterxml.jackson.`annotation`.JsonInclude
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.Valid
-import kotlin.Any
+import jakarta.validation.Valid
 import kotlin.String
 import kotlin.collections.List
 
@@ -31,5 +30,6 @@ public data class NewNullableFormat(
   public val singleRequiredFieldNullableRef: SingleRequiredFieldNullableObject?,
   @param:JsonProperty("complexNullable")
   @get:JsonProperty("complexNullable")
-  public val complexNullable: List<Any>? = null,
+  @get:Valid
+  public val complexNullable: List<NewNullableFormatComplexNullable>? = null,
 )

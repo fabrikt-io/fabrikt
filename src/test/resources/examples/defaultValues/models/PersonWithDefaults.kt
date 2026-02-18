@@ -2,11 +2,11 @@ package examples.defaultValues.models
 
 import com.fasterxml.jackson.`annotation`.JsonInclude
 import com.fasterxml.jackson.`annotation`.JsonProperty
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import java.math.BigDecimal
 import java.net.URI
 import java.util.Base64
-import javax.validation.Valid
-import javax.validation.constraints.NotNull
 import kotlin.Boolean
 import kotlin.ByteArray
 import kotlin.Double

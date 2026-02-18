@@ -3,17 +3,17 @@ package com.cjbooms.fabrikt.model
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
 import com.cjbooms.fabrikt.cli.CodeGenerationType
 import com.cjbooms.fabrikt.cli.InstantLibrary
-import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.SerializationLibrary.KOTLINX_SERIALIZATION
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.OasType.Companion.toOasType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.getEnumValues
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isEnumDefinition
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedDiscriminatedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isUnsupportedComplexInlinedDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedTypedAdditionalProperties
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isNotDefined
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterfaceWithDiscriminator
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isUnsupportedComplexInlinedDefinition
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.reprezen.kaizen.oasparser.model3.Schema
 import java.math.BigDecimal
@@ -171,9 +171,7 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
 
                 OasType.Any -> AnyType
                 OasType.OneOfAny ->
-                    if (schema.isOneOfSuperInterfaceWithDiscriminator() &&
-                        ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF in MutableSettings.modelOptions
-                    ) {
+                    if (schema.isOneOfSuperInterfaceWithDiscriminator()) {
                         Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema))
                     } else {
                         AnyType
@@ -187,7 +185,7 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
             oasKey: String
         ): KotlinTypeInfo {
             return when {
-                arraySchema.itemsSchema.isInlinedObjectDefinition() && !arraySchema.itemsSchema.isUnsupportedComplexInlinedDefinition() ->
+                (arraySchema.itemsSchema.isInlinedObjectDefinition() || arraySchema.itemsSchema.isInlinedDiscriminatedOneOfSuperInterface()) && !arraySchema.itemsSchema.isUnsupportedComplexInlinedDefinition() ->
                     Object(ModelNameRegistry.getOrRegister(arraySchema, enclosingSchema))
                 arraySchema.itemsSchema.isNotDefined() -> AnyType
                 else -> from(arraySchema.itemsSchema, oasKey, enclosingSchema)

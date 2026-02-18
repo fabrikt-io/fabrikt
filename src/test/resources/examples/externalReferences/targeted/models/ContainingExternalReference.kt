@@ -1,7 +1,7 @@
 package examples.externalReferences.targeted.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.Valid
+import jakarta.validation.Valid
 
 public data class ContainingExternalReference(
   @param:JsonProperty("some-external-reference")

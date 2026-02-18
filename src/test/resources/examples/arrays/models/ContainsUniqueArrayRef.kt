@@ -1,9 +1,9 @@
 package examples.arrays.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import java.util.LinkedHashSet
-import javax.validation.Valid
-import javax.validation.constraints.NotNull
 
 public data class ContainsUniqueArrayRef(
   @param:JsonProperty("weight_on_mars")

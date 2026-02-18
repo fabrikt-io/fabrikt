@@ -1,11 +1,11 @@
 package examples.validationAnnotations.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.constraints.DecimalMax
-import javax.validation.constraints.DecimalMin
-import javax.validation.constraints.NotNull
-import javax.validation.constraints.Pattern
-import javax.validation.constraints.Size
+import jakarta.validation.constraints.DecimalMax
+import jakarta.validation.constraints.DecimalMin
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.Size
 import kotlin.Int
 import kotlin.String
 import kotlin.collections.List

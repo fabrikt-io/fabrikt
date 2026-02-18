@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt.util
 
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.generators.MutableSettings
+import com.cjbooms.fabrikt.generators.MutableSettings.isSealedInterfacesForOneOfEnabled
 import com.cjbooms.fabrikt.model.OasType
 import com.cjbooms.fabrikt.model.PropertyInfo
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
@@ -35,9 +36,6 @@ object KaizenParserExtensions {
 
     private const val EXTENSIBLE_ENUM_KEY = "x-extensible-enum"
 
-    private fun isSealedInterfacesForOneOfEnabled(): Boolean = 
-        ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF in MutableSettings.modelOptions
-
     fun Schema.isPolymorphicSuperType(): Boolean = discriminator?.propertyName != null ||
         getDiscriminatorForInLinedObjectUnderAllOf()?.propertyName != null
 
@@ -56,9 +54,6 @@ object KaizenParserExtensions {
 
     private fun Schema.isAggregatedObject(): Boolean =
         combinedAnyOfAndAllOfSchemas().size > 1
-
-    private fun Schema.isOneOfDefinitionOnly(): Boolean =
-        properties.isEmpty() && !isAggregatedObject() && oneOfSchemas?.isNotEmpty() == true
 
     fun Schema.isInlinedTypedAdditionalProperties() =
         isObjectType() && !isSchemaLess() && Overlay.of(this).pathFromRoot.contains("additionalProperties")
@@ -185,8 +180,10 @@ object KaizenParserExtensions {
         if (!isSealedInterfacesForOneOfEnabled()) {
             return emptySet()
         }
-        return allSchemas
-            .filter { it.oneOfSchemas.isNotEmpty() }
+        
+        // Check top-level oneOf schemas
+        val topLevelInterfaces = allSchemas
+            .filter { it.oneOfSchemas.isNotEmpty() && it.isOneOfSuperInterface() }
             .mapNotNull { schema ->
                 if (schema.oneOfSchemas.toList().contains(this) &&
                     schema.oneOfSchemas.map { it.safeName() }.contains(this.safeName()) // Guard against identical inlined schemas
@@ -194,7 +191,35 @@ object KaizenParserExtensions {
                     schema
                 else null
             }
-            .toSet()
+            
+        // Check inline oneOf within properties of all schemas
+        val inlineInterfaces = allSchemas.flatMap { enclosingSchema ->
+            enclosingSchema.properties.values.flatMap { property ->
+                val interfaces = mutableListOf<Schema>()
+                
+                // Check oneOf in array items
+                property.itemsSchema?.let { items ->
+                    if (items.isInlinedOneOfSuperInterface() &&
+                        items.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
+                    ) {
+                        ModelNameRegistry.preRegisterInlineSchema(items, enclosingSchema)
+                        interfaces.add(items)
+                    }
+                }
+                
+                // Check oneOf directly on property
+                if (property.isInlinedOneOfSuperInterface() &&
+                    property.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
+                ) {
+                    ModelNameRegistry.preRegisterInlineSchema(property, enclosingSchema)
+                    interfaces.add(property)
+                }
+                
+                interfaces
+            }
+        }
+        
+        return (topLevelInterfaces + inlineInterfaces).toSet()
     }
 
     fun Schema.getKeyIfSingleDiscriminatorValue(
@@ -252,7 +277,7 @@ object KaizenParserExtensions {
 
     fun Schema.safeName(): String =
         when {
-            isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !isSealedInterfacesForOneOfEnabled() -> 
+            isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !(isOneOfSuperInterfaceWithDiscriminator()) ->
                 this.oneOfSchemas.first().allOfSchemas.first().safeName()
             isInlinedAggregationOfExactlyOne() -> combinedAnyOfAndAllOfSchemas().first().safeName()
             name != null -> name
@@ -317,16 +342,14 @@ object KaizenParserExtensions {
     }
 
 
-    fun Schema.isInlinedOneOfSuperInterface() = isOneOfSuperInterfaceOnly() && isInlinedPropertySchema()
+    fun Schema.isInlinedOneOfSuperInterface() = isOneOfSuperInterface() && isInlinedPropertySchema()
 
-    // Not part of any other aggregations
-    fun Schema.isOneOfSuperInterfaceOnly() =
-        oneOfSchemas.isNotEmpty() && allOfSchemas.isEmpty() && anyOfSchemas.isEmpty() && properties.isEmpty() &&
-            oneOfSchemas.all { it.isObjectType() || it.isOneOfDefinitionOnly() }
+    fun Schema.isInlinedDiscriminatedOneOfSuperInterface() = isOneOfSuperInterfaceWithDiscriminator() && isInlinedPropertySchema()
 
-    fun Schema.isOneOfSuperInterface() =
+    fun Schema.isOneOfSuperInterface(): Boolean =
         oneOfSchemas.isNotEmpty() && allOfSchemas.isEmpty() && anyOfSchemas.isEmpty() && properties.isEmpty() &&
-            oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() || it.isOneOfDefinitionOnly() }
+            oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() || it.isOneOfSuperInterface() } &&
+            isSealedInterfacesForOneOfEnabled()
 
     fun Schema.isOneOfSuperInterfaceWithDiscriminator() =
         discriminator != null && discriminator.propertyName != null && isOneOfSuperInterface()

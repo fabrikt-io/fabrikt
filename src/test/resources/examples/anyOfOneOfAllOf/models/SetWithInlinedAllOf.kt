@@ -1,8 +1,8 @@
 package examples.anyOfOneOfAllOf.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
+import jakarta.validation.Valid
 import java.util.LinkedHashSet
-import javax.validation.Valid
 
 public data class SetWithInlinedAllOf(
   @param:JsonProperty("items")

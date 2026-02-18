@@ -1,7 +1,7 @@
 package examples.inLinedObject.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.Valid
+import jakarta.validation.Valid
 
 public data class SecondInlineObject(
   @param:JsonProperty("generation")
