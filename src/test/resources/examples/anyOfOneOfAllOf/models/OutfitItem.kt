@@ -17,4 +17,4 @@ public data class OutfitItem(
   @get:JsonProperty("outfit_id")
   @get:NotNull
   public val outfitId: String,
-)
+) : ItemReference

@@ -26,19 +26,23 @@ object ModelNameRegistry {
         enclosingSchema: Schema? = null,
         valueSuffix: Boolean = false,
         schemaInfoName: String? = null,
+        allocate: Boolean = true,
     ): String {
         val modelClassName = schema.toModelClassName(schemaInfoName, enclosingSchema, valueSuffix)
         var suggestion = modelClassName
-        while (allocatedNames.contains(suggestion)) {
-            suggestion += SUFFIX
-        }
-        allocatedNames.add(suggestion)
+        
+        if (allocate) {
+            while (allocatedNames.contains(suggestion)) {
+                suggestion += SUFFIX
+            }
+            allocatedNames.add(suggestion)
 
-        val tag = resolveTag(schema, modelClassName)
-        val replaced = tagToName.put(tag, suggestion)
-        if (replaced != null) {
-            // Only allow unique tags to be registered
-            throw IllegalArgumentException("tag $tag cannot be used for both '$replaced' and '$suggestion'")
+            val tag = resolveTag(schema, modelClassName)
+            val replaced = tagToName.put(tag, suggestion)
+            if (replaced != null) {
+                // Only allow unique tags to be registered
+                throw IllegalArgumentException("tag $tag cannot be used for both '$replaced' and '$suggestion'")
+            }
         }
 
         return suggestion
@@ -94,8 +98,25 @@ object ModelNameRegistry {
         this[resolveTag(schemaInfo.schema, schemaInfoName = schemaInfo.name)]
             .getOrElse { register(schemaInfo.schema, schemaInfoName = schemaInfo.name) }
 
+    private val inlineSchemaTracking: MutableMap<Schema, String> = mutableMapOf()
+    
+    /**
+     * Pre-compute what name an inline schema will get without allocating it yet.
+     * Called from findOneOfSuperInterface to map schema -> future name.
+     */
+    fun preRegisterInlineSchema(schema: Schema, enclosingSchema: Schema) {
+        if (inlineSchemaTracking.containsKey(schema)) return
+        val modelClassName = register(schema, enclosingSchema, valueSuffix = false, schemaInfoName = null, allocate = false)
+        inlineSchemaTracking[schema] = modelClassName
+    }
+    
+
+    fun getBySchema(schema: Schema): String? =
+        inlineSchemaTracking[schema]
+
     fun clear() {
         allocatedNames.clear()
         tagToName.clear()
+        inlineSchemaTracking.clear()
     }
 }

@@ -55,9 +55,6 @@ object KaizenParserExtensions {
     private fun Schema.isAggregatedObject(): Boolean =
         combinedAnyOfAndAllOfSchemas().size > 1
 
-    private fun Schema.isOneOfDefinitionOnly(): Boolean =
-        properties.isEmpty() && !isAggregatedObject() && oneOfSchemas?.isNotEmpty() == true
-
     fun Schema.isInlinedTypedAdditionalProperties() =
         isObjectType() && !isSchemaLess() && Overlay.of(this).pathFromRoot.contains("additionalProperties")
 
@@ -183,8 +180,10 @@ object KaizenParserExtensions {
         if (!isSealedInterfacesForOneOfEnabled()) {
             return emptySet()
         }
-        return allSchemas
-            .filter { it.oneOfSchemas.isNotEmpty() }
+        
+        // Check top-level oneOf schemas
+        val topLevelInterfaces = allSchemas
+            .filter { it.oneOfSchemas.isNotEmpty() && it.isOneOfSuperInterface() }
             .mapNotNull { schema ->
                 if (schema.oneOfSchemas.toList().contains(this) &&
                     schema.oneOfSchemas.map { it.safeName() }.contains(this.safeName()) // Guard against identical inlined schemas
@@ -192,7 +191,35 @@ object KaizenParserExtensions {
                     schema
                 else null
             }
-            .toSet()
+            
+        // Check inline oneOf within properties of all schemas
+        val inlineInterfaces = allSchemas.flatMap { enclosingSchema ->
+            enclosingSchema.properties.values.flatMap { property ->
+                val interfaces = mutableListOf<Schema>()
+                
+                // Check oneOf in array items
+                property.itemsSchema?.let { items ->
+                    if (items.isInlinedOneOfSuperInterface() &&
+                        items.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
+                    ) {
+                        ModelNameRegistry.preRegisterInlineSchema(items, enclosingSchema)
+                        interfaces.add(items)
+                    }
+                }
+                
+                // Check oneOf directly on property
+                if (property.isInlinedOneOfSuperInterface() &&
+                    property.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
+                ) {
+                    ModelNameRegistry.preRegisterInlineSchema(property, enclosingSchema)
+                    interfaces.add(property)
+                }
+                
+                interfaces
+            }
+        }
+        
+        return (topLevelInterfaces + inlineInterfaces).toSet()
     }
 
     fun Schema.getKeyIfSingleDiscriminatorValue(
@@ -250,7 +277,7 @@ object KaizenParserExtensions {
 
     fun Schema.safeName(): String =
         when {
-            isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !isSealedInterfacesForOneOfEnabled() -> 
+            isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !(isOneOfSuperInterfaceWithDiscriminator()) ->
                 this.oneOfSchemas.first().allOfSchemas.first().safeName()
             isInlinedAggregationOfExactlyOne() -> combinedAnyOfAndAllOfSchemas().first().safeName()
             name != null -> name
@@ -315,16 +342,12 @@ object KaizenParserExtensions {
     }
 
 
-    fun Schema.isInlinedOneOfSuperInterface() = isOneOfSuperInterfaceOnly() && isInlinedPropertySchema()
-
-    // Not part of any other aggregations
-    fun Schema.isOneOfSuperInterfaceOnly() =
+    fun Schema.isInlinedOneOfSuperInterface() = isOneOfSuperInterface() && isInlinedPropertySchema()
+    fun Schema.isInlinedDiscriminatedOneOfSuperInterface() = isOneOfSuperInterfaceWithDiscriminator() && isInlinedPropertySchema()
+    fun Schema.isOneOfSuperInterface(): Boolean =
         oneOfSchemas.isNotEmpty() && allOfSchemas.isEmpty() && anyOfSchemas.isEmpty() && properties.isEmpty() &&
-            oneOfSchemas.all { it.isObjectType() || it.isOneOfDefinitionOnly() }
-
-    fun Schema.isOneOfSuperInterface() =
-        oneOfSchemas.isNotEmpty() && allOfSchemas.isEmpty() && anyOfSchemas.isEmpty() && properties.isEmpty() &&
-            oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() || it.isOneOfDefinitionOnly() }
+            oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() || it.isOneOfSuperInterface() } &&
+            isSealedInterfacesForOneOfEnabled()
 
     fun Schema.isOneOfSuperInterfaceWithDiscriminator() =
         discriminator != null && discriminator.propertyName != null && isOneOfSuperInterface()
