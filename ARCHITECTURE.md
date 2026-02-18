@@ -1,6 +1,8 @@
-# Fabrikt Code Generation Architecture Guide
+# Fabrikt Code Generation Architecture
 
-Quick reference for understanding the code generation pipeline and where to look for issues.
+Developer guide for understanding the code generation pipeline and troubleshooting issues.
+
+> **For AI Assistants**: This document helps identify where to look when debugging type resolution, model generation, or annotation issues.
 
 ## Architecture Overview
 
@@ -15,6 +17,7 @@ OpenAPI Schema → Type Resolution → Code Generation → Output
   - `safeName()` - Determines the name/type to use for a schema
   - `safeType()` - Classifies schema as object/array/string/etc
   - `is*()` functions - Detection predicates for special cases
+  - `findOneOfSuperInterface()` - Finds sealed interfaces a schema should implement
   
 - **`KotlinTypeInfo.kt`**
   - `from()` - Converts OpenAPI schema to Kotlin type
@@ -23,6 +26,8 @@ OpenAPI Schema → Type Resolution → Code Generation → Output
 - **`ModelNameRegistry.kt`**
   - Manages type name registration and lookup
   - Calls `safeName()` to generate names
+  - `preRegisterInlineSchema()` - Pre-computes names for inline oneOf schemas
+  - `getBySchema()` - Retrieves pre-registered names by schema reference
 
 ### Code Generation (Creates Kotlin code)
 - **`ModelGenerator.kt`**
@@ -41,15 +46,22 @@ OpenAPI Schema → Type Resolution → Code Generation → Output
 
 | Symptom | Where to Look |
 |---------|---------------|
-| Property has wrong type | `KotlinTypeInfo.from()`, `safeName()` |
-| Type doesn't exist | `safeName()`, `ModelGenerator` filters |
+| Property has wrong type | `KotlinTypeInfo.from()`, `getParameterizedTypeForArray()`, `safeName()` |
+| Type doesn't exist / wrong name | `safeName()`, `ModelGenerator` filters, `ModelNameRegistry` |
 | Missing annotations | `PropertyUtils.addToClass()` |
-| Wrong sealed interface | `findOneOfSuperInterface()` |
+| Wrong sealed interface | `findOneOfSuperInterface()`, `isOneOfSuperInterface*()` |
+| Class implements wrong interface | `findOneOfSuperInterface()`, `ModelNameRegistry.getBySchema()` |
 
-## Key Principle
+## Key Principles
 
 **Type resolution happens BEFORE generation.**
 - Fix "wrong type" issues in `KotlinTypeInfo` or `safeName()`
 - Fix "missing model" issues in `ModelGenerator`
 - Don't duplicate existing detection logic - reuse `is*()` functions
+
+**Inline oneOf schemas need special handling.**
+- Inline oneOf schemas don't have a `name` property
+- `ModelNameRegistry.preRegisterInlineSchema()` pre-computes their names during `findOneOfSuperInterface()`
+- `ModelNameRegistry.getBySchema()` retrieves the pre-computed name during generation
+- This ensures the interface name matches what's used in `implements` clauses
 
