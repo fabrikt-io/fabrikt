@@ -576,8 +576,10 @@ class ModelGenerator(
             .addMicronautReflectionAnnotation()
             .addCompanionObject()
         for (oneOfInterface in oneOfInterfaces) {
+            val interfaceName = ModelNameRegistry.getBySchema(oneOfInterface) ?: oneOfInterface.name
+
             classBuilder
-                .addSuperinterface(generatedType(packages.base, ModelNameRegistry.getOrRegister(oneOfInterface)))
+                .addSuperinterface(generatedType(packages.base, interfaceName))
         }
         oneOfInterfaces
             .mapNotNull { it.discriminator.mappingKeyForSchemaName(schemaName) }
@@ -671,7 +673,9 @@ class ModelGenerator(
         }
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {
-            interfaceBuilder.addSuperinterface(generatedType(packages.base, oneOfSuperInterface.name))
+            val interfaceName = ModelNameRegistry.getBySchema(oneOfSuperInterface) ?: oneOfSuperInterface.name
+
+            interfaceBuilder.addSuperinterface(generatedType(packages.base, interfaceName))
         }
 
         interfaceBuilder
@@ -781,7 +785,9 @@ class ModelGenerator(
             .modifiers.remove(KModifier.DATA)
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {
-            this.addSuperinterface(generatedType(packages.base, oneOfSuperInterface.name))
+            val interfaceName = ModelNameRegistry.getBySchema(oneOfSuperInterface) ?: oneOfSuperInterface.name
+
+            this.addSuperinterface(generatedType(packages.base, interfaceName))
         }
 
         val subTypes = allSchemas
@@ -850,7 +856,8 @@ class ModelGenerator(
             )
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {
-            this.addSuperinterface(generatedType(packages.base, oneOfSuperInterface.name))
+            val interfaceName = ModelNameRegistry.getBySchema(oneOfSuperInterface) ?: oneOfSuperInterface.name
+            this.addSuperinterface(generatedType(packages.base, interfaceName))
         }
 
         val properties = superType.schema.getDiscriminatorForInLinedObjectUnderAllOf()?.let { discriminator ->

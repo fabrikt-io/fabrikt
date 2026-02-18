@@ -8,8 +8,8 @@ public data class OneObject(
   /**
    * Type Property
    */
-  @param:JsonProperty("type")
   @get:JsonProperty("type")
   @get:NotNull
-  public val type: String,
-)
+  @param:JsonProperty("type")
+  public val type: String = "char_location",
+) : SomeObjInlinedArray, SomeObjInlinedObject, SomeObjInlinedObjectNoMappings

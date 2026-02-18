@@ -180,7 +180,9 @@ object KaizenParserExtensions {
         if (!isSealedInterfacesForOneOfEnabled()) {
             return emptySet()
         }
-        return allSchemas
+        
+        // Check top-level oneOf schemas
+        val topLevelInterfaces = allSchemas
             .filter { it.oneOfSchemas.isNotEmpty() && it.isOneOfSuperInterface() }
             .mapNotNull { schema ->
                 if (schema.oneOfSchemas.toList().contains(this) &&
@@ -189,7 +191,35 @@ object KaizenParserExtensions {
                     schema
                 else null
             }
-            .toSet()
+            
+        // Check inline oneOf within properties of all schemas
+        val inlineInterfaces = allSchemas.flatMap { enclosingSchema ->
+            enclosingSchema.properties.values.flatMap { property ->
+                val interfaces = mutableListOf<Schema>()
+                
+                // Check oneOf in array items
+                property.itemsSchema?.let { items ->
+                    if (items.isInlinedOneOfSuperInterface() &&
+                        items.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
+                    ) {
+                        ModelNameRegistry.preRegisterInlineSchema(items, enclosingSchema)
+                        interfaces.add(items)
+                    }
+                }
+                
+                // Check oneOf directly on property
+                if (property.isInlinedOneOfSuperInterface() &&
+                    property.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
+                ) {
+                    ModelNameRegistry.preRegisterInlineSchema(property, enclosingSchema)
+                    interfaces.add(property)
+                }
+                
+                interfaces
+            }
+        }
+        
+        return (topLevelInterfaces + inlineInterfaces).toSet()
     }
 
     fun Schema.getKeyIfSingleDiscriminatorValue(

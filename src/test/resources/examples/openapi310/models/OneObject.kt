@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotNull
 import kotlin.String
 
 public data class OneObject(
-  @param:JsonProperty("type")
   @get:JsonProperty("type")
   @get:NotNull
-  public val type: String,
-)
+  @param:JsonProperty("type")
+  public val type: String = "char_location",
+) : NewNullableFormatComplexNullable
