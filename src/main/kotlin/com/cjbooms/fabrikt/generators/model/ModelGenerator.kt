@@ -230,7 +230,7 @@ class ModelGenerator(
         val modelName = ModelNameRegistry.getOrRegister(schemaInfo)
         val schemaName = schemaInfo.schema.getSchemaRefName()
         return when {
-            schemaInfo.schema.isOneOfSuperInterface() && isSealedInterfacesForOneOfEnabled() -> oneOfSuperInterface(
+            schemaInfo.schema.isOneOfSuperInterface() -> oneOfSuperInterface(
                 modelName = modelName,
                 discriminator = schemaInfo.schema.discriminator,
                 allSchemas = allSchemas,
@@ -296,7 +296,7 @@ class ModelGenerator(
                             emptySet() // Rely on the parent definition
                         }
 
-                        it.schema.isOneOfSuperInterface() && isSealedInterfacesForOneOfEnabled() -> {
+                        it.schema.isOneOfSuperInterface() -> {
                             setOf(
                                 oneOfSuperInterface(
                                     modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
@@ -399,7 +399,7 @@ class ModelGenerator(
                         ),
                     )
 
-                items.isInlinedOneOfSuperInterface() && isSealedInterfacesForOneOfEnabled() ->
+                items.isInlinedOneOfSuperInterface() ->
                     setOf(
                         oneOfSuperInterface(
                             modelName = ModelNameRegistry.getOrRegister(schema, enclosingSchema),

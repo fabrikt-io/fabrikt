@@ -5,7 +5,6 @@ import com.cjbooms.fabrikt.cli.CodeGenerationType
 import com.cjbooms.fabrikt.cli.InstantLibrary
 import com.cjbooms.fabrikt.cli.SerializationLibrary.KOTLINX_SERIALIZATION
 import com.cjbooms.fabrikt.generators.MutableSettings
-import com.cjbooms.fabrikt.generators.MutableSettings.isSealedInterfacesForOneOfEnabled
 import com.cjbooms.fabrikt.model.OasType.Companion.toOasType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.getEnumValues
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isEnumDefinition
@@ -172,7 +171,7 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
 
                 OasType.Any -> AnyType
                 OasType.OneOfAny ->
-                    if (schema.isOneOfSuperInterfaceWithDiscriminator() && isSealedInterfacesForOneOfEnabled()) {
+                    if (schema.isOneOfSuperInterfaceWithDiscriminator()) {
                         Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema))
                     } else {
                         AnyType
