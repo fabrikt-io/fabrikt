@@ -9,6 +9,7 @@ import com.cjbooms.fabrikt.generators.MutableSettings.isSealedInterfacesForOneOf
 import com.cjbooms.fabrikt.model.OasType.Companion.toOasType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.getEnumValues
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isEnumDefinition
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedDiscriminatedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedTypedAdditionalProperties
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isNotDefined
@@ -185,7 +186,7 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
             oasKey: String
         ): KotlinTypeInfo {
             return when {
-                arraySchema.itemsSchema.isInlinedObjectDefinition() && !arraySchema.itemsSchema.isUnsupportedComplexInlinedDefinition() ->
+                (arraySchema.itemsSchema.isInlinedObjectDefinition() || arraySchema.itemsSchema.isInlinedDiscriminatedOneOfSuperInterface()) && !arraySchema.itemsSchema.isUnsupportedComplexInlinedDefinition() ->
                     Object(ModelNameRegistry.getOrRegister(arraySchema, enclosingSchema))
                 arraySchema.itemsSchema.isNotDefined() -> AnyType
                 else -> from(arraySchema.itemsSchema, oasKey, enclosingSchema)
