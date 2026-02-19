@@ -214,7 +214,7 @@ data class SimpleClientOperationStatement(
     }
 
     private fun CodeBlock.Builder.addRequestStatement(): CodeBlock.Builder {
-        this.add("\nval request: %T = Request.Builder()", "Request".toClassName("okhttp3"))
+        this.add("\nval request: %T = %T.Builder()", "Request".toClassName("okhttp3"), "Request".toClassName("okhttp3"))
         this.add("\n.url(httpUrl)\n.headers(httpHeaders)")
         when (val op = verb.toUpperCase()) {
             "PUT" -> this.addRequestSerializerStatement("put")
