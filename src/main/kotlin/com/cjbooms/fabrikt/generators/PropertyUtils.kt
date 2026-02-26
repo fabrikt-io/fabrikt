@@ -251,7 +251,7 @@ object PropertyUtils {
     }
 
     fun PropertyInfo.isSchemaNullable(classSettings: ClassSettings): Boolean =
-        schema.isNullable || classSettings.nullableObjectRefs.contains(name)
+        schema.isNullable || classSettings.nullableObjectRefs.contains(oasKey)
 
     fun PropertyInfo.isNullable(classSettings: ClassSettings) = when (this) {
         is PropertyInfo.Field -> !isRequired && schema.default == null || isSchemaNullable(classSettings)
