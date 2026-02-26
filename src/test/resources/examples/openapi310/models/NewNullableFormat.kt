@@ -3,6 +3,7 @@ package examples.openapi310.models
 import com.fasterxml.jackson.`annotation`.JsonInclude
 import com.fasterxml.jackson.`annotation`.JsonProperty
 import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import kotlin.String
 import kotlin.collections.List
 
@@ -23,6 +24,11 @@ public data class NewNullableFormat(
   @get:Valid
   @param:JsonInclude(JsonInclude.Include.ALWAYS)
   public val requiredNullableRef: OneObject?,
+  @param:JsonProperty("required_nullable_underscore_ref")
+  @get:JsonProperty("required_nullable_underscore_ref")
+  @get:NotNull
+  @get:Valid
+  public val requiredNullableUnderscoreRef: OneObject,
   @param:JsonProperty("singleRequiredFieldNullableRef")
   @get:JsonProperty("singleRequiredFieldNullableRef")
   @get:Valid
