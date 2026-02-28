@@ -222,7 +222,7 @@ data class SimpleClientOperationStatement(
             "PATCH" -> this.addRequestSerializerStatement("patch")
             "HEAD" -> this.add("\n.head()")
             "GET" -> this.add("\n.get()")
-            "DELETE" -> this.add("\n.delete()")
+            "DELETE" -> this.addRequestSerializerStatement("delete")
             else -> throw NotImplementedError("API operation $op is not supported")
         }
         return this.add("\n.build()\n")
@@ -248,6 +248,6 @@ data class SimpleClientOperationStatement(
                 requestBody.getPrimaryContentMediaType()?.key,
                 "toMediaType".toClassName("okhttp3.MediaType.Companion")
             )
-        } ?: this.add("\n.%N(ByteArray(0).%T())", verb, toRequestBody)
+        } ?: if (verb == "delete") this.add("\n.delete()") else this.add("\n.%N(ByteArray(0).%T())", verb, toRequestBody)
     }
 }
