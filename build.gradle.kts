@@ -221,6 +221,11 @@ publishing {
                         email.set("averabaq@gmail.com")
                     }
                 }
+                scm {
+                    connection.set(projectScmConUrl)
+                    developerConnection.set(projectScmDevUrl)
+                    url.set(projectScmUrl)
+                }
                 withXml {
                     asNode().appendNode("distributionManagement").apply {
                         appendNode("relocation").apply {
