@@ -10,7 +10,7 @@ jobs:
         run: |
           echo "Querying for open staging repository..."
           RESPONSE=$(curl -s -u "${{ secrets.OSSRH_USER_TOKEN_USERNAME }}:${{ secrets.OSSRH_USER_TOKEN_PASSWORD }}" \
-            "https://ossrh-staging-api.central.sonatype.com/manual/search/repositories?ip=any&profile_id=com.cjbooms")
+            "https://ossrh-staging-api.central.sonatype.com/manual/search/repositories?ip=any&profile_id=io.fabrikt")
           
           REPO_KEY=$(echo "$RESPONSE" | jq -r '.repositories[] | select(.state == "open") | .key')
 

@@ -18,15 +18,15 @@ java {
 
 val executableName = "fabrikt"
 
-group = "com.cjbooms"
+group = "io.fabrikt"
 val gitVersion: groovy.lang.Closure<*> by extra
 version = gitVersion.call()
 
-val projectUrl = "https://github.com/cjbooms/fabrikt"
-val projectScmUrl = "scm:https://cjbooms@github.com/cjbooms/fabrikt.git"
-val projectScmConUrl = "scm:https://cjbooms@github.com/cjbooms/fabrikt.git"
-val projectScmDevUrl = "scm:git://github.com/cjbooms/fabrikt.git"
-val projectIssueUrl = "https://github.com/cjbooms/fabrikt/issues"
+val projectUrl = "https://github.com/fabrikt-io/fabrikt"
+val projectScmUrl = "scm:https://fabrikt-io@github.com/fabrikt-io/fabrikt.git"
+val projectScmConUrl = "scm:https://fabrikt-io@github.com/fabrikt-io/fabrikt.git"
+val projectScmDevUrl = "scm:git://github.com/fabrikt-io/fabrikt.git"
+val projectIssueUrl = "https://github.com/fabrikt-io/fabrikt/issues"
 val projectName = "Fabrikt"
 val projectDesc = "Fabricates Kotlin code from OpenApi3 specifications"
 val projectLicenseName = "Apache License 2.0"
@@ -189,6 +189,50 @@ publishing {
                 }
             }
         }
+
+        // Relocation POM published under old coordinates to point users to the new groupId
+        // NOTE: This is a ONE-TIME publication. After this release is published to Maven Central,
+        // remove this entire publication block from future releases to avoid re-publishing it.
+        create<MavenPublication>("relocationPom") {
+            groupId = "com.cjbooms"
+            artifactId = "fabrikt"
+            version = project.version.toString()
+            pom {
+                name.set(projectName)
+                description.set(projectDesc)
+                url.set(projectUrl)
+                packaging = "pom"
+                inceptionYear.set("2020")
+                licenses {
+                    license {
+                        name.set(projectLicenseName)
+                        url.set(projectLicenseUrl)
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("cjbooms")
+                        name.set("Conor Gallagher")
+                        email.set("cjbooms@gmail.com")
+                    }
+                    developer {
+                        id.set("averabaq")
+                        name.set("Alejandro Vera-Baquero")
+                        email.set("averabaq@gmail.com")
+                    }
+                }
+                withXml {
+                    asNode().appendNode("distributionManagement").apply {
+                        appendNode("relocation").apply {
+                            appendNode("groupId", "io.fabrikt")
+                            appendNode("artifactId", "fabrikt")
+                            appendNode("version", project.version.toString())
+                            appendNode("message", "Artifact relocated to io.fabrikt:fabrikt")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -198,4 +242,5 @@ signing {
     useInMemoryPgpKeys(signingKey, signingPassword)
 
     sign(publishing.publications["fabrikt"])
+    sign(publishing.publications["relocationPom"])
 }
