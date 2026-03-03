@@ -189,55 +189,6 @@ publishing {
                 }
             }
         }
-
-        // Relocation POM published under old coordinates to point users to the new groupId
-        // NOTE: This is a ONE-TIME publication. After this release is published to Maven Central,
-        // remove this entire publication block from future releases to avoid re-publishing it.
-        create<MavenPublication>("relocationPom") {
-            groupId = "com.cjbooms"
-            artifactId = "fabrikt"
-            version = project.version.toString()
-            pom {
-                name.set(projectName)
-                description.set(projectDesc)
-                url.set(projectUrl)
-                packaging = "pom"
-                inceptionYear.set("2020")
-                licenses {
-                    license {
-                        name.set(projectLicenseName)
-                        url.set(projectLicenseUrl)
-                    }
-                }
-                developers {
-                    developer {
-                        id.set("cjbooms")
-                        name.set("Conor Gallagher")
-                        email.set("cjbooms@gmail.com")
-                    }
-                    developer {
-                        id.set("averabaq")
-                        name.set("Alejandro Vera-Baquero")
-                        email.set("averabaq@gmail.com")
-                    }
-                }
-                scm {
-                    connection.set(projectScmConUrl)
-                    developerConnection.set(projectScmDevUrl)
-                    url.set(projectScmUrl)
-                }
-                withXml {
-                    asNode().appendNode("distributionManagement").apply {
-                        appendNode("relocation").apply {
-                            appendNode("groupId", "io.fabrikt")
-                            appendNode("artifactId", "fabrikt")
-                            appendNode("version", project.version.toString())
-                            appendNode("message", "Artifact relocated to io.fabrikt:fabrikt")
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -247,5 +198,4 @@ signing {
     useInMemoryPgpKeys(signingKey, signingPassword)
 
     sign(publishing.publications["fabrikt"])
-    sign(publishing.publications["relocationPom"])
 }
