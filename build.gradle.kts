@@ -91,7 +91,7 @@ dependencies {
 tasks {
     val shadowJar by getting(ShadowJar::class) {
         manifest {
-            attributes["Main-Class"] = "com.cjbooms.fabrikt.cli.CodeGen"
+            attributes["Main-Class"] = "io.fabrikt.cli.CodeGen"
             attributes["Implementation-Title"] = "fabrikt"
             attributes["Implementation-Version"] = project.version
             attributes["Built-JDK"] = System.getProperty("java.version")

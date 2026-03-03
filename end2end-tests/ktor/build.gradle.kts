@@ -117,7 +117,7 @@ fun TaskContainer.createCodeGenerationTask(
     outputs.dir(generationDir)
     outputs.cacheIf { true }
     classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
-    mainClass.set("com.cjbooms.fabrikt.cli.CodeGen")
+    mainClass.set("io.fabrikt.cli.CodeGen")
     args = listOf(
         "--output-directory", generationDir,
         "--base-package", "com.example",
