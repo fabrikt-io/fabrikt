@@ -43,7 +43,7 @@ Try Fabrikt with your own API spec in the [Fabrikt Playground](https://try.fabri
 
 ```xml
 <dependency>
-  <groupId>com.cjbooms</groupId>
+  <groupId>io.fabrikt</groupId>
   <artifactId>fabrikt</artifactId>
 </dependency>
 ```
@@ -118,7 +118,7 @@ tasks {
         outputs.dir(generationDir)
         outputs.cacheIf { true }
         classpath(fabrikt)
-        mainClass.set("com.cjbooms.fabrikt.cli.CodeGen")
+        mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", generationDir,
             "--base-package", "com.example",
@@ -135,7 +135,7 @@ tasks {
 }
 
 dependencies {
-     fabrikt("com.cjbooms:fabrikt:+") // This should be pinned  
+     fabrikt("io.fabrikt:fabrikt:+") // This should be pinned  
      ...
 }
 ```
