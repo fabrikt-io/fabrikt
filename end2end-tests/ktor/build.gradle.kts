@@ -23,7 +23,7 @@ dependencies {
     implementation(platform(libs.jackson.bom))
     implementation(libs.jakarta.validation.api)
     implementation(libs.validation.api)
-    implementation(libs.kotlinx.datetime.v062)
+    implementation(libs.kotlinx.datetime.legacy)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.core)
@@ -51,7 +51,7 @@ dependencies {
     testImplementation(libs.bundles.junit)
     testImplementation(libs.assertj.core)
 
-    testImplementation(libs.logback.classic.v143)
+    testImplementation(libs.logback.classic.legacy)
 }
 
 tasks {

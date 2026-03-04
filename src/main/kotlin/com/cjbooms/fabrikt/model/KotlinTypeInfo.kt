@@ -32,7 +32,6 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
     object KotlinxLocalDate : KotlinTypeInfo(kotlinx.datetime.LocalDate::class)
     object DateTime : KotlinTypeInfo(OffsetDateTime::class)
     object Instant : KotlinTypeInfo(java.time.Instant::class)
-    @Suppress("DEPRECATION")
     object KotlinxInstant : KotlinTypeInfo(kotlinx.datetime.Instant::class)
     object KotlinInstant : KotlinTypeInfo(kotlin.time.Instant::class)
     object LocalDateTime : KotlinTypeInfo(java.time.LocalDateTime::class)

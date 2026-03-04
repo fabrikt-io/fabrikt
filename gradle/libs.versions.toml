@@ -1,9 +1,8 @@
 [versions]
 # Core / Kotlin
-kotlin-test = "1.8.20"
 kotlinpoet = "1.14.2"
-kotlinx-datetime = "0.7.1-0.6.x-compat"
-kotlinx-datetime-compat = "0.6.2"
+kotlinx-datetime = "0.7.1"
+kotlinx-datetime-legacy = "0.6.2"
 kotlinx-serialization = "1.9.0"
 
 # Jackson / Serialization
@@ -65,7 +64,7 @@ jackson-databind-nullable = { module = "org.openapitools:jackson-databind-nullab
 
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom" }
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
-kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin-test" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test" }
 
 handlebars = { module = "com.github.jknack:handlebars", version.ref = "handlebars" }
 jcommander = { module = "com.beust:jcommander", version.ref = "jcommander" }
@@ -75,7 +74,7 @@ kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 flogger = { module = "com.google.flogger:flogger", version.ref = "flogger" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
-kotlinx-datetime-v062 = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime-compat" }
+kotlinx-datetime-legacy = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime-legacy" }
 
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
@@ -110,7 +109,7 @@ ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-logback-classic-v143 = { module = "ch.qos.logback:logback-classic", version.ref = "logback-legacy" }
+logback-classic-legacy = { module = "ch.qos.logback:logback-classic", version.ref = "logback-legacy" }
 
 wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock" }
 kotlin-wiremock = { module = "com.marcinziolo:kotlin-wiremock", version.ref = "kotlin-wiremock" }
