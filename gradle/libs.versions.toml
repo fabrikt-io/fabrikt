@@ -1,0 +1,129 @@
+[versions]
+# Core / Kotlin
+kotlin-test = "1.8.20"
+kotlinpoet = "1.14.2"
+kotlinx-datetime = "0.7.1-0.6.x-compat"
+kotlinx-datetime-compat = "0.6.2"
+kotlinx-serialization = "1.9.0"
+
+# Jackson / Serialization
+jackson = "2.20.1"
+jackson-databind-nullable = "0.2.6"
+
+# OpenAPI
+kaizen-openapi-parser = "4.1.0"
+jsonoverlay = "4.0.4"
+
+# Code generation
+handlebars = "4.3.1"
+jcommander = "1.82"
+flogger = "0.7.4"
+
+# Ktor
+ktor = "3.0.1"
+
+# Spring
+spring-boot = "3.4.3"
+spring-webmvc = "6.0.9"
+spring-security = "6.1.0"
+
+# Micronaut
+micronaut = "3.8.7"
+
+# HTTP clients
+okhttp = "4.10.0"
+feign = "13.3"
+resilience4j = "2.1.0"
+
+# Validation
+jakarta-validation = "3.0.2"
+validation-api = "2.0.1.Final"
+
+# Logging
+logback = "1.5.6"
+logback-legacy = "1.4.3"
+
+# Testing
+junit = "5.9.2"
+assertj = "3.24.2"
+mockk = "1.13.7"
+wiremock = "3.3.1"
+kotlin-wiremock = "2.1.1"
+
+# Linting
+ktlint = "1.7.1"
+
+[libraries]
+jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations" }
+jackson-dataformat-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml" }
+jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310" }
+jackson-databind-nullable = { module = "org.openapitools:jackson-databind-nullable", version.ref = "jackson-databind-nullable" }
+
+kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom" }
+kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin-test" }
+
+handlebars = { module = "com.github.jknack:handlebars", version.ref = "handlebars" }
+jcommander = { module = "com.beust:jcommander", version.ref = "jcommander" }
+openapi-parser = { module = "io.fabrikt:kaizen-openapi-parser", version.ref = "kaizen-openapi-parser" }
+jsonoverlay = { module = "com.reprezen.jsonoverlay:jsonoverlay", version.ref = "jsonoverlay" }
+kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
+flogger = { module = "com.google.flogger:flogger", version.ref = "flogger" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+kotlinx-datetime-v062 = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime-compat" }
+
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+validation-api = { module = "javax.validation:validation-api", version.ref = "validation-api" }
+jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
+spring-webmvc = { module = "org.springframework:spring-webmvc", version.ref = "spring-webmvc" }
+spring-security-web = { module = "org.springframework.security:spring-security-web", version.ref = "spring-security" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+micronaut-core = { module = "io.micronaut:micronaut-core", version.ref = "micronaut" }
+micronaut-http = { module = "io.micronaut:micronaut-http", version.ref = "micronaut" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+ktor-server-data-conversion = { module = "io.ktor:ktor-server-data-conversion", version.ref = "ktor" }
+ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+ktor-server-netty-jvm = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
+ktor-server-content-negotiation-jvm = { module = "io.ktor:ktor-server-content-negotiation-jvm", version.ref = "ktor" }
+ktor-server-html-builder = { module = "io.ktor:ktor-server-html-builder", version.ref = "ktor" }
+ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
+ktor-serialization-jackson = { module = "io.ktor:ktor-serialization-jackson", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+logback-classic-v143 = { module = "ch.qos.logback:logback-classic", version.ref = "logback-legacy" }
+
+wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock" }
+kotlin-wiremock = { module = "com.marcinziolo:kotlin-wiremock", version.ref = "kotlin-wiremock" }
+resilience4j-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version.ref = "resilience4j" }
+feign-core = { module = "io.github.openfeign:feign-core", version.ref = "feign" }
+feign-jackson = { module = "io.github.openfeign:feign-jackson", version.ref = "feign" }
+feign-okhttp = { module = "io.github.openfeign:feign-okhttp", version.ref = "feign" }
+
+ktlint-bom = { module = "com.pinterest.ktlint:ktlint-bom", version.ref = "ktlint" }
+ktlint-rule-engine-core = { module = "com.pinterest.ktlint:ktlint-rule-engine-core" }
+ktlint-rule-engine = { module = "com.pinterest.ktlint:ktlint-rule-engine" }
+ktlint-ruleset-standard = { module = "com.pinterest.ktlint:ktlint-ruleset-standard" }
+
+[bundles]
+junit = ["junit-jupiter-api", "junit-jupiter-engine", "junit-jupiter-params"]
+wiremock = ["wiremock", "kotlin-wiremock"]

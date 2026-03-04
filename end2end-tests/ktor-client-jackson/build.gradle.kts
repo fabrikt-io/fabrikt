@@ -20,27 +20,21 @@ kotlin {
     jvmToolchain(17)
 }
 
-val junitVersion: String by rootProject.extra
-val ktorVersion: String by rootProject.extra
-
 dependencies {
     // ktor client
-    implementation("io.ktor:ktor-client-core:$ktorVersion")
-    implementation("io.ktor:ktor-client-cio:$ktorVersion")
-    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
-    implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.jackson)
 
     // ktor test
-    testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
-    testImplementation("io.mockk:mockk:1.13.7")
+    testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.mockk)
 
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:$junitVersion")
-    testImplementation("org.assertj:assertj-core:3.24.2")
-    testImplementation("org.wiremock:wiremock:3.3.1")
-    testImplementation("com.marcinziolo:kotlin-wiremock:2.1.1")
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.bundles.wiremock)
 }
 
 tasks {
