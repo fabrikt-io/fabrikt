@@ -74,6 +74,29 @@ data class GenerationSettings(
     }
 
     /**
+     * Construct the equivalent fabrikt CLI command for these settings.
+     */
+    fun toCliCommand(): String {
+        fun q(v: String) = "'$v'"
+        val args = mutableListOf<String>()
+        args += "--api-file ${q("api.yaml")}"
+        args += "--base-package ${q("com.example")}"
+        genTypes.forEach { args += "--targets ${q(it.name)}" }
+        if (serializationLibrary != SerializationLibrary.default) args += "--serialization-library ${q(serializationLibrary.name)}"
+        modelOptions.forEach { args += "--http-model-opts ${q(it.name)}" }
+        if (modelSuffix.isNotBlank()) args += "--http-model-suffix ${q(modelSuffix)}"
+        if (controllerTarget != ControllerCodeGenTargetType.default) args += "--http-controller-target ${q(controllerTarget.name)}"
+        controllerOptions.forEach { args += "--http-controller-opts ${q(it.name)}" }
+        if (clientTarget != ClientCodeGenTargetType.default) args += "--http-client-target ${q(clientTarget.name)}"
+        clientOptions.forEach { args += "--http-client-opts ${q(it.name)}" }
+        typeOverrides.forEach { args += "--type-overrides ${q(it.name)}" }
+        if (validationLibrary != ValidationLibrary.default) args += "--validation-library ${q(validationLibrary.name)}"
+        if (externalRefResolutionMode != ExternalReferencesResolutionMode.default) args += "--external-ref-resolution ${q(externalRefResolutionMode.name)}"
+        outputOptions.forEach { args += "--output-opts ${q(it.name)}" }
+        return "java -jar fabrikt.jar \\\n" + args.joinToString(" \\\n") { "  $it" }
+    }
+
+    /**
      * Construct the query parameters string for the settings
      */
     fun toQueryParams(): String {

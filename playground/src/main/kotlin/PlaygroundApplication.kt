@@ -27,9 +27,10 @@ import kotlinx.html.style
 import kotlinx.html.unsafe
 import lib.generateCodeSynchronized
 import lib.GenerationSettings.Companion.receiveGenerationSettings
-import views.elements.fileViewForFile
+import views.elements.cliCommandView
 import views.elements.codeView
 import views.elements.fileView
+import views.elements.fileViewForFile
 import views.elements.specForm
 import views.layout.columnPanel
 import views.layout.mainLayout
@@ -59,7 +60,7 @@ fun main() {
                     }
 
                 call.respondHtml {
-                    mainLayout {
+                    mainLayout(Version.GIT_VERSION) {
                         columnPanel(
                             flexSizes = listOf(1.0, 0.4, 1.5),
                             // first column: spec form
@@ -75,6 +76,10 @@ fun main() {
                                     div(classes = "file-sidebar-empty") {
                                         +"// Files will appear here"
                                     }
+                                }
+                                div {
+                                    id = "cli-command"
+                                    style = "flex-shrink: 0; border-top: 1px solid #e0e0e0;"
                                 }
                                 div {
                                     style = "flex-shrink: 0; padding: 8px 10px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #999;"
@@ -136,6 +141,12 @@ fun main() {
                             id = "file-sidebar"
                             attributes["hx-swap-oob"] = "innerHTML"
                             if (fileNames.isNotEmpty()) fileList(fileNames)
+                        }
+                        // OOB swap: update the CLI command
+                        div {
+                            id = "cli-command"
+                            attributes["hx-swap-oob"] = "innerHTML"
+                            cliCommandView(generationSettings.toCliCommand())
                         }
                     }
                 }.onFailure { error ->

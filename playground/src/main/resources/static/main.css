@@ -113,6 +113,53 @@ a, a:visited, a:hover, a:active {
 .file-tag.config     { background: rgba(0,0,0,0.07);      color: #777; }
 
 
+.cli-command-section {
+    padding: 8px 10px;
+}
+
+.cli-command-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #aaa;
+    margin-bottom: 6px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.cli-command-header:hover {
+    color: #888;
+}
+
+.cli-copy-btn {
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 600;
+    color: #3BAFDA;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.cli-copy-btn:hover {
+    text-decoration: underline;
+}
+
+.cli-command-code {
+    font-family: monospace;
+    font-size: 11px;
+    color: #444;
+    background: #f7f7f7;
+    border-radius: 4px;
+    padding: 8px;
+    margin: 0;
+    overflow-x: auto;
+    white-space: pre;
+}
+
 .btn-generate {
     background-color: #3399CC;
     color: white;

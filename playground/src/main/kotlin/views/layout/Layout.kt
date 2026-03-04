@@ -15,7 +15,7 @@ private const val HTMX_VERSION = "2.0.3"
 private const val NORMALIZE_VERSION = "8.0.1"
 private const val BASSCSS = "8.1.0"
 
-fun HTML.mainLayout(content: FlowContent.() -> Unit) = run {
+fun HTML.mainLayout(version: String, content: FlowContent.() -> Unit) = run {
     head {
         title { +"Fabrikt Playground" }
         script { src = "https://cdnjs.cloudflare.com/ajax/libs/prism/$PRISM_VERSION/prism.min.js" }
@@ -49,8 +49,9 @@ fun HTML.mainLayout(content: FlowContent.() -> Unit) = run {
         }
         link {
             rel = "stylesheet"
-            href = "/static/main.css"
+            href = "/static/main.css?v=$version"
         }
+        script { src = "/static/main.js?v=$version" }
         meta ( name = "viewport", content = "width=device-width, initial-scale=1" )
     }
     body {
