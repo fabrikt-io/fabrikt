@@ -14,6 +14,7 @@ import java.net.URL
 object ModelNameRegistry {
     private val allocatedNames: MutableSet<String> = mutableSetOf()
     private val tagToName: MutableMap<String, String> = mutableMapOf()
+    private val referenceToName: MutableMap<String, String> = mutableMapOf()
     private const val SUFFIX = "Extra"
 
     /**
@@ -89,14 +90,37 @@ object ModelNameRegistry {
         schema: Schema,
         enclosingSchema: Schema? = null,
         valueSuffix: Boolean = false,
-    ) = this[resolveTag(schema, enclosingSchema, valueSuffix)]
-        .getOrElse { register(schema, enclosingSchema, valueSuffix) }
+    ): String {
+        getByReference(schema)?.let { return it }
+        return this[resolveTag(schema, enclosingSchema, valueSuffix)]
+            .getOrElse { register(schema, enclosingSchema, valueSuffix) }
+    }
 
     fun getOrRegister(
         schemaInfo: SchemaInfo,
-    ) =
-        this[resolveTag(schemaInfo.schema, schemaInfoName = schemaInfo.name)]
+    ): String {
+        getByReference(schemaInfo.schema)?.let { return it }
+        return this[resolveTag(schemaInfo.schema, schemaInfoName = schemaInfo.name)]
             .getOrElse { register(schemaInfo.schema, schemaInfoName = schemaInfo.name) }
+    }
+
+    fun preRegisterByReference(schema: Schema, name: String) {
+        val ref = Overlay.of(schema).jsonReference
+        if (!referenceToName.containsKey(ref)) {
+            val modelClassName = name.toModelClassName() + MutableSettings.modelSuffix
+            var suggestion = modelClassName
+            while (allocatedNames.contains(suggestion)) {
+                suggestion += SUFFIX
+            }
+            allocatedNames.add(suggestion)
+            referenceToName[ref] = suggestion
+        }
+    }
+
+    private fun getByReference(schema: Schema): String? {
+        val ref = Overlay.of(schema).jsonReference
+        return referenceToName[ref]
+    }
 
     private val inlineSchemaTracking: MutableMap<Schema, String> = mutableMapOf()
     
@@ -118,5 +142,6 @@ object ModelNameRegistry {
         allocatedNames.clear()
         tagToName.clear()
         inlineSchemaTracking.clear()
+        referenceToName.clear()
     }
 }

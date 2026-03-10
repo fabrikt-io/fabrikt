@@ -44,7 +44,7 @@ object KaizenParserExtensions {
     fun Schema.isUnsupportedComplexInlinedDefinition() =
         Overlay.of(this).pathFromRoot.contains("paths") &&
             name == null &&
-            (isObjectType() || isEnumDefinition())
+            isObjectType()
 
     fun Schema.isInlinedObjectDefinition() =
         (isObjectType() || isAggregatedObject()) && !isSchemaLess() && (

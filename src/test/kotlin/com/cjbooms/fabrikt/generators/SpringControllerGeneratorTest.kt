@@ -48,6 +48,7 @@ class SpringControllerGeneratorTest {
         "unsupportedInlinedDefinitions",
         "httpStatusCodeRangeDefinition",
         "multiMediaType",
+        "inlinedEnumParameter",
     )
 
     private fun setupGithubApiTestEnv(annotations: ValidationAnnotations = JavaxValidationAnnotations) {

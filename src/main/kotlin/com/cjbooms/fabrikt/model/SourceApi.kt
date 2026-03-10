@@ -1,9 +1,12 @@
 package com.cjbooms.fabrikt.model
 
 import com.beust.jcommander.ParameterException
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isEnumDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isNotDefined
+import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.YamlUtils
 import com.cjbooms.fabrikt.validation.ValidationError
+import com.reprezen.jsonoverlay.Overlay
 import com.reprezen.kaizen.oasparser.model3.OpenApi3
 import com.reprezen.kaizen.oasparser.model3.Schema
 import java.nio.file.Path
@@ -37,9 +40,23 @@ data class SourceApi(
         validateSchemaObjects(openApi3).let {
             if (it.isNotEmpty()) throw ParameterException("Invalid models or api file:\n${it.joinToString("\n\t")}")
         }
+
+        val inlineEnumParams = openApi3.paths.values.flatMap { path ->
+            val allParams = path.parameters + path.operations.values.flatMap { it.parameters }
+            allParams.filter { param ->
+                param.schema?.isEnumDefinition() == true &&
+                    Overlay.of(param.schema).pathFromRoot.contains("paths")
+            }.map { param -> param.name to param.schema }
+        }.distinctBy { Overlay.of(it.second).jsonReference }
+
+        inlineEnumParams.forEach { (name, schema) ->
+            ModelNameRegistry.preRegisterByReference(schema, name)
+        }
+
         allSchemas = openApi3.schemas.entries.map { it.key to it.value }
             .plus(openApi3.parameters.entries.map { it.key to it.value.schema })
             .plus(openApi3.responses.entries.flatMap { it.value.contentMediaTypes.entries.map { content -> it.key to content.value.schema } })
+            .plus(inlineEnumParams)
             .map { (key, schema) -> SchemaInfo(key, schema) }
     }
 
