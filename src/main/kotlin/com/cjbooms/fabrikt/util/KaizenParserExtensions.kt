@@ -349,6 +349,7 @@ object KaizenParserExtensions {
     fun Schema.isOneOfSuperInterface(): Boolean =
         oneOfSchemas.isNotEmpty() && allOfSchemas.isEmpty() && anyOfSchemas.isEmpty() && properties.isEmpty() &&
             oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() || it.isOneOfSuperInterface() } &&
+            !(isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && hasNoDiscriminator()) &&
             isSealedInterfacesForOneOfEnabled()
 
     fun Schema.isOneOfSuperInterfaceWithDiscriminator() =
