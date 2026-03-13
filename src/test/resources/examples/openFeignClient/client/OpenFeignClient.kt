@@ -8,10 +8,12 @@ import feign.Headers
 import feign.Param
 import feign.QueryMap
 import feign.RequestLine
+import kotlin.Any
 import kotlin.Boolean
 import kotlin.Int
 import kotlin.String
 import kotlin.Suppress
+import kotlin.collections.Collection
 import kotlin.collections.List
 import kotlin.collections.Map
 
@@ -130,8 +132,17 @@ public interface ExamplePath3SubresourceClient {
         firstModel: FirstModel,
         @Param("pathParam") pathParam: String,
         @Param("ifMatch") ifMatch: String,
-        @Param("csvListQueryParam") csvListQueryParam: List<String>? = null,
+        @Param(value = "csvListQueryParam", expander = CsvCollectionExpander::class)
+        csvListQueryParam: List<String>? = null,
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
         @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     )
+}
+
+public class CsvCollectionExpander : Param.Expander {
+    override fun expand(`value`: Any): String =
+        when (value) {
+            is Collection<*> -> value.joinToString(",")
+            else -> value.toString()
+        }
 }

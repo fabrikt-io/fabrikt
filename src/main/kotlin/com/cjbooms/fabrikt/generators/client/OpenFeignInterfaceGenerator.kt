@@ -16,8 +16,11 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.optionallyParameterizeWithResponseEntity
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.metadata.OpenFeignAnnotations
+import com.cjbooms.fabrikt.generators.client.metadata.OpenFeignImports
+import com.cjbooms.fabrikt.generators.client.metadata.OpenFeignImports.CSV_COLLECTION_EXPANDER_CLASS_NAME
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
+import com.cjbooms.fabrikt.model.Destinations.clientPackage
 import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
@@ -31,6 +34,7 @@ import com.cjbooms.fabrikt.util.toUpperCase
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.reprezen.kaizen.oasparser.model3.Path
 import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
@@ -43,7 +47,7 @@ class OpenFeignInterfaceGenerator(
     private val api: SourceApi,
 ) : ClientGenerator {
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
-        val clientTypes = api.openApi3.routeToPaths().map { (resourceName, paths) ->
+        var clientTypes: Set<ClientType> = api.openApi3.routeToPaths().map { (resourceName, paths) ->
             val funcSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
                 path.operations.map { (verb, operation) ->
                     buildFunction(path, resource, operation, verb, options)
@@ -71,8 +75,43 @@ class OpenFeignInterfaceGenerator(
             ClientType(clientType, packages.base)
         }.toSet()
 
+        if (needsCsvCollectionExpander()) {
+            clientTypes = clientTypes + ClientType(buildCsvCollectionExpander(), packages.base)
+        }
+
         return Clients(clientTypes)
     }
+
+    private fun needsCsvCollectionExpander(): Boolean =
+        api.openApi3.routeToPaths().any { (_, paths) ->
+            paths.any { (resource, path) ->
+                path.operations.any { (_, operation) ->
+                    deriveClientParameters(path, operation, packages.base).any { param ->
+                        param is RequestParameter &&
+                            param.parameterLocation is QueryParam &&
+                            param.explode == false &&
+                            param.typeInfo is KotlinTypeInfo.Array
+                    }
+                }
+            }
+        }
+
+    private fun buildCsvCollectionExpander(): TypeSpec =
+        TypeSpec.classBuilder(CSV_COLLECTION_EXPANDER_CLASS_NAME)
+            .addSuperinterface(OpenFeignImports.PARAM_EXPANDER)
+            .addFunction(
+                FunSpec.builder("expand")
+                    .addModifiers(KModifier.OVERRIDE)
+                    .addParameter("value", Any::class)
+                    .returns(String::class)
+                    .addCode(
+                        "return when (value) {\n    is %T<*> -> value.joinToString(%S)\n    else -> value.toString()\n}",
+                        Collection::class,
+                        ","
+                    )
+                    .build()
+            )
+            .build()
 
     override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> = emptyList()
 
@@ -94,9 +133,19 @@ class OpenFeignInterfaceGenerator(
             .addIncomingParameters(
                 parameters,
                 annotateRequestParameterWith = { parameter ->
-                    OpenFeignAnnotations.paramBuilder()
-                        .addMember("%S", parameter.name)
-                        .build()
+                    val paramBuilder = OpenFeignAnnotations.paramBuilder()
+                    if (parameter.parameterLocation is QueryParam &&
+                        parameter.explode == false &&
+                        parameter.typeInfo is KotlinTypeInfo.Array
+                    ) {
+                        val expanderClass = ClassName(clientPackage(packages.base), CSV_COLLECTION_EXPANDER_CLASS_NAME)
+                        paramBuilder
+                            .addMember("value = %S", parameter.name)
+                            .addMember("expander = %T::class", expanderClass)
+                            .build()
+                    } else {
+                        paramBuilder.addMember("%S", parameter.name).build()
+                    }
                 },
             )
             .addParameter(
