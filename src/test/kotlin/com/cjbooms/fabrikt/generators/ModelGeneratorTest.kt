@@ -75,7 +75,6 @@ class ModelGeneratorTest {
         "leadingUnderscoreProperty",
         "inlinedEnumParameter",
         "unsupportedInlinedDefinitions",
-        "oneOfWithSharedDiscriminatedParent",
     )
 
     @BeforeEach

@@ -349,8 +349,17 @@ object KaizenParserExtensions {
     fun Schema.isOneOfSuperInterface(): Boolean =
         oneOfSchemas.isNotEmpty() && allOfSchemas.isEmpty() && anyOfSchemas.isEmpty() && properties.isEmpty() &&
             oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() || it.isOneOfSuperInterface() } &&
-            !(isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && hasNoDiscriminator()) &&
+            !isRedundantOneOfForExistingDiscriminatedHierarchy() &&
             isSealedInterfacesForOneOfEnabled()
+
+    /**
+     * A oneOf is redundant when all its members already inherit from a common allOf super type
+     * that has its own discriminator, and the oneOf itself declares no discriminator.
+     * In this case the polymorphism is fully handled by the parent type, and generating
+     * a sealed interface would create a phantom type that subtypes reference but is never emitted.
+     */
+    private fun Schema.isRedundantOneOfForExistingDiscriminatedHierarchy(): Boolean =
+        isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && hasNoDiscriminator()
 
     fun Schema.isOneOfSuperInterfaceWithDiscriminator() =
         discriminator != null && discriminator.propertyName != null && isOneOfSuperInterface()

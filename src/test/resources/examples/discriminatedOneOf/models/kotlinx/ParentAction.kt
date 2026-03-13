@@ -1,7 +1,8 @@
-package examples.oneOfWithSharedDiscriminatedParent.models
+package examples.discriminatedOneOf.models
 
 import com.fasterxml.jackson.`annotation`.JsonSubTypes
 import com.fasterxml.jackson.`annotation`.JsonTypeInfo
+import kotlinx.serialization.Serializable
 
 @JsonTypeInfo(
   use = JsonTypeInfo.Id.NAME,
@@ -11,6 +12,7 @@ import com.fasterxml.jackson.`annotation`.JsonTypeInfo
 )
 @JsonSubTypes(JsonSubTypes.Type(value = ChildActionA::class, name =
     "CHILD_A"),JsonSubTypes.Type(value = ChildActionB::class, name = "CHILD_B"))
+@Serializable
 public sealed class ParentAction() {
   public abstract val actionType: ParentActionActionType
 }

@@ -205,3 +205,45 @@ components:
           type: string
         id3:
           type: string
+
+    # Regression test: inline oneOf where all members share a common discriminated parent.
+    # The oneOf itself has no discriminator, so no sealed interface should be generated —
+    # polymorphism is already handled by ParentAction's discriminator.
+    ParentAction:
+      type: object
+      discriminator:
+        propertyName: actionType
+        mapping:
+          CHILD_A: '#/components/schemas/ChildActionA'
+          CHILD_B: '#/components/schemas/ChildActionB'
+      properties:
+        actionType:
+          type: string
+          enum:
+            - CHILD_A
+            - CHILD_B
+      required:
+        - actionType
+    ChildActionA:
+      allOf:
+        - $ref: '#/components/schemas/ParentAction'
+        - type: object
+          properties:
+            fieldA:
+              type: string
+    ChildActionB:
+      allOf:
+        - $ref: '#/components/schemas/ParentAction'
+        - type: object
+          properties:
+            fieldB:
+              type: integer
+    ActionRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          oneOf:
+            - $ref: '#/components/schemas/ChildActionA'
+            - $ref: '#/components/schemas/ChildActionB'

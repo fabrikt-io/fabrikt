@@ -1,4 +1,4 @@
-package examples.oneOfWithSharedDiscriminatedParent.models
+package examples.discriminatedOneOf.models
 
 import com.fasterxml.jackson.`annotation`.JsonValue
 import kotlin.String
