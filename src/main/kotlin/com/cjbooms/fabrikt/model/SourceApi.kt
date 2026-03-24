@@ -28,7 +28,7 @@ data class SourceApi(
             baseDir: Path = Paths.get("").toAbsolutePath(),
         ): SourceApi {
             val combinedApi =
-                apiFragments.fold(baseApi) { acc: String, fragment -> YamlUtils.mergeYamlTrees(acc, fragment) }
+                apiFragments.fold(YamlUtils.expandYamlAliases(baseApi)) { acc: String, fragment -> YamlUtils.mergeYamlTrees(acc, fragment) }
             return SourceApi(combinedApi, baseDir)
         }
     }
