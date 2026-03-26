@@ -20,7 +20,11 @@ object OpenFeignImports {
 
     val PARAM = ClassName(Packages.FEIGN, "Param")
 
+    val PARAM_EXPANDER = ClassName(Packages.FEIGN, "Param", "Expander")
+
     val FEIGN_CLIENT = ClassName(Packages.SPRING_STARTER, "FeignClient")
+
+    const val CSV_COLLECTION_EXPANDER_CLASS_NAME = "CsvCollectionExpander"
 }
 
 object OpenFeignAnnotations {
