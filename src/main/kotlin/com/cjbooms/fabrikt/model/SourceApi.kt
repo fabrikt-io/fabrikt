@@ -44,9 +44,13 @@ data class SourceApi(
         val inlineEnumParams = openApi3.paths.values.flatMap { path ->
             val allParams = path.parameters + path.operations.values.flatMap { it.parameters }
             allParams.filter { param ->
-                param.schema?.isEnumDefinition() == true &&
-                    Overlay.of(param.schema).pathFromRoot.contains("paths")
-            }.map { param -> param.name to param.schema }
+                Overlay.of(param.schema).pathFromRoot.contains("paths") &&
+                    (param.schema?.isEnumDefinition() == true ||
+                        (param.schema?.type == "array" && param.schema?.itemsSchema?.isEnumDefinition() == true))
+            }.map { param ->
+                val schema = if (param.schema?.type == "array") param.schema.itemsSchema else param.schema
+                param.name to schema
+            }
         }.distinctBy { Overlay.of(it.second).jsonReference }
 
         inlineEnumParams.forEach { (name, schema) ->
