@@ -1,8 +1,8 @@
 package examples.nestedPolymorphicModels.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.Valid
-import javax.validation.constraints.NotNull
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import kotlin.Boolean
 import kotlin.Int
 import kotlin.String
@@ -27,7 +27,10 @@ public data class ThirdLevelChild12(
   @get:NotNull
   @get:Valid
   override val metadata: SecondLevelMetadata,
-  @param:JsonProperty("isDeleted")
+  @param:JsonProperty(
+    "isDeleted",
+    required = true,
+  )
   @get:JsonProperty("isDeleted")
   @get:NotNull
   public val isDeleted: Boolean,

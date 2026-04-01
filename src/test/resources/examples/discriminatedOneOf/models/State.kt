@@ -10,5 +10,5 @@ import com.fasterxml.jackson.`annotation`.JsonTypeInfo
   visible = true,
 )
 @JsonSubTypes(JsonSubTypes.Type(value = StateA::class, name = "a"),JsonSubTypes.Type(value =
-    StateB::class, name = "b"))
+    StateB1::class, name = "b1"),JsonSubTypes.Type(value = StateB2::class, name = "b2"))
 public sealed interface State

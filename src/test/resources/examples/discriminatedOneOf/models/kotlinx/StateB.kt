@@ -1,13 +1,10 @@
 package examples.discriminatedOneOf.models
 
-import javax.validation.constraints.NotNull
-import kotlinx.serialization.SerialName
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
 
-@SerialName("b")
 @Serializable
-public data class StateB(
-  @SerialName("mode")
-  @get:NotNull
-  public val mode: StateBMode,
-) : State
+@JsonClassDiscriminator("status")
+@ExperimentalSerializationApi
+public sealed interface StateB : State

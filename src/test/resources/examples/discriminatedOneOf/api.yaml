@@ -56,6 +56,8 @@ components:
       enum:
         - a
         - b
+        - b1
+        - b2
     StateA:
       type: object
       required:
@@ -64,6 +66,15 @@ components:
         status:
           $ref: '#/components/schemas/Status'
     StateB:
+      oneOf:
+        - $ref: '#/components/schemas/StateB1'
+        - $ref: '#/components/schemas/StateB2'
+      discriminator:
+        propertyName: status
+        mapping:
+          b1: '#/components/schemas/StateB1'
+          b2: '#/components/schemas/StateB2'
+    StateB1:
       type: object
       required:
         - status
@@ -73,11 +84,17 @@ components:
           $ref: '#/components/schemas/Status'
         mode:
           type: string
-          enum:
-            - mode1
-            - mode2
+    StateB2:
+      type: object
+      required:
+        - status
+        - mode
+      properties:
+        status:
+          $ref: '#/components/schemas/Status'
+        mode:
+          type: string
     OneObject:
-      description: One Object
       required:
         - type
       properties:
@@ -90,3 +107,143 @@ components:
       properties:
         type:
           type: string
+    
+    # Test has no explicit mapping, will auto-flatten YTest -> YTest1, YTest2
+    SomeRequest:
+      type: object
+      properties:
+        id:
+          type: number
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/Test"
+
+    Test:
+      oneOf:
+        - $ref: "#/components/schemas/XTest"
+        - $ref: "#/components/schemas/YTest"
+      discriminator:
+        propertyName: type
+
+    XTest:
+      type: object
+      properties:
+        type:
+          type: string
+        alt:
+          type: string
+
+    YTest:
+      oneOf:
+        - $ref: "#/components/schemas/YTest1"
+        - $ref: "#/components/schemas/YTest2"
+      discriminator:
+        propertyName: type
+
+    YTest1:
+      type: object
+      properties:
+        type:
+          type: string
+        alt:
+          type: string
+
+    YTest2:
+      type: object
+      properties:
+        type:
+          type: string
+        alt:
+          type: string
+
+    Poly1:
+      discriminator:
+        propertyName: type
+        mapping:
+          obj1: "#/components/schemas/Obj1"
+          obj2: "#/components/schemas/Obj2"
+      oneOf:
+        - $ref: "#/components/schemas/Obj1"
+        - $ref: "#/components/schemas/Obj2"
+    Poly2:
+      discriminator:
+        propertyName: type
+        mapping:
+          obj3: '#/components/schemas/Obj3'
+          obj1: '#/components/schemas/Obj1'
+      oneOf:
+        - $ref: '#/components/schemas/Obj3'
+        - $ref: '#/components/schemas/Obj1'
+    Obj1:
+      required:
+        - id1
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+        id1:
+          type: string
+    Obj2:
+      required:
+        - id2
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+        id2:
+          type: string
+    Obj3:
+      required:
+        - id3
+        - type
+      type: object
+      properties:
+        type:
+          type: string
+        id3:
+          type: string
+
+    # Regression test: inline oneOf where all members share a common discriminated parent.
+    # The oneOf itself has no discriminator, so no sealed interface should be generated —
+    # polymorphism is already handled by ParentAction's discriminator.
+    ParentAction:
+      type: object
+      discriminator:
+        propertyName: actionType
+        mapping:
+          CHILD_A: '#/components/schemas/ChildActionA'
+          CHILD_B: '#/components/schemas/ChildActionB'
+      properties:
+        actionType:
+          type: string
+          enum:
+            - CHILD_A
+            - CHILD_B
+      required:
+        - actionType
+    ChildActionA:
+      allOf:
+        - $ref: '#/components/schemas/ParentAction'
+        - type: object
+          properties:
+            fieldA:
+              type: string
+    ChildActionB:
+      allOf:
+        - $ref: '#/components/schemas/ParentAction'
+        - type: object
+          properties:
+            fieldB:
+              type: integer
+    ActionRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          oneOf:
+            - $ref: '#/components/schemas/ChildActionA'
+            - $ref: '#/components/schemas/ChildActionB'

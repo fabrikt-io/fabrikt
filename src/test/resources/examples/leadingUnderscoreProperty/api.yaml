@@ -1,0 +1,38 @@
+openapi: "3.0.3"
+info:
+  title: "Example API"
+  version: "1.0.0"
+paths: {}
+components:
+  schemas:
+    MyCustomType:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        enabled:
+          type: boolean
+      required:
+        - id
+        - name
+    ExampleModel:
+      type: object
+      additionalProperties: false
+      properties:
+        foo:
+          type: string
+        _foo:
+          $ref: "#/components/schemas/MyCustomType"
+        foo_:
+          $ref: "#/components/schemas/MyCustomType"
+        _bar_:
+          type: string
+      required:
+        - foo
+        - _foo
+        - foo_
+        - _bar_

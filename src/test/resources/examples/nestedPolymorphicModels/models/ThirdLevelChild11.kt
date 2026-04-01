@@ -1,8 +1,8 @@
 package examples.nestedPolymorphicModels.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.Valid
-import javax.validation.constraints.NotNull
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import kotlin.Boolean
 import kotlin.Int
 import kotlin.String
@@ -30,7 +30,10 @@ public data class ThirdLevelChild11(
   /**
    * timestamp
    */
-  @param:JsonProperty("creationDate")
+  @param:JsonProperty(
+    "creationDate",
+    required = true,
+  )
   @get:JsonProperty("creationDate")
   @get:NotNull
   public val creationDate: Int,

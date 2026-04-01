@@ -6,7 +6,7 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKdoc
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.SecuritySupport
-import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.happyPathResponse
+import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.toSuccessResponseType
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.methodName
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.securitySupport
 import com.cjbooms.fabrikt.generators.controller.metadata.MicronautImports
@@ -74,7 +74,7 @@ class MicronautControllerInterfaceGenerator(
         verb: String,
     ): FunSpec {
         val methodName = methodName(op, verb, path.pathString.isSingleResource())
-        val returnType = MicronautImports.RESPONSE.parameterizedBy(op.happyPathResponse(packages.base))
+        val returnType = MicronautImports.RESPONSE.parameterizedBy(op.toSuccessResponseType(packages.base))
         val parameters = op.toIncomingParameters(packages.base, path.parameters, emptyList())
         val globalSecurity = this.api.openApi3.securityRequirements.securitySupport()
 

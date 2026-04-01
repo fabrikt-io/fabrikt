@@ -11,7 +11,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.reprezen.kaizen.oasparser.OpenApi3Parser
 import com.reprezen.kaizen.oasparser.model3.OpenApi3
+import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.LoaderOptions
+import org.yaml.snakeyaml.Yaml
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -41,6 +43,40 @@ object YamlUtils {
         }
     )
 
+    /**
+     * Returns true only if the content contains at least one anchor definition that is also
+     * referenced by an alias, e.g.:
+     *   enum: &status_values
+     *   enum: *status_values
+     */
+    internal fun containsYamlAnchorsAndAliases(content: String): Boolean {
+        val anchorNames = Regex("""\w+:\s+&(\w+)""").findAll(content).map { it.groupValues[1] }.toList()
+        if (anchorNames.isEmpty()) return false
+        return anchorNames.any { content.contains(Regex("""\w+:\s+\*$it""")) }
+    }
+
+    /**
+     * Returns the YAML content with all anchors and aliases expanded inline. Jackson's YAML parser
+     * does not resolve aliases, causing consumers like the kaizen OpenAPI parser to see a plain
+     * string instead of the anchored value. SnakeYAML is used to pre-process the content so that
+     * every alias is replaced by a full copy of its anchored value before Jackson parses it.
+     */
+    fun expandYamlAliases(content: String): String {
+        if (!containsYamlAnchorsAndAliases(content)) return content
+        val loaderOptions = LoaderOptions().also { it.maxAliasesForCollections = Int.MAX_VALUE }
+        val data = runCatching { Yaml(loaderOptions).load<Map<*, *>>(content) }.getOrNull() ?: return content
+        val options = DumperOptions().also { it.defaultFlowStyle = DumperOptions.FlowStyle.BLOCK }
+        // Deep copy breaks shared object references so SnakeYAML's dumper writes values inline
+        // instead of re-emitting aliases, which would undo the expansion.
+        return Yaml(options).dump(deepCopy(data))
+    }
+
+    private fun deepCopy(value: Any?): Any? = when (value) {
+        is Map<*, *> -> value.entries.associateTo(LinkedHashMap()) { (k, v) -> k to deepCopy(v) }
+        is List<*> -> value.map { deepCopy(it) }
+        else -> value
+    }
+
     fun mergeYamlTrees(mainTree: String, updateTree: String) =
         internalMapper.writeValueAsString(
             mergeNodes(
@@ -52,10 +88,7 @@ object YamlUtils {
     fun parseOpenApi(input: String, inputDir: Path = Paths.get("").toAbsolutePath()): OpenApi3 =
         try {
             val root: JsonNode = objectMapper.readTree(input)
-            val openapiVersion = root["openapi"]?.asText() ?: ""
-            if (openapiVersion.startsWith("3.1.")) {
-                OpenApi31Downgrader.downgrade(root)
-            }
+            OpenApi31Downgrader.downgradeIncompatibleElements(root)
             cleanEmptyTypes(root)
             OpenApi3Parser().parse(root, inputDir.toUri().toURL())
         } catch (ex: NullPointerException) {

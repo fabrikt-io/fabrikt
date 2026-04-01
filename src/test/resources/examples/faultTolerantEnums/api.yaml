@@ -1,0 +1,32 @@
+openapi: 3.0.0
+paths:
+info:
+  title: Fault-Tolerant Enums Test
+  version: 1.0.0
+components:
+  schemas:
+    SimpleEnum:
+      type: string
+      enum:
+        - value_one
+        - value_two
+
+    ExtensibleEnum:
+      type: string
+      x-extensible-enum:
+        - extensible_one
+        - extensible_two
+
+    EnumContainer:
+      type: object
+      properties:
+        simple_enum:
+          $ref: '#/components/schemas/SimpleEnum'
+        extensible_enum:
+          $ref: '#/components/schemas/ExtensibleEnum'
+        inlined_enum:
+          type: string
+          enum:
+            - inlined_a
+            - inlined_b
+

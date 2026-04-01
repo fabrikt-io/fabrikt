@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt.util
 
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.generators.MutableSettings
+import com.cjbooms.fabrikt.generators.MutableSettings.isSealedInterfacesForOneOfEnabled
 import com.cjbooms.fabrikt.model.OasType
 import com.cjbooms.fabrikt.model.PropertyInfo
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
@@ -43,7 +44,7 @@ object KaizenParserExtensions {
     fun Schema.isUnsupportedComplexInlinedDefinition() =
         Overlay.of(this).pathFromRoot.contains("paths") &&
             name == null &&
-            (isObjectType() || isEnumDefinition())
+            isObjectType()
 
     fun Schema.isInlinedObjectDefinition() =
         (isObjectType() || isAggregatedObject()) && !isSchemaLess() && (
@@ -78,7 +79,7 @@ object KaizenParserExtensions {
     fun Schema.isSimpleMapDefinition() = hasAdditionalProperties() && properties?.isEmpty() == true
 
     fun Schema.isSimpleOneOfAnyDefinition() = oneOfSchemas?.isNotEmpty() == true &&
-        !isOneOfPolymorphicTypes() &&
+        !isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() &&
         anyOfSchemas?.isEmpty() == true &&
         allOfSchemas?.isEmpty() == true &&
         properties?.isEmpty() == true
@@ -156,11 +157,14 @@ object KaizenParserExtensions {
         prop: Map.Entry<String, Schema>,
         markReadWriteOnlyOptional: Boolean,
         markAllOptional: Boolean,
+        additionalRequiredFields: Collection<String> = emptySet()
     ): Boolean =
         if (markAllOptional || (prop.value.isReadOnly && markReadWriteOnlyOptional) || (prop.value.isWriteOnly && markReadWriteOnlyOptional)) {
             false
         } else {
-            requiredFields.contains(prop.key) || isDiscriminatorProperty(api, prop) // A discriminator property should be required
+            requiredFields.contains(prop.key) || 
+                additionalRequiredFields.contains(prop.key) ||
+                isDiscriminatorProperty(api, prop) // A discriminator property should be required
         }
 
     fun Schema.getSchemaRefName() = Overlay.of(this).jsonReference.split("/").last()
@@ -173,15 +177,49 @@ object KaizenParserExtensions {
             }
 
     fun Schema.findOneOfSuperInterface(allSchemas: List<Schema>): Set<Schema> {
-        if (ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF !in MutableSettings.modelOptions) {
+        if (!isSealedInterfacesForOneOfEnabled()) {
             return emptySet()
         }
-        return allSchemas
-            .filter { it.oneOfSchemas.isNotEmpty() }
+        
+        // Check top-level oneOf schemas
+        val topLevelInterfaces = allSchemas
+            .filter { it.oneOfSchemas.isNotEmpty() && it.isOneOfSuperInterface() }
             .mapNotNull { schema ->
-                if (schema.oneOfSchemas.toList().contains(this)) schema else null
+                if (schema.oneOfSchemas.toList().contains(this) &&
+                    schema.oneOfSchemas.map { it.safeName() }.contains(this.safeName()) // Guard against identical inlined schemas
+                )
+                    schema
+                else null
             }
-            .toSet()
+            
+        // Check inline oneOf within properties of all schemas
+        val inlineInterfaces = allSchemas.flatMap { enclosingSchema ->
+            enclosingSchema.properties.values.flatMap { property ->
+                val interfaces = mutableListOf<Schema>()
+                
+                // Check oneOf in array items
+                property.itemsSchema?.let { items ->
+                    if (items.isInlinedOneOfSuperInterface() &&
+                        items.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
+                    ) {
+                        ModelNameRegistry.preRegisterInlineSchema(items, enclosingSchema)
+                        interfaces.add(items)
+                    }
+                }
+                
+                // Check oneOf directly on property
+                if (property.isInlinedOneOfSuperInterface() &&
+                    property.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
+                ) {
+                    ModelNameRegistry.preRegisterInlineSchema(property, enclosingSchema)
+                    interfaces.add(property)
+                }
+                
+                interfaces
+            }
+        }
+        
+        return (topLevelInterfaces + inlineInterfaces).toSet()
     }
 
     fun Schema.getKeyIfSingleDiscriminatorValue(
@@ -239,7 +277,8 @@ object KaizenParserExtensions {
 
     fun Schema.safeName(): String =
         when {
-            isOneOfPolymorphicTypes() -> this.oneOfSchemas.first().allOfSchemas.first().safeName()
+            isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !(isOneOfSuperInterfaceWithDiscriminator()) ->
+                this.oneOfSchemas.first().allOfSchemas.first().safeName()
             isInlinedAggregationOfExactlyOne() -> combinedAnyOfAndAllOfSchemas().first().safeName()
             name != null -> name
             else -> Overlay.of(this).pathFromRoot
@@ -259,7 +298,7 @@ object KaizenParserExtensions {
         if (allOfSchemas.hasAnyDefinedProperties()) return "object"
         if (oneOfSchemas.hasAnyDefinedProperties()) return "object"
         if (anyOfSchemas.hasAnyDefinedProperties()) return "object"
-        if (isOneOfPolymorphicTypes()) return "object"
+        if (isOneOfWhereAllTypesInheritFromACommonAllOfSuperType()) return "object"
         if (isUnknownAdditionalProperties("")) return "object"
         if (Overlay.of(additionalPropertiesSchema).isPresent) return "object"
 
@@ -287,24 +326,40 @@ object KaizenParserExtensions {
     private fun List<Schema>?.hasAnyDefinedProperties(): Boolean =
         this?.any { it.properties?.isNotEmpty() == true } == true
 
-    fun Schema.isOneOfPolymorphicTypes(): Boolean {
+    fun Schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType(): Boolean {
         val maybeAllOfInFirstOneOf = this.oneOfSchemas?.firstOrNull()?.allOfSchemas?.firstOrNull()
-        return if (maybeAllOfInFirstOneOf != null) {
+        // This identifies the OLD allOf-based polymorphism pattern where the BASE type has the discriminator
+        return if (maybeAllOfInFirstOneOf != null && maybeAllOfInFirstOneOf.hasDiscriminator())  {
             this.oneOfSchemas.all { it.allOfSchemas.contains(maybeAllOfInFirstOneOf) }
         } else false
     }
 
+    fun Schema.isOneOfResolvingToAnyType(): Boolean {
+        // oneOf schemas with discriminators that resolve to Any when sealed interfaces are not enabled
+        return this.hasDiscriminator() && 
+               this.oneOfSchemas.isNotEmpty() && 
+               !isSealedInterfacesForOneOfEnabled()
+    }
 
-    fun Schema.isInlinedOneOfSuperInterface() = isOneOfSuperInterfaceOnly() && isInlinedPropertySchema()
 
-    // Not part of any other aggregations
-    fun Schema.isOneOfSuperInterfaceOnly() =
+    fun Schema.isInlinedOneOfSuperInterface() = isOneOfSuperInterface() && isInlinedPropertySchema()
+
+    fun Schema.isInlinedDiscriminatedOneOfSuperInterface() = isOneOfSuperInterfaceWithDiscriminator() && isInlinedPropertySchema()
+
+    fun Schema.isOneOfSuperInterface(): Boolean =
         oneOfSchemas.isNotEmpty() && allOfSchemas.isEmpty() && anyOfSchemas.isEmpty() && properties.isEmpty() &&
-            oneOfSchemas.all { it.isObjectType() }
+            oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() || it.isOneOfSuperInterface() } &&
+            !isRedundantOneOfForExistingDiscriminatedHierarchy() &&
+            isSealedInterfacesForOneOfEnabled()
 
-    fun Schema.isOneOfSuperInterface() =
-        oneOfSchemas.isNotEmpty() && allOfSchemas.isEmpty() && anyOfSchemas.isEmpty() && properties.isEmpty() &&
-            oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() }
+    /**
+     * A oneOf is redundant when all its members already inherit from a common allOf super type
+     * that has its own discriminator, and the oneOf itself declares no discriminator.
+     * In this case the polymorphism is fully handled by the parent type, and generating
+     * a sealed interface would create a phantom type that subtypes reference but is never emitted.
+     */
+    private fun Schema.isRedundantOneOfForExistingDiscriminatedHierarchy(): Boolean =
+        isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && hasNoDiscriminator()
 
     fun Schema.isOneOfSuperInterfaceWithDiscriminator() =
         discriminator != null && discriminator.propertyName != null && isOneOfSuperInterface()

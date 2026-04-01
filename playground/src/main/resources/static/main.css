@@ -30,21 +30,88 @@ a, a:visited, a:hover, a:active {
     color: #3BAFDA;
 }
 
-.panel::-webkit-scrollbar {
+.panel::-webkit-scrollbar,
+#file-sidebar::-webkit-scrollbar {
     width: 5px;
 }
 
-.panel::-webkit-scrollbar-track {
+.panel::-webkit-scrollbar-track,
+#file-sidebar::-webkit-scrollbar-track {
     background: #F1F1F1;
 }
 
-.panel::-webkit-scrollbar-thumb {
+.panel::-webkit-scrollbar-thumb,
+#file-sidebar::-webkit-scrollbar-thumb {
     background: #3BAFDA;
 }
 
-.panel::-webkit-scrollbar-thumb:hover {
+.panel::-webkit-scrollbar-thumb:hover,
+#file-sidebar::-webkit-scrollbar-thumb:hover {
     background: #3BAFDA;
 }
+
+.file-sidebar-empty {
+    padding: 10px;
+    font-family: monospace;
+    font-size: 14px;
+    color: #999;
+}
+
+.file-nav-group {
+    margin-bottom: 4px;
+}
+
+.file-nav-heading {
+    padding: 8px 10px 3px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #aaa;
+}
+
+.file-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.file-nav li {
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.file-nav a {
+    display: block;
+    padding: 4px 10px;
+    text-decoration: none;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.1s, color 0.1s;
+}
+
+.file-nav a:hover {
+    background: #f0f8fd;
+    color: #3BAFDA;
+}
+
+.file-tag {
+    font-size: 9px;
+    margin-left: 5px;
+    padding: 1px 4px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    vertical-align: middle;
+}
+
+.file-tag.model      { background: rgba(59,175,218,0.12); color: #3BAFDA; }
+.file-tag.client     { background: rgba(92,184,92,0.15);  color: #3d9b3d; }
+.file-tag.controller { background: rgba(240,173,78,0.2);  color: #c07f00; }
+.file-tag.config     { background: rgba(0,0,0,0.07);      color: #777; }
+
 
 .btn-generate {
     background-color: #3399CC;

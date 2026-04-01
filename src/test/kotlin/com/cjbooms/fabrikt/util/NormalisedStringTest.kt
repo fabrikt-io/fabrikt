@@ -59,4 +59,39 @@ class NormalisedStringTest {
     fun `toEnumName should not backtick enum if it starts with underscore character`() {
         assertThat("_42".toEnumName()).isEqualTo("_42")
     }
+
+    @Test
+    fun `camelCase should preserve single leading underscore to distinguish from non-prefixed name`() {
+        assertThat("_foo".camelCase()).isEqualTo("_foo")
+    }
+
+    @Test
+    fun `camelCase should preserve double leading underscores`() {
+        assertThat("__foo".camelCase()).isEqualTo("__foo")
+    }
+
+    @Test
+    fun `camelCase should preserve leading underscore while still camelCasing the rest`() {
+        assertThat("_foo_bar".camelCase()).isEqualTo("_fooBar")
+    }
+
+    @Test
+    fun `camelCase should preserve single trailing underscore to distinguish from non-suffixed name`() {
+        assertThat("foo_".camelCase()).isEqualTo("foo_")
+    }
+
+    @Test
+    fun `camelCase should preserve double trailing underscores`() {
+        assertThat("foo__".camelCase()).isEqualTo("foo__")
+    }
+
+    @Test
+    fun `camelCase should preserve trailing underscore while still camelCasing the rest`() {
+        assertThat("foo_bar_".camelCase()).isEqualTo("fooBar_")
+    }
+
+    @Test
+    fun `camelCase should preserve both leading and trailing underscores`() {
+        assertThat("_foo_".camelCase()).isEqualTo("_foo_")
+    }
 }

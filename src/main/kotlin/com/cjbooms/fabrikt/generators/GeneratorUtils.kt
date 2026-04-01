@@ -148,6 +148,11 @@ object GeneratorUtils {
     fun Operation.hasMultipleSuccessResponseSchemas(): Boolean =
             getBodySuccessResponses().flatMap { it.contentMediaTypes.values }.map { it.schema.name }.distinct().size > 1
 
+    fun Operation.hasOnlyJsonSuccessResponses(): Boolean =
+        getBodySuccessResponses()
+            .flatMap { it.contentMediaTypes.keys }
+            .all { it.contains("json", ignoreCase = true) }
+
     fun Operation.getPathParams(): List<Parameter> = this.filterParams("path")
 
     fun Operation.getQueryParams(): List<Parameter> = this.filterParams("query")
@@ -157,7 +162,7 @@ object GeneratorUtils {
     private fun Operation.getBodyResponses(): List<Response> =
         this.responses.filter { it.key != "default" }.values.filter(Response::hasContentMediaTypes)
 
-    private fun Operation.getBodySuccessResponses(): List<Response> =
+    fun Operation.getBodySuccessResponses(): List<Response> =
         getSuccessResponses().values.filter(Response::hasContentMediaTypes)
 
     private fun Operation.getSuccessResponses(): Map<String, Response> =

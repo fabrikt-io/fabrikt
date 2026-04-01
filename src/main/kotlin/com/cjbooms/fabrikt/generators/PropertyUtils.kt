@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.generators
 
+import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKDoc
 import com.cjbooms.fabrikt.generators.TypeFactory.maybeMakeMapValueNullable
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata
@@ -25,6 +26,8 @@ data class ClassSettings(
 
     val isMergePatchPattern = extensions["x-json-merge-patch"] as? Boolean ?: false
     val addJsonIncludeNonNullAnnotation = extensions["x-jackson-include-non-null"] as? Boolean ?: false
+    val nullableObjectRefs: Set<String> = (extensions["x-FABRIKT-INTERNAL-nullable"] as? List<*>)?.map { it.toString() }?.toSet()
+        ?: emptySet()
 
     enum class PolymorphyType {
         NONE,
@@ -44,6 +47,7 @@ object PropertyUtils {
         classSettings: ClassSettings = ClassSettings(ClassSettings.PolymorphyType.NONE),
         validationAnnotations: ValidationAnnotations = JavaxValidationAnnotations,
         serializationAnnotations: SerializationAnnotations = JacksonAnnotations,
+        jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.NONE,
     ) {
         if (this.typeInfo is KotlinTypeInfo.UntypedObject && !serializationAnnotations.supportsAdditionalProperties)
             throw UnsupportedOperationException("Untyped objects not supported by selected serialization library (${this.oasKey}: ${this.schema})")
@@ -53,7 +57,7 @@ object PropertyUtils {
                 ClassName(
                     "org.openapitools.jackson.nullable",
                     "JsonNullable",
-                ).parameterizedBy(type.copy(nullable = this.schema.isNullable))
+                ).parameterizedBy(type.copy(nullable = isSchemaNullable(classSettings)))
             } else {
                 type
             }
@@ -117,21 +121,24 @@ object PropertyUtils {
                             property.addModifiers(KModifier.OVERRIDE)
                             classBuilder.addSuperclassConstructorParameter(name)
                         }
-                        serializationAnnotations.addParameter(property, oasKey)
+                        serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
                     }
                     serializationAnnotations.addProperty(property, oasKey, typeInfo)
-                    property.addValidationAnnotations(this, validationAnnotations)
+                    property.addValidationAnnotations(this, validationAnnotations, classSettings)
                 }
 
                 ClassSettings.PolymorphyType.NONE -> {
-                    serializationAnnotations.addParameter(property, oasKey)
+                    serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
                     serializationAnnotations.addProperty(property, oasKey, typeInfo)
-                    property.addValidationAnnotations(this, validationAnnotations)
+                    property.addValidationAnnotations(this, validationAnnotations, classSettings)
                 }
 
                 ClassSettings.PolymorphyType.ONE_OF -> {
+                    if (!isDiscriminatorFieldWithSingleKnownValue(classSettings, schemaName)) {
+                        serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
+                    }
                     serializationAnnotations.addProperty(property, oasKey, typeInfo)
-                    property.addValidationAnnotations(this, validationAnnotations)
+                    property.addValidationAnnotations(this, validationAnnotations, classSettings)
                 }
             }
 
@@ -142,7 +149,7 @@ object PropertyUtils {
                         return // Skip adding the property to the class
                     } else {
                         property.initializer(name)
-                        serializationAnnotations.addParameter(property, oasKey)
+                        serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
                         val constructorParameter: ParameterSpec.Builder = ParameterSpec.builder(name, wrappedType)
                         val discriminators = maybeDiscriminator.getDiscriminatorMappings(schemaName)
                         when (val discriminator = discriminators.first()) {
@@ -159,9 +166,26 @@ object PropertyUtils {
                 property.initializer(name)
                 val constructorParameter: ParameterSpec.Builder = ParameterSpec.builder(name, wrappedType)
                 val oasDefault = getDefaultValue(this, parameterizedType)
+
+                val enforceNonNull = jacksonNullabilityMode in setOf(
+                    JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL,
+                    JacksonNullabilityMode.STRICT
+                )
+
+                val enforceRequiredNullable = jacksonNullabilityMode in setOf(
+                    JacksonNullabilityMode.ENFORCE_REQUIRED_NULLABLE,
+                    JacksonNullabilityMode.STRICT
+                )
+
+                val isSchemaNullable = isSchemaNullable(classSettings)
+
+                if (enforceRequiredNullable && isRequired && isSchemaNullable) {
+                    property.addAnnotation(JacksonMetadata.JSON_INCLUDE_ALWAYS)
+                }
+
                 if (!isRequired) {
-                    if (classSettings.addJsonIncludeNonNullAnnotation) {
-                        property.addAnnotation(JacksonMetadata.JSON_INCLUDE)
+                    if (classSettings.addJsonIncludeNonNullAnnotation || (enforceNonNull && !isSchemaNullable)) {
+                        property.addAnnotation(JacksonMetadata.JSON_INCLUDE_NON_NULL)
                     }
                     if (oasDefault != null) {
                         val wrappedDefault =
@@ -226,11 +250,14 @@ object PropertyUtils {
         }
     }
 
-    fun PropertyInfo.isNullable() = when (this) {
-        is PropertyInfo.Field -> !isRequired && schema.default == null || schema.isNullable
+    fun PropertyInfo.isSchemaNullable(classSettings: ClassSettings): Boolean =
+        schema.isNullable || classSettings.nullableObjectRefs.contains(oasKey)
+
+    fun PropertyInfo.isNullable(classSettings: ClassSettings) = when (this) {
+        is PropertyInfo.Field -> !isRequired && schema.default == null || isSchemaNullable(classSettings)
         is PropertyInfo.ListField, is PropertyInfo.MapField,
         is PropertyInfo.ObjectRefField, is PropertyInfo.ObjectInlinedField ->
-            !isRequired || schema.isNullable
+            !isRequired || isSchemaNullable(classSettings)
         else -> !isRequired
     }
 
@@ -255,8 +282,9 @@ object PropertyUtils {
     private fun PropertySpec.Builder.addValidationAnnotations(
         info: PropertyInfo,
         validationAnnotations: ValidationAnnotations,
+        classSettings: ClassSettings,
     ) {
-        if (!info.isNullable()) maybeAddAnnotation(validationAnnotations.nonNullAnnotation)
+        if (!info.isNullable(classSettings)) maybeAddAnnotation(validationAnnotations.nonNullAnnotation)
         when (info) {
             is PropertyInfo.Field -> {
                 // Regex validation pattern to validate string input

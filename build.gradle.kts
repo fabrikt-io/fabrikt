@@ -18,15 +18,15 @@ java {
 
 val executableName = "fabrikt"
 
-group = "com.cjbooms"
+group = "io.fabrikt"
 val gitVersion: groovy.lang.Closure<*> by extra
 version = gitVersion.call()
 
-val projectUrl = "https://github.com/cjbooms/fabrikt"
-val projectScmUrl = "scm:https://cjbooms@github.com/cjbooms/fabrikt.git"
-val projectScmConUrl = "scm:https://cjbooms@github.com/cjbooms/fabrikt.git"
-val projectScmDevUrl = "scm:git://github.com/cjbooms/fabrikt.git"
-val projectIssueUrl = "https://github.com/cjbooms/fabrikt/issues"
+val projectUrl = "https://github.com/fabrikt-io/fabrikt"
+val projectScmUrl = "scm:https://fabrikt-io@github.com/fabrikt-io/fabrikt.git"
+val projectScmConUrl = "scm:https://fabrikt-io@github.com/fabrikt-io/fabrikt.git"
+val projectScmDevUrl = "scm:git://github.com/fabrikt-io/fabrikt.git"
+val projectIssueUrl = "https://github.com/fabrikt-io/fabrikt/issues"
 val projectName = "Fabrikt"
 val projectDesc = "Fabricates Kotlin code from OpenApi3 specifications"
 val projectLicenseName = "Apache License 2.0"
@@ -38,60 +38,51 @@ allprojects {
     }
 }
 
-val jacksonVersion by extra { "2.20.1" }
-val junitVersion by extra { "5.9.2" }
-val ktorVersion by extra { "3.0.1" }
-val kotlinxSerializationVersion by extra { "1.9.0" }
-val kotlinxDateTimeVersion by extra { "0.7.1-0.6.x-compat" }
-
 dependencies {
-    implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersion"))
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("com.github.jknack:handlebars:4.3.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("com.fasterxml.jackson.core:jackson-databind")
-    implementation("com.fasterxml.jackson.core:jackson-core")
-    implementation("com.fasterxml.jackson.core:jackson-annotations")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
-    implementation("com.beust:jcommander:1.82")
-    implementation("com.reprezen.kaizen:openapi-parser:4.0.4") { exclude(group = "junit") }
-    implementation("com.reprezen.jsonoverlay:jsonoverlay:4.0.4")
-    implementation("com.squareup:kotlinpoet:1.14.2") { exclude(module = "kotlin-stdlib-jre7") }
-    implementation("com.google.flogger:flogger:0.7.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
+    implementation(platform(libs.jackson.bom))
+    implementation(platform(libs.kotlin.bom))
+    implementation(libs.kotlin.stdlib.jdk8)
+    implementation(libs.handlebars)
+    implementation(libs.jackson.module.kotlin)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.core)
+    implementation(libs.jackson.annotations)
+    implementation(libs.jackson.dataformat.yaml)
+    implementation(libs.jcommander)
+    implementation(libs.openapi.parser) { exclude(group = "junit") }
+    implementation(libs.jsonoverlay)
+    implementation(libs.kotlinpoet) { exclude(module = "kotlin-stdlib-jre7") }
+    implementation(libs.flogger)
+    implementation(libs.kotlinx.serialization.json)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:$kotlinxDateTimeVersion")
+    implementation(libs.kotlinx.datetime)
 
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:$junitVersion")
-    testImplementation("org.assertj:assertj-core:3.24.2")
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.assertj.core)
 
     // Below dependencies are solely present so code examples in the test resources dir compile
-    testImplementation("javax.validation:validation-api:2.0.1.Final")
-    testImplementation("jakarta.validation:jakarta.validation-api:3.0.2")
-    testImplementation("org.springframework:spring-webmvc:6.0.9")
-    testImplementation("org.springframework.security:spring-security-web:6.1.0")
-    testImplementation("io.micronaut:micronaut-core:3.8.7")
-    testImplementation("io.micronaut:micronaut-http:3.8.7")
-    //testCompileOnly("io.micronaut.security:micronaut-security:3.8.7")
-    testImplementation("com.squareup.okhttp3:okhttp:4.10.0")
-    testImplementation("org.openapitools:jackson-databind-nullable:0.2.6")
-    testImplementation("io.ktor:ktor-server-core:$ktorVersion")
-    testImplementation("io.ktor:ktor-server-auth:$ktorVersion")
+    testImplementation(libs.validation.api)
+    testImplementation(libs.jakarta.validation.api)
+    testImplementation(libs.spring.webmvc)
+    testImplementation(libs.spring.security.web)
+    testImplementation(libs.micronaut.core)
+    testImplementation(libs.micronaut.http)
+    testImplementation(libs.okhttp)
+    testImplementation(libs.jackson.databind.nullable)
+    testImplementation(libs.ktor.server.core)
+    testImplementation(libs.ktor.server.auth)
 
-    testImplementation(platform("com.pinterest.ktlint:ktlint-bom:1.7.1"))
-    testImplementation("com.pinterest.ktlint:ktlint-rule-engine-core")
-    testImplementation("com.pinterest.ktlint:ktlint-rule-engine")
-    testImplementation("com.pinterest.ktlint:ktlint-ruleset-standard")
+    testImplementation(platform(libs.ktlint.bom))
+    testImplementation(libs.ktlint.rule.engine.core)
+    testImplementation(libs.ktlint.rule.engine)
+    testImplementation(libs.ktlint.ruleset.standard)
 }
 
 tasks {
     val shadowJar by getting(ShadowJar::class) {
         manifest {
-            attributes["Main-Class"] = "com.cjbooms.fabrikt.cli.CodeGen"
+            attributes["Main-Class"] = "io.fabrikt.cli.CodeGen"
             attributes["Implementation-Title"] = "fabrikt"
             attributes["Implementation-Version"] = project.version
             attributes["Built-JDK"] = System.getProperty("java.version")

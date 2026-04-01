@@ -8,7 +8,9 @@ import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
 import com.cjbooms.fabrikt.model.KotlinSourceSet
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatExpectedFiles
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
+import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.failGenerated
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.ResourceHelper.getFileNamesInFolder
 import com.cjbooms.fabrikt.util.ResourceHelper.readFolder
@@ -50,8 +52,8 @@ class KotlinSerializationModelGeneratorTest {
     @MethodSource("testCases")
     fun `correct models are generated for different OpenApi Specifications`(testCaseName: String) {
         print("Testcase: $testCaseName")
-        if (testCaseName == "discriminatedOneOf" || testCaseName == "oneOfMarkerInterface") {
-            MutableSettings.addOption(ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF)
+        if (testCaseName !in listOf("discriminatedOneOf", "oneOfMarkerInterface")) {
+            MutableSettings.addOption(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF)
         }
         val basePackage = "examples.${testCaseName.replace("/", ".")}"
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
@@ -77,9 +79,11 @@ class KotlinSerializationModelGeneratorTest {
                 assertThatGenerated(it.value)
                     .isEqualTo( "$expectedModelsPath${it.key}")
             } else {
-                assertThat(it.value).isEqualTo("File not found in expected models")
+                failGenerated(it.value).asFileNotFound("$expectedModelsPath${it.key}", "File not found in expected models")
             }
         }
+        assertThatExpectedFiles(Path.of("src/test/resources$expectedModelsPath"))
+            .areContainedInGenerated(tempFolderContents)
 
         tempDirectory.toFile().deleteRecursively()
     }

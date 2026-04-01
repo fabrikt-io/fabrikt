@@ -6,6 +6,7 @@ components:
       required:
         - simpleNullable
         - requiredNullableRef
+        - required_nullable_underscore_ref
         - singleRequiredFieldNullableRef
       properties:
         simpleNullable:
@@ -18,6 +19,10 @@ components:
             - type: 'null'
             - $ref: '#/components/schemas/OneObject'
         requiredNullableRef:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/OneObject'
+        required_nullable_underscore_ref:
           oneOf:
             - type: 'null'
             - $ref: '#/components/schemas/OneObject'

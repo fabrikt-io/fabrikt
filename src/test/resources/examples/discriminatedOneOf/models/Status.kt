@@ -10,6 +10,8 @@ public enum class Status(
 ) {
   A("a"),
   B("b"),
+  B1("b1"),
+  B2("b2"),
   ;
 
   override fun toString(): String = value

@@ -1,9 +1,12 @@
 package com.cjbooms.fabrikt.model
 
 import com.beust.jcommander.ParameterException
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isEnumDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isNotDefined
+import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.YamlUtils
 import com.cjbooms.fabrikt.validation.ValidationError
+import com.reprezen.jsonoverlay.Overlay
 import com.reprezen.kaizen.oasparser.model3.OpenApi3
 import com.reprezen.kaizen.oasparser.model3.Schema
 import java.nio.file.Path
@@ -19,15 +22,13 @@ data class SourceApi(
     val baseDir: Path = Paths.get("").toAbsolutePath(),
 ) {
     companion object {
-        private val logger = Logger.getGlobal()
-
         fun create(
             baseApi: String,
             apiFragments: Collection<String>,
             baseDir: Path = Paths.get("").toAbsolutePath(),
         ): SourceApi {
             val combinedApi =
-                apiFragments.fold(baseApi) { acc: String, fragment -> YamlUtils.mergeYamlTrees(acc, fragment) }
+                apiFragments.fold(YamlUtils.expandYamlAliases(baseApi)) { acc: String, fragment -> YamlUtils.mergeYamlTrees(acc, fragment) }
             return SourceApi(combinedApi, baseDir)
         }
     }
@@ -39,9 +40,27 @@ data class SourceApi(
         validateSchemaObjects(openApi3).let {
             if (it.isNotEmpty()) throw ParameterException("Invalid models or api file:\n${it.joinToString("\n\t")}")
         }
+
+        val inlineEnumParams = openApi3.paths.values.flatMap { path ->
+            val allParams = path.parameters + path.operations.values.flatMap { it.parameters }
+            allParams.filter { param ->
+                Overlay.of(param.schema).pathFromRoot.contains("paths") &&
+                    (param.schema?.isEnumDefinition() == true ||
+                        (param.schema?.type == "array" && param.schema?.itemsSchema?.isEnumDefinition() == true))
+            }.map { param ->
+                val schema = if (param.schema?.type == "array") param.schema.itemsSchema else param.schema
+                param.name to schema
+            }
+        }.distinctBy { Overlay.of(it.second).jsonReference }
+
+        inlineEnumParams.forEach { (name, schema) ->
+            ModelNameRegistry.preRegisterByReference(schema, name)
+        }
+
         allSchemas = openApi3.schemas.entries.map { it.key to it.value }
             .plus(openApi3.parameters.entries.map { it.key to it.value.schema })
             .plus(openApi3.responses.entries.flatMap { it.value.contentMediaTypes.entries.map { content -> it.key to content.value.schema } })
+            .plus(inlineEnumParams)
             .map { (key, schema) -> SchemaInfo(key, schema) }
     }
 
@@ -70,9 +89,7 @@ data class SourceApi(
             .fold(schemaErrors) { lst, entry ->
                 val name = entry.key
                 val schema = entry.value
-                if (schema.type == OasType.Array.type && schema.itemsSchema.isNotDefined()) {
-                    lst + listOf(ValidationError("Array type '$name' cannot be parsed to a Schema. Check your input"))
-                } else if (schema.isNotDefined()) {
+                if (schema.isNotDefined()) {
                     lst + listOf(ValidationError("Property '$name' cannot be parsed to a Schema. Check your input"))
                 } else {
                     lst

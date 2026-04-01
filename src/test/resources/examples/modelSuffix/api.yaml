@@ -384,5 +384,23 @@ components:
           bar_prop:
             type: string
 
+    # oneOf sealed interface with suffix — regression test for issue #564
+    OneOfType:
+      oneOf:
+        - $ref: "#/components/schemas/VariantA"
+        - $ref: "#/components/schemas/VariantB"
+
+    VariantA:
+      type: object
+      properties:
+        fieldA:
+          type: string
+
+    VariantB:
+      type: object
+      properties:
+        fieldB:
+          type: integer
+
 
 

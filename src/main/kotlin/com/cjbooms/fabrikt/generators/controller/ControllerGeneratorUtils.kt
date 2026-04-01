@@ -1,9 +1,12 @@
 package com.cjbooms.fabrikt.generators.controller
 
+import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipleSuccessResponseSchemas
+import com.cjbooms.fabrikt.generators.GeneratorUtils.hasOnlyJsonSuccessResponses
 import com.cjbooms.fabrikt.generators.model.ModelGenerator.Companion.toModelType
 import com.cjbooms.fabrikt.model.ControllerType
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
+import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.reprezen.kaizen.oasparser.model3.Response
 import com.reprezen.kaizen.oasparser.model3.SecurityRequirement
@@ -11,35 +14,37 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.asTypeName
 
 object ControllerGeneratorUtils {
-    /**
-     * This maps the OpenAPI response code with a ClassName object.
-     * Pulling out the first response. This assumes first is happy path
-     * may need to revisit if we want to have conditional responses
-     */
-    fun Operation.happyPathResponse(basePackage: String): TypeName {
-        // Map of response code to nullable name of schema
-        val responseDetails = happyPathResponseObject()
-        return responseDetails
+    fun Operation.toSuccessResponseType(basePackage: String): TypeName =
+        when {
+            hasMultipleSuccessResponseSchemas() -> multiSchemaResponseType()
+            else -> singleSchemaResponseType(basePackage)
+        }
+
+    private fun Operation.multiSchemaResponseType(): TypeName =
+        if (hasOnlyJsonSuccessResponses()) JsonNode::class.asTypeName() else Any::class.asTypeName()
+
+    private fun Operation.singleSchemaResponseType(basePackage: String): TypeName =
+        primarySuccessResponse()
             .contentMediaTypes
-            .map { it.value?.schema }
-            .filterNotNull()
+            .mapNotNull { it.value?.schema }
             .firstOrNull()
             ?.let { toModelType(basePackage, KotlinTypeInfo.from(it)) }
             ?: Unit::class.asTypeName()
-    }
 
-    private fun Operation.happyPathResponseObject(): Response {
-        val toResponseMapping: Map<Int, Response> = responses
-            .filter { it.key != "default" }
-            .map { (code, body) ->
-                code.replace('X','0').toInt() to body
-            }.toMap()
-
-        // Happy path, just pull out the http code with the lowest value. Later we may have conditional responses
-        val code: Int = toResponseMapping.keys.minOrNull()
+    private fun Operation.primarySuccessResponse(): Response =
+        responses
+            .filterNot { it.key == "default" }
+            .mapNotNull { (code, response) -> code.replace('X', '0').toIntOrNull()?.let { it to response } }
+            .toMap()
+            .minByOrNull { it.key }
+            ?.value
             ?: throw IllegalStateException("Could not extract the response for $this")
 
-        return toResponseMapping[code]!!
+    fun Operation.isSseResponse(): Boolean {
+        val responseDetails = primarySuccessResponse()
+        return responseDetails.contentMediaTypes["text/event-stream"]
+            ?.let { it.schema.type == "array" && it.schema.format == "event-stream" }
+            ?: false
     }
 
     fun controllerName(resourceName: String) = "$resourceName${ControllerType.SUFFIX}"

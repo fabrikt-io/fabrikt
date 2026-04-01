@@ -3,11 +3,13 @@ package com.cjbooms.fabrikt.generators.client
 import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.GeneratorUtils
+import com.cjbooms.fabrikt.generators.GeneratorUtils.getBodySuccessResponses
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaTypeKey
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasAnySuccessResponseSchemas
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipleContentMediaTypes
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipleSuccessResponseSchemas
+import com.cjbooms.fabrikt.generators.GeneratorUtils.hasOnlyJsonSuccessResponses
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toClassName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.OasDefault
@@ -48,17 +50,14 @@ object ClientGeneratorUtils {
         }
 
     /**
-     * Gives the Kotlin return type for an API call based on the Content-Types specified in the Operation.
-     * If multiple media types are found, but their response schema is the same, then the first media type is used and
-     * kotlin model for the schema is returned.
-     * If there are several possible response schemas, then the return type is JsonNode, so they are all covered.
-     * If no response body is found, Unit is returned.
+     * Determines return the return type, with special handling for multiple response schemas.
+     * Returns JsonNode for JSON-only responses, Any for mixed content types.
      */
      fun Operation.getReturnType(): Any {
         return if (!hasAnySuccessResponseSchemas()) {
             Unit::class
         } else if (hasMultipleSuccessResponseSchemas()) {
-            JsonNode::class
+            if (hasOnlyJsonSuccessResponses()) JsonNode::class else Any::class
         } else {
             this.getPrimaryContentMediaType()?.let {
                 KotlinTypeInfo.from(it.value.schema)

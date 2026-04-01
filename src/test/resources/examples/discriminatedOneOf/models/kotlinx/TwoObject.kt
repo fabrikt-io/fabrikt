@@ -1,13 +1,8 @@
 package examples.discriminatedOneOf.models
 
-import javax.validation.constraints.NotNull
-import kotlin.String
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@SerialName("content_block_location")
 @Serializable
-public data class TwoObject(
-  @SerialName("type")
-  @get:NotNull
-  public val type: String,
-)
+public object TwoObject : SomeObjInlinedArray, SomeObjInlinedObject, SomeObjInlinedObjectNoMappings

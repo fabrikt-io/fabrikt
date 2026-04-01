@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.model
 
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata
+import com.cjbooms.fabrikt.generators.model.JacksonMetadata.JSON_ENUM_DEFAULT_VALUE
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.JSON_VALUE
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.basePolymorphicType
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.polymorphicSubTypes
@@ -24,8 +25,14 @@ object JacksonAnnotations : SerializationAnnotations {
     override fun addProperty(propertySpecBuilder: PropertySpec.Builder, oasKey: String, kotlinTypeInfo: KotlinTypeInfo): PropertySpec.Builder =
         propertySpecBuilder.addAnnotation(JacksonMetadata.jacksonPropertyAnnotation(oasKey))
 
-    override fun addParameter(propertySpecBuilder: PropertySpec.Builder, oasKey: String) =
-        propertySpecBuilder.addAnnotation(JacksonMetadata.jacksonParameterAnnotation(oasKey))
+    override fun addParameter(
+        propertySpecBuilder: PropertySpec.Builder,
+        oasKey: String,
+        isRequired: Boolean,
+        typeInfo: KotlinTypeInfo,
+    ) = propertySpecBuilder.addAnnotation(
+        JacksonMetadata.jacksonParameterAnnotation(oasKey, required = isRequired && typeInfo.isPrimitiveType)
+    )
 
     override fun addClassAnnotation(typeSpecBuilder: TypeSpec.Builder) =
         typeSpecBuilder
@@ -44,6 +51,9 @@ object JacksonAnnotations : SerializationAnnotations {
 
     override fun addEnumConstantAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String) =
         enumSpecBuilder // not applicable
+
+    override fun addEnumDefaultAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String) =
+        enumSpecBuilder.addAnnotation(JSON_ENUM_DEFAULT_VALUE)
 
     override fun annotateArrayElementType(elementType: TypeName, elementTypeInfo: KotlinTypeInfo): TypeName =
         elementType // Jackson doesn't need array element annotations

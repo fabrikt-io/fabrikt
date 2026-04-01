@@ -7,4 +7,4 @@ public data class CModel(
   @param:JsonProperty("c")
   @get:JsonProperty("c")
   public val c: BigDecimal? = null,
-)
+) : ContainerArrayWithOneOf

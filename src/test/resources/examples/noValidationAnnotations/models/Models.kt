@@ -10,7 +10,10 @@ public data class ValidationAnnotations(
     @param:JsonProperty("user_name")
     @get:JsonProperty("user_name")
     public val userName: String,
-    @param:JsonProperty("age")
+    @param:JsonProperty(
+        "age",
+        required = true,
+    )
     @get:JsonProperty("age")
     public val age: Int,
     @param:JsonProperty("bio")

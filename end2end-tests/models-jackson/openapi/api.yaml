@@ -472,3 +472,34 @@ components:
           type: number
           format: double
           default: 0.1
+
+    # Required primitives - for testing issue #489
+    RequiredPrimitives:
+      type: object
+      required:
+        - required_string
+        - required_int
+        - required_long
+        - required_double
+        - required_float
+        - required_boolean
+      properties:
+        required_string:
+          type: string
+        required_int:
+          type: integer
+          format: int32
+        required_long:
+          type: integer
+          format: int64
+        required_double:
+          type: number
+          format: double
+        required_float:
+          type: number
+          format: float
+        required_boolean:
+          type: boolean
+        optional_int:
+          type: integer
+          format: int32

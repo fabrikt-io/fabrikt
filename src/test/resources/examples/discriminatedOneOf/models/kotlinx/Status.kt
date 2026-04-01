@@ -11,6 +11,10 @@ public enum class Status(
   A("a"),
   @SerialName("b")
   B("b"),
+  @SerialName("b1")
+  B1("b1"),
+  @SerialName("b2")
+  B2("b2"),
   ;
 
   override fun toString(): String = value

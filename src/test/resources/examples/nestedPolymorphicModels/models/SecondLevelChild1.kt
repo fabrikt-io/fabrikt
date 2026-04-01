@@ -3,7 +3,7 @@ package examples.nestedPolymorphicModels.models
 import com.fasterxml.jackson.`annotation`.JsonProperty
 import com.fasterxml.jackson.`annotation`.JsonSubTypes
 import com.fasterxml.jackson.`annotation`.JsonTypeInfo
-import javax.validation.constraints.NotNull
+import jakarta.validation.constraints.NotNull
 import kotlin.Boolean
 import kotlin.Int
 import kotlin.String

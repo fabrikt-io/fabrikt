@@ -14,21 +14,19 @@ repositories {
     mavenCentral()
 }
 
-val ktorVersion: String by rootProject.extra
-
 dependencies {
     implementation(project(":"))
 
     // ktor server
-    implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-server-html-builder:$ktorVersion")
-    implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
+    implementation(libs.ktor.server.netty.jvm)
+    implementation(libs.ktor.server.content.negotiation.jvm)
+    implementation(libs.ktor.server.html.builder)
+    implementation(libs.ktor.server.call.logging)
 
     // logging
-    implementation("ch.qos.logback:logback-classic:1.5.6")
+    implementation(libs.logback.classic)
 
-    implementation("com.squareup:kotlinpoet:1.14.2") { exclude(module = "kotlin-stdlib-jre7") }
+    implementation(libs.kotlinpoet) { exclude(module = "kotlin-stdlib-jre7") }
 
     testImplementation(kotlin("test"))
 }

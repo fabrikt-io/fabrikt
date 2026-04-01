@@ -1,8 +1,8 @@
 package examples.openapi310.models
 
+import com.fasterxml.jackson.`annotation`.JsonInclude
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.Valid
-import kotlin.Any
+import jakarta.validation.Valid
 import kotlin.String
 import kotlin.collections.List
 
@@ -12,6 +12,7 @@ public data class NewNullableFormat(
    */
   @param:JsonProperty("simpleNullable")
   @get:JsonProperty("simpleNullable")
+  @param:JsonInclude(JsonInclude.Include.ALWAYS)
   public val simpleNullable: String?,
   @param:JsonProperty("objectNullable")
   @get:JsonProperty("objectNullable")
@@ -20,12 +21,20 @@ public data class NewNullableFormat(
   @param:JsonProperty("requiredNullableRef")
   @get:JsonProperty("requiredNullableRef")
   @get:Valid
-  public val requiredNullableRef: OneObject? = null,
+  @param:JsonInclude(JsonInclude.Include.ALWAYS)
+  public val requiredNullableRef: OneObject?,
+  @param:JsonProperty("required_nullable_underscore_ref")
+  @get:JsonProperty("required_nullable_underscore_ref")
+  @get:Valid
+  @param:JsonInclude(JsonInclude.Include.ALWAYS)
+  public val requiredNullableUnderscoreRef: OneObject?,
   @param:JsonProperty("singleRequiredFieldNullableRef")
   @get:JsonProperty("singleRequiredFieldNullableRef")
   @get:Valid
-  public val singleRequiredFieldNullableRef: SingleRequiredFieldNullableObject? = null,
+  @param:JsonInclude(JsonInclude.Include.ALWAYS)
+  public val singleRequiredFieldNullableRef: SingleRequiredFieldNullableObject?,
   @param:JsonProperty("complexNullable")
   @get:JsonProperty("complexNullable")
-  public val complexNullable: List<Any>? = null,
+  @get:Valid
+  public val complexNullable: List<NewNullableFormatComplexNullable>? = null,
 )

@@ -4,6 +4,7 @@ import com.beust.jcommander.ParameterException
 import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
 import com.cjbooms.fabrikt.cli.CodeGenerationType
+import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
@@ -11,7 +12,9 @@ import com.cjbooms.fabrikt.generators.model.ModelGenerator
 import com.cjbooms.fabrikt.model.KotlinSourceSet
 import com.cjbooms.fabrikt.model.Models
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatExpectedFiles
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
+import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.failGenerated
 import com.cjbooms.fabrikt.util.Linter
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.ResourceHelper.getFileNamesInFolder
@@ -45,9 +48,9 @@ class ModelGeneratorTest {
         "enumExamples",
         "enumPolymorphicDiscriminator",
         "externalReferences/targeted",
+        "faultTolerantEnums",
         "githubApi",
         "inLinedObject",
-        "customExtensions",
         "mapExamples",
         "mapExamplesNonNullValues",
         "mixingCamelSnakeLispCase",
@@ -68,7 +71,10 @@ class ModelGeneratorTest {
         "binary",
         "oneOfMarkerInterface",
         "untypedObject",
-        "primitiveTypes"
+        "primitiveTypes",
+        "leadingUnderscoreProperty",
+        "inlinedEnumParameter",
+        "unsupportedInlinedDefinitions",
     )
 
     @BeforeEach
@@ -80,25 +86,37 @@ class ModelGeneratorTest {
     }
 
     @Test
-    fun `debug single test`() = `correct models are generated for different OpenApi Specifications`("arrays")
+    fun `debug single test`() =
+        `correct models are generated for different OpenApi Specifications`("discriminatedOneOf")
 
     @ParameterizedTest
     @MethodSource("testCases")
     fun `correct models are generated for different OpenApi Specifications`(testCaseName: String) {
         print("Testcase: $testCaseName")
-        MutableSettings.updateSettings()
+        if (testCaseName in listOf("oneOfPolymorphicModels")) {
+            MutableSettings.updateSettings(modelOptions = setOf(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF))
+        }
         MutableSettings.addOption(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS)
         if (testCaseName == "instantDateTime") {
             MutableSettings.addOption(CodeGenTypeOverride.DATETIME_AS_INSTANT)
-        }
-        if (testCaseName == "discriminatedOneOf" || testCaseName == "oneOfMarkerInterface" || testCaseName == "polymorphicModels") {
-            MutableSettings.addOption(ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF)
         }
         if (testCaseName == "mapExamplesNonNullValues") {
             MutableSettings.addOption(ModelCodeGenOptionType.NON_NULL_MAP_VALUES)
         }
         if (testCaseName == "byteArrayStream") {
             MutableSettings.addOption(CodeGenTypeOverride.BYTEARRAY_AS_INPUTSTREAM)
+        }
+        if (testCaseName == "faultTolerantEnums") {
+            MutableSettings.addOption(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS)
+        }
+        if (testCaseName == "defaultValues") {
+            MutableSettings.addOption(JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL)
+        }
+        if (testCaseName == "arrays") {
+            MutableSettings.addOption(JacksonNullabilityMode.ENFORCE_REQUIRED_NULLABLE)
+        }
+        if (testCaseName == "optionalVsRequired" || testCaseName == "openapi310") {
+            MutableSettings.addOption(JacksonNullabilityMode.STRICT)
         }
         val basePackage = "examples.${testCaseName.replace("/", ".")}"
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
@@ -125,16 +143,16 @@ class ModelGeneratorTest {
         tempFolderContents.forEach {
             if (expectedModels.contains(it.key)) {
                 assertThatGenerated(it.value)
-                    .isEqualTo( "$expectedModelsPath${it.key}")
+                    .isEqualTo("$expectedModelsPath${it.key}")
             } else {
-                assertThat(it.value).isEqualTo("File not found in expected models")
+                failGenerated(it.value).asFileNotFound(
+                    "$expectedModelsPath${it.key}",
+                    "File not found in expected models"
+                )
             }
         }
-        expectedModels.forEach {
-            assertThat(tempFolderContents.contains(it))
-                .withFailMessage { "Expected model file $it not found in generated models" }
-                .isTrue()
-        }
+        assertThatExpectedFiles(Path.of("src/test/resources$expectedModelsPath"))
+            .areContainedInGenerated(tempFolderContents)
 
         tempDirectory.toFile().deleteRecursively()
     }
@@ -205,7 +223,6 @@ class ModelGeneratorTest {
         assertThatGenerated(Linter.lintString(validationAnnotationsModel.toString())).isEqualTo(expectedJakartaModel)
     }
 
-
     @Test
     fun `generate models using no validation annotations`() {
         val basePackage = "examples.noValidationAnnotations"
@@ -232,7 +249,10 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/javaSerializableModels/api.yaml")
         val expectedModels = "/examples/javaSerializableModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(ModelCodeGenOptionType.JAVA_SERIALIZATION),
+            modelOptions = setOf(
+                ModelCodeGenOptionType.JAVA_SERIALIZATION,
+                ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF
+            ),
         )
         val models = ModelGenerator(
             Packages(basePackage),
@@ -243,12 +263,6 @@ class ModelGeneratorTest {
 
         assertThatGenerated(models).isEqualTo(expectedModels)
     }
-
-    @Test
-    fun `missing array reference throws constructive message`() = assertExceptionWithMessage(
-        "/badInput/ErrorMissingRefArray.yaml",
-        "Array type 'hooks' cannot be parsed to a Schema. Check your input",
-    )
 
     @Test
     fun `missing object reference throws constructive message`() = assertExceptionWithMessage(
@@ -290,7 +304,10 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/quarkusReflectionModels/api.yaml")
         val expectedModels = "/examples/quarkusReflectionModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(ModelCodeGenOptionType.QUARKUS_REFLECTION),
+            modelOptions = setOf(
+                ModelCodeGenOptionType.QUARKUS_REFLECTION,
+                ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF
+            ),
         )
 
         val models = ModelGenerator(
@@ -309,7 +326,10 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/micronautIntrospectedModels/api.yaml")
         val expectedModels = "/examples/micronautIntrospectedModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(ModelCodeGenOptionType.MICRONAUT_INTROSPECTION),
+            modelOptions = setOf(
+                ModelCodeGenOptionType.MICRONAUT_INTROSPECTION,
+                ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF
+            ),
         )
 
         val models = ModelGenerator(
@@ -328,7 +348,10 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/micronautSerdeModels/api.yaml")
         val expectedModels = "/examples/micronautSerdeModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(ModelCodeGenOptionType.MICRONAUT_SERDEABLE),
+            modelOptions = setOf(
+                ModelCodeGenOptionType.MICRONAUT_SERDEABLE,
+                ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF
+            ),
         )
 
         val models = ModelGenerator(
@@ -347,7 +370,10 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/micronautReflectionModels/api.yaml")
         val expectedModels = "/examples/micronautReflectionModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(ModelCodeGenOptionType.MICRONAUT_REFLECTION),
+            modelOptions = setOf(
+                ModelCodeGenOptionType.MICRONAUT_REFLECTION,
+                ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF
+            ),
         )
 
         val models = ModelGenerator(

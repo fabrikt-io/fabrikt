@@ -19,29 +19,23 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-val jacksonVersion: String by rootProject.extra
-val junitVersion: String by rootProject.extra
-
 dependencies {
-    implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersion"))
-    implementation("com.squareup.okhttp3:okhttp:4.10.0")
-    implementation("io.github.openfeign:feign-core:13.3")
-    implementation("io.github.openfeign:feign-jackson:13.3")
-    implementation("io.github.openfeign:feign-okhttp:13.3")
-    implementation("jakarta.validation:jakarta.validation-api:3.0.2")
-    implementation("javax.validation:validation-api:2.0.1.Final")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("com.fasterxml.jackson.core:jackson-databind")
-    implementation("com.fasterxml.jackson.core:jackson-core")
-    implementation("com.fasterxml.jackson.core:jackson-annotations")
+    implementation(platform(libs.jackson.bom))
+    implementation(libs.okhttp)
+    implementation(libs.feign.core)
+    implementation(libs.feign.jackson)
+    implementation(libs.feign.okhttp)
+    implementation(libs.jakarta.validation.api)
+    implementation(libs.validation.api)
+    implementation(libs.jackson.module.kotlin)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.core)
+    implementation(libs.jackson.annotations)
 
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:$junitVersion")
-    testImplementation("org.assertj:assertj-core:3.24.2")
-    testImplementation("org.wiremock:wiremock:3.3.1")
-    testImplementation("com.marcinziolo:kotlin-wiremock:2.1.1")
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.bundles.wiremock)
 }
 
 tasks {
@@ -51,7 +45,7 @@ tasks {
         outputs.dir(generationDir)
         outputs.cacheIf { true }
         classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
-        mainClass.set("com.cjbooms.fabrikt.cli.CodeGen")
+        mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", generationDir,
             "--base-package", "com.example",
@@ -59,6 +53,7 @@ tasks {
             "--targets", "http_models",
             "--targets", "client",
             "--http-client-target", "open_feign",
+            "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF"
         )
         dependsOn(":jar")
         dependsOn(":shadowJar")

@@ -5,7 +5,8 @@ import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKdoc
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
-import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.happyPathResponse
+import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.isSseResponse
+import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.toSuccessResponseType
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.methodName
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.securitySupport
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringAnnotations
@@ -40,7 +41,10 @@ class SpringControllerInterfaceGenerator(
     private val options: Set<ControllerCodeGenOptionType> = emptySet(),
 ) : ControllerInterfaceGenerator, AnnotationBasedControllerInterfaceGenerator(packages, api, validationAnnotations) {
 
-    private val EXTENSION_ASYNC_SUPPORT = "x-async-support"
+    companion object {
+        private const val EXTENSION_ASYNC_SUPPORT = "x-async-support"
+    }
+
     private val addAuthenticationParameter: Boolean
         get() = options.any { it == ControllerCodeGenOptionType.AUTHENTICATION }
 
@@ -68,7 +72,7 @@ class SpringControllerInterfaceGenerator(
         verb: String,
     ): FunSpec {
         val methodName = methodName(op, verb, path.pathString.isSingleResource())
-        val returnType = op.happyPathResponse(packages.base)
+        val returnType = op.toSuccessResponseType(packages.base)
         val parameters = op.toIncomingParameters(packages.base, path.parameters, emptyList())
         val globalSecurity = api.openApi3.securityRequirements.securitySupport()
 
@@ -82,15 +86,17 @@ class SpringControllerInterfaceGenerator(
 
         val explicitAsyncSupport = op.extensions[EXTENSION_ASYNC_SUPPORT] as? Boolean
         val asyncSupport = explicitAsyncSupport ?: options.contains(ControllerCodeGenOptionType.COMPLETION_STAGE)
+        val springSseSupport = options.contains(ControllerCodeGenOptionType.SSE_EMITTER)
 
-        val funcSpec = if (asyncSupport) {
-            baseFunSpec.returns(
+        val funcSpec = when {
+            springSseSupport && op.isSseResponse() -> baseFunSpec.returns(SpringImports.SSE_EMITTER)
+            asyncSupport -> baseFunSpec.returns(
                 SpringImports.COMPLETION_STAGE.parameterizedBy(
                     SpringImports.RESPONSE_ENTITY.parameterizedBy(returnType)
                 )
             )
-        } else {
-            baseFunSpec.returns(SpringImports.RESPONSE_ENTITY.parameterizedBy(returnType))
+
+            else -> baseFunSpec.returns(SpringImports.RESPONSE_ENTITY.parameterizedBy(returnType))
         }
 
         parameters
@@ -135,6 +141,7 @@ class SpringControllerInterfaceGenerator(
     private fun FunSpec.Builder.addSpringFunAnnotation(op: Operation, verb: String, path: String): FunSpec.Builder {
         val produces = op.responses
             .flatMap { it.value.contentMediaTypes.keys }
+            .distinct()
             .toTypedArray()
 
         val consumes = op.requestBody

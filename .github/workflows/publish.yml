@@ -23,18 +23,18 @@ jobs:
           sleep 60
       - name: Notify Central of Upload (Manual Staging Promotion)
         run: |
-          echo "Querying for open staging repository..."
+          echo "Querying for open staging repository (io.fabrikt profile)..."
           RESPONSE=$(curl -s -u "${{ secrets.OSSRH_USER_TOKEN_USERNAME }}:${{ secrets.OSSRH_USER_TOKEN_PASSWORD }}" \
-            "https://ossrh-staging-api.central.sonatype.com/manual/search/repositories?ip=any&profile_id=com.cjbooms")
+            "https://ossrh-staging-api.central.sonatype.com/manual/search/repositories?ip=any&profile_id=io.fabrikt")
           
           REPO_KEY=$(echo "$RESPONSE" | jq -r '.repositories[] | select(.state == "open") | .key')
 
           if [[ "$REPO_KEY" == "null" ]]; then
-            echo "No open repository found"
+            echo "No open repository found for io.fabrikt profile"
             exit 1
           fi
 
-          echo "Notifying Sonatype to register repository in Central Publisher Portal..."
+          echo "Notifying Sonatype to register io.fabrikt repository in Central Publisher Portal..."
           curl -X POST -H "Accept: application/json" \
             -u "${{ secrets.OSSRH_USER_TOKEN_USERNAME }}:${{ secrets.OSSRH_USER_TOKEN_PASSWORD }}" \
             "https://ossrh-staging-api.central.sonatype.com/manual/upload/repository/$REPO_KEY"

@@ -1,0 +1,9 @@
+FROM eclipse-temurin:21-jre-alpine
+
+# Package the JAR built by the workflow's Gradle step.
+COPY build/libs/fabrikt-*.jar /app/fabrikt.jar
+
+WORKDIR /workspace
+
+ENTRYPOINT ["java", "-jar", "/app/fabrikt.jar"]
+CMD ["--help"]

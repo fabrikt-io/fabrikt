@@ -10,7 +10,10 @@ import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.TestFileUtils.toSingleFile
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
 import com.cjbooms.fabrikt.util.ModelNameRegistry
+import com.cjbooms.fabrikt.model.SimpleFile
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -39,7 +42,7 @@ class KtorClientGeneratorTest {
 
     @ParameterizedTest
     @MethodSource("fullApiTestCases")
-    fun `correct Ktor routing resources are generated`(testCaseName: String) {
+    fun `correct Ktor client code is generated`(testCaseName: String) {
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
@@ -55,5 +58,57 @@ class KtorClientGeneratorTest {
             .toSingleFile()
 
         assertThatGenerated(clientCode).isEqualTo(expectedClient)
+    }
+
+    @ParameterizedTest
+    @MethodSource("fullApiTestCases")
+    fun `correct Ktor API models are generated`(testCaseName: String) {
+        val packages = Packages("examples.$testCaseName")
+        val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
+        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+
+        val expectedApiModels = "/examples/$testCaseName/client/ktor/KtorApiModels.kt"
+
+        val apiModels = KtorClientGenerator(
+            packages,
+            sourceApi
+        )
+            .generateLibrary(emptySet())
+            .filterIsInstance<SimpleFile>()
+            .first { it.path.fileName.toString() == "KtorApiModels.kt" }
+
+        assertThatGenerated(apiModels.content).isEqualTo(expectedApiModels)
+    }
+
+    @Test
+    fun `operationId with dots is sanitized to valid Kotlin function name`() {
+        val spec = """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /usage:
+                get:
+                  operationId: app.GetApplicationApiUsage
+                  responses:
+                    '200':
+                      description: Success
+                      content:
+                        application/json:
+                          schema:
+                            type: string
+        """.trimIndent()
+
+        val packages = Packages("com.test")
+        val sourceApi = SourceApi(spec)
+
+        val clientCode = KtorClientGenerator(packages, sourceApi)
+            .generate(emptySet())
+            .clients
+            .toSingleFile()
+
+        assertThat(clientCode).contains("fun appGetApplicationApiUsage(")
+        assertThat(clientCode).doesNotContain("app.GetApplicationApiUsage")
     }
 }

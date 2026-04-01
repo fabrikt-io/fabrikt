@@ -21,7 +21,21 @@ components:
       properties:
         status:
           type: string
+
     StateB:
+      oneOf:
+        - $ref: '#/components/schemas/StateB1'
+        - $ref: '#/components/schemas/StateB2'
+
+    StateB1:
+      type: object
+      required:
+        - mode
+      properties:
+        mode:
+          type: string
+
+    StateB2:
       type: object
       required:
         - mode

@@ -19,45 +19,39 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-val jacksonVersion: String by rootProject.extra
-val junitVersion: String by rootProject.extra
-val ktorVersion: String by rootProject.extra
-
 dependencies {
-    implementation(platform("com.fasterxml.jackson:jackson-bom:$jacksonVersion"))
-    implementation("jakarta.validation:jakarta.validation-api:3.0.2")
-    implementation("javax.validation:validation-api:2.0.1.Final")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("com.fasterxml.jackson.core:jackson-databind")
-    implementation("com.fasterxml.jackson.core:jackson-core")
-    implementation("com.fasterxml.jackson.core:jackson-annotations")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation(platform(libs.jackson.bom))
+    implementation(libs.jakarta.validation.api)
+    implementation(libs.validation.api)
+    implementation(libs.kotlinx.datetime.legacy)
+    implementation(libs.jackson.module.kotlin)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.core)
+    implementation(libs.jackson.annotations)
+    implementation(libs.jackson.datatype.jsr310)
 
     // ktor server
-    implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-serialization-jackson:$ktorVersion")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-    implementation("io.ktor:ktor-server-auth:$ktorVersion")
-    implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
-    implementation("io.ktor:ktor-server-data-conversion:$ktorVersion")
+    implementation(libs.ktor.server.content.negotiation.jvm)
+    implementation(libs.ktor.serialization.jackson)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.server.auth)
+    implementation(libs.ktor.server.status.pages)
+    implementation(libs.ktor.server.data.conversion)
 
     // ktor test
-    testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
-    testImplementation("io.ktor:ktor-server-auth:$ktorVersion")
-    testImplementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")
-    testImplementation("io.ktor:ktor-server-status-pages:$ktorVersion")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:1.8.20")
+    testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.ktor.server.auth)
+    testImplementation(libs.ktor.server.auth.jwt)
+    testImplementation(libs.ktor.server.status.pages)
+    testImplementation(libs.kotlin.test)
 
-    testImplementation("io.mockk:mockk:1.13.7")
+    testImplementation(libs.mockk)
 
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:$junitVersion")
-    testImplementation("org.assertj:assertj-core:3.24.2")
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.assertj.core)
 
-    testImplementation("ch.qos.logback:logback-classic:1.4.3")
+    testImplementation(libs.logback.classic.legacy)
 }
 
 tasks {
@@ -117,7 +111,7 @@ fun TaskContainer.createCodeGenerationTask(
     outputs.dir(generationDir)
     outputs.cacheIf { true }
     classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
-    mainClass.set("com.cjbooms.fabrikt.cli.CodeGen")
+    mainClass.set("io.fabrikt.cli.CodeGen")
     args = listOf(
         "--output-directory", generationDir,
         "--base-package", "com.example",
@@ -126,6 +120,7 @@ fun TaskContainer.createCodeGenerationTask(
         "--targets", "controllers",
         "--http-controller-target", "ktor",
         "--instant-library", "KOTLINX_INSTANT",
+        "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF"
     ) + opts
     dependsOn(":jar")
     dependsOn(":shadowJar")

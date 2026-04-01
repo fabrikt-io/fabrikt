@@ -1,14 +1,15 @@
 package com.cjbooms.fabrikt.generators.model
 
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
+import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
-import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.ClassSettings
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toClassName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKDoc
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toObjectTypeSpec
 import com.cjbooms.fabrikt.generators.MutableSettings
+import com.cjbooms.fabrikt.generators.MutableSettings.isSealedInterfacesForOneOfEnabled
 import com.cjbooms.fabrikt.generators.PropertyUtils.addToClass
 import com.cjbooms.fabrikt.generators.PropertyUtils.isNullable
 import com.cjbooms.fabrikt.generators.TypeFactory.createList
@@ -41,8 +42,9 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedTypedAdditionalProperties
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfPolymorphicTypes
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterface
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfResolvingToAnyType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isPolymorphicSubType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isPolymorphicSuperType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSimpleType
@@ -78,6 +80,7 @@ class ModelGenerator(
     private val validationAnnotations: ValidationAnnotations = MutableSettings.validationLibrary.annotations
     private val serializationAnnotations: SerializationAnnotations = MutableSettings.effectiveSerializationAnnotations
     private val externalRefResolutionMode: ExternalReferencesResolutionMode = MutableSettings.externalRefResolutionMode
+    private val jacksonNullabilityMode: JacksonNullabilityMode = MutableSettings.effectiveJacksonNullabilityMode
 
     companion object {
         private val logger = Logger.getGlobal()
@@ -144,6 +147,7 @@ class ModelGenerator(
                         typeInfo.parameterizedType,
                     ),
                 )
+
                 is KotlinTypeInfo.SimpleTypedAdditionalProperties -> createMutableMapOfStringToType(
                     toModelType(
                         basePackage,
@@ -188,17 +192,20 @@ class ModelGenerator(
 
     private fun createModels(api: OpenApi3, schemas: List<SchemaInfo>) = schemas
         .filterNot { it.schema.isSimpleType() }
-        .filterNot { it.schema.isOneOfPolymorphicTypes() && SEALED_INTERFACES_FOR_ONE_OF !in options }
+        .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !isSealedInterfacesForOneOfEnabled() }
+        .filterNot { it.schema.isOneOfResolvingToAnyType() }
         .flatMap { schemaInfo ->
             val properties = schemaInfo.schema.topLevelProperties(HTTP_SETTINGS, api, schemaInfo.schema)
             when {
                 properties.isNotEmpty() ||
-                schemaInfo.typeInfo is KotlinTypeInfo.Enum ||
-                schemaInfo.schema.findOneOfSuperInterface(schemas.map { it.schema }).isNotEmpty() -> {
+                    schemaInfo.typeInfo is KotlinTypeInfo.Enum ||
+                    schemaInfo.schema.findOneOfSuperInterface(schemas.map { it.schema }).isNotEmpty() -> {
                     val primaryModel = buildPrimaryModel(api, schemaInfo, properties, schemas)
-                    val inlinedModels = buildInLinedModels(properties, schemaInfo.schema, schemaInfo.schema.getDocumentUrl())
+                    val inlinedModels =
+                        buildInLinedModels(properties, schemaInfo.schema, schemaInfo.schema.getDocumentUrl())
                     listOf(primaryModel) + inlinedModels
                 }
+
                 schemaInfo.typeInfo is KotlinTypeInfo.Array -> {
                     buildInlinedListDefinition(
                         schema = schemaInfo.schema,
@@ -207,6 +214,7 @@ class ModelGenerator(
                         apiDocUrl = schemaInfo.schema.getDocumentUrl(),
                     )
                 }
+
                 else -> {
                     emptyList()
                 }
@@ -222,7 +230,7 @@ class ModelGenerator(
         val modelName = ModelNameRegistry.getOrRegister(schemaInfo)
         val schemaName = schemaInfo.schema.getSchemaRefName()
         return when {
-            schemaInfo.schema.isOneOfSuperInterface() && SEALED_INTERFACES_FOR_ONE_OF in options -> oneOfSuperInterface(
+            schemaInfo.schema.isOneOfSuperInterface() -> oneOfSuperInterface(
                 modelName = modelName,
                 discriminator = schemaInfo.schema.discriminator,
                 allSchemas = allSchemas,
@@ -272,8 +280,6 @@ class ModelGenerator(
         }
     }
 
-
-
     private fun buildInLinedModels(
         topLevelProperties: Collection<PropertyInfo>,
         enclosingSchema: Schema,
@@ -289,7 +295,8 @@ class ModelGenerator(
                         it.isInherited -> {
                             emptySet() // Rely on the parent definition
                         }
-                        it.schema.isOneOfSuperInterface() && SEALED_INTERFACES_FOR_ONE_OF in options -> {
+
+                        it.schema.isOneOfSuperInterface() -> {
                             setOf(
                                 oneOfSuperInterface(
                                     modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
@@ -300,6 +307,7 @@ class ModelGenerator(
                                 )
                             )
                         }
+
                         else -> {
                             val props = it.schema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, enclosingSchema)
                             val currentModel = standardDataClass(
@@ -323,9 +331,16 @@ class ModelGenerator(
                     if (it.schema.isComplexTypedAdditionalProperties("additionalProperties")) {
                         setOf(
                             standardDataClass(
-                                modelName = ModelNameRegistry.getOrRegister(it.schema, valueSuffix = it.schema.isInlinedTypedAdditionalProperties()),
+                                modelName = ModelNameRegistry.getOrRegister(
+                                    it.schema,
+                                    valueSuffix = it.schema.isInlinedTypedAdditionalProperties()
+                                ),
                                 schemaName = it.name,
-                                properties = it.schema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, enclosingSchema),
+                                properties = it.schema.topLevelProperties(
+                                    HTTP_SETTINGS,
+                                    sourceApi.openApi3,
+                                    enclosingSchema
+                                ),
                                 schema = it.schema,
                                 oneOfInterfaces = emptySet(),
                             ),
@@ -347,6 +362,7 @@ class ModelGenerator(
                     } else {
                         buildInlinedListDefinition(it.schema, it.name, enclosingSchema, apiDocUrl)
                     }
+
                 is PropertyInfo.OneOfAny -> emptySet()
             }
         }
@@ -383,7 +399,7 @@ class ModelGenerator(
                         ),
                     )
 
-                items.isInlinedOneOfSuperInterface() && SEALED_INTERFACES_FOR_ONE_OF in options ->
+                items.isInlinedOneOfSuperInterface() ->
                     setOf(
                         oneOfSuperInterface(
                             modelName = ModelNameRegistry.getOrRegister(schema, enclosingSchema),
@@ -432,6 +448,8 @@ class ModelGenerator(
 
     private fun buildEnumClass(schema: Schema, enum: KotlinTypeInfo.Enum): TypeSpec {
         val enumType = generatedType(packages.base, enum.enumClassName)
+        val isFaultTolerant = options.contains(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS)
+
         val classBuilder = TypeSpec
             .enumBuilder(enumType)
             .apply { schema.toKDoc()?.let { addKdoc(it) } }
@@ -454,6 +472,18 @@ class ModelGenerator(
             )
         }
 
+        // Add UNRECOGNIZED fallback entry for fault-tolerant enums
+        if (isFaultTolerant) {
+            val unrecognizedConstantBuilder = TypeSpec.anonymousClassBuilder()
+                .addSuperclassConstructorParameter("%S", "UNRECOGNIZED")
+            serializationAnnotations.addEnumConstantAnnotation(unrecognizedConstantBuilder, "UNRECOGNIZED")
+            serializationAnnotations.addEnumDefaultAnnotation(unrecognizedConstantBuilder, "UNRECOGNIZED")
+            classBuilder.addEnumConstant(
+                "UNRECOGNIZED",
+                unrecognizedConstantBuilder.build(),
+            )
+        }
+
         val valuePropSpecBuilder = PropertySpec.builder("value", String::class).initializer("value")
         serializationAnnotations.addEnumPropertyAnnotation(valuePropSpecBuilder)
         classBuilder.addProperty(valuePropSpecBuilder.build())
@@ -466,21 +496,34 @@ class ModelGenerator(
 
         classBuilder.addFunction(toStringBuilder.build())
 
-        val companion = TypeSpec.companionObjectBuilder()
+        val companionBuilder = TypeSpec.companionObjectBuilder()
             .addProperty(
                 PropertySpec.builder("mapping", createMapOfStringToNonNullType(enumType))
                     .initializer("entries.associateBy(%T::value)", enumType)
                     .addModifiers(KModifier.PRIVATE)
                     .build(),
             )
-            .addFunction(
+
+        // Modify fromValue to return UNRECOGNIZED for fault-tolerant enums, or nullable for regular enums
+        if (isFaultTolerant) {
+            companionBuilder.addFunction(
+                FunSpec.builder("fromValue")
+                    .addParameter(ParameterSpec.builder("value", String::class).build())
+                    .returns(enumType)
+                    .addStatement("return mapping[value] ?: UNRECOGNIZED")
+                    .build(),
+            )
+        } else {
+            companionBuilder.addFunction(
                 FunSpec.builder("fromValue")
                     .addParameter(ParameterSpec.builder("value", String::class).build())
                     .returns(enumType.copy(nullable = true))
                     .addStatement("return mapping[value]")
                     .build(),
             )
-            .build()
+        }
+
+        val companion = companionBuilder.build()
 
         // Only Micronaut Serde needs @Serdeable on enums; Jackson and kotlinx don't annotate enum classes
         if (options.contains(ModelCodeGenOptionType.MICRONAUT_SERDEABLE)) {
@@ -494,9 +537,15 @@ class ModelGenerator(
         if (mapField.schema.additionalPropertiesSchema.isComplexTypedAdditionalProperties("additionalProperties")) {
             val schema = mapField.schema.additionalPropertiesSchema
             standardDataClass(
-                modelName = ModelNameRegistry.getOrRegister(schema, valueSuffix = schema.isInlinedTypedAdditionalProperties()),
+                modelName = ModelNameRegistry.getOrRegister(
+                    schema,
+                    valueSuffix = schema.isInlinedTypedAdditionalProperties()
+                ),
                 schemaName = schema.safeName(),
-                properties = mapField.schema.additionalPropertiesSchema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3),
+                properties = mapField.schema.additionalPropertiesSchema.topLevelProperties(
+                    HTTP_SETTINGS,
+                    sourceApi.openApi3
+                ),
                 schema = schema,
                 oneOfInterfaces = emptySet(),
             )
@@ -527,18 +576,18 @@ class ModelGenerator(
             .addMicronautReflectionAnnotation()
             .addCompanionObject()
         for (oneOfInterface in oneOfInterfaces) {
-            classBuilder
-                .addSuperinterface(generatedType(packages.base, ModelNameRegistry.getOrRegister(oneOfInterface)))
+            val interfaceName = ModelNameRegistry.getBySchema(oneOfInterface) ?: ModelNameRegistry.getOrRegister(oneOfInterface)
 
-            // determine the mapping key for this schema as a subtype of the oneOf interface
-            val mappingKey = oneOfInterface.discriminator.mappingKeyForSchemaName(schemaName)
-            if (mappingKey != null) {
-                serializationAnnotations.addSubtypeMappingAnnotation(classBuilder, mappingKey)
-            }
+            classBuilder
+                .addSuperinterface(generatedType(packages.base, interfaceName))
         }
+        oneOfInterfaces
+            .mapNotNull { it.discriminator.mappingKeyForSchemaName(schemaName) }
+            .distinct()
+            .forEach { serializationAnnotations.addSubtypeMappingAnnotation(classBuilder, it) }
 
         if (!generateObject) {
-            if (oneOfInterfaces.size == 1) {
+            if (oneOfInterfaces.isNotEmpty()) {
                 properties.addToClass(
                     schemaName = schemaName,
                     classBuilder = classBuilder,
@@ -612,7 +661,7 @@ class ModelGenerator(
         if (discriminator != null && discriminator.propertyName != null) {
             serializationAnnotations.addBasePolymorphicTypeAnnotation(interfaceBuilder, discriminator.propertyName)
 
-            val mappings = getDiscriminatorMappingsOrDefault(discriminator, members, allSchemas, modelName)
+            val mappings = getFlattenedDiscriminatorMappings(discriminator, members, allSchemas, modelName)
 
             val kotlinMappings = mappings.mapValues { (_, schema) ->
                 toModelType(
@@ -624,7 +673,9 @@ class ModelGenerator(
         }
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {
-            interfaceBuilder.addSuperinterface(generatedType(packages.base, oneOfSuperInterface.name))
+            val interfaceName = ModelNameRegistry.getBySchema(oneOfSuperInterface) ?: ModelNameRegistry.getOrRegister(oneOfSuperInterface)
+
+            interfaceBuilder.addSuperinterface(generatedType(packages.base, interfaceName))
         }
 
         interfaceBuilder
@@ -633,6 +684,38 @@ class ModelGenerator(
             .addMicronautReflectionAnnotation()
 
         return interfaceBuilder.build()
+    }
+
+    private fun getFlattenedDiscriminatorMappings(
+        discriminator: Discriminator,
+        members: List<Schema>,
+        allSchemas: List<SchemaInfo>,
+        modelName: String
+    ): Map<String, SchemaInfo> {
+        val directMappings = getDiscriminatorMappingsOrDefault(discriminator, members, allSchemas, modelName)
+
+        // Expand mappings for members that are themselves oneOf sealed interfaces
+        val expandedMappings = directMappings.flatMap { (key, schemaInfo) ->
+            val schema = schemaInfo.schema
+            if (schema.isOneOfSuperInterface() &&
+                schema.discriminator != null &&
+                schema.discriminator.propertyName == discriminator.propertyName
+            ) {
+                val nestedMappings = getDiscriminatorMappingsOrDefault(
+                    discriminator = schema.discriminator,
+                    members = schema.oneOfSchemas,
+                    allSchemas = allSchemas,
+                    modelName = schema.name
+                )
+                nestedMappings.entries.map { (nestedKey, nestedSchema) ->
+                    nestedKey to nestedSchema
+                }
+            } else {
+                listOf(key to schemaInfo)
+            }
+        }.toMap()
+
+        return expandedMappings
     }
 
     private fun getDiscriminatorMappingsOrDefault(
@@ -702,7 +785,9 @@ class ModelGenerator(
             .modifiers.remove(KModifier.DATA)
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {
-            this.addSuperinterface(generatedType(packages.base, oneOfSuperInterface.name))
+            val interfaceName = ModelNameRegistry.getBySchema(oneOfSuperInterface) ?: ModelNameRegistry.getOrRegister(oneOfSuperInterface)
+
+            this.addSuperinterface(generatedType(packages.base, interfaceName))
         }
 
         val subTypes = allSchemas
@@ -771,7 +856,8 @@ class ModelGenerator(
             )
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {
-            this.addSuperinterface(generatedType(packages.base, oneOfSuperInterface.name))
+            val interfaceName = ModelNameRegistry.getBySchema(oneOfSuperInterface) ?: ModelNameRegistry.getOrRegister(oneOfSuperInterface)
+            this.addSuperinterface(generatedType(packages.base, interfaceName))
         }
 
         val properties = superType.schema.getDiscriminatorForInLinedObjectUnderAllOf()?.let { discriminator ->
@@ -808,7 +894,7 @@ class ModelGenerator(
                 type = toModelType(
                     packages.base,
                     it.typeInfo,
-                    it.isNullable(),
+                    it.isNullable(classType),
                 ),
                 parameterizedType = toClassName(
                     packages.base,
@@ -819,6 +905,7 @@ class ModelGenerator(
                 classSettings = classType,
                 validationAnnotations = validationAnnotations,
                 serializationAnnotations = serializationAnnotations,
+                jacksonNullabilityMode = jacksonNullabilityMode
             )
         }
         if (constructorBuilder.parameters.isNotEmpty() && classBuilder.modifiers.isEmpty()) {
@@ -903,7 +990,12 @@ class ModelGenerator(
     private fun List<SchemaInfo>.filterByExternalRefResolutionMode(
         externalReferences: Map.Entry<String, MutableSet<String>>,
     ) = when (externalRefResolutionMode) {
-            ExternalReferencesResolutionMode.TARGETED -> this.filter { apiSchema -> externalReferences.value.contains(apiSchema.name) }
-            else -> this
+        ExternalReferencesResolutionMode.TARGETED -> this.filter { apiSchema ->
+            externalReferences.value.contains(
+                apiSchema.name
+            )
         }
+
+        else -> this
+    }
 }

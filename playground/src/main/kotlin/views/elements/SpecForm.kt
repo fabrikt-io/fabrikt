@@ -85,6 +85,8 @@ fun FlowContent.specForm(settings: GenerationSettings) = div {
                 var textarea = document.getElementById("spec");
                 editor.getSession().setValue(textarea.value);
                 editor.getSession().setMode("ace/mode/yaml");
+                editor.getSession().setTabSize(2);
+                editor.getSession().setUseSoftTabs(true);
                 
                 // keep the text area in sync with the editor content
                 editor.getSession().on('change', function(){

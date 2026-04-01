@@ -29,8 +29,8 @@ fun HttpUrl.Builder.queryParam(key: String, values: List<Any>?, explode: Boolean
 }
 
 @Suppress("unused")
-fun Headers.Builder.header(key: String, value: String?): Headers.Builder = this.apply {
-    if (value != null) this.add(key, value)
+fun Headers.Builder.header(key: String, value: Any?): Headers.Builder = this.apply {
+    if (value != null) this.add(key, value.toString())
 }
 
 @Throws(ApiException::class)

@@ -18,23 +18,34 @@ object JacksonMetadata {
     private val JSON_ANY_GETTER = ClassName("com.fasterxml.jackson.annotation", "JsonAnyGetter")
     private val JSON_IGNORE = ClassName("com.fasterxml.jackson.annotation", "JsonIgnore")
     private val JSON_INCLUDE_CLASS = ClassName("com.fasterxml.jackson.annotation", "JsonInclude")
+    private val JSON_ENUM_DEFAULT_VALUE_CLASS = ClassName("com.fasterxml.jackson.annotation", "JsonEnumDefaultValue")
 
     val JSON_VALUE = AnnotationSpec.builder(JSON_VALUE_CLASS).build()
-    val JSON_INCLUDE = AnnotationSpec
+    val JSON_INCLUDE_NON_NULL = AnnotationSpec
         .builder(JSON_INCLUDE_CLASS)
         .useSiteTarget(AnnotationSpec.UseSiteTarget.PARAM)
         .addMember("%T.Include.NON_NULL", JSON_INCLUDE_CLASS)
         .build()
+
+    val JSON_INCLUDE_ALWAYS = AnnotationSpec
+        .builder(JSON_INCLUDE_CLASS)
+        .useSiteTarget(AnnotationSpec.UseSiteTarget.PARAM)
+        .addMember("%T.Include.ALWAYS", JSON_INCLUDE_CLASS)
+        .build()
+
+    val JSON_ENUM_DEFAULT_VALUE = AnnotationSpec.builder(JSON_ENUM_DEFAULT_VALUE_CLASS).build()
 
     fun jacksonPropertyAnnotation(name: String) = AnnotationSpec
         .builder(JSON_PROPERTY_CLASS)
         .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
         .addMember("%S", name).build()
 
-    fun jacksonParameterAnnotation(name: String) = AnnotationSpec
+    fun jacksonParameterAnnotation(name: String, required: Boolean = false) = AnnotationSpec
         .builder(JSON_PROPERTY_CLASS)
         .useSiteTarget(AnnotationSpec.UseSiteTarget.PARAM)
-        .addMember("%S", name).build()
+        .addMember("%S", name)
+        .apply { if (required) addMember("required = %L", true) }
+        .build()
 
     val anySetter = AnnotationSpec.builder(JSON_ANY_SETTER).build()
     val anyGetter = AnnotationSpec.builder(JSON_ANY_GETTER).build()

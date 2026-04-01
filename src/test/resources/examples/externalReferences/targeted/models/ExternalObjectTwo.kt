@@ -4,7 +4,7 @@ import com.fasterxml.jackson.`annotation`.JsonAnyGetter
 import com.fasterxml.jackson.`annotation`.JsonAnySetter
 import com.fasterxml.jackson.`annotation`.JsonIgnore
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import javax.validation.Valid
+import jakarta.validation.Valid
 import kotlin.String
 import kotlin.collections.List
 import kotlin.collections.Map

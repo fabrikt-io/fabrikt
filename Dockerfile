@@ -1,5 +1,15 @@
 # Build stage
 FROM gradle:8-jdk21 AS builder
+ARG TARGETARCH
+
+# Install OpenJDK 17 for Gradle toolchain detection
+USER root
+RUN apt-get update \
+  && apt-get install -y openjdk-17-jdk ca-certificates --no-install-recommends \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-${TARGETARCH}
+ENV PATH=$JAVA_HOME/bin:$PATH
 
 WORKDIR /build
 

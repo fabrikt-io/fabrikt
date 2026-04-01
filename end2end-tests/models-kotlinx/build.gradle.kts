@@ -19,19 +19,13 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-val junitVersion: String by rootProject.extra
-val kotlinxSerializationVersion: String by rootProject.extra
-val kotlinxDateTimeVersion: String by rootProject.extra
-
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:$kotlinxDateTimeVersion")
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.datetime)
 
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:$junitVersion")
-    testImplementation("org.assertj:assertj-core:3.24.2")
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.assertj.core)
 }
 
 fun createGenerateCodeTask(name: String, apiFilePath: String, basePackage: String, additionalArgs: List<String> = emptyList()) =
@@ -40,7 +34,7 @@ fun createGenerateCodeTask(name: String, apiFilePath: String, basePackage: Strin
         outputs.dir(generationDir)
         outputs.cacheIf { true }
         classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
-        mainClass.set("com.cjbooms.fabrikt.cli.CodeGen")
+        mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", generationDir,
             "--base-package", basePackage,
@@ -49,7 +43,6 @@ fun createGenerateCodeTask(name: String, apiFilePath: String, basePackage: Strin
             "--targets", "http_models",
             "--serialization-library", "KOTLINX_SERIALIZATION",
             "--instant-library", "KOTLIN_TIME_INSTANT",
-            "--http-model-opts", "SEALED_INTERFACES_FOR_ONE_OF",
         ).plus(additionalArgs)
         dependsOn(":jar")
         dependsOn(":shadowJar")

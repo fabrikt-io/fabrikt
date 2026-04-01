@@ -75,8 +75,12 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
             else -> false
         }
 
-    override fun addParameter(propertySpecBuilder: PropertySpec.Builder, oasKey: String) =
-        propertySpecBuilder // not applicable
+    override fun addParameter(
+        propertySpecBuilder: PropertySpec.Builder,
+        oasKey: String,
+        isRequired: Boolean,
+        typeInfo: KotlinTypeInfo,
+    ) = propertySpecBuilder // not applicable
 
     override fun addClassAnnotation(typeSpecBuilder: TypeSpec.Builder) =
         typeSpecBuilder.addAnnotation(AnnotationSpec.builder(Serializable::class).build())
@@ -105,4 +109,7 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
 
     override fun addEnumConstantAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String) =
         enumSpecBuilder.addAnnotation(AnnotationSpec.builder(SerialName::class).addMember("%S", enumValue).build())
+
+    override fun addEnumDefaultAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String) =
+        enumSpecBuilder // not applicable
 }

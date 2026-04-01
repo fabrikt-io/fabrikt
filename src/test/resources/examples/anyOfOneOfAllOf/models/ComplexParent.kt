@@ -1,8 +1,8 @@
 package examples.anyOfOneOfAllOf.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
+import jakarta.validation.constraints.NotNull
 import java.math.BigDecimal
-import javax.validation.constraints.NotNull
 import kotlin.Any
 import kotlin.Int
 import kotlin.String
@@ -21,7 +21,10 @@ public data class ComplexParent(
   @get:JsonProperty("required_string")
   @get:NotNull
   public val requiredString: String,
-  @param:JsonProperty("required_int")
+  @param:JsonProperty(
+    "required_int",
+    required = true,
+  )
   @get:JsonProperty("required_int")
   @get:NotNull
   public val requiredInt: Int,

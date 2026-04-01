@@ -8,6 +8,7 @@ import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ControllerCodeGenTargetType
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
 import com.cjbooms.fabrikt.cli.InstantLibrary
+import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.cli.SerializationLibrary
@@ -42,6 +43,8 @@ object MutableSettings {
         private set
     var instantLibrary: InstantLibrary = InstantLibrary.default
         private set
+    var jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.default
+        private set
     var outputOptions: Set<OutputOptionType> = mutableSetOf()
         private set
 
@@ -57,6 +60,14 @@ object MutableSettings {
             serializationLibrary.serializationAnnotations
         }
 
+    /**
+     * Returns the effective nullability mode for Jackson serialization. If Jackson
+     * is used, returns [jacksonNullabilityMode], otherwise returns [JacksonNullabilityMode.NONE].
+     */
+    val effectiveJacksonNullabilityMode: JacksonNullabilityMode
+        get() = if (serializationLibrary == SerializationLibrary.JACKSON) jacksonNullabilityMode else JacksonNullabilityMode.NONE
+
+
     fun updateSettings(
         genTypes: Set<CodeGenerationType> = emptySet(),
         controllerOptions: Set<ControllerCodeGenOptionType> = emptySet(),
@@ -71,12 +82,13 @@ object MutableSettings {
         externalRefResolutionMode: ExternalReferencesResolutionMode = ExternalReferencesResolutionMode.default,
         serializationLibrary: SerializationLibrary = SerializationLibrary.default,
         instantLibrary: InstantLibrary = InstantLibrary.default,
+        jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.default,
         outputOptions: Set<OutputOptionType> = emptySet()
     ) {
         this.generationTypes = genTypes
         this.controllerOptions = controllerOptions
         this.controllerTarget = controllerTarget
-        this.modelOptions = modelOptions
+        this.modelOptions = modelOptions - ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF
         this.modelSuffix = modelSuffix
         this.clientOptions = clientOptions
         this.clientTarget = clientTarget
@@ -86,6 +98,7 @@ object MutableSettings {
         this.externalRefResolutionMode = externalRefResolutionMode
         this.serializationLibrary = serializationLibrary
         this.instantLibrary = instantLibrary
+        this.jacksonNullabilityMode = jacksonNullabilityMode
         this.outputOptions = outputOptions
     }
 
@@ -96,4 +109,11 @@ object MutableSettings {
     fun addOption(override: CodeGenTypeOverride) {
         typeOverrides += override
     }
+
+    fun addOption(mode: JacksonNullabilityMode) {
+        jacksonNullabilityMode = mode
+    }
+
+    fun isSealedInterfacesForOneOfEnabled(): Boolean =
+        ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF !in modelOptions
 }

@@ -1,5 +1,6 @@
 package examples.customExtensions.models
 
+import com.fasterxml.jackson.`annotation`.JsonInclude
 import com.fasterxml.jackson.`annotation`.JsonProperty
 import javax.validation.constraints.NotNull
 import kotlin.String
@@ -25,6 +26,7 @@ public data class NullabilityCheck(
   public val notNullNoDefaultRequired: String,
   @param:JsonProperty("nullable-no-default-required")
   @get:JsonProperty("nullable-no-default-required")
+  @param:JsonInclude(JsonInclude.Include.ALWAYS)
   public val nullableNoDefaultRequired: String?,
   @param:JsonProperty("not-null-with-default-required")
   @get:JsonProperty("not-null-with-default-required")
@@ -32,5 +34,6 @@ public data class NullabilityCheck(
   public val notNullWithDefaultRequired: String,
   @param:JsonProperty("nullable-with-default-required")
   @get:JsonProperty("nullable-with-default-required")
+  @param:JsonInclude(JsonInclude.Include.ALWAYS)
   public val nullableWithDefaultRequired: String?,
 )
