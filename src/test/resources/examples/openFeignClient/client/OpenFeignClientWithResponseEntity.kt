@@ -10,13 +10,11 @@ import feign.QueryMap
 import feign.RequestLine
 import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.http.ResponseEntity
-import kotlin.Any
 import kotlin.Boolean
 import kotlin.Int
 import kotlin.String
 import kotlin.Suppress
 import kotlin.Unit
-import kotlin.collections.Collection
 import kotlin.collections.List
 import kotlin.collections.Map
 
@@ -147,17 +145,9 @@ public interface ExamplePath3SubresourceClient {
         firstModel: FirstModel,
         @Param("pathParam") pathParam: String,
         @Param("ifMatch") ifMatch: String,
-        @Param(value = "csvListQueryParam", expander = CsvCollectionExpander::class)
+        @Param(value = "csvListQueryParam", expander = CsvParamExpander::class)
         csvListQueryParam: List<String>? = null,
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
         @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ResponseEntity<Unit>
-}
-
-public class CsvCollectionExpander : Param.Expander {
-    override fun expand(`value`: Any): String =
-        when (value) {
-            is Collection<*> -> value.joinToString(",")
-            else -> value.toString()
-        }
 }

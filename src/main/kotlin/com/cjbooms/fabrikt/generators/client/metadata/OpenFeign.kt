@@ -24,7 +24,7 @@ object OpenFeignImports {
 
     val FEIGN_CLIENT = ClassName(Packages.SPRING_STARTER, "FeignClient")
 
-    const val CSV_COLLECTION_EXPANDER_CLASS_NAME = "CsvCollectionExpander"
+    const val CSV_PARAM_EXPANDER_CLASS_NAME = "CsvParamExpander"
 }
 
 object OpenFeignAnnotations {

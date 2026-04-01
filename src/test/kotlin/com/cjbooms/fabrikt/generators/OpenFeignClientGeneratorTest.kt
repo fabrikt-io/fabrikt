@@ -9,6 +9,7 @@ import com.cjbooms.fabrikt.generators.client.OpenFeignInterfaceGenerator
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Models
+import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
 import com.cjbooms.fabrikt.util.Linter
@@ -57,6 +58,20 @@ class OpenFeignClientGeneratorTest {
             clientFileName = "SuspendableOpenFeignClient.kt",
             options = setOf(ClientCodeGenOptionType.SUSPEND_MODIFIER),
         )
+    }
+
+    @ParameterizedTest
+    @MethodSource("fullApiTestCases")
+    fun `correct Open Feign utility library is generated`(testCaseName: String) {
+        val packages = Packages("examples.$testCaseName")
+        val sourceApi = SourceApi(readTextResource("/examples/$testCaseName/api.yaml"))
+
+        val generatedUtil = OpenFeignInterfaceGenerator(packages, sourceApi)
+            .generateLibrary(emptySet())
+            .filterIsInstance<SimpleFile>()
+            .first { it.path.fileName.toString() == "OpenFeignUtil.kt" }
+
+        assertThatGenerated(generatedUtil.content).isEqualTo("/examples/$testCaseName/client/OpenFeignUtil.kt")
     }
 
     @Test

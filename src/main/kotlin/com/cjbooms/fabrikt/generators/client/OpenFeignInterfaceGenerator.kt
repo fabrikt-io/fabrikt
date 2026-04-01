@@ -16,12 +16,13 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.optionallyParameterizeWithResponseEntity
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.metadata.OpenFeignAnnotations
-import com.cjbooms.fabrikt.generators.client.metadata.OpenFeignImports
-import com.cjbooms.fabrikt.generators.client.metadata.OpenFeignImports.CSV_COLLECTION_EXPANDER_CLASS_NAME
+import com.cjbooms.fabrikt.generators.client.metadata.OpenFeignImports.CSV_PARAM_EXPANDER_CLASS_NAME
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
+import com.cjbooms.fabrikt.model.Destinations
 import com.cjbooms.fabrikt.model.Destinations.clientPackage
 import com.cjbooms.fabrikt.model.GeneratedFile
+import com.cjbooms.fabrikt.model.HandlebarsTemplates
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
@@ -29,6 +30,7 @@ import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
+import com.github.javaparser.utils.CodeGenerationUtils
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPaths
 import com.cjbooms.fabrikt.util.toUpperCase
 import com.reprezen.kaizen.oasparser.model3.Operation
@@ -45,9 +47,10 @@ import com.squareup.kotlinpoet.buildCodeBlock
 class OpenFeignInterfaceGenerator(
     private val packages: Packages,
     private val api: SourceApi,
+    private val srcPath: java.nio.file.Path = Destinations.MAIN_KT_SOURCE,
 ) : ClientGenerator {
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
-        var clientTypes: Set<ClientType> = api.openApi3.routeToPaths().map { (resourceName, paths) ->
+        val clientTypes: Set<ClientType> = api.openApi3.routeToPaths().map { (resourceName, paths) ->
             val funcSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
                 path.operations.map { (verb, operation) ->
                     buildFunction(path, resource, operation, verb, options)
@@ -75,45 +78,22 @@ class OpenFeignInterfaceGenerator(
             ClientType(clientType, packages.base)
         }.toSet()
 
-        if (needsCsvCollectionExpander()) {
-            clientTypes = clientTypes + ClientType(buildCsvCollectionExpander(), packages.base)
-        }
-
         return Clients(clientTypes)
     }
 
-    private fun needsCsvCollectionExpander(): Boolean =
-        api.openApi3.routeToPaths().any { (_, paths) ->
-            paths.any { (resource, path) ->
-                path.operations.any { (_, operation) ->
-                    deriveClientParameters(path, operation, packages.base).any { param ->
-                        param is RequestParameter &&
-                            param.parameterLocation is QueryParam &&
-                            param.explode == false &&
-                            param.typeInfo is KotlinTypeInfo.Array
-                    }
-                }
-            }
-        }
-
-    private fun buildCsvCollectionExpander(): TypeSpec =
-        TypeSpec.classBuilder(CSV_COLLECTION_EXPANDER_CLASS_NAME)
-            .addSuperinterface(OpenFeignImports.PARAM_EXPANDER)
-            .addFunction(
-                FunSpec.builder("expand")
-                    .addModifiers(KModifier.OVERRIDE)
-                    .addParameter("value", Any::class)
-                    .returns(String::class)
-                    .addCode(
-                        "return when (value) {\n    is %T<*> -> value.joinToString(%S)\n    else -> value.toString()\n}",
-                        Collection::class,
-                        ","
-                    )
-                    .build()
+    override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> {
+        val clientDir = srcPath
+            .resolve(CodeGenerationUtils.packageToPath(packages.base))
+            .resolve("client")
+        return setOf(
+            HandlebarsTemplates.applyTemplate(
+                template = HandlebarsTemplates.openFeignUtils,
+                input = packages,
+                path = clientDir,
+                fileName = "OpenFeignUtil.kt",
             )
-            .build()
-
-    override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> = emptyList()
+        )
+    }
 
     private fun buildFunction(
         path: Path,
@@ -138,7 +118,7 @@ class OpenFeignInterfaceGenerator(
                         parameter.explode == false &&
                         parameter.typeInfo is KotlinTypeInfo.Array
                     ) {
-                        val expanderClass = ClassName(clientPackage(packages.base), CSV_COLLECTION_EXPANDER_CLASS_NAME)
+                        val expanderClass = ClassName(clientPackage(packages.base), CSV_PARAM_EXPANDER_CLASS_NAME)
                         paramBuilder
                             .addMember("value = %S", parameter.name)
                             .addMember("expander = %T::class", expanderClass)
