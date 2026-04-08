@@ -247,3 +247,34 @@ components:
           oneOf:
             - $ref: '#/components/schemas/ChildActionA'
             - $ref: '#/components/schemas/ChildActionB'
+
+    # Regression test: inline oneOf where all members share a common parent WITHOUT a discriminator.
+    # Same as ParentAction case above, but the parent has no discriminator property —
+    # e.g., Kotlin sealed classes serialized without @JsonTypeInfo.
+    # The oneOf is still redundant because all members inherit from the same parent.
+    BaseError:
+      type: object
+      properties:
+        message:
+          type: string
+        errorType:
+          type: string
+          enum:
+            - VALIDATION
+            - SERVER
+      required:
+        - message
+        - errorType
+    ValidationErr:
+      allOf:
+        - $ref: '#/components/schemas/BaseError'
+    ServerErr:
+      allOf:
+        - $ref: '#/components/schemas/BaseError'
+    ErrorWrapper:
+      type: object
+      properties:
+        error:
+          oneOf:
+            - $ref: '#/components/schemas/ValidationErr'
+            - $ref: '#/components/schemas/ServerErr'
