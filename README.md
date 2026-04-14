@@ -225,6 +225,7 @@ This section documents the available CLI parameters for controlling what gets ge
 |                                | CHOOSE ANY OF: |
 |                                |   `SUSPEND_MODIFIER` - This option adds the suspend modifier to the generated controller functions |
 |                                |   `AUTHENTICATION` - This option adds the authentication parameter to the generated controller functions |
+|                                |   `GROUP_BY_TAG` - This option groups controllers based on the first tag rather than paths |
 |                                |   `COMPLETION_STAGE` - This option makes generated controller functions have Type CompletionStage<T> (works only with Spring Controller generator). Can be overridden per operation using the OpenAPI extension `x-async-support: true|false` |
 |                                |   `SSE_EMITTER` - This option makes generated controller functions have Type SseEmitter (works only with Spring Controller generator) |
 |   `--http-controller-target`   | Optionally select the target framework for the controllers that you want to be generated. Defaults to Spring Controllers |
@@ -289,7 +290,6 @@ This section documents the available CLI parameters for controlling what gets ge
 |                                |   `JAVAX_VALIDATION` - Use `javax.validation` annotations in generated model classes |
 |                                |   `JAKARTA_VALIDATION` - Use `jakarta.validation` annotations in generated model classes (default) |
 |                                |   `NO_VALIDATION` - Use no validation annotations in generated model classes |
-
 ## Original Motivation
 
 The team that built the first version of this tool initially contributed to the Kotlin code generation ability in

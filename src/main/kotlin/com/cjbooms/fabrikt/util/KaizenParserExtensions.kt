@@ -13,6 +13,11 @@ import com.reprezen.kaizen.oasparser.model3.Path
 import com.reprezen.kaizen.oasparser.model3.Schema
 import java.net.URI
 
+enum class GroupingStrategy {
+    BY_FIRST_TAG,
+    BY_FIRST_PATH_SEGMENT
+}
+
 object KaizenParserExtensions {
 
     private val invalidNames =
@@ -393,32 +398,24 @@ object KaizenParserExtensions {
             ?.path.orEmpty()
             .removeSuffix("/")
 
+    fun OpenApi3.groupedPaths(groupingStrategy: GroupingStrategy): Map<String, Map<String, Path>> = when (groupingStrategy) {
+        GroupingStrategy.BY_FIRST_PATH_SEGMENT -> groupByPathSegment()
+        GroupingStrategy.BY_FIRST_TAG -> routeToPathsByFirstTag()
+    }
+
     /**
      * Returns a Map of String to list of openapi Path objects,
      * where the String is the uri, but in pascal case suitable
      * for naming classes for controllers and services.
      */
-    fun OpenApi3.routeToPaths(): Map<String, Map<String, Path>> = paths
+    fun OpenApi3.groupByPathSegment(): Map<String, Map<String, Path>> = paths
         .map { (name, path) -> name to path }
         .groupBy { it.first.uriToClassName() }
         .mapValues { it.value.toMap() }
 
     /**
-     * Returns paths grouped either by tag or by URI path segment.
-     *
-     * @param tagGrouping if true, groups paths by their first operation tag;
-     *                    if false, groups by the first URI path segment (default behavior)
-     */
-    fun OpenApi3.routeToPaths(tagGrouping: Boolean): Map<String, Map<String, Path>> =
-        if (tagGrouping) routeToPathsByFirstTag() else routeToPaths()
-
-    /**
-     * Returns paths grouped by the first tag of their operations.
-     * The tag name is converted to PascalCase for use as a class name.
-     *
-     * If an operation has no tags, falls back to grouping by URI path segment.
-     * When multiple operations exist on a path, the first tag found (in order:
-     * GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD, TRACE) is used.
+     * Falls back to path-segment grouping for paths with no tags.
+     * When operations on a path have different primary tags, the alphabetically-first verb's tag wins.
      */
     fun OpenApi3.routeToPathsByFirstTag(): Map<String, Map<String, Path>> = paths
         .map { (route, path) -> route to path }
@@ -427,16 +424,13 @@ object KaizenParserExtensions {
         }
         .mapValues { (_, entries) -> entries.toMap() }
 
-    private fun Path.firstOperationTagOrNull(): String? {
-        val opsInStableOrder = listOfNotNull(
-            get, post, put, patch, delete, options, head, trace
-        )
-
-        return opsInStableOrder
+    // Alphabetical sort by verb makes grouping deterministic; Kaizen's PropertiesOverlay uses HashMap internally.
+    private fun Path.firstOperationTagOrNull(): String? =
+        operations.entries
+            .sortedBy { (verb, _) -> verb }
             .asSequence()
-            .mapNotNull { op -> op.tags?.firstOrNull() }
+            .mapNotNull { (_, op) -> op.tags?.firstOrNull() }
             .firstOrNull()
-    }
 
     private fun String.uriToClassName(): String = toResourceNames().joinToString("-").toModelClassName()
 

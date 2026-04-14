@@ -27,7 +27,7 @@ import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPaths
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupByPathSegment
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
@@ -41,7 +41,6 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 import java.nio.file.Path
 import com.cjbooms.fabrikt.util.toUpperCase
-import com.squareup.kotlinpoet.TypeName
 
 class OkHttpSimpleClientGenerator(
     private val packages: Packages,
@@ -49,7 +48,7 @@ class OkHttpSimpleClientGenerator(
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE
 ) {
     fun generateDynamicClientCode(): Collection<ClientType> {
-        return api.openApi3.routeToPaths().map { (resourceName, paths) ->
+        return api.openApi3.groupByPathSegment().map { (resourceName, paths) ->
             val funcSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
                 path.operations.map { (verb, operation) ->
                     val parameters = deriveClientParameters(path, operation, packages.base)
