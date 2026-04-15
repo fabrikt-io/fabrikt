@@ -15,21 +15,28 @@ cd fabrikt/
 - **Bug fixes and small improvements** — open a PR directly.
 - **New features or significant changes** — open an issue first to discuss the approach.
 
-## Tests
+## Tests and Living Documentation
 
-Fabrikt uses generated code snapshots as its primary test mechanism. If your change affects code generation output, regenerate the examples:
+Fabrikt's tests work by comparing generated code against committed example files in
+`src/test/resources/examples/`. These examples are the living documentation of what fabrikt
+produces — they show exactly what gets generated for a given spec and set of options.
 
-```bash
-./gradlew test -Doverwrite.sources=true
+If your change affects code generation output, you need to update the snapshots. Rather than
+editing them by hand, set the flag in
+[`GeneratedCodeAsserter.kt`](src/test/kotlin/com/cjbooms/fabrikt/util/GeneratedCodeAsserter.kt):
+
+```kotlin
+const val SHOULD_OVERWRITE_EXAMPLES = true
 ```
 
-Commit the updated snapshots alongside your change — they form the living documentation of what fabrikt produces.
+Run the tests — they will overwrite the example files automatically. Then flip the flag back
+to `false`, run again to confirm everything passes, and commit the updated snapshots alongside
+your change. (A test exists specifically to prevent accidentally committing with the flag left on.)
 
 ## Pull Request Checklist
 
 - [ ] `./gradlew build` passes
-- [ ] Generated snapshots updated if output changed
-- [ ] New behaviour covered by a test or snapshot
+- [ ] Generated snapshots updated and committed if output changed
 
 ## Reporting Issues
 
