@@ -194,7 +194,7 @@ The command mounts your current directory to `/workspace` in the container, wher
 ### 1. Prefer components to inline schemas
 While inline schemas are perfectly valid they are not supported by Fabrikt in all circumstances.
 This is especially true for request bodies and non-trivial parameters. Instead, define your schemas in the
-components section of the OpenAPI spec (`components.parameters` & `components.requestBodies`). [#20](https://github.com/cjbooms/fabrikt/issues/20), [#187](https://github.com/cjbooms/fabrikt/issues/187)
+components section of the OpenAPI spec (`components.parameters` & `components.requestBodies`). [#20](https://github.com/fabrikt-io/fabrikt/issues/20), [#187](https://github.com/fabrikt-io/fabrikt/issues/187)
 
 ### 2. Use `oneOf` with discriminator for polymorphism
 `oneOf` along with the flag `SEALED_INTERFACES_FOR_ONE_OF` will generate polymorphic models with sealed interfaces.
@@ -458,7 +458,7 @@ data class Responses(
 
 Fabrikt is built with Gradle and requires an initialised git repository. The easiest way to build it is to clone the repo locally before executing the build command:
 ```
-git clone git@github.com:cjbooms/fabrikt.git
+git clone git@github.com:fabrikt-io/fabrikt.git
 cd fabrikt/
 ./gradlew clean build
 ```
@@ -469,7 +469,7 @@ A utility function is available in [GeneratedCodeAsserter.kt](src/test/kotlin/co
 
 ### Publishing
 
-1. Go to [Release Tab](https://github.com/cjbooms/fabrikt/releases)
+1. Go to [Release Tab](https://github.com/fabrikt-io/fabrikt/releases)
 2. Select `Draft a new release`.
 3. Set tag to a version greater than current using symantic versioning, anticipating whether the changes made could break builds.
 4. Click `Generate release notes`. Ensure that the tag and release version match.
