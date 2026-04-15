@@ -24,10 +24,6 @@ fun HTML.mainLayout(content: FlowContent.() -> Unit) = run {
         meta { attributes["property"] = "og:type"; attributes["content"] = "website" }
         meta { attributes["property"] = "og:url"; attributes["content"] = "https://try.fabrikt.io" }
         meta { attributes["property"] = "og:image"; attributes["content"] = "https://raw.githubusercontent.com/fabrikt-io/fabrikt/master/.github/assets/fabrikt-social-preview.png" }
-        meta(name = "twitter:card", content = "summary_large_image")
-        meta(name = "twitter:title", content = "Fabrikt Playground")
-        meta(name = "twitter:description", content = "Generate Kotlin data classes, HTTP clients, and server controllers from your OpenAPI 3 spec.")
-        meta(name = "twitter:image", content = "https://raw.githubusercontent.com/fabrikt-io/fabrikt/master/.github/assets/fabrikt-social-preview.png")
         script { src = "https://cdnjs.cloudflare.com/ajax/libs/prism/$PRISM_VERSION/prism.min.js" }
         script { src = "https://cdnjs.cloudflare.com/ajax/libs/prism/$PRISM_VERSION/components/prism-kotlin.min.js" }
         script { src = "https://cdnjs.cloudflare.com/ajax/libs/ace/$ACE_VERSION/ace.js" }
