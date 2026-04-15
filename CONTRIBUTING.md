@@ -34,4 +34,8 @@ Run the tests — they will rewrite the example files automatically. Then flip t
 
 ## Reporting Issues
 
-Please use [GitHub Issues](https://github.com/fabrikt-io/fabrikt/issues). Include your OpenAPI spec snippet and the fabrikt version where possible.
+Please use [GitHub Issues](https://github.com/fabrikt-io/fabrikt/issues). For generation bugs, a minimal reproduction helps enormously:
+
+1. Reduce your spec to the smallest fragment that triggers the problem
+2. Set the relevant options in the [playground](https://try.fabrikt.io) and share the URL (it encodes your spec and flags)
+3. Describe the expected output vs what was actually generated
