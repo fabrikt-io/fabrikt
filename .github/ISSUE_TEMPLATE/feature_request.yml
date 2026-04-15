@@ -1,0 +1,25 @@
+name: Feature Request
+description: Suggest a new option or generation behaviour
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What would you like fabrikt to generate?
+      description: Describe the desired behaviour and why it would be useful.
+    validations:
+      required: true
+
+  - type: textarea
+    id: spec
+    attributes:
+      label: Example Spec
+      description: If relevant, paste an OpenAPI spec fragment that illustrates the use case.
+      render: yaml
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Desired Output
+      description: What would the ideal generated code look like?
+      render: kotlin

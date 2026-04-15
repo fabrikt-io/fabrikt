@@ -1,0 +1,53 @@
+name: Bug Report
+description: Report incorrect or unexpected code generation
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What went wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: spec
+    attributes:
+      label: Minimal OpenAPI Spec
+      description: Paste the smallest spec fragment that reproduces the problem.
+      render: yaml
+    validations:
+      required: true
+
+  - type: input
+    id: playground
+    attributes:
+      label: Playground URL
+      description: Open [try.fabrikt.io](https://try.fabrikt.io), select the relevant options, and paste the URL here. The URL encodes the flags used.
+      placeholder: https://try.fabrikt.io/?...
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Output
+      description: What did you expect fabrikt to generate?
+      render: kotlin
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Output
+      description: What was actually generated?
+      render: kotlin
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Fabrikt Version
+      placeholder: e.g. 26.3.0
+    validations:
+      required: true
