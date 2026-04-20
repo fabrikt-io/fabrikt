@@ -13,4 +13,8 @@ public data class ServerErr(
   @get:JsonProperty("errorType")
   @get:NotNull
   public val errorType: BaseErrorErrorType,
-)
+  @param:JsonProperty("stackTrace")
+  @get:JsonProperty("stackTrace")
+  @get:NotNull
+  public val stackTrace: String,
+) : ErrorWrapperError

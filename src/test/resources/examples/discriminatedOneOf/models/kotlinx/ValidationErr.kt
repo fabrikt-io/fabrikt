@@ -13,4 +13,7 @@ public data class ValidationErr(
   @SerialName("errorType")
   @get:NotNull
   public val errorType: BaseErrorErrorType,
-)
+  @SerialName("fieldName")
+  @get:NotNull
+  public val fieldName: String,
+) : ErrorWrapperError

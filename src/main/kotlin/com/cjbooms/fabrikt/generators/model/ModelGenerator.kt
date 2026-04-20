@@ -352,6 +352,16 @@ class ModelGenerator(
                 is PropertyInfo.Field ->
                     if (it.typeInfo is KotlinTypeInfo.Enum && !it.isInherited) {
                         setOf(buildEnumClass(it.schema, it.typeInfo))
+                    } else if (!it.isInherited && it.schema.isOneOfSuperInterface()) {
+                        setOf(
+                            oneOfSuperInterface(
+                                modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
+                                discriminator = it.schema.discriminator,
+                                allSchemas = sourceApi.allSchemas,
+                                members = it.schema.oneOfSchemas,
+                                oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema })
+                            )
+                        )
                     } else {
                         emptySet()
                     }
@@ -363,7 +373,18 @@ class ModelGenerator(
                         buildInlinedListDefinition(it.schema, it.name, enclosingSchema, apiDocUrl)
                     }
 
-                is PropertyInfo.OneOfAny -> emptySet()
+                is PropertyInfo.OneOfAny ->
+                    if (it.schema.isOneOfSuperInterface()) {
+                        setOf(
+                            oneOfSuperInterface(
+                                modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
+                                discriminator = it.schema.discriminator,
+                                allSchemas = sourceApi.allSchemas,
+                                members = it.schema.oneOfSchemas,
+                                oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema })
+                            )
+                        )
+                    } else emptySet()
             }
         }
     }

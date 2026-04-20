@@ -333,11 +333,10 @@ object KaizenParserExtensions {
 
     fun Schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType(): Boolean {
         val maybeAllOfInFirstOneOf = this.oneOfSchemas?.firstOrNull()?.allOfSchemas?.firstOrNull()
-            ?: return false
-        // All oneOf members must share the same allOf parent — with or without a discriminator.
-        // When the parent has no discriminator (e.g., Kotlin sealed classes without @JsonTypeInfo),
-        // the oneOf is still redundant because the parent type already represents the hierarchy.
-        return this.oneOfSchemas.all { it.allOfSchemas.contains(maybeAllOfInFirstOneOf) }
+        // This identifies the OLD allOf-based polymorphism pattern where the BASE type has the discriminator
+        return if (maybeAllOfInFirstOneOf != null && maybeAllOfInFirstOneOf.hasDiscriminator()) {
+            this.oneOfSchemas.all { it.allOfSchemas.contains(maybeAllOfInFirstOneOf) }
+        } else false
     }
 
     fun Schema.isOneOfResolvingToAnyType(): Boolean {
@@ -355,17 +354,16 @@ object KaizenParserExtensions {
     fun Schema.isOneOfSuperInterface(): Boolean =
         oneOfSchemas.isNotEmpty() && allOfSchemas.isEmpty() && anyOfSchemas.isEmpty() && properties.isEmpty() &&
             oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() || it.isOneOfSuperInterface() } &&
-            !isRedundantOneOfForExistingHierarchy() &&
+            !isRedundantOneOfForExistingDiscriminatedHierarchy() &&
             isSealedInterfacesForOneOfEnabled()
 
     /**
      * A oneOf is redundant when all its members already inherit from a common allOf super type
-     * and the oneOf itself declares no discriminator.
-     * In this case the polymorphism is fully handled by the parent type (whether or not it has
-     * a discriminator), and generating a sealed interface would create a phantom type that
-     * subtypes reference but is never emitted.
+     * that has its own discriminator, and the oneOf itself declares no discriminator.
+     * In this case the polymorphism is fully handled by the parent type, and generating
+     * a sealed interface would create a phantom type that subtypes reference but is never emitted.
      */
-    private fun Schema.isRedundantOneOfForExistingHierarchy(): Boolean =
+    private fun Schema.isRedundantOneOfForExistingDiscriminatedHierarchy(): Boolean =
         isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && hasNoDiscriminator()
 
     fun Schema.isOneOfSuperInterfaceWithDiscriminator() =
