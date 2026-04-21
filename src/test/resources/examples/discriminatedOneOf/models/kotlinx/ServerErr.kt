@@ -13,4 +13,7 @@ public data class ServerErr(
   @SerialName("errorType")
   @get:NotNull
   public val errorType: BaseErrorErrorType,
+  @SerialName("stackTrace")
+  @get:NotNull
+  public val stackTrace: String,
 )

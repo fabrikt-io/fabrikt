@@ -248,10 +248,12 @@ components:
             - $ref: '#/components/schemas/ChildActionA'
             - $ref: '#/components/schemas/ChildActionB'
 
-    # Regression test: inline oneOf where all members share a common parent WITHOUT a discriminator.
-    # Same as ParentAction case above, but the parent has no discriminator property —
-    # e.g., Kotlin sealed classes serialized without @JsonTypeInfo.
-    # The oneOf is still redundant because all members inherit from the same parent.
+    # Inline oneOf where all members share a common parent WITHOUT a discriminator.
+    # ValidationErr and ServerErr each have distinct properties (fieldName, stackTrace) but the
+    # oneOf carries no discriminator, so Jackson cannot select the correct subtype during
+    # deserialisation. A sealed interface (ErrorWrapperError) is generated so the subtypes are
+    # type-safe to produce; the field is typed as Any? so deserialization captures the raw JSON
+    # as a LinkedHashMap without data loss. The correct fix is in the spec: add a discriminator.
     BaseError:
       type: object
       properties:
@@ -268,9 +270,21 @@ components:
     ValidationErr:
       allOf:
         - $ref: '#/components/schemas/BaseError'
+        - type: object
+          required:
+            - fieldName
+          properties:
+            fieldName:
+              type: string
     ServerErr:
       allOf:
         - $ref: '#/components/schemas/BaseError'
+        - type: object
+          required:
+            - stackTrace
+          properties:
+            stackTrace:
+              type: string
     ErrorWrapper:
       type: object
       properties:

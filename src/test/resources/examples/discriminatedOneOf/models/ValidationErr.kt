@@ -13,4 +13,8 @@ public data class ValidationErr(
   @get:JsonProperty("errorType")
   @get:NotNull
   public val errorType: BaseErrorErrorType,
+  @param:JsonProperty("fieldName")
+  @get:JsonProperty("fieldName")
+  @get:NotNull
+  public val fieldName: String,
 )
