@@ -51,6 +51,7 @@ class SpringControllerGeneratorTest {
         "inlinedEnumParameter",
         "tagGrouping",
         "requestBodiesSchema",
+        "responsesSchema",
     )
 
     private fun setupGithubApiTestEnv(annotations: ValidationAnnotations = JavaxValidationAnnotations) {
