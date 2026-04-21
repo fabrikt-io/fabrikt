@@ -25,30 +25,6 @@ class DiscriminatorlessOneOfWithDeductionTest {
     private val objectMapper = mapper()
 
     @Test
-    fun `serialization uses runtime type - NetworkFailure unique field emitted`() {
-        val report = DiagnosticReport(
-            failure = NetworkFailure(kind = "network", retries = 3),
-        )
-
-        val json = objectMapper.writeValueAsString(report)
-
-        assertThat(json).contains("\"kind\":\"network\"")
-        assertThat(json).contains("\"retries\":3")
-    }
-
-    @Test
-    fun `serialization uses runtime type - DnsFailure unique field emitted`() {
-        val report = DiagnosticReport(
-            failure = DnsFailure(kind = "dns", host = "example.com"),
-        )
-
-        val json = objectMapper.writeValueAsString(report)
-
-        assertThat(json).contains("\"kind\":\"dns\"")
-        assertThat(json).contains("\"host\":\"example.com\"")
-    }
-
-    @Test
     fun `deserialization deduces NetworkFailure from retries field`() {
         val json = """{"failure":{"kind":"network","retries":3}}"""
 

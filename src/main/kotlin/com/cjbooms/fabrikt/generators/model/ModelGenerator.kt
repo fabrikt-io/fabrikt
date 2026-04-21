@@ -683,7 +683,7 @@ class ModelGenerator(
         allSchemas: List<SchemaInfo>,
         members: List<Schema>,
         oneOfSuperInterfaces: Set<Schema>,
-        requestsDeduction: Boolean = false,
+        requestsDeduction: Boolean,
     ): TypeSpec {
         val interfaceBuilder = TypeSpec.interfaceBuilder(generatedType(packages.base, modelName))
             .addModifiers(KModifier.SEALED)

@@ -137,7 +137,7 @@ sealed class PropertyInfo {
                                 schema = property.value,
                                 isInherited = settings.markAsInherited,
                                 parentSchema = this,
-                                enclosingSchema = enclosingSchema ?: this,
+                                enclosingSchema = enclosingSchema
                             )
                         else
                             ObjectRefField(
