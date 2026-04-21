@@ -293,6 +293,41 @@ components:
             - $ref: '#/components/schemas/ValidationErr'
             - $ref: '#/components/schemas/ServerErr'
 
+    # Discriminator-less inline oneOf with x-fabrikt-jackson-deduction: true on the property.
+    # Subtypes have distinguishing required fields (retries vs host), so Jackson DEDUCTION can
+    # pick the correct subtype. The property is typed as the sealed interface
+    # (DiagnosticReportFailure?) and the interface gets @JsonTypeInfo(use = DEDUCTION) +
+    # @JsonSubTypes(...). Kotlinx ignores the extension and keeps Any? — kotlinx has no
+    # DEDUCTION equivalent.
+    NetworkFailure:
+      type: object
+      required:
+        - kind
+        - retries
+      properties:
+        kind:
+          type: string
+        retries:
+          type: integer
+    DnsFailure:
+      type: object
+      required:
+        - kind
+        - host
+      properties:
+        kind:
+          type: string
+        host:
+          type: string
+    DiagnosticReport:
+      type: object
+      properties:
+        failure:
+          x-fabrikt-jackson-deduction: true
+          oneOf:
+            - $ref: '#/components/schemas/NetworkFailure'
+            - $ref: '#/components/schemas/DnsFailure'
+
     # Named top-level array schemas whose items are a discriminated oneOf.
     # ChildActionsAll covers all members of ParentAction's discriminator mapping —
     # references to it should resolve to List<ParentAction> (the parent type).

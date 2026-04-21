@@ -53,6 +53,7 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaOfTy
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedOneOfUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinitionUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeyForSchemaName
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.requestsJacksonDeduction
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeys
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeName
 import com.cjbooms.fabrikt.util.ModelNameRegistry
@@ -240,6 +241,7 @@ class ModelGenerator(
                 allSchemas = allSchemas,
                 members = schemaInfo.schema.oneOfSchemas,
                 oneOfSuperInterfaces = schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
+                requestsDeduction = schemaInfo.schema.requestsJacksonDeduction(),
             )
 
             schemaInfo.schema.isPolymorphicSuperType() && schemaInfo.schema.isPolymorphicSubType(api) ->
@@ -307,7 +309,8 @@ class ModelGenerator(
                                     discriminator = it.schema.discriminator,
                                     allSchemas = sourceApi.allSchemas,
                                     members = it.schema.oneOfSchemas,
-                                    oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema })
+                                    oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
+                                    requestsDeduction = it.schema.requestsJacksonDeduction(),
                                 )
                             )
                         }
@@ -363,7 +366,8 @@ class ModelGenerator(
                                 discriminator = it.schema.discriminator,
                                 allSchemas = sourceApi.allSchemas,
                                 members = it.schema.oneOfSchemas,
-                                oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema })
+                                oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
+                                requestsDeduction = it.schema.requestsJacksonDeduction(),
                             )
                         )
                     } else {
@@ -385,7 +389,8 @@ class ModelGenerator(
                                 discriminator = it.schema.discriminator,
                                 allSchemas = sourceApi.allSchemas,
                                 members = it.schema.oneOfSchemas,
-                                oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema })
+                                oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
+                                requestsDeduction = it.schema.requestsJacksonDeduction(),
                             )
                         )
                     } else emptySet()
@@ -431,7 +436,8 @@ class ModelGenerator(
                             discriminator = items.discriminator,
                             allSchemas = sourceApi.allSchemas,
                             members = items.oneOfSchemas,
-                            oneOfSuperInterfaces = items.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema })
+                            oneOfSuperInterfaces = items.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
+                            requestsDeduction = items.requestsJacksonDeduction(),
                         )
                     )
 
@@ -677,6 +683,7 @@ class ModelGenerator(
         allSchemas: List<SchemaInfo>,
         members: List<Schema>,
         oneOfSuperInterfaces: Set<Schema>,
+        requestsDeduction: Boolean = false,
     ): TypeSpec {
         val interfaceBuilder = TypeSpec.interfaceBuilder(generatedType(packages.base, modelName))
             .addModifiers(KModifier.SEALED)
@@ -695,6 +702,11 @@ class ModelGenerator(
                 )
             }
             serializationAnnotations.addPolymorphicSubTypesAnnotation(interfaceBuilder, kotlinMappings)
+        } else if (requestsDeduction) {
+            val subTypeNames = members.map { member ->
+                toModelType(packages.base, KotlinTypeInfo.from(member, member.safeName()))
+            }
+            serializationAnnotations.addDeductionPolymorphicTypeAnnotation(interfaceBuilder, subTypeNames)
         }
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {
