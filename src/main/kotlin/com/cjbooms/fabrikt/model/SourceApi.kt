@@ -57,9 +57,40 @@ data class SourceApi(
             ModelNameRegistry.preRegisterByReference(schema, name)
         }
 
+        val inlineRequestBodySchemas = openApi3.requestBodies.entries.flatMap { requestBody ->
+            requestBody.value.contentMediaTypes.entries
+                .filter { content ->
+                    val schema = content.value.schema
+                    Overlay.of(schema).pathFromRoot.contains("requestBodies") &&
+                        schema.oneOfSchemas.isNullOrEmpty() &&
+                        schema.anyOfSchemas.isNullOrEmpty()
+                }
+                .map { content -> requestBody.key to content.value.schema }
+        }
+
+        inlineRequestBodySchemas.forEach { (name, schema) ->
+            ModelNameRegistry.preRegisterByReference(schema, name)
+        }
+
+        val inlineResponseSchemas = openApi3.responses.entries.flatMap { response ->
+            response.value.contentMediaTypes.entries
+                .filter { content ->
+                    val schema = content.value.schema
+                    Overlay.of(schema).pathFromRoot.contains("responses") &&
+                        schema.oneOfSchemas.isNullOrEmpty() &&
+                        schema.anyOfSchemas.isNullOrEmpty()
+                }
+                .map { content -> response.key to content.value.schema }
+        }
+
+        inlineResponseSchemas.forEach { (name, schema) ->
+            ModelNameRegistry.preRegisterByReference(schema, name)
+        }
+
         allSchemas = openApi3.schemas.entries.map { it.key to it.value }
             .plus(openApi3.parameters.entries.map { it.key to it.value.schema })
-            .plus(openApi3.responses.entries.flatMap { it.value.contentMediaTypes.entries.map { content -> it.key to content.value.schema } })
+            .plus(inlineResponseSchemas)
+            .plus(inlineRequestBodySchemas)
             .plus(inlineEnumParams)
             .map { (key, schema) -> SchemaInfo(key, schema) }
     }

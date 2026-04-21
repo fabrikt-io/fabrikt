@@ -1,0 +1,62 @@
+openapi: 3.0.0
+info:
+  title: Request Bodies Schema Test
+  version: 1.0.0
+paths:
+  /widgets:
+    post:
+      operationId: createWidget
+      tags:
+        - widgets
+      summary: Create a new widget
+      requestBody:
+        $ref: '#/components/requestBodies/CreateWidgetRequest'
+      responses:
+        '201':
+          description: Widget created
+  /widgets/{id}:
+    put:
+      operationId: updateWidget
+      tags:
+        - widgets
+      summary: Update an existing widget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateWidgetRequest'
+      responses:
+        '200':
+          description: Widget updated
+components:
+  requestBodies:
+    CreateWidgetRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+              - count
+            properties:
+              name:
+                type: string
+              count:
+                type: integer
+    UpdateWidgetRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
+              description:
+                type: string

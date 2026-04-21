@@ -1,5 +1,13 @@
 openapi: 3.0.0
 components:
+  schemas:
+    SharedModel:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
   responses:
     ErrorResponse:
       description: "Response on error"
@@ -26,3 +34,9 @@ components:
             properties:
               message:
                 type: string
+    ReferencedResponse:
+      description: "Response whose schema is a $ref — should NOT generate a duplicate class"
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SharedModel'
