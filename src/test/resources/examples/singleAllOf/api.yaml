@@ -13,6 +13,7 @@ paths:
 components:
   schemas:
     Result:
+      nullable: true
       allOf:
         - $ref: '#/components/schemas/Base'
 

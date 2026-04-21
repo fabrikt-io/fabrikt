@@ -28,7 +28,7 @@ object ControllerGeneratorUtils {
             .contentMediaTypes
             .mapNotNull { it.value?.schema }
             .firstOrNull()
-            ?.let { toModelType(basePackage, KotlinTypeInfo.from(it)) }
+            ?.let { toModelType(basePackage, KotlinTypeInfo.from(it), it.isNullable) }
             ?: Unit::class.asTypeName()
 
     private fun Operation.primarySuccessResponse(): Response =

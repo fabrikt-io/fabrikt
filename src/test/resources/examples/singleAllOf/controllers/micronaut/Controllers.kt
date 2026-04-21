@@ -14,5 +14,5 @@ public interface TestController {
      */
     @Get(uri = "/test")
     @Produces(value = ["application/json"])
-    public fun test(): HttpResponse<Result>
+    public fun test(): HttpResponse<Result?>
 }

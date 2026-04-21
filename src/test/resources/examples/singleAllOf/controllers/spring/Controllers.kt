@@ -20,5 +20,5 @@ public interface TestController {
         produces = ["application/json"],
         method = [RequestMethod.GET],
     )
-    public fun test(): ResponseEntity<Result>
+    public fun test(): ResponseEntity<Result?>
 }

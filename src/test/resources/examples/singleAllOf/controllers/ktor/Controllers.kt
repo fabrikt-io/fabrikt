@@ -21,12 +21,12 @@ import kotlin.Suppress
 
 public interface TestController {
     /**
-     * Route is expected to respond with [examples.singleAllOf.models.Result].
+     * Route is expected to respond with [examples.singleAllOf.models.Result?].
      * Use [examples.singleAllOf.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
-    public suspend fun test(call: TypedApplicationCall<Result>)
+    public suspend fun test(call: TypedApplicationCall<Result?>)
 
     public companion object {
         /**
