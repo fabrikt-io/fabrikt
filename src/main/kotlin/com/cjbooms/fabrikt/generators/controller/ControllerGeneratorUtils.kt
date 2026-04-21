@@ -25,23 +25,22 @@ object ControllerGeneratorUtils {
 
     private fun Operation.singleSchemaResponseType(basePackage: String): TypeName =
         primarySuccessResponse()
-            .contentMediaTypes
-            .mapNotNull { it.value?.schema }
-            .firstOrNull()
+            ?.contentMediaTypes
+            ?.mapNotNull { it.value?.schema }
+            ?.firstOrNull()
             ?.let { toModelType(basePackage, KotlinTypeInfo.from(it), it.isNullable) }
             ?: Unit::class.asTypeName()
 
-    private fun Operation.primarySuccessResponse(): Response =
+    private fun Operation.primarySuccessResponse(): Response? =
         responses
             .filterNot { it.key == "default" }
             .mapNotNull { (code, response) -> code.replace('X', '0').toIntOrNull()?.let { it to response } }
             .toMap()
             .minByOrNull { it.key }
             ?.value
-            ?: throw IllegalStateException("Could not extract the response for $this")
 
     fun Operation.isSseResponse(): Boolean {
-        val responseDetails = primarySuccessResponse()
+        val responseDetails = primarySuccessResponse() ?: return false
         return responseDetails.contentMediaTypes["text/event-stream"]
             ?.let { it.schema.type == "array" && it.schema.format == "event-stream" }
             ?: false

@@ -21,4 +21,14 @@ public interface ExampleController {
         method = [RequestMethod.GET],
     )
     public fun `get`(): ResponseEntity<Unit>
+
+    /**
+     *
+     */
+    @RequestMapping(
+        value = ["/example"],
+        produces = [],
+        method = [RequestMethod.DELETE],
+    )
+    public fun deleteExample(): ResponseEntity<Unit>
 }

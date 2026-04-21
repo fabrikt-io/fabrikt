@@ -8,3 +8,6 @@ paths:
       responses:
         '2XX':  # https://swagger.io/docs/specification/v3_0/describing-responses/#http-status-codes
           description: example
+    delete:
+      operationId: deleteExample
+      responses: {}
