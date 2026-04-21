@@ -216,6 +216,7 @@ object PropertyUtils {
         schemaName: String,
     ) = this is PropertyInfo.Field &&
         isPolymorphicDiscriminator &&
+        classSettings.polymorphyType != ClassSettings.PolymorphyType.NONE &&
         !isSubTypeDiscriminatorWithNoValue(classSettings) &&
         !isSubTypeDiscriminatorWithMultipleValues(classSettings, schemaName)
 

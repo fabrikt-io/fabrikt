@@ -329,3 +329,32 @@ components:
       properties:
         actions:
           $ref: '#/components/schemas/ChildActionsPartial'
+    DiscriminatedBase:
+      type: object
+      discriminator:
+        propertyName: errorCode
+        mapping:
+          ERR_ONE: '#/components/schemas/DiscriminatedChild'
+      required: [errorCode, message]
+      properties:
+        errorCode:
+          type: string
+        message:
+          type: string
+    DiscriminatedChild:
+      allOf:
+        - $ref: '#/components/schemas/DiscriminatedBase'
+        - type: object
+  responses:
+    NarrowedDiscriminatorResponse:
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/DiscriminatedChild'
+              - type: object
+                required: [errorCode]
+                properties:
+                  errorCode:
+                    type: string
+                    enum: [ERR_ONE]
