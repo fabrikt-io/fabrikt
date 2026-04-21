@@ -11,5 +11,5 @@ public data class FooBarsDto(
   @param:JsonProperty("prop_two")
   @get:JsonProperty("prop_two")
   @get:Valid
-  public val propTwo: List<FooBarsDtoBarDto>? = null,
+  public val propTwo: List<BarDto>? = null,
 )

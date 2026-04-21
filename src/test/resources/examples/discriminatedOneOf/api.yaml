@@ -292,3 +292,40 @@ components:
           oneOf:
             - $ref: '#/components/schemas/ValidationErr'
             - $ref: '#/components/schemas/ServerErr'
+
+    # Named top-level array schemas whose items are a discriminated oneOf.
+    # ChildActionsAll covers all members of ParentAction's discriminator mapping —
+    # references to it should resolve to List<ParentAction> (the parent type).
+    # ChildActionsPartial covers only a subset — it requires its own sealed interface.
+    ChildActionsAll:
+      type: array
+      default: []
+      items:
+        oneOf:
+          - $ref: '#/components/schemas/ChildActionA'
+          - $ref: '#/components/schemas/ChildActionB'
+        discriminator:
+          propertyName: actionType
+          mapping:
+            CHILD_A: '#/components/schemas/ChildActionA'
+            CHILD_B: '#/components/schemas/ChildActionB'
+    ChildActionsPartial:
+      type: array
+      default: []
+      items:
+        oneOf:
+          - $ref: '#/components/schemas/ChildActionA'
+        discriminator:
+          propertyName: actionType
+          mapping:
+            CHILD_A: '#/components/schemas/ChildActionA'
+    ResponseWithChildActionsAll:
+      type: object
+      properties:
+        actions:
+          $ref: '#/components/schemas/ChildActionsAll'
+    ResponseWithChildActionsPartial:
+      type: object
+      properties:
+        actions:
+          $ref: '#/components/schemas/ChildActionsPartial'

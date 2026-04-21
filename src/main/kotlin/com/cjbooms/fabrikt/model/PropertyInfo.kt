@@ -4,11 +4,12 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.getKeyIfSingleDiscriminat
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasAdditionalProperties
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasNoDiscriminator
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isDiscriminatorProperty
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInLinedObjectUnderAllOf
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectUnderAllOf
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedArrayDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedDiscriminatedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedItemsSchemaUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isRequired
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSchemaLess
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSimpleMapDefinition
@@ -53,7 +54,7 @@ sealed class PropertyInfo {
                     it.topLevelProperties(
                         settings = maybeMarkInherited(settings, enclosingSchema, it),
                         api = api,
-                        enclosingSchema = if (this.isInlinedObjectDefinition()) enclosingSchema else this,
+                        enclosingSchema = if (this.isInlinedObjectDefinition() || this.isInlinedItemsSchemaUnderTopLevelArrayDefinition()) enclosingSchema else this,
                         additionalRequiredFields = combinedRequiredFields
                     )
                 } +
@@ -62,7 +63,7 @@ sealed class PropertyInfo {
                     it.topLevelProperties(
                         settings = settings.copy(markAllOptional = true),
                         api = api,
-                        enclosingSchema = if (this.isInlinedObjectDefinition()) enclosingSchema else this
+                        enclosingSchema = if (this.isInlinedObjectDefinition() || this.isInlinedItemsSchemaUnderTopLevelArrayDefinition()) enclosingSchema else this
                     )
                 } +
                 getInLinedProperties(settings, api, enclosingSchema, combinedRequiredFields)
@@ -73,7 +74,7 @@ sealed class PropertyInfo {
             val isInherited = when {
                 it.safeName() == enclosingSchema?.name -> false
                 it.hasNoDiscriminator() -> settings.markAsInherited
-                it.isInLinedObjectUnderAllOf() && it.hasNoDiscriminator() -> settings.markAsInherited
+                it.isInlinedObjectUnderAllOf() && it.hasNoDiscriminator() -> settings.markAsInherited
                 else -> true
             }
             return settings.copy(markAsInherited = isInherited)

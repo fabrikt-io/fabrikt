@@ -42,7 +42,7 @@ object KaizenParserExtensions {
     private const val EXTENSIBLE_ENUM_KEY = "x-extensible-enum"
 
     fun Schema.isPolymorphicSuperType(): Boolean = discriminator?.propertyName != null ||
-        getDiscriminatorForInLinedObjectUnderAllOf()?.propertyName != null
+        getDiscriminatorForInlinedObjectUnderAllOf()?.propertyName != null
 
     fun Schema.printPathFromRoot(): String = Overlay.of(this).pathFromRoot
 
@@ -52,10 +52,7 @@ object KaizenParserExtensions {
             isObjectType()
 
     fun Schema.isInlinedObjectDefinition() =
-        (isObjectType() || isAggregatedObject()) && !isSchemaLess() && (
-            Overlay.of(this).pathFromRoot.contains("properties") ||
-                Overlay.of(this).pathFromRoot.contains("items")
-            )
+        (isObjectType() || isAggregatedObject()) && !isSchemaLess() && isInlinedPropertySchema()
 
     private fun Schema.isAggregatedObject(): Boolean =
         combinedAnyOfAndAllOfSchemas().size > 1
@@ -151,8 +148,8 @@ object KaizenParserExtensions {
             schema.allOfSchemas.firstOrNull { it.isPolymorphicSuperType() }
         }
 
-    fun Schema.getDiscriminatorForInLinedObjectUnderAllOf(): Discriminator? =
-        this.allOfSchemas.firstOrNull { it.isInLinedObjectUnderAllOf() }?.discriminator
+    fun Schema.getDiscriminatorForInlinedObjectUnderAllOf(): Discriminator? =
+        this.allOfSchemas.firstOrNull { it.isInlinedObjectUnderAllOf() }?.discriminator
 
     private fun Schema.getEnclosingSchema(api: OpenApi3): Schema? =
         api.schemas.values.firstOrNull { it.name == safeName() }
@@ -224,7 +221,17 @@ object KaizenParserExtensions {
             }
         }
         
-        return (topLevelInterfaces + inlineInterfaces).toSet()
+        // Check top-level named array schemas whose items form a oneOf super interface.
+        // The array schema's own name becomes the synthetic sealed interface name.
+        val topLevelArrayInterfaces = allSchemas
+            .mapNotNull { arraySchema ->
+                val items = arraySchema.itemsSchema ?: return@mapNotNull null
+                if (items.isInlinedOneOfUnderTopLevelArrayDefinition() &&
+                    items.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
+                ) arraySchema else null
+            }
+
+        return (topLevelInterfaces + inlineInterfaces + topLevelArrayInterfaces).toSet()
     }
 
     fun Schema.getKeyIfSingleDiscriminatorValue(
@@ -269,7 +276,7 @@ object KaizenParserExtensions {
     fun Discriminator.mappingKeyForSchemaName(schemaName: String): String? =
         mappings.filter { it.value.endsWith(schemaName) }.keys.firstOrNull()
 
-    fun Schema.isInLinedObjectUnderAllOf(): Boolean =
+    fun Schema.isInlinedObjectUnderAllOf(): Boolean =
         Overlay.of(this).pathFromRoot
             .splitToSequence("/")
             .toList()
@@ -388,6 +395,21 @@ object KaizenParserExtensions {
 
         return isDirectProperty || isArrayItem
     }
+
+    fun Schema.isInlinedItemsSchemaUnderTopLevelArrayDefinition(): Boolean =
+        Regex(".*/schemas/[^/]+/items$").matches(Overlay.of(this).pathFromRoot)
+
+    fun Schema.isInlinedOneOfUnderTopLevelArrayDefinition(): Boolean =
+        isOneOfSuperInterface() && isInlinedItemsSchemaUnderTopLevelArrayDefinition()
+
+    fun Schema.hasInlinedItemsSchemaWithOneOf(): Boolean =
+        itemsSchema?.isInlinedOneOfUnderTopLevelArrayDefinition() == true
+
+    fun Schema.isInlinedObjectDefinitionUnderTopLevelArrayDefinition(): Boolean =
+        (isObjectType() || isAggregatedObject()) && !isSchemaLess() && isInlinedItemsSchemaUnderTopLevelArrayDefinition()
+
+    fun Schema.hasInlinedItemsSchemaOfTypeObject(): Boolean =
+        itemsSchema?.isInlinedObjectDefinitionUnderTopLevelArrayDefinition() == true
 
     fun OpenApi3.basePath(): String =
         servers

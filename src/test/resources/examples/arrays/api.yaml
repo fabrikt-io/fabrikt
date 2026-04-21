@@ -135,3 +135,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MissingRef"
+
+    # A model whose property references a named array schema with inline object items.
+    # Verifies that the type resolves to List<ArrayContainingComplexInlined> and no
+    # duplicate inline class is generated.
+    ContainsNamedInlinedArray:
+      type: object
+      properties:
+        items:
+          $ref: '#/components/schemas/ArrayContainingComplexInlined'

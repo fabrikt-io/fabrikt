@@ -8,4 +8,4 @@ import kotlinx.serialization.Serializable
 public data class ChildActionB(
   @SerialName("fieldB")
   public val fieldB: Int? = null,
-) : ParentAction()
+) : ParentAction(), ChildActionsAll

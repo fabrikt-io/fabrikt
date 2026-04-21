@@ -87,3 +87,24 @@ components:
             properties:
               url_citation:
                 type: string
+
+    # A named top-level array schema whose items are allOf-composed (ref + inline object with a
+    # nested inline object property). Exercises the enclosingSchema pass-through in
+    # topLevelProperties when items lives at .../schemas/<Name>/items.
+    NamedAggregatedArray:
+      type: array
+      items:
+        allOf:
+          - $ref: '#/components/schemas/ReferencedObjectWithArrayInlining'
+          - type: object
+            properties:
+              metadata:
+                type: object
+                properties:
+                  source:
+                    type: string
+    ContainerWithNamedAggregatedArray:
+      type: object
+      properties:
+        entries:
+          $ref: '#/components/schemas/NamedAggregatedArray'
