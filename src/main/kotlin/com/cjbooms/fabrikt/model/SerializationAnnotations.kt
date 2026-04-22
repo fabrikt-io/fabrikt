@@ -30,6 +30,14 @@ sealed interface SerializationAnnotations {
     fun addClassAnnotation(typeSpecBuilder: TypeSpec.Builder): TypeSpec.Builder
     fun addBasePolymorphicTypeAnnotation(typeSpecBuilder: TypeSpec.Builder, propertyName: String): TypeSpec.Builder
     fun addPolymorphicSubTypesAnnotation(typeSpecBuilder: TypeSpec.Builder, mappings: Map<String, TypeName>): TypeSpec.Builder
+
+    /** Discriminator-less polymorphism for the sealed super-interface. No-op for libraries
+     *  without a deduction equivalent (e.g. kotlinx). */
+    fun addDeductionPolymorphicTypeAnnotation(
+        typeSpecBuilder: TypeSpec.Builder,
+        subTypes: List<TypeName>,
+    ): TypeSpec.Builder
+
     fun addSubtypeMappingAnnotation(typeSpecBuilder: TypeSpec.Builder, mapping: String): TypeSpec.Builder
     fun addEnumPropertyAnnotation(propSpecBuilder: PropertySpec.Builder): PropertySpec.Builder
     fun addEnumConstantAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String): TypeSpec.Builder

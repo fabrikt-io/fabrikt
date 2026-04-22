@@ -84,4 +84,19 @@ object JacksonMetadata {
         return AnnotationSpec.builder(JSON_SUB_TYPES_CLASS)
             .addMember(codeBuilder.build()).build()
     }
+
+    fun deductionPolymorphicType(): AnnotationSpec = AnnotationSpec
+        .builder(JSON_TYPE_INFO_CLASS)
+        .addMember("use = %T.Id.DEDUCTION", JSON_TYPE_INFO_CLASS)
+        .build()
+
+    fun deductionPolymorphicSubTypes(types: List<TypeName>): AnnotationSpec {
+        val codeBuilder = CodeBlock.builder()
+        types.forEach { type ->
+            if (codeBuilder.isNotEmpty()) codeBuilder.add(",")
+            codeBuilder.add("%T.Type(value = %T::class)", JSON_SUB_TYPES_CLASS, type)
+        }
+        return AnnotationSpec.builder(JSON_SUB_TYPES_CLASS)
+            .addMember(codeBuilder.build()).build()
+    }
 }

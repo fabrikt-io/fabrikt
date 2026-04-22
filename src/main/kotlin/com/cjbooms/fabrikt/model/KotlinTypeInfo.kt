@@ -12,8 +12,10 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedDiscriminatedOne
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedTypedAdditionalProperties
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isNotDefined
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterfaceWithDiscriminator
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaWithOneOf
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.requestsSubTypeDeduction
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaOfTypeObject
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isUnsupportedComplexInlinedDefinition
 import com.cjbooms.fabrikt.util.ModelNameRegistry
@@ -172,7 +174,11 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
 
                 OasType.Any -> AnyType
                 OasType.OneOfAny ->
-                    if (schema.isOneOfSuperInterfaceWithDiscriminator()) {
+                    if (schema.isOneOfSuperInterfaceWithDiscriminator() ||
+                        (schema.isOneOfSuperInterface() &&
+                            schema.requestsSubTypeDeduction() &&
+                            MutableSettings.serializationLibrary != KOTLINX_SERIALIZATION)
+                    ) {
                         Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema))
                     } else {
                         AnyType
