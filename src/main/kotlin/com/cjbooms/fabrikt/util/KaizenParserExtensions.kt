@@ -376,17 +376,12 @@ object KaizenParserExtensions {
     fun Schema.isOneOfSuperInterfaceWithDiscriminator() =
         discriminator != null && discriminator.propertyName != null && isOneOfSuperInterface()
 
-    /**
-     * Per-schema opt-in: `x-fabrikt-jackson-deduction: true` on a discriminator-less inline
-     * `oneOf` schema asks the generator to type the property as the sealed super-interface and
-     * emit `@JsonTypeInfo(use = DEDUCTION)` so Jackson can dispatch by inspecting which
-     * properties are present in the JSON. Subtypes must have distinguishing required fields —
-     * if they don't, deserialization fails at runtime.
-     */
-    fun Schema.requestsJacksonDeduction(): Boolean =
-        extensions[X_FABRIKT_JACKSON_DEDUCTION] as? Boolean == true
+    /** Per-schema opt-in for Jackson DEDUCTION-style polymorphism. Subtypes must have
+     *  distinguishing required fields or deserialization fails at runtime. */
+    fun Schema.requestsSubTypeDeduction(): Boolean =
+        extensions[X_JACKSON_SUBTYPE_DEDUCTION] as? Boolean == true
 
-    private const val X_FABRIKT_JACKSON_DEDUCTION = "x-fabrikt-jackson-deduction"
+    private const val X_JACKSON_SUBTYPE_DEDUCTION = "x-jackson-subtype-deduction"
 
     private fun Schema.isInlinedAggregationOfExactlyOne() =
         combinedAnyOfAndAllOfSchemas().size == 1 && isInlinedPropertySchema()

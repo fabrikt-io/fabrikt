@@ -10,7 +10,7 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedDiscriminatedOne
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterface
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.requestsJacksonDeduction
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.requestsSubTypeDeduction
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedItemsSchemaUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isRequired
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSchemaLess
@@ -128,7 +128,7 @@ sealed class PropertyInfo {
                                 parentSchema = this
                             )
                         else if (property.value.isInlinedObjectDefinition() ||
-                            (property.value.isOneOfSuperInterface() && property.value.requestsJacksonDeduction()))
+                            (property.value.isOneOfSuperInterface() && property.value.requestsSubTypeDeduction()))
                             ObjectInlinedField(
                                 isRequired = isRequired(
                                     api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields

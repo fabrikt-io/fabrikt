@@ -15,7 +15,7 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.isNotDefined
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterfaceWithDiscriminator
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaWithOneOf
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.requestsJacksonDeduction
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.requestsSubTypeDeduction
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaOfTypeObject
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isUnsupportedComplexInlinedDefinition
 import com.cjbooms.fabrikt.util.ModelNameRegistry
@@ -176,7 +176,7 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
                 OasType.OneOfAny ->
                     if (schema.isOneOfSuperInterfaceWithDiscriminator() ||
                         (schema.isOneOfSuperInterface() &&
-                            schema.requestsJacksonDeduction() &&
+                            schema.requestsSubTypeDeduction() &&
                             MutableSettings.serializationLibrary != KOTLINX_SERIALIZATION)
                     ) {
                         Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema))

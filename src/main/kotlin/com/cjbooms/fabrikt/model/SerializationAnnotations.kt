@@ -31,14 +31,8 @@ sealed interface SerializationAnnotations {
     fun addBasePolymorphicTypeAnnotation(typeSpecBuilder: TypeSpec.Builder, propertyName: String): TypeSpec.Builder
     fun addPolymorphicSubTypesAnnotation(typeSpecBuilder: TypeSpec.Builder, mappings: Map<String, TypeName>): TypeSpec.Builder
 
-    /**
-     * Emit annotations enabling discriminator-less polymorphic deserialization for the sealed
-     * super-interface — Jackson uses `@JsonTypeInfo(use = DEDUCTION)` + `@JsonSubTypes(...)` so it
-     * can pick the subtype by inspecting which properties are present in the JSON.
-     *
-     * Other libraries (kotlinx) have no DEDUCTION equivalent and treat this as a no-op; the
-     * source property type stays `Any?` for them in `KotlinTypeInfo.from`.
-     */
+    /** Discriminator-less polymorphism for the sealed super-interface. No-op for libraries
+     *  without a deduction equivalent (e.g. kotlinx). */
     fun addDeductionPolymorphicTypeAnnotation(
         typeSpecBuilder: TypeSpec.Builder,
         subTypes: List<TypeName>,

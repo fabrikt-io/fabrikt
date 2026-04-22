@@ -293,12 +293,9 @@ components:
             - $ref: '#/components/schemas/ValidationErr'
             - $ref: '#/components/schemas/ServerErr'
 
-    # Discriminator-less inline oneOf with x-fabrikt-jackson-deduction: true on the property.
-    # Subtypes have distinguishing required fields (retries vs host), so Jackson DEDUCTION can
-    # pick the correct subtype. The property is typed as the sealed interface
-    # (DiagnosticReportFailure?) and the interface gets @JsonTypeInfo(use = DEDUCTION) +
-    # @JsonSubTypes(...). Kotlinx ignores the extension and keeps Any? — kotlinx has no
-    # DEDUCTION equivalent.
+    # Opted into Jackson DEDUCTION via x-jackson-subtype-deduction. Subtypes (NetworkFailure,
+    # DnsFailure) have distinguishing required fields (retries vs host) so Jackson can pick
+    # the right subtype. Kotlinx has no DEDUCTION equivalent and falls back to Any?.
     NetworkFailure:
       type: object
       required:
@@ -323,7 +320,7 @@ components:
       type: object
       properties:
         failure:
-          x-fabrikt-jackson-deduction: true
+          x-jackson-subtype-deduction: true
           oneOf:
             - $ref: '#/components/schemas/NetworkFailure'
             - $ref: '#/components/schemas/DnsFailure'

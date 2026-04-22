@@ -32,7 +32,7 @@ This library was built to take advantage of the complex modeling features availa
  - GraalVM Native Reflection Registration
  - Json Merge Patch (via `JsonNullable`) (add `x-json-merge-patch: true` to schemas)
  - Override Jackson Include NonNull (via `JsonInclude`) (add `x-jackson-include-non-null: true` to schemas)
- - Type discriminator-less inline `oneOf` properties as the sealed super-interface using Jackson's deduction-based polymorphism (add `x-fabrikt-jackson-deduction: true` to the `oneOf` schema; subtypes need distinguishing required fields)
+ - Type discriminator-less inline `oneOf` properties as the sealed super-interface using Jackson's deduction-based polymorphism (add `x-jackson-subtype-deduction: true` to the `oneOf` schema; subtypes need distinguishing required fields)
  
 as well as HTTP clients and controllers for a number of popular frameworks (see [Features](#features)).
 

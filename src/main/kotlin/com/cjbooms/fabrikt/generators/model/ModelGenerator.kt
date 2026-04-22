@@ -53,7 +53,7 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaOfTy
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedOneOfUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinitionUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeyForSchemaName
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.requestsJacksonDeduction
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.requestsSubTypeDeduction
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeys
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeName
 import com.cjbooms.fabrikt.util.ModelNameRegistry
@@ -241,7 +241,7 @@ class ModelGenerator(
                 allSchemas = allSchemas,
                 members = schemaInfo.schema.oneOfSchemas,
                 oneOfSuperInterfaces = schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
-                requestsDeduction = schemaInfo.schema.requestsJacksonDeduction(),
+                isSubTypeDeductionEnabled = schemaInfo.schema.requestsSubTypeDeduction(),
             )
 
             schemaInfo.schema.isPolymorphicSuperType() && schemaInfo.schema.isPolymorphicSubType(api) ->
@@ -310,7 +310,7 @@ class ModelGenerator(
                                     allSchemas = sourceApi.allSchemas,
                                     members = it.schema.oneOfSchemas,
                                     oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
-                                    requestsDeduction = it.schema.requestsJacksonDeduction(),
+                                    isSubTypeDeductionEnabled = it.schema.requestsSubTypeDeduction(),
                                 )
                             )
                         }
@@ -367,7 +367,7 @@ class ModelGenerator(
                                 allSchemas = sourceApi.allSchemas,
                                 members = it.schema.oneOfSchemas,
                                 oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
-                                requestsDeduction = it.schema.requestsJacksonDeduction(),
+                                isSubTypeDeductionEnabled = it.schema.requestsSubTypeDeduction(),
                             )
                         )
                     } else {
@@ -390,7 +390,7 @@ class ModelGenerator(
                                 allSchemas = sourceApi.allSchemas,
                                 members = it.schema.oneOfSchemas,
                                 oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
-                                requestsDeduction = it.schema.requestsJacksonDeduction(),
+                                isSubTypeDeductionEnabled = it.schema.requestsSubTypeDeduction(),
                             )
                         )
                     } else emptySet()
@@ -437,7 +437,7 @@ class ModelGenerator(
                             allSchemas = sourceApi.allSchemas,
                             members = items.oneOfSchemas,
                             oneOfSuperInterfaces = items.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
-                            requestsDeduction = items.requestsJacksonDeduction(),
+                            isSubTypeDeductionEnabled = items.requestsSubTypeDeduction(),
                         )
                     )
 
@@ -683,7 +683,7 @@ class ModelGenerator(
         allSchemas: List<SchemaInfo>,
         members: List<Schema>,
         oneOfSuperInterfaces: Set<Schema>,
-        requestsDeduction: Boolean,
+        isSubTypeDeductionEnabled: Boolean,
     ): TypeSpec {
         val interfaceBuilder = TypeSpec.interfaceBuilder(generatedType(packages.base, modelName))
             .addModifiers(KModifier.SEALED)
@@ -702,7 +702,7 @@ class ModelGenerator(
                 )
             }
             serializationAnnotations.addPolymorphicSubTypesAnnotation(interfaceBuilder, kotlinMappings)
-        } else if (requestsDeduction) {
+        } else if (isSubTypeDeductionEnabled) {
             val subTypeNames = members.map { member ->
                 toModelType(packages.base, KotlinTypeInfo.from(member, member.safeName()))
             }

@@ -8,18 +8,9 @@ import com.example.oneof.models.NetworkFailure
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-/**
- * Demonstrates Jackson serde behaviour for a discriminator-less inline oneOf that opts into
- * `x-fabrikt-jackson-deduction: true`.
- *
- * Unlike [DiscriminatorlessOneOfTest] (where the property stays `Any?`), the property is typed as
- * the sealed super-interface [DiagnosticReportFailure]. Jackson dispatches to the correct subtype
- * by deduction — inspecting which properties are present in the JSON. Subtypes have distinguishing
- * required fields (`retries` vs `host`) so deduction is unambiguous.
- *
- * Constraint: subtypes must have distinguishing required properties for deduction to succeed; if
- * they don't, deserialization fails at runtime.
- */
+/** Counterpart to [DiscriminatorlessOneOfTest]: opting into `x-jackson-subtype-deduction`
+ *  types the property as the sealed interface and lets Jackson dispatch by required-property
+ *  shape (`retries` vs `host`). */
 class DiscriminatorlessOneOfWithDeductionTest {
 
     private val objectMapper = mapper()
