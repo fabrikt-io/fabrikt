@@ -99,6 +99,18 @@ java -jar fabrikt.jar \
     --http-client-opts resilience4j
 ```
 
+Alternatively, using [JBang](https://www.jbang.dev/), the CLI can also be invoked as follows:
+
+```
+jbang run io.fabrikt:fabrikt:RELEASE \
+    --output-directory '/tmp' \
+    --base-package 'com.example' \
+    --api-file '/path-to-api/open-api.yaml' \
+    --targets 'client' \
+    --targets 'http_models' \
+    --http-client-opts resilience4j
+```
+
 ### Gradle w/ custom task
 
 Here is an example of a Gradle task with code generated to the `build/generated` directory, and execution linked to the compile task. 
