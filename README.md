@@ -99,16 +99,10 @@ java -jar fabrikt.jar \
     --http-client-opts resilience4j
 ```
 
-Alternatively, using [JBang](https://www.jbang.dev/), the CLI can also be invoked as follows:
+__Tip__: You can also run the latest version without a manual download via [JBang](https://www.jbang.dev/):
 
 ```
-jbang run io.fabrikt:fabrikt:RELEASE \
-    --output-directory '/tmp' \
-    --base-package 'com.example' \
-    --api-file '/path-to-api/open-api.yaml' \
-    --targets 'client' \
-    --targets 'http_models' \
-    --http-client-opts resilience4j
+jbang run io.fabrikt:fabrikt:RELEASE [args...]
 ```
 
 ### Gradle w/ custom task
