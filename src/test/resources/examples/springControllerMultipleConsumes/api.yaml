@@ -1,0 +1,58 @@
+openapi: 3.0.0
+info:
+  description: Some description
+  version: 1.0.0
+  title: The API title
+  contact:
+    name: cjbooms
+    email: api@cjbooms.com
+externalDocs:
+  description: The docs are great.
+  url: http://find.them.here
+
+paths:
+  /internal/upload:
+    post:
+      tags:
+        - upload
+      summary: Upload Images
+      parameters:
+        - name: Content-Type
+          in: header
+          description: mime type of the image, "image/png" or "image/jpeg"
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: image binary data
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: byte
+          image/png:
+            schema:
+              type: string
+              format: byte
+          application/octet-stream:
+            schema:
+              type: string
+              format: byte
+      responses:
+        '202':
+          description: upload successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+components:
+  schemas:
+    UploadResponse:
+      type: object
+      additionalProperties: true
+      required:
+        - image_id
+      properties:
+        image_id:
+          type: string
+          description: The id of the image

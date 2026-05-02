@@ -311,6 +311,21 @@ class SpringControllerGeneratorTest {
     }
 
     @Test
+    fun `controller functions consumes multiple mime types in request body`() {
+        val basePackage = "examples.sseEmitter"
+        val api = SourceApi(readTextResource("/examples/springControllerMultipleConsumes/api.yaml"))
+        val expectedControllers = "/examples/springControllerMultipleConsumes/controllers/Controllers.kt"
+
+        val controllers = SpringControllerInterfaceGenerator(
+            Packages(basePackage),
+            api,
+            JavaxValidationAnnotations,
+        ).generate().toSingleFile()
+
+        assertThatGenerated(controllers).isEqualTo(expectedControllers)
+    }
+
+    @Test
     fun `sse controller functions return array if disabled`() {
         val basePackage = "examples.sseEmitter"
         val api = SourceApi(readTextResource("/examples/springControllerSse/api.yaml"))

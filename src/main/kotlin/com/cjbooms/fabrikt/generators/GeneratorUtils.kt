@@ -193,6 +193,15 @@ object GeneratorUtils {
                 )
             }
             .distinctBy { it.schema.safeName().toKotlinParameterName().ifEmpty { it.schema.toVarName() } }
+            .reduceOrNull { acc, _ ->
+                BodyParameter(
+                    oasName = "body",
+                    description = acc.description,
+                    type = acc.type,
+                    schema = acc.schema
+                )
+            }
+            ?.let { listOf(it) } ?: emptyList()
 
         val parameters = mergeParameters(pathParameters, parameters)
             .map {
