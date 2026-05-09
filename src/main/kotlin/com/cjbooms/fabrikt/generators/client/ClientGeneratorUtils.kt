@@ -93,6 +93,8 @@ object ClientGeneratorUtils {
                 originalName = ACCEPT_HEADER_NAME,
                 parameterLocation = HeaderParam,
                 typeInfo = KotlinTypeInfo.Text,
+                minimum = null,
+                maximum = null,
                 defaultValue = operation.getPrimaryContentMediaTypeKey(),
             )
         ) else emptyList()
