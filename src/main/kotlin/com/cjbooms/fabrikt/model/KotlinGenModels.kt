@@ -74,38 +74,47 @@ fun <T : GeneratedType> Collection<T>.toFileSpec(): Collection<FileSpec> = this
  * The IncomingParameter class is intended to represent a given name and type
  * of an incoming request, be it either a header, url param, path param, or body
  */
-sealed class IncomingParameter(val oasName: String, val description: String?, val type: TypeName) {
+sealed class IncomingParameter(val oasName: String, val description: String?, val type: TypeName, val isRequired: Boolean) {
     val name: String = oasName.toKotlinParameterName()
     open fun toParameterSpecBuilder(treatAnyTypeHeadersAsStrings: Boolean = false): ParameterSpec.Builder =
-        ParameterSpec.builder(name, type)
+        ParameterSpec.builder(
+            name = name,
+            type = if (isRequired) type else type.copy(nullable = true)
+        )
 }
 
-class BodyParameter(oasName: String, description: String?, type: TypeName, val schema: Schema) :
-    IncomingParameter(oasName, description, type)
+class BodyParameter(
+    oasName: String,
+    description: String?,
+    type: TypeName,
+    isRequired: Boolean = false,
+    val schema: Schema
+) :
+    IncomingParameter(oasName, description, type, isRequired)
 
 class RequestParameter(
     oasName: String,
     description: String?,
     type: TypeName,
+    isRequired: Boolean = false,
     var originalName: String,
     val parameterLocation: RequestParameterLocation,
     val typeInfo: KotlinTypeInfo,
     val minimum: Number? = null,
     val maximum: Number? = null,
-    val isRequired: Boolean = false,
     val explode: Boolean? = null,
     val defaultValue: Any? = null,
-) : IncomingParameter(oasName, description, type) {
+) : IncomingParameter(oasName, description, type, isRequired) {
     constructor(oasName: String, description: String?, type: TypeName, parameter: Parameter) : this(
         oasName = oasName,
         description = description,
         type = type,
+        isRequired = parameter.isRequired,
         originalName = parameter.name,
+        parameterLocation = RequestParameterLocation(parameter.`in`),
         typeInfo = KotlinTypeInfo.from(parameter.schema, oasName),
         minimum = parameter.schema.minimum,
         maximum = parameter.schema.maximum,
-        parameterLocation = RequestParameterLocation(parameter.`in`),
-        isRequired = parameter.isRequired,
         explode = parameter.explode,
         defaultValue = parameter.schema.default
     )

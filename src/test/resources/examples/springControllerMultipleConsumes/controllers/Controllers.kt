@@ -30,7 +30,7 @@ public interface InternalUploadController {
         consumes = ["image/jpeg", "image/png", "application/octet-stream"],
     )
     public fun post(
-        @RequestBody @Valid body: ByteArray,
+        @RequestBody @Valid body: ByteArray?,
         @RequestHeader(
             value = "Content-Type",
             required = true,

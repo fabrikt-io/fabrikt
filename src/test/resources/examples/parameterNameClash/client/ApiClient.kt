@@ -67,7 +67,7 @@ public class ExampleClient(
      */
     @Throws(ApiException::class)
     public fun postExample(
-        bodySomeObject: SomeObject,
+        bodySomeObject: SomeObject?,
         querySomeObject: String,
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),

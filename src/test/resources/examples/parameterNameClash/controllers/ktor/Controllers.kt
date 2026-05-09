@@ -46,7 +46,7 @@ public interface ExampleController {
      */
     public suspend fun post(
         querySomeObject: String,
-        bodySomeObject: SomeObject,
+        bodySomeObject: SomeObject?,
         call: ApplicationCall,
     )
 

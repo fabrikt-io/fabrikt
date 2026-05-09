@@ -33,7 +33,7 @@ public interface ExampleClient {
      */
     @RequestLine("POST /example?someObject={querySomeObject}")
     public fun postExample(
-        bodySomeObject: SomeObject,
+        bodySomeObject: SomeObject?,
         @Param("querySomeObject") querySomeObject: String,
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
         @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),

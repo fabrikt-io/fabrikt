@@ -35,6 +35,6 @@ public interface ExampleController {
     @Consumes(value = ["application/json"])
     @Produces(value = ["application/json"])
     public fun post(
-        @Body @Valid rootType: RootTypeDto,
+        @Body @Valid rootType: RootTypeDto?,
     ): HttpResponse<RootTypeDto>
 }

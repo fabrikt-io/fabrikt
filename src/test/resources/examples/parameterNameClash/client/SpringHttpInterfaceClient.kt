@@ -41,7 +41,7 @@ public interface ExampleClient {
         method = "POST",
     )
     public fun postExample(
-        @RequestBody bodySomeObject: SomeObject,
+        @RequestBody bodySomeObject: SomeObject?,
         @RequestParam("someObject") querySomeObject: String,
         @RequestHeader additionalHeaders: Map<String, Any> = emptyMap(),
         @RequestParam additionalQueryParameters: Map<String, Any> = emptyMap(),

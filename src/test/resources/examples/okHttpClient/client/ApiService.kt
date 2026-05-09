@@ -99,7 +99,7 @@ public class ExamplePath2Service(
     @Throws(ApiException::class)
     public fun getExamplePath2PathParam(
         pathParam: String,
-        limit: Int = 500,
+        limit: Int? = 500,
         queryParam2: Int? = null,
         ifNoneMatch: String? = null,
         additionalHeaders: Map<String, String> = emptyMap(),

@@ -42,6 +42,6 @@ public interface ExampleController {
         consumes = ["application/json"],
     )
     public fun post(
-        @RequestBody @Valid rootType: RootTypeDto,
+        @RequestBody @Valid rootType: RootTypeDto?,
     ): ResponseEntity<RootTypeDto>
 }

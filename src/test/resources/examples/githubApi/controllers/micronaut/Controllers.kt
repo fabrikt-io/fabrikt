@@ -69,7 +69,7 @@ public interface ContributorsController {
     @Get(uri = "/contributors")
     @Produces(value = ["application/json"])
     public fun searchContributors(
-        @Min(1) @Max(100) @QueryValue(value = "limit", defaultValue = "10") limit: Int,
+        @Min(1) @Max(100) @QueryValue(value = "limit", defaultValue = "10") limit: Int?,
         @Header(value = "X-Flow-Id") xFlowId: String?,
         @QueryValue(value = "include_inactive") includeInactive: Boolean?,
         @QueryValue(value = "cursor") cursor: String?,
@@ -118,7 +118,7 @@ public interface ContributorsController {
     @Produces(value = ["application/json"])
     public fun getContributor(
         @PathVariable(value = "id") id: String,
-        @QueryValue(value = "status", defaultValue = "all") status: StatusQueryParam,
+        @QueryValue(value = "status", defaultValue = "all") status: StatusQueryParam?,
         @Header(value = "X-Flow-Id") xFlowId: String?,
         @Header(value = "If-None-Match") ifNoneMatch: String?,
     ): HttpResponse<Contributor>
@@ -176,7 +176,7 @@ public interface OrganisationsController {
     @Get(uri = "/organisations")
     @Produces(value = ["application/json"])
     public fun `get`(
-        @Min(1) @Max(100) @QueryValue(value = "limit", defaultValue = "10") limit: Int,
+        @Min(1) @Max(100) @QueryValue(value = "limit", defaultValue = "10") limit: Int?,
         @Header(value = "X-Flow-Id") xFlowId: String?,
         @QueryValue(value = "include_inactive") includeInactive: Boolean?,
         @QueryValue(value = "cursor") cursor: String?,
@@ -225,7 +225,7 @@ public interface OrganisationsController {
     @Produces(value = ["application/json"])
     public fun getById(
         @PathVariable(value = "id") id: String,
-        @QueryValue(value = "status", defaultValue = "all") status: StatusQueryParam,
+        @QueryValue(value = "status", defaultValue = "all") status: StatusQueryParam?,
         @Header(value = "X-Flow-Id") xFlowId: String?,
         @Header(value = "If-None-Match") ifNoneMatch: String?,
     ): HttpResponse<Organisation>
@@ -286,7 +286,7 @@ public interface OrganisationsContributorsController {
     @Produces(value = ["application/json"])
     public fun `get`(
         @PathVariable(value = "parent-id") parentId: String,
-        @Min(1) @Max(100) @QueryValue(value = "limit", defaultValue = "10") limit: Int,
+        @Min(1) @Max(100) @QueryValue(value = "limit", defaultValue = "10") limit: Int?,
         @Header(value = "X-Flow-Id") xFlowId: String?,
         @QueryValue(value = "include_inactive") includeInactive: Boolean?,
         @QueryValue(value = "cursor") cursor: String?,
@@ -386,7 +386,7 @@ public interface RepositoriesController {
     @Get(uri = "/repositories")
     @Produces(value = ["application/json"])
     public fun `get`(
-        @Min(1) @Max(100) @QueryValue(value = "limit", defaultValue = "10") limit: Int,
+        @Min(1) @Max(100) @QueryValue(value = "limit", defaultValue = "10") limit: Int?,
         @Header(value = "X-Flow-Id") xFlowId: String?,
         @Valid @QueryValue(value = "slug") slug: List<String>?,
         @Valid @QueryValue(value = "name") name: List<String>?,
@@ -437,7 +437,7 @@ public interface RepositoriesController {
     @Produces(value = ["application/json"])
     public fun getById(
         @PathVariable(value = "id") id: String,
-        @QueryValue(value = "status", defaultValue = "all") status: StatusQueryParam,
+        @QueryValue(value = "status", defaultValue = "all") status: StatusQueryParam?,
         @Header(value = "X-Flow-Id") xFlowId: String?,
         @Header(value = "If-None-Match") ifNoneMatch: String?,
     ): HttpResponse<Repository>
@@ -498,7 +498,7 @@ public interface RepositoriesPullRequestsController {
     @Produces(value = ["application/json"])
     public fun `get`(
         @PathVariable(value = "parent-id") parentId: String,
-        @Min(1) @Max(100) @QueryValue(value = "limit", defaultValue = "10") limit: Int,
+        @Min(1) @Max(100) @QueryValue(value = "limit", defaultValue = "10") limit: Int?,
         @Header(value = "X-Flow-Id") xFlowId: String?,
         @QueryValue(value = "include_inactive") includeInactive: Boolean?,
         @QueryValue(value = "cursor") cursor: String?,

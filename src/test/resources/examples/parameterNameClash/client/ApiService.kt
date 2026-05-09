@@ -42,7 +42,7 @@ public class ExampleService(
 
     @Throws(ApiException::class)
     public fun postExample(
-        bodySomeObject: SomeObject,
+        bodySomeObject: SomeObject?,
         querySomeObject: String,
         additionalHeaders: Map<String, String> = emptyMap(),
     ): ApiResponse<Unit> =

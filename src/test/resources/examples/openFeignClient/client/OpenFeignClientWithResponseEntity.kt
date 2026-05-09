@@ -83,7 +83,7 @@ public interface ExamplePath2Client {
     )
     public fun getExamplePath2PathParam(
         @Param("pathParam") pathParam: String,
-        @Param("limit") limit: Int = 500,
+        @Param("limit") limit: Int? = 500,
         @Param("queryParam2") queryParam2: Int? = null,
         @Param("ifNoneMatch") ifNoneMatch: String? = null,
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),

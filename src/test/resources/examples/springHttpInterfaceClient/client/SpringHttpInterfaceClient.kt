@@ -75,7 +75,7 @@ public interface ExamplePath2Client {
     )
     public fun getExamplePath2PathParam(
         @PathVariable("path_param") pathParam: String,
-        @RequestParam("limit") limit: Int = 500,
+        @RequestParam("limit") limit: Int? = 500,
         @RequestParam("query_param2") queryParam2: Int? = null,
         @RequestHeader("If-None-Match") ifNoneMatch: String? = null,
         @RequestHeader additionalHeaders: Map<String, Any> = emptyMap(),
@@ -113,7 +113,7 @@ public interface ExamplePath2Client {
         method = "PUT",
     )
     public fun putExamplePath2PathParam(
-        @RequestBody firstModel: FirstModel,
+        @RequestBody firstModel: FirstModel?,
         @PathVariable("path_param") pathParam: String,
         @RequestHeader("If-Match") ifMatch: String,
         @RequestHeader additionalHeaders: Map<String, Any> = emptyMap(),
@@ -136,7 +136,7 @@ public interface ExamplePath3SubresourceClient {
         method = "PUT",
     )
     public fun putExamplePath3PathParamSubresource(
-        @RequestBody firstModel: FirstModel,
+        @RequestBody firstModel: FirstModel?,
         @PathVariable("path_param") pathParam: String,
         @RequestHeader("If-Match") ifMatch: String,
         @RequestParam("csv_list_query_param") csvListQueryParam: List<String>? = null,

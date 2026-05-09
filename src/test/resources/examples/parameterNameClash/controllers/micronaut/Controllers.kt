@@ -38,7 +38,7 @@ public interface ExampleController {
     @Post(uri = "/example")
     @Consumes(value = ["application/json"])
     public fun post(
-        @Body @Valid bodySomeObject: SomeObject,
+        @Body @Valid bodySomeObject: SomeObject?,
         @QueryValue(value = "querySomeObject")
         querySomeObject: String,
     ): HttpResponse<Unit>

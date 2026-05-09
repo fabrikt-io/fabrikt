@@ -3,7 +3,6 @@ package com.cjbooms.fabrikt.generators.client
 import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.GeneratorUtils
-import com.cjbooms.fabrikt.generators.GeneratorUtils.getBodySuccessResponses
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaTypeKey
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasAnySuccessResponseSchemas
@@ -90,12 +89,10 @@ object ClientGeneratorUtils {
                 oasName = ACCEPT_HEADER_VARIABLE_NAME,
                 description = null,
                 type = toModelType(basePackage, KotlinTypeInfo.Text, false),
+                isRequired = true,
                 originalName = ACCEPT_HEADER_NAME,
                 parameterLocation = HeaderParam,
                 typeInfo = KotlinTypeInfo.Text,
-                minimum = null,
-                maximum = null,
-                isRequired = true,
                 defaultValue = operation.getPrimaryContentMediaTypeKey(),
             )
         ) else emptyList()

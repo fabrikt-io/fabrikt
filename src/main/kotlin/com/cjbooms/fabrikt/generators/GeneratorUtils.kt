@@ -186,19 +186,21 @@ object GeneratorUtils {
         val bodies = requestBody.contentMediaTypes.values
             .map {
                 BodyParameter(
-                    it.schema.safeName().toKotlinParameterName().ifEmpty { it.schema.toVarName() },
-                    requestBody.description,
-                    toModelType(basePackage, KotlinTypeInfo.from(it.schema)),
-                    it.schema
+                    oasName = it.schema.safeName().toKotlinParameterName().ifEmpty { it.schema.toVarName() },
+                    description = requestBody.description,
+                    type = toModelType(basePackage, KotlinTypeInfo.from(it.schema)),
+                    schema = it.schema,
+                    isRequired = requestBody.isRequired,
                 )
             }
             .distinctBy { it.schema.safeName().toKotlinParameterName().ifEmpty { it.schema.toVarName() } }
-            .reduceOrNull { acc, _ ->
+            .reduceOrNull { acc, bodyParam ->
                 BodyParameter(
                     oasName = "body",
                     description = acc.description,
                     type = acc.type,
-                    schema = acc.schema
+                    schema = acc.schema,
+                    isRequired = acc.isRequired && bodyParam.isRequired,
                 )
             }
             ?.let { listOf(it) } ?: emptyList()
@@ -228,23 +230,24 @@ object GeneratorUtils {
         return parameters.map { p ->
             when (p) {
                 is BodyParameter -> BodyParameter(
-                    "body_${p.oasName}".toKotlinParameterName(),
-                    p.description,
-                    p.type,
-                    p.schema,
+                    oasName = "body_${p.oasName}".toKotlinParameterName(),
+                    description = p.description,
+                    type = p.type,
+                    isRequired = p.isRequired,
+                    schema = p.schema,
                 )
                 is RequestParameter -> RequestParameter(
-                    "${p.parameterLocation}_${p.oasName}".toKotlinParameterName(),
-                    p.description,
-                    p.type,
-                    p.originalName,
-                    p.parameterLocation,
-                    p.typeInfo,
-                    p.minimum,
-                    p.maximum,
-                    p.isRequired,
-                    p.explode,
-                    p.defaultValue,
+                    oasName = "${p.parameterLocation}_${p.oasName}".toKotlinParameterName(),
+                    description = p.description,
+                    type = p.type,
+                    isRequired = p.isRequired,
+                    originalName = p.originalName,
+                    parameterLocation = p.parameterLocation,
+                    typeInfo = p.typeInfo,
+                    minimum = p.minimum,
+                    maximum = p.maximum,
+                    explode = p.explode,
+                    defaultValue = p.defaultValue,
                 )
             }
         }

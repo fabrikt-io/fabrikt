@@ -78,7 +78,7 @@ public interface ContributorsController {
     )
     public fun searchContributors(
         @Min(1) @Max(100) @RequestParam(value = "limit", required = false, defaultValue = "10")
-        limit: Int,
+        limit: Int?,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestParam(value = "include_inactive", required = false) includeInactive: Boolean?,
         @RequestParam(value = "cursor", required = false) cursor: String?,
@@ -135,7 +135,7 @@ public interface ContributorsController {
     public fun getContributor(
         @PathVariable(value = "id", required = true) id: String,
         @RequestParam(value = "status", required = false, defaultValue = "all")
-        status: StatusQueryParam,
+        status: StatusQueryParam?,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "If-None-Match", required = false) ifNoneMatch: String?,
     ): CompletionStage<ResponseEntity<Contributor>>
@@ -203,7 +203,7 @@ public interface OrganisationsController {
     )
     public fun `get`(
         @Min(1) @Max(100) @RequestParam(value = "limit", required = false, defaultValue = "10")
-        limit: Int,
+        limit: Int?,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestParam(value = "include_inactive", required = false) includeInactive: Boolean?,
         @RequestParam(value = "cursor", required = false) cursor: String?,
@@ -260,7 +260,7 @@ public interface OrganisationsController {
     public fun getById(
         @PathVariable(value = "id", required = true) id: String,
         @RequestParam(value = "status", required = false, defaultValue = "all")
-        status: StatusQueryParam,
+        status: StatusQueryParam?,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "If-None-Match", required = false) ifNoneMatch: String?,
     ): CompletionStage<ResponseEntity<Organisation>>
@@ -331,7 +331,7 @@ public interface OrganisationsContributorsController {
     public fun `get`(
         @PathVariable(value = "parent-id", required = true) parentId: String,
         @Min(1) @Max(100) @RequestParam(value = "limit", required = false, defaultValue = "10")
-        limit: Int,
+        limit: Int?,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestParam(value = "include_inactive", required = false) includeInactive: Boolean?,
         @RequestParam(value = "cursor", required = false) cursor: String?,
@@ -448,7 +448,7 @@ public interface RepositoriesController {
     )
     public fun `get`(
         @Min(1) @Max(100) @RequestParam(value = "limit", required = false, defaultValue = "10")
-        limit: Int,
+        limit: Int?,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @Valid @RequestParam(value = "slug", required = false) slug: List<String>?,
         @Valid @RequestParam(value = "name", required = false) name: List<String>?,
@@ -507,7 +507,7 @@ public interface RepositoriesController {
     public fun getById(
         @PathVariable(value = "id", required = true) id: String,
         @RequestParam(value = "status", required = false, defaultValue = "all")
-        status: StatusQueryParam,
+        status: StatusQueryParam?,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestHeader(value = "If-None-Match", required = false) ifNoneMatch: String?,
     ): CompletionStage<ResponseEntity<Repository>>
@@ -578,7 +578,7 @@ public interface RepositoriesPullRequestsController {
     public fun `get`(
         @PathVariable(value = "parent-id", required = true) parentId: String,
         @Min(1) @Max(100) @RequestParam(value = "limit", required = false, defaultValue = "10")
-        limit: Int,
+        limit: Int?,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
         @RequestParam(value = "include_inactive", required = false) includeInactive: Boolean?,
         @RequestParam(value = "cursor", required = false) cursor: String?,

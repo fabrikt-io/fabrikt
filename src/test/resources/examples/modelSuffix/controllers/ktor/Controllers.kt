@@ -44,7 +44,7 @@ public interface ExampleController {
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
     public suspend fun post(
-        rootType: RootTypeDto,
+        rootType: RootTypeDto?,
         call: TypedApplicationCall<RootTypeDto>,
     )
 

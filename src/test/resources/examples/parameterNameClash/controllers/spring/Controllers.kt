@@ -47,7 +47,7 @@ public interface ExampleController {
         consumes = ["application/json"],
     )
     public fun post(
-        @RequestBody @Valid bodySomeObject: SomeObject,
+        @RequestBody @Valid bodySomeObject: SomeObject?,
         @RequestParam(
             value =
                 "querySomeObject",
