@@ -101,7 +101,7 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
     override fun addPolymorphicSubTypesAnnotation(typeSpecBuilder: TypeSpec.Builder, mappings: Map<String, TypeName>) =
         typeSpecBuilder // not applicable
 
-    override fun addDeductionPolymorphicTypeAnnotation(typeSpecBuilder: TypeSpec.Builder, subTypes: List<TypeName>) =
+    override fun addPolymorphicSubTypeDeductionAnnotation(typeSpecBuilder: TypeSpec.Builder, subTypes: List<TypeName>) =
         typeSpecBuilder // not applicable — kotlinx requires a class discriminator field
 
     override fun addSubtypeMappingAnnotation(typeSpecBuilder: TypeSpec.Builder, mapping: String) =

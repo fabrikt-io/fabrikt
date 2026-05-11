@@ -53,7 +53,7 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaOfTy
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedOneOfUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinitionUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeyForSchemaName
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.requestsSubTypeDeduction
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSubTypeDeductionEnabled
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeys
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeName
 import com.cjbooms.fabrikt.util.ModelNameRegistry
@@ -241,7 +241,7 @@ class ModelGenerator(
                 allSchemas = allSchemas,
                 members = schemaInfo.schema.oneOfSchemas,
                 oneOfSuperInterfaces = schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
-                isSubTypeDeductionEnabled = schemaInfo.schema.requestsSubTypeDeduction(),
+                isSubTypeDeductionEnabled = schemaInfo.schema.isSubTypeDeductionEnabled(),
             )
 
             schemaInfo.schema.isPolymorphicSuperType() && schemaInfo.schema.isPolymorphicSubType(api) ->
@@ -310,7 +310,7 @@ class ModelGenerator(
                                     allSchemas = sourceApi.allSchemas,
                                     members = it.schema.oneOfSchemas,
                                     oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
-                                    isSubTypeDeductionEnabled = it.schema.requestsSubTypeDeduction(),
+                                    isSubTypeDeductionEnabled = it.schema.isSubTypeDeductionEnabled(),
                                 )
                             )
                         }
@@ -367,7 +367,7 @@ class ModelGenerator(
                                 allSchemas = sourceApi.allSchemas,
                                 members = it.schema.oneOfSchemas,
                                 oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
-                                isSubTypeDeductionEnabled = it.schema.requestsSubTypeDeduction(),
+                                isSubTypeDeductionEnabled = it.schema.isSubTypeDeductionEnabled(),
                             )
                         )
                     } else {
@@ -390,7 +390,7 @@ class ModelGenerator(
                                 allSchemas = sourceApi.allSchemas,
                                 members = it.schema.oneOfSchemas,
                                 oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
-                                isSubTypeDeductionEnabled = it.schema.requestsSubTypeDeduction(),
+                                isSubTypeDeductionEnabled = it.schema.isSubTypeDeductionEnabled(),
                             )
                         )
                     } else emptySet()
@@ -437,7 +437,7 @@ class ModelGenerator(
                             allSchemas = sourceApi.allSchemas,
                             members = items.oneOfSchemas,
                             oneOfSuperInterfaces = items.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
-                            isSubTypeDeductionEnabled = items.requestsSubTypeDeduction(),
+                            isSubTypeDeductionEnabled = items.isSubTypeDeductionEnabled(),
                         )
                     )
 
@@ -706,7 +706,7 @@ class ModelGenerator(
             val subTypeNames = members.map { member ->
                 toModelType(packages.base, KotlinTypeInfo.from(member, member.safeName()))
             }
-            serializationAnnotations.addDeductionPolymorphicTypeAnnotation(interfaceBuilder, subTypeNames)
+            serializationAnnotations.addPolymorphicSubTypeDeductionAnnotation(interfaceBuilder, subTypeNames)
         }
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {

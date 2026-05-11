@@ -33,7 +33,7 @@ sealed interface SerializationAnnotations {
 
     /** Discriminator-less polymorphism for the sealed super-interface. No-op for libraries
      *  without a deduction equivalent (e.g. kotlinx). */
-    fun addDeductionPolymorphicTypeAnnotation(
+    fun addPolymorphicSubTypeDeductionAnnotation(
         typeSpecBuilder: TypeSpec.Builder,
         subTypes: List<TypeName>,
     ): TypeSpec.Builder

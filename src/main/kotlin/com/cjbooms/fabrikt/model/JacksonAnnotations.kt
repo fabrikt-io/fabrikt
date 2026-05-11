@@ -45,7 +45,7 @@ object JacksonAnnotations : SerializationAnnotations {
     override fun addPolymorphicSubTypesAnnotation(typeSpecBuilder: TypeSpec.Builder, mappings: Map<String, TypeName>) =
         typeSpecBuilder.addAnnotation(polymorphicSubTypes(mappings, enumDiscriminator = null))
 
-    override fun addDeductionPolymorphicTypeAnnotation(typeSpecBuilder: TypeSpec.Builder, subTypes: List<TypeName>) =
+    override fun addPolymorphicSubTypeDeductionAnnotation(typeSpecBuilder: TypeSpec.Builder, subTypes: List<TypeName>) =
         typeSpecBuilder
             .addAnnotation(deductionPolymorphicType())
             .addAnnotation(deductionPolymorphicSubTypes(subTypes))

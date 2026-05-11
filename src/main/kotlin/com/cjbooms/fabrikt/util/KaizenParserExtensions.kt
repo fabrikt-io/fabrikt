@@ -378,7 +378,7 @@ object KaizenParserExtensions {
 
     /** Per-schema opt-in for Jackson DEDUCTION-style polymorphism. Subtypes must have
      *  distinguishing required fields or deserialization fails at runtime. */
-    fun Schema.requestsSubTypeDeduction(): Boolean =
+    fun Schema.isSubTypeDeductionEnabled(): Boolean =
         extensions[X_JACKSON_SUBTYPE_DEDUCTION] as? Boolean == true
 
     private const val X_JACKSON_SUBTYPE_DEDUCTION = "x-jackson-subtype-deduction"
