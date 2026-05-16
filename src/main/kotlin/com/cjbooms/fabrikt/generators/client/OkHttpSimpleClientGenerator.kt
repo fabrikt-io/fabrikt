@@ -274,13 +274,13 @@ data class SimpleClientOperationStatement(
 
         // First handle the array binary files with forEach loops
         parameters.filterIsInstance<MultipartParameter>().filter { it.isBinaryFile && it.schema.type == "array" }.forEach { param ->
-            this.add("\n%N.forEachIndexed { index, fileData ->", param.name)
+            this.add("\n%N?.forEachIndexed { index, fileData ->", param.name)
             this.add(
-                "\n    multipartBuilder.addFormDataPart(%S, \"file\$index\", fileData.%T(%S.%T()))",
+                $$"\n      multipartBuilder.addFormDataPart(%S, \"file$index\", fileData.%T(%S.%T()))",
                 param.partName,
                 "toRequestBody".toClassName("okhttp3.RequestBody.Companion"),
                 param.contentType,
-                "toMediaType".toClassName("okhttp3.MediaType.Companion")
+                "toMediaType".toClassName("okhttp3.MediaType.Companion"),
             )
             this.add("\n}")
         }
@@ -290,12 +290,17 @@ data class SimpleClientOperationStatement(
             when {
                 param.isBinaryFile -> {
                     this.add(
-                        "\nmultipartBuilder.addFormDataPart(%S, \"file\", %N.%T(%S.%T()))",
-                        param.partName,
+                        """
+                            
+                            %N?.let {
+                                multipartBuilder.addFormDataPart(%S, "file", it.%T(%S.%T()))
+                            }
+                        """.trimIndent(),
                         param.name,
+                        param.partName,
                         "toRequestBody".toClassName("okhttp3.RequestBody.Companion"),
                         param.contentType,
-                        "toMediaType".toClassName("okhttp3.MediaType.Companion")
+                        "toMediaType".toClassName("okhttp3.MediaType.Companion"),
                     )
                 }
                 param.contentType == "application/json" -> {

@@ -1,7 +1,9 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 val fabrikt: Configuration by configurations.creating
 
 val generationDir = "$buildDir/generated"
-val apiFile = "${projectDir}/api.yaml"
+val apiFile = "${rootProject.projectDir}/src/test/resources/examples/multipartUpload/api.yaml"
 
 sourceSets {
     main { java.srcDirs("$generationDir/src/main/kotlin") }
@@ -17,25 +19,21 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-val jacksonVersion: String by rootProject.extra
-val junitVersion: String by rootProject.extra
-
 dependencies {
-    implementation("com.squareup.okhttp3:okhttp:4.10.0")
-    implementation("jakarta.validation:jakarta.validation-api:3.0.2")
-    implementation("javax.validation:validation-api:2.0.1.Final")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
+    implementation(platform(libs.jackson.bom))
+    implementation(libs.okhttp)
+    implementation(libs.resilience4j.circuitbreaker)
+    implementation(libs.jakarta.validation.api)
+    implementation(libs.validation.api)
+    implementation(libs.jackson.module.kotlin)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.core)
+    implementation(libs.jackson.annotations)
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:$junitVersion")
-    testImplementation("org.assertj:assertj-core:3.24.2")
-    testImplementation("org.wiremock:wiremock:3.3.1")
-    testImplementation("com.marcinziolo:kotlin-wiremock:2.1.1")
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.bundles.wiremock)
 }
 
 tasks {
@@ -45,20 +43,20 @@ tasks {
         outputs.dir(generationDir)
         outputs.cacheIf { true }
         classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
-        mainClass.set("com.cjbooms.fabrikt.cli.CodeGen")
+        mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", generationDir,
             "--base-package", "com.example.multipart",
             "--api-file", apiFile,
             "--targets", "http_models",
-            "--targets", "client"
+            "--targets", "client",
         )
         dependsOn(":jar")
         dependsOn(":shadowJar")
     }
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.jvmTarget = "17"
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         dependsOn(generateCode)
     }
 

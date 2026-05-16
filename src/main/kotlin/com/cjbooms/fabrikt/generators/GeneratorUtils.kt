@@ -223,16 +223,17 @@ object GeneratorUtils {
                     )
                 }
                 .distinctBy { it.schema.safeName().toKotlinParameterName().ifEmpty { it.schema.toVarName() } }
-        }.reduceOrNull { acc, bodyParam ->
-            BodyParameter(
-                oasName = "body",
-                description = acc.description,
-                type = acc.type,
-                schema = acc.schema,
-                isRequired = acc.isRequired && bodyParam.isRequired,
-            )
+                .reduceOrNull { acc, bodyParam ->
+                    BodyParameter(
+                        oasName = "body",
+                        description = acc.description,
+                        type = acc.type,
+                        schema = acc.schema,
+                        isRequired = acc.isRequired && bodyParam.isRequired,
+                    )
+                }
+                ?.let { listOf(it) } ?: emptyList()
         }
-            ?.let { listOf(it) } ?: emptyList()
 
         val parameters = mergeParameters(pathParameters, parameters)
             .map {
@@ -258,21 +259,21 @@ object GeneratorUtils {
 
         return parameters.map { p ->
             when (p) {
+                is MultipartParameter -> MultipartParameter(
+                    oasName = "multipart_${p.oasName}".toKotlinParameterName(),
+                    description = p.description,
+                    type = p.type,
+                    schema = p.schema,
+                    partName = p.partName,
+                    isBinaryFile = p.isBinaryFile,
+                    contentType = p.contentType,
+                )
                 is BodyParameter -> BodyParameter(
                     oasName = "body_${p.oasName}".toKotlinParameterName(),
                     description = p.description,
                     type = p.type,
                     isRequired = p.isRequired,
                     schema = p.schema,
-                )
-                is MultipartParameter -> MultipartParameter(
-                    "multipart_${p.oasName}".toKotlinParameterName(),
-                    p.description,
-                    p.type,
-                    p.schema,
-                    p.partName,
-                    p.isBinaryFile,
-                    p.contentType,
                 )
                 is RequestParameter -> RequestParameter(
                     oasName = "${p.parameterLocation}_${p.oasName}".toKotlinParameterName(),
