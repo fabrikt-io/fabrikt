@@ -20,6 +20,7 @@ import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.KotlinTypes
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
@@ -100,6 +101,9 @@ class MicronautControllerInterfaceGenerator(
         parameters
             .map {
                 when (it) {
+                    is MultipartParameter ->
+                        throw UnsupportedOperationException("Multipart parameters are not supported for Micronaut controllers")
+
                     is BodyParameter ->
                         it
                             .toParameterSpecBuilder()

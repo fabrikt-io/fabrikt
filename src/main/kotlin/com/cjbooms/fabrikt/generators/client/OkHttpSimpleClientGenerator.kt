@@ -3,6 +3,8 @@ package com.cjbooms.fabrikt.generators.client
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.GeneratorUtils.functionName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaType
+import com.cjbooms.fabrikt.generators.GeneratorUtils.getMultipartSchema
+import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipartRequestBody
 import com.cjbooms.fabrikt.generators.GeneratorUtils.primaryPropertiesConstructor
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toClassName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKdoc
@@ -12,6 +14,7 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_QUE
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveMultipartParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
@@ -23,6 +26,7 @@ import com.cjbooms.fabrikt.model.HandlebarsTemplates
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
@@ -213,16 +217,30 @@ data class SimpleClientOperationStatement(
     }
 
     private fun CodeBlock.Builder.addRequestStatement(): CodeBlock.Builder {
-        this.add("\nval request: %T = %T.Builder()", "Request".toClassName("okhttp3"), "Request".toClassName("okhttp3"))
-        this.add("\n.url(httpUrl)\n.headers(httpHeaders)")
-        when (val op = verb.toUpperCase()) {
-            "PUT" -> this.addRequestSerializerStatement("put")
-            "POST" -> this.addRequestSerializerStatement("post")
-            "PATCH" -> this.addRequestSerializerStatement("patch")
-            "HEAD" -> this.add("\n.head()")
-            "GET" -> this.add("\n.get()")
-            "DELETE" -> this.add("\n.delete()")
-            else -> throw NotImplementedError("API operation $op is not supported")
+        if (operation.hasMultipartRequestBody()) {
+            // For multipart requests, build the multipart body first, then the request
+            this.addMultipartBodyStatement()
+            this.add("\nval request: %T = Request.Builder()", "Request".toClassName("okhttp3"))
+            this.add("\n.url(httpUrl)\n.headers(httpHeaders)")
+            when (val op = verb.toUpperCase()) {
+                "PUT" -> this.add("\n.put(multipartBody)")
+                "POST" -> this.add("\n.post(multipartBody)")
+                "PATCH" -> this.add("\n.patch(multipartBody)")
+                else -> throw NotImplementedError("API operation $op is not supported for multipart")
+            }
+        } else {
+            // Regular requests
+            this.add("\nval request: %T = %T.Builder()", "Request".toClassName("okhttp3"), "Request".toClassName("okhttp3"))
+            this.add("\n.url(httpUrl)\n.headers(httpHeaders)")
+            when (val op = verb.toUpperCase()) {
+                "PUT" -> this.addRequestSerializerStatement("put")
+                "POST" -> this.addRequestSerializerStatement("post")
+                "PATCH" -> this.addRequestSerializerStatement("patch")
+                "HEAD" -> this.add("\n.head()")
+                "GET" -> this.add("\n.get()")
+                "DELETE" -> this.add("\n.delete()")
+                else -> throw NotImplementedError("API operation $op is not supported")
+            }
         }
         return this.add("\n.build()\n")
     }
@@ -248,5 +266,60 @@ data class SimpleClientOperationStatement(
                 "toMediaType".toClassName("okhttp3.MediaType.Companion")
             )
         } ?: this.add("\n.%N(ByteArray(0).%T())", verb, toRequestBody)
+    }
+
+    private fun CodeBlock.Builder.addMultipartBodyStatement() {
+        this.add("\nval multipartBuilder = %T()", "MultipartBody.Builder".toClassName("okhttp3"))
+        this.add("\n.setType(%T.FORM)", "MultipartBody".toClassName("okhttp3"))
+
+        // First handle the array binary files with forEach loops
+        parameters.filterIsInstance<MultipartParameter>().filter { it.isBinaryFile && it.schema.type == "array" }.forEach { param ->
+            this.add("\n%N?.forEachIndexed { index, fileData ->", param.name)
+            this.add(
+                $$"\n      multipartBuilder.addFormDataPart(%S, \"file$index\", fileData.%T(%S.%T()))",
+                param.partName,
+                "toRequestBody".toClassName("okhttp3.RequestBody.Companion"),
+                param.contentType,
+                "toMediaType".toClassName("okhttp3.MediaType.Companion"),
+            )
+            this.add("\n}")
+        }
+
+        // Then handle other parameters using multipartBuilder directly
+        parameters.filterIsInstance<MultipartParameter>().filter { !(it.isBinaryFile && it.schema.type == "array") }.forEach { param ->
+            when {
+                param.isBinaryFile -> {
+                    this.add(
+                        """
+                            
+                            %N?.let {
+                                multipartBuilder.addFormDataPart(%S, "file", it.%T(%S.%T()))
+                            }
+                        """.trimIndent(),
+                        param.name,
+                        param.partName,
+                        "toRequestBody".toClassName("okhttp3.RequestBody.Companion"),
+                        param.contentType,
+                        "toMediaType".toClassName("okhttp3.MediaType.Companion"),
+                    )
+                }
+                param.contentType == "application/json" -> {
+                    this.add(
+                        "\nmultipartBuilder.addFormDataPart(%S, objectMapper.writeValueAsString(%N))",
+                        param.partName,
+                        param.name
+                    )
+                }
+                else -> {
+                    this.add(
+                        "\nmultipartBuilder.addFormDataPart(%S, %N.toString())",
+                        param.partName,
+                        param.name
+                    )
+                }
+            }
+        }
+
+        this.add("\nval multipartBody = multipartBuilder.build()")
     }
 }
