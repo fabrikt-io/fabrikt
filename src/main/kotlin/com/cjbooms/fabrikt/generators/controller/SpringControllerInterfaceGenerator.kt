@@ -144,8 +144,8 @@ class SpringControllerInterfaceGenerator(
             type = when {
                 parameter.isBinaryFile && parameter.schema.type == "array" -> springMultipartFileTypeList
                 parameter.isBinaryFile -> springMultipartFileType
-                else -> parameter.type.copy(nullable = !parameter.isRequired)
-            },
+                else -> parameter.type
+            }.copy(nullable = !parameter.isRequired),
         )
 
     private fun FunSpec.Builder.addSpringFunAnnotation(op: Operation, verb: String, path: String): FunSpec.Builder {
