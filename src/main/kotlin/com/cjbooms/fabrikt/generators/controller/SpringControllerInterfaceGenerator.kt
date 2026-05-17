@@ -95,7 +95,7 @@ class SpringControllerInterfaceGenerator(
                 when (it) {
                     is MultipartParameter ->
                         toParameterSpecBuilder(it)
-                            .addAnnotation(SpringAnnotations.requestBodyBuilder().build())
+                            .addSpringParamAnnotation(it)
                             .maybeAddAnnotation(validationAnnotations.parameterValid())
                             .build()
 
@@ -144,8 +144,8 @@ class SpringControllerInterfaceGenerator(
             type = when {
                 parameter.isBinaryFile && parameter.schema.type == "array" -> springMultipartFileTypeList
                 parameter.isBinaryFile -> springMultipartFileType
-                else -> parameter.type
-            }.copy(nullable = !parameter.isRequired)
+                else -> parameter.type.copy(nullable = !parameter.isRequired)
+            },
         )
 
     private fun FunSpec.Builder.addSpringFunAnnotation(op: Operation, verb: String, path: String): FunSpec.Builder {
@@ -198,6 +198,16 @@ class SpringControllerInterfaceGenerator(
                 this.addAnnotation(SpringAnnotations.dateTimeFormat(SpringImports.DateTimeFormat.ISO_DATE_TIME))
             }
 
+            this.addAnnotation(it.build())
+        }
+
+    private fun ParameterSpec.Builder.addSpringParamAnnotation(parameter: MultipartParameter): ParameterSpec.Builder =
+        when (parameter.isBinaryFile) {
+            true -> SpringAnnotations.requestPartBuilder()
+            false -> SpringAnnotations.requestParamBuilder()
+        }.let {
+            it.addMember("value = %S", parameter.oasName)
+            it.addMember("required = %L", parameter.isRequired)
             this.addAnnotation(it.build())
         }
 
