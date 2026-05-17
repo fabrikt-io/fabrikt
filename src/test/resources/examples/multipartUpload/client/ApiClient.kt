@@ -36,8 +36,8 @@ public class ApiUploadClient(
      */
     @Throws(ApiException::class)
     public fun uploadFile(
-        `file`: ByteArray?,
-        metadata: FileMetadata?,
+        `file`: ByteArray,
+        metadata: FileMetadata,
         tags: List<String>?,
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
@@ -92,7 +92,7 @@ public class ApiUploadSimpleClient(
      */
     @Throws(ApiException::class)
     public fun uploadSingleFile(
-        `file`: ByteArray?,
+        `file`: ByteArray,
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<SimpleUploadResult> {
@@ -146,8 +146,8 @@ public class ApiUploadMultipleClient(
      */
     @Throws(ApiException::class)
     public fun uploadMultipleFiles(
-        files: List<ByteArray>?,
-        commonMetadata: FileMetadata?,
+        files: List<ByteArray>,
+        commonMetadata: FileMetadata,
         description: String?,
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
