@@ -2,37 +2,16 @@ package com.cjbooms.fabrikt.generators
 
 import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.generators.model.ModelGenerator.Companion.toModelType
-import com.cjbooms.fabrikt.model.BodyParameter
-import com.cjbooms.fabrikt.model.HeaderParam
-import com.cjbooms.fabrikt.model.IncomingParameter
-import com.cjbooms.fabrikt.model.KotlinTypeInfo
-import com.cjbooms.fabrikt.model.PathParam
-import com.cjbooms.fabrikt.model.QueryParam
-import com.cjbooms.fabrikt.model.MultipartParameter
-import com.cjbooms.fabrikt.model.RequestParameter
+import com.cjbooms.fabrikt.model.*
 import com.cjbooms.fabrikt.util.GroupingStrategy
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeName
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.NormalisedString.toKotlinParameterName
 import com.cjbooms.fabrikt.util.capitalized
 import com.cjbooms.fabrikt.util.decapitalized
-import com.reprezen.kaizen.oasparser.model3.MediaType
-import com.reprezen.kaizen.oasparser.model3.Operation
-import com.reprezen.kaizen.oasparser.model3.Parameter
-import com.reprezen.kaizen.oasparser.model3.RequestBody
-import com.reprezen.kaizen.oasparser.model3.Response
-import com.reprezen.kaizen.oasparser.model3.Schema
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.ParameterSpec
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.asTypeName
+import com.reprezen.kaizen.oasparser.model3.*
+import com.squareup.kotlinpoet.*
 import java.util.function.Predicate
-import kotlin.collections.component1
-import kotlin.collections.component2
 
 object GeneratorUtils {
     /**
@@ -192,7 +171,7 @@ object GeneratorUtils {
                 multipartSchema.properties?.map { (partName, partSchema) ->
                     val isBinaryFile = (partSchema.format == "binary" && partSchema.type == "string") ||
                             (partSchema.type == "array" && partSchema.itemsSchema?.format == "binary" && partSchema.itemsSchema?.type == "string")
-                    val type = toModelType(basePackage, KotlinTypeInfo.from(partSchema))
+                    val type = toModelType(basePackage, KotlinTypeInfo.from(partSchema), !multipartSchema.requiredFields.contains(partName))
                     val contentType = when {
                         isBinaryFile -> "application/octet-stream"
                         partSchema.type == "string" -> "text/plain"
@@ -206,7 +185,8 @@ object GeneratorUtils {
                         schema = partSchema,
                         partName = partName,
                         isBinaryFile = isBinaryFile,
-                        contentType = contentType
+                        contentType = contentType,
+                        isRequired = !type.isNullable,
                     )
                 } ?: emptyList()
             } ?: emptyList()

@@ -34,7 +34,7 @@ public interface ApiUploadController {
     )
     public fun uploadFile(
         @RequestBody @Valid `file`: MultipartFile,
-        @RequestBody @Valid metadata: FileMetadata?,
+        @RequestBody @Valid metadata: FileMetadata,
         @RequestBody @Valid tags: List<String>?,
     ): ResponseEntity<UploadResult>
 }
@@ -78,7 +78,7 @@ public interface ApiUploadMultipleController {
     )
     public fun uploadMultipleFiles(
         @RequestBody @Valid files: List<MultipartFile>,
-        @RequestBody @Valid commonMetadata: FileMetadata?,
+        @RequestBody @Valid commonMetadata: FileMetadata,
         @RequestBody @Valid description: String?,
     ): ResponseEntity<List<UploadResult>>
 }
