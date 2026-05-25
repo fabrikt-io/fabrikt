@@ -115,18 +115,23 @@ object ClientGeneratorUtils {
     ): FunSpec.Builder {
         val specs = parameters.map {
             val builder = it.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings = true)
-            if (it is RequestParameter) {
-                if (it.defaultValue != null) OasDefault.from(it.typeInfo, it.type, it.defaultValue)
-                    ?.let { t -> builder.defaultValue(t.getDefault()) }
-                else if (!it.isRequired) builder.defaultValue("null")
-                annotateRequestParameterWith?.invoke(it)?.let { annotationSpec ->
-                    builder.addAnnotation(annotationSpec)
+            when (it) {
+                is RequestParameter -> {
+                    if (it.defaultValue != null) OasDefault.from(it.typeInfo, it.type, it.defaultValue)
+                        ?.let { t -> builder.defaultValue(t.getDefault()) }
+                    else if (!it.isRequired) builder.defaultValue("null")
+                    annotateRequestParameterWith?.invoke(it)?.let { annotationSpec ->
+                        builder.addAnnotation(annotationSpec)
+                    }
                 }
-            }
-            if (it is BodyParameter) {
-                annotateBodyParameterWith?.invoke(it)?.let { annotationSpec ->
-                    builder.addAnnotation(annotationSpec)
+
+                is BodyParameter -> {
+                    annotateBodyParameterWith?.invoke(it)?.let { annotationSpec ->
+                        builder.addAnnotation(annotationSpec)
+                    }
                 }
+
+                is MultipartParameter -> {}
             }
             builder.build()
         }
