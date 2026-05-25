@@ -89,19 +89,18 @@ open class BodyParameter(
     type: TypeName,
     isRequired: Boolean = false,
     open val schema: Schema
-) :
-    IncomingParameter(oasName, description, type, isRequired)
+) : IncomingParameter(oasName, description, type, isRequired)
 
 class MultipartParameter(
     oasName: String,
     description: String?,
     type: TypeName,
     isRequired: Boolean = false,
-    override val schema: Schema,
+    val schema: Schema,
     val partName: String,
     val isBinaryFile: Boolean = false,
     val contentType: String? = null
-) : BodyParameter(oasName, description, type, isRequired, schema)
+) : IncomingParameter(oasName, description, type, isRequired)
 
 class RequestParameter(
     oasName: String,
