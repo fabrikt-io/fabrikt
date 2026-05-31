@@ -56,11 +56,11 @@ public class ApiUploadClient(
             MultipartBody
                 .Builder()
                 .setType(MultipartBody.FORM)
-        `file`?.let {
-            multipartBuilder.addFormDataPart("file", it.second, it.first)
-        }
+        multipartBuilder.addFormDataPart("file", `file`.second, `file`.first)
         multipartBuilder.addFormDataPart("metadata", objectMapper.writeValueAsString(metadata))
-        multipartBuilder.addFormDataPart("tags", objectMapper.writeValueAsString(tags))
+        tags?.let {
+            multipartBuilder.addFormDataPart("tags", objectMapper.writeValueAsString(tags))
+        }
         val multipartBody = multipartBuilder.build()
         val request: Request =
             Request
@@ -106,9 +106,7 @@ public class ApiUploadSimpleClient(
             MultipartBody
                 .Builder()
                 .setType(MultipartBody.FORM)
-        `file`?.let {
-            multipartBuilder.addFormDataPart("file", it.second, it.first)
-        }
+        multipartBuilder.addFormDataPart("file", `file`.second, `file`.first)
         val multipartBody = multipartBuilder.build()
         val request: Request =
             Request
@@ -165,7 +163,9 @@ public class ApiUploadMultipleClient(
             "commonMetadata",
             objectMapper.writeValueAsString(commonMetadata),
         )
-        multipartBuilder.addFormDataPart("description", description.toString())
+        description?.let {
+            multipartBuilder.addFormDataPart("description", description.toString())
+        }
         val multipartBody = multipartBuilder.build()
         val request: Request =
             Request

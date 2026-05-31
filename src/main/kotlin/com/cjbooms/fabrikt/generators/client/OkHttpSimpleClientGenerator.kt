@@ -303,34 +303,32 @@ data class SimpleClientOperationStatement(
 
         // Then handle other parameters using multipartBuilder directly
         parameters.filterIsInstance<MultipartParameter>().filter { !(it.isBinaryFile && it.schema.type == "array") }.forEach { param ->
+            if (!param.isRequired) this.add("\n%N?.let {", param.name)
             when {
                 param.isBinaryFile -> {
                     this.add(
-                        """
-                            
-                            %N?.let {
-                                multipartBuilder.addFormDataPart(%S, it.second, it.first)
-                            }
-                        """.trimIndent(),
-                        param.name,
+                        "\n    multipartBuilder.addFormDataPart(%S, %N.second, %N.first)",
                         param.partName,
+                        param.name,
+                        param.name
                     )
                 }
                 param.contentType == "application/json" -> {
                     this.add(
-                        "\nmultipartBuilder.addFormDataPart(%S, objectMapper.writeValueAsString(%N))",
+                        "\n    multipartBuilder.addFormDataPart(%S, objectMapper.writeValueAsString(%N))",
                         param.partName,
                         param.name
                     )
                 }
                 else -> {
                     this.add(
-                        "\nmultipartBuilder.addFormDataPart(%S, %N.toString())",
+                        "\n    multipartBuilder.addFormDataPart(%S, %N.toString())",
                         param.partName,
                         param.name
                     )
                 }
             }
+            if (!param.isRequired) this.add("\n}")
         }
 
         this.add("\nval multipartBody = multipartBuilder.build()")
