@@ -3,7 +3,6 @@ package com.cjbooms.fabrikt.generators.client
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.GeneratorUtils.functionName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaType
-import com.cjbooms.fabrikt.generators.GeneratorUtils.getMultipartSchema
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipartRequestBody
 import com.cjbooms.fabrikt.generators.GeneratorUtils.primaryPropertiesConstructor
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toClassName
@@ -14,7 +13,6 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_QUE
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
-import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveMultipartParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
@@ -45,12 +43,21 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 import java.nio.file.Path
 import com.cjbooms.fabrikt.util.toUpperCase
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.asClassName
 
 class OkHttpSimpleClientGenerator(
     private val packages: Packages,
     private val api: SourceApi,
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE
 ) {
+
+    private val okRequestBodyType = ClassName.bestGuess("okhttp3.RequestBody")
+    private val filenameType = String::class.asClassName()
+    private val okMultipartFileType = Pair::class.asClassName().parameterizedBy(okRequestBodyType, filenameType)
+    private val okMultipartFileTypeList = List::class.asClassName().parameterizedBy(okMultipartFileType)
+
     fun generateDynamicClientCode(): Collection<ClientType> {
         return api.openApi3.groupByPathSegment().map { (resourceName, paths) ->
             val funcSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
@@ -64,7 +71,19 @@ class OkHttpSimpleClientGenerator(
                             AnnotationSpec.builder(Throws::class)
                                 .addMember("%T::class", "ApiException".toClassName(packages.client)).build()
                         )
-                        .addIncomingParameters(parameters)
+                        .addIncomingParameters(parameters, multipartParameterToSpecBuilder = {
+                            ParameterSpec.builder(
+                                name = when {
+                                    it.isBinaryFile -> it.name
+                                    else -> it.name
+                                },
+                                type = when {
+                                    it.isBinaryFile && it.schema.type == "array" -> okMultipartFileTypeList
+                                    it.isBinaryFile -> okMultipartFileType
+                                    else -> it.type
+                                }.copy(nullable = !it.isRequired),
+                            )
+                        })
                         .addParameter(
                             ParameterSpec.builder(
                                 ADDITIONAL_HEADERS_PARAMETER_NAME,
@@ -184,7 +203,7 @@ data class SimpleClientOperationStatement(
                         "queryParam".toClassName(packages.client),
                         it.originalName,
                         it.name,
-                        if (it.explode == null || it.explode == true) "true" else "false"
+                        if (it.explode == null || it.explode) "true" else "false"
                     )
                     else -> this.add(
                         "\n.%T(%S, %N)",
@@ -276,11 +295,8 @@ data class SimpleClientOperationStatement(
         parameters.filterIsInstance<MultipartParameter>().filter { it.isBinaryFile && it.schema.type == "array" }.forEach { param ->
             this.add("\n%N?.forEachIndexed { index, fileData ->", param.name)
             this.add(
-                $$"\n      multipartBuilder.addFormDataPart(%S, \"file$index\", fileData.%T(%S.%T()))",
+                "\n      multipartBuilder.addFormDataPart(%S, fileData.second, fileData.first)",
                 param.partName,
-                "toRequestBody".toClassName("okhttp3.RequestBody.Companion"),
-                param.contentType,
-                "toMediaType".toClassName("okhttp3.MediaType.Companion"),
             )
             this.add("\n}")
         }
@@ -293,14 +309,11 @@ data class SimpleClientOperationStatement(
                         """
                             
                             %N?.let {
-                                multipartBuilder.addFormDataPart(%S, "file", it.%T(%S.%T()))
+                                multipartBuilder.addFormDataPart(%S, it.second, it.first)
                             }
                         """.trimIndent(),
                         param.name,
                         param.partName,
-                        "toRequestBody".toClassName("okhttp3.RequestBody.Companion"),
-                        param.contentType,
-                        "toMediaType".toClassName("okhttp3.MediaType.Companion"),
                     )
                 }
                 param.contentType == "application/json" -> {

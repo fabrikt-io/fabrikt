@@ -28,6 +28,7 @@ import com.reprezen.kaizen.oasparser.model3.Schema
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.asTypeName
@@ -112,26 +113,33 @@ object ClientGeneratorUtils {
         parameters: List<IncomingParameter>,
         annotateRequestParameterWith: ((parameter: RequestParameter) -> AnnotationSpec?)? = null,
         annotateBodyParameterWith: ((parameter: BodyParameter) -> AnnotationSpec?)? = null,
+        multipartParameterToSpecBuilder: ((parameter: MultipartParameter) -> ParameterSpec.Builder)? = null
     ): FunSpec.Builder {
         val specs = parameters.map {
-            val builder = it.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings = true)
-            when (it) {
+            val builder = when (it) {
                 is RequestParameter -> {
+                    val builder = it.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings = true)
                     if (it.defaultValue != null) OasDefault.from(it.typeInfo, it.type, it.defaultValue)
                         ?.let { t -> builder.defaultValue(t.getDefault()) }
                     else if (!it.isRequired) builder.defaultValue("null")
                     annotateRequestParameterWith?.invoke(it)?.let { annotationSpec ->
                         builder.addAnnotation(annotationSpec)
                     }
+                    builder
                 }
 
                 is BodyParameter -> {
+                    val builder = it.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings = true)
                     annotateBodyParameterWith?.invoke(it)?.let { annotationSpec ->
                         builder.addAnnotation(annotationSpec)
                     }
+                    builder
                 }
 
-                is MultipartParameter -> {}
+                is MultipartParameter -> {
+                    multipartParameterToSpecBuilder?.invoke(it) ?:
+                        it.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings = true)
+                }
             }
             builder.build()
         }

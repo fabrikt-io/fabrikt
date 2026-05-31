@@ -8,13 +8,12 @@ import examples.multipartUpload.models.UploadResult
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.MultipartBody.Builder
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import kotlin.ByteArray
+import okhttp3.RequestBody
+import kotlin.Pair
 import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.List
@@ -36,7 +35,7 @@ public class ApiUploadClient(
      */
     @Throws(ApiException::class)
     public fun uploadFile(
-        `file`: ByteArray,
+        `file`: Pair<RequestBody, String>,
         metadata: FileMetadata,
         tags: List<String>?,
         additionalHeaders: Map<String, String> = emptyMap(),
@@ -58,11 +57,7 @@ public class ApiUploadClient(
                 .Builder()
                 .setType(MultipartBody.FORM)
         `file`?.let {
-            multipartBuilder.addFormDataPart(
-                "file",
-                "file",
-                it.toRequestBody("application/octet-stream".toMediaType()),
-            )
+            multipartBuilder.addFormDataPart("file", it.second, it.first)
         }
         multipartBuilder.addFormDataPart("metadata", objectMapper.writeValueAsString(metadata))
         multipartBuilder.addFormDataPart("tags", objectMapper.writeValueAsString(tags))
@@ -92,7 +87,7 @@ public class ApiUploadSimpleClient(
      */
     @Throws(ApiException::class)
     public fun uploadSingleFile(
-        `file`: ByteArray,
+        `file`: Pair<RequestBody, String>,
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<SimpleUploadResult> {
@@ -112,11 +107,7 @@ public class ApiUploadSimpleClient(
                 .Builder()
                 .setType(MultipartBody.FORM)
         `file`?.let {
-            multipartBuilder.addFormDataPart(
-                "file",
-                "file",
-                it.toRequestBody("application/octet-stream".toMediaType()),
-            )
+            multipartBuilder.addFormDataPart("file", it.second, it.first)
         }
         val multipartBody = multipartBuilder.build()
         val request: Request =
@@ -146,7 +137,7 @@ public class ApiUploadMultipleClient(
      */
     @Throws(ApiException::class)
     public fun uploadMultipleFiles(
-        files: List<ByteArray>,
+        files: List<Pair<RequestBody, String>>,
         commonMetadata: FileMetadata,
         description: String?,
         additionalHeaders: Map<String, String> = emptyMap(),
@@ -168,11 +159,7 @@ public class ApiUploadMultipleClient(
                 .Builder()
                 .setType(MultipartBody.FORM)
         files?.forEachIndexed { index, fileData ->
-            multipartBuilder.addFormDataPart(
-                "files",
-                "file$index",
-                fileData.toRequestBody("application/octet-stream".toMediaType()),
-            )
+            multipartBuilder.addFormDataPart("files", fileData.second, fileData.first)
         }
         multipartBuilder.addFormDataPart(
             "commonMetadata",

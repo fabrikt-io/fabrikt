@@ -16,7 +16,9 @@ import com.marcinziolo.kotlin.wiremock.contains
 import com.marcinziolo.kotlin.wiremock.like
 import com.marcinziolo.kotlin.wiremock.post
 import com.marcinziolo.kotlin.wiremock.returns
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.net.ServerSocket
 import java.time.OffsetDateTime
+import kotlin.text.toByteArray
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class MultipartUploadTest {
@@ -78,7 +81,7 @@ class MultipartUploadTest {
 
         // Act
         val result = uploadClient.uploadFile(
-            file = fileContent,
+            file = fileContent.toRequestBody("image/png".toMediaType()) to "image1.png",
             metadata = metadata,
             tags = listOf("test", "example")
         )
@@ -135,8 +138,8 @@ class MultipartUploadTest {
         }
 
         val files = listOf(
-            "Content of file 1".toByteArray(),
-            "Content of file 2 is longer".toByteArray()
+            "Content of file 1".toByteArray().toRequestBody("image/png".toMediaType()) to "image1.png",
+            "Content of file 2 is longer".toByteArray().toRequestBody("image/jpeg".toMediaType()) to "image2.jpeg",
         )
         val commonMetadata = FileMetadata(
             name = "batch-upload",
@@ -201,7 +204,7 @@ class MultipartUploadTest {
 
         // Act
         val result = uploadClient.uploadFile(
-            file = fileContent,
+            file = fileContent.toRequestBody("image/png".toMediaType()) to "image1.png",
             metadata = metadata,
             tags = emptyList()
         )
@@ -256,7 +259,7 @@ class MultipartUploadTest {
             body = mapper.writeValueAsString(expectedResponse)
         }
 
-        val fileContent = "Simple file content".toByteArray()
+        val fileContent = "Simple file content".toByteArray().toRequestBody("image/png".toMediaType()) to "image1.png"
 
         // Act
         val result = uploadSimpleClient.uploadSingleFile(file = fileContent)
