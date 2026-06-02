@@ -76,6 +76,7 @@ class ModelGeneratorTest {
         "inlinedEnumParameter",
         "unsupportedInlinedDefinitions",
         "requestBodiesSchema",
+        "normalizedNameConflation",
     )
 
     @BeforeEach
