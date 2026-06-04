@@ -13,6 +13,7 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_QUE
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
@@ -28,7 +29,6 @@ import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupByPathSegment
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
@@ -49,7 +49,7 @@ class OkHttpSimpleClientGenerator(
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE
 ) {
     fun generateDynamicClientCode(options: Set<ClientCodeGenOptionType> = emptySet()): Collection<ClientType> {
-        return api.openApi3.groupByPathSegment().map { (resourceName, paths) ->
+        return api.groupedClientPaths(options).map { (resourceName, paths) ->
             val funcSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
                 path.operations.map { (verb, operation) ->
                     val parameters = deriveClientParameters(path, operation, packages.base)

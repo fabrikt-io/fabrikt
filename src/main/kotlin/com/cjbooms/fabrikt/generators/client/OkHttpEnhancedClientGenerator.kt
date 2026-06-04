@@ -10,6 +10,7 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_HEA
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.enhancedClientName
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
@@ -20,7 +21,6 @@ import com.cjbooms.fabrikt.model.HandlebarsTemplates
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupByPathSegment
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
@@ -42,11 +42,11 @@ class OkHttpEnhancedClientGenerator(
 
     fun generateDynamicClientCode(options: Set<ClientCodeGenOptionType>): Collection<ClientType> =
         options.ifResilience4jIsEnabled {
-            generateResilience4jClientCode()
+            generateResilience4jClientCode(options)
         }
 
-    private fun generateResilience4jClientCode(): Collection<ClientType> {
-        return api.openApi3.groupByPathSegment().map { (resourceName, paths) ->
+    private fun generateResilience4jClientCode(options: Set<ClientCodeGenOptionType>): Collection<ClientType> {
+        return api.groupedClientPaths(options).map { (resourceName, paths) ->
             val funSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
                 path.operations.map { (verb, operation) ->
                     val parameters = deriveClientParameters(path, operation, packages.base)
