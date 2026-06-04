@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.generators
 
+import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ClientCodeGenTargetType
 import com.cjbooms.fabrikt.cli.CodeGenerationType
 import com.cjbooms.fabrikt.cli.SerializationLibrary
@@ -29,6 +30,9 @@ class KtorClientGeneratorTest {
         "parameterNameClash",
     )
 
+    @Suppress("unused")
+    private fun groupedClientTestCases(): Stream<String> = Stream.concat(fullApiTestCases(), Stream.of("tagGrouping"))
+
     @BeforeEach
     fun init() {
         MutableSettings.updateSettings(
@@ -41,19 +45,19 @@ class KtorClientGeneratorTest {
     }
 
     @ParameterizedTest
-    @MethodSource("fullApiTestCases")
+    @MethodSource("groupedClientTestCases")
     fun `correct Ktor client code is generated`(testCaseName: String) {
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
 
-        val expectedClient = "/examples/$testCaseName/client/ktor/KtorClient.kt"
+        val expectedClient = expectedClientPath(testCaseName, "KtorClient.kt")
 
         val clientCode = KtorClientGenerator(
             packages,
             sourceApi
         )
-            .generate(emptySet())
+            .generate(optionsFor(testCaseName))
             .clients
             .toSingleFile()
 
@@ -79,6 +83,16 @@ class KtorClientGeneratorTest {
 
         assertThatGenerated(apiModels.content).isEqualTo(expectedApiModels)
     }
+
+    private fun optionsFor(testCaseName: String): Set<ClientCodeGenOptionType> =
+        if (testCaseName == "tagGrouping") setOf(ClientCodeGenOptionType.GROUP_BY_TAG) else emptySet()
+
+    private fun expectedClientPath(testCaseName: String, fileName: String): String =
+        if (testCaseName == "tagGrouping") {
+            "/examples/$testCaseName/client/ktor/grouped/$fileName"
+        } else {
+            "/examples/$testCaseName/client/ktor/$fileName"
+        }
 
     @Test
     fun `operationId with dots is sanitized to valid Kotlin function name`() {
