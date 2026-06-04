@@ -16,6 +16,7 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.optionallyParameterizeWithResponseEntity
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.metadata.OpenFeignAnnotations
+import com.cjbooms.fabrikt.generators.client.metadata.OpenFeignImports
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
 import com.cjbooms.fabrikt.model.GeneratedFile
@@ -37,6 +38,7 @@ import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.buildCodeBlock
+import java.util.logging.Logger
 
 class OpenFeignInterfaceGenerator(
     private val packages: Packages,
@@ -143,6 +145,10 @@ class OpenFeignInterfaceGenerator(
         private val verb: String,
         private val parameters: List<IncomingParameter>,
     ) {
+        companion object {
+            private val logger = Logger.getGlobal()
+        }
+
         /**
          * Gives the url path so that it can be used as input for OpenFeign's @RequestLine.
          * For query and path variables, the deduplicated parameter name will be used instead of the original name.
@@ -190,9 +196,33 @@ class OpenFeignInterfaceGenerator(
 
         fun build(): AnnotationSpec {
             val urlPath = buildUrlPath()
-            return OpenFeignAnnotations.requestLineBuilder()
+            val builder = OpenFeignAnnotations.requestLineBuilder()
                 .addMember("%S", "${verb.toUpperCase()} $urlPath")
-                .build()
+
+            val arrayQueryParams = parameters
+                .filterIsInstance<RequestParameter>()
+                .filter { it.parameterLocation is QueryParam && it.typeInfo is KotlinTypeInfo.Array }
+
+            if (arrayQueryParams.isNotEmpty()) {
+                val allExplodeFalse = arrayQueryParams.all { it.explode == false }
+                val anyExplodeFalse = arrayQueryParams.any { it.explode == false }
+                when {
+                    allExplodeFalse ->
+                        builder.addMember(
+                            "collectionFormat = %T.%L",
+                            OpenFeignImports.COLLECTION_FORMAT,
+                            "CSV",
+                        )
+                    anyExplodeFalse ->
+                        logger.warning(
+                            "Operation ${verb.toUpperCase()} $resource has array query parameters " +
+                                "with mixed explode values. Cannot use a consistent collectionFormat. " +
+                                "Defaulting to exploded format.",
+                        )
+                }
+            }
+
+            return builder.build()
         }
     }
 
