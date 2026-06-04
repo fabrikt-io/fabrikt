@@ -8,6 +8,7 @@ import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.configurations.Packages
+import com.cjbooms.fabrikt.generators.client.OkHttpClientGenerator
 import com.cjbooms.fabrikt.generators.client.OkHttpEnhancedClientGenerator
 import com.cjbooms.fabrikt.generators.client.OkHttpSimpleClientGenerator
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
@@ -70,11 +71,13 @@ class OkHttpClientGeneratorTest {
             packages,
             sourceApi
         ).generate().toSingleFile()
-        val simpleClientCode = OkHttpSimpleClientGenerator(
+        val simpleClientCode = OkHttpClientGenerator(
             packages,
-            sourceApi
+            sourceApi,
+            Paths.get("src/main/kotlin")
         )
-            .generateDynamicClientCode(optionsFor(testCaseName))
+            .generate(optionsFor(testCaseName))
+            .clients
             .toSingleFile()
 
         if (testCaseName != "tagGrouping") {
