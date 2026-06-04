@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.generators.client
 
+import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.GeneratorUtils.functionName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaType
@@ -47,7 +48,7 @@ class OkHttpSimpleClientGenerator(
     private val api: SourceApi,
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE
 ) {
-    fun generateDynamicClientCode(): Collection<ClientType> {
+    fun generateDynamicClientCode(options: Set<ClientCodeGenOptionType> = emptySet()): Collection<ClientType> {
         return api.openApi3.groupByPathSegment().map { (resourceName, paths) ->
             val funcSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
                 path.operations.map { (verb, operation) ->
