@@ -16,7 +16,7 @@ class OkHttpClientGenerator(
     private val enhancedClientGenerator = OkHttpEnhancedClientGenerator(packages, api, srcPath)
 
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
-        val simpleClient = simpleClientGenerator.generateDynamicClientCode()
+        val simpleClient = simpleClientGenerator.generateDynamicClientCode(options)
         val enhancedClient = enhancedClientGenerator.generateDynamicClientCode(options)
 
         return Clients(enhancedClient.plus(simpleClient).toSet())

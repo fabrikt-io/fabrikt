@@ -12,6 +12,7 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingPar
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addSuspendModifier
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.optionallyParameterizeWithResponseEntity
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.metadata.SpringHttpInterfaceAnnotations
@@ -26,7 +27,6 @@ import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupByPathSegment
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.reprezen.kaizen.oasparser.model3.Path
 import com.squareup.kotlinpoet.AnnotationSpec
@@ -43,7 +43,7 @@ class SpringHttpInterfaceGenerator(
     private val srcPath: java.nio.file.Path = Destinations.MAIN_KT_SOURCE
 ) : ClientGenerator {
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
-        val clientTypes = api.openApi3.groupByPathSegment().map { (resourceName, paths) ->
+        val clientTypes = api.groupedClientPaths(options).map { (resourceName, paths) ->
             val funcSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
                 path.operations.map { (verb, operation) ->
                     buildFunction(path, resource, operation, verb, options)
