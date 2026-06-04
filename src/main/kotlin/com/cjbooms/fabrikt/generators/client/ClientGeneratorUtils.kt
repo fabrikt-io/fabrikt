@@ -24,7 +24,6 @@ import com.cjbooms.fabrikt.model.RequestParameter
 import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.reprezen.kaizen.oasparser.model3.Path
-import com.reprezen.kaizen.oasparser.model3.Schema
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -166,29 +165,4 @@ object ClientGeneratorUtils {
         return this
     }
 
-    /**
-     * Derives multipart parameters from a multipart/form-data schema
-     */
-    fun deriveMultipartParameters(schema: Schema, basePackage: String): List<MultipartParameter> {
-        return schema.properties?.map { (partName, partSchema) ->
-            val isBinaryFile = (partSchema.format == "binary" && partSchema.type == "string") ||
-                (partSchema.type == "array" && partSchema.itemsSchema?.format == "binary" && partSchema.itemsSchema?.type == "string")
-            val type = toModelType(basePackage, KotlinTypeInfo.from(partSchema))
-            val contentType = when {
-                isBinaryFile -> "application/octet-stream"
-                partSchema.type == "string" -> "text/plain"
-                else -> "application/json"
-            }
-
-            MultipartParameter(
-                oasName = partName,
-                description = partSchema.description,
-                type = type,
-                schema = partSchema,
-                partName = partName,
-                isBinaryFile = isBinaryFile,
-                contentType = contentType
-            )
-        } ?: emptyList()
-    }
 }
