@@ -202,9 +202,10 @@ class SpringControllerInterfaceGenerator(
         }
 
     private fun ParameterSpec.Builder.addSpringParamAnnotation(parameter: MultipartParameter): ParameterSpec.Builder =
-        when (parameter.isBinaryFile) {
-            true -> SpringAnnotations.requestPartBuilder()
-            false -> SpringAnnotations.requestParamBuilder()
+        when {
+            parameter.isBinaryFile -> SpringAnnotations.requestPartBuilder()
+            parameter.contentType == "application/json" -> SpringAnnotations.requestPartBuilder()
+            else -> SpringAnnotations.requestParamBuilder()
         }.let {
             it.addMember("value = %S", parameter.oasName)
             it.addMember("required = %L", parameter.isRequired)
