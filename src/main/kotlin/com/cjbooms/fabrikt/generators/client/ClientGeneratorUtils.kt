@@ -155,23 +155,25 @@ object ClientGeneratorUtils {
         return this
     }
 
-    private val okRequestBodyType = ClassName.bestGuess("okhttp3.RequestBody")
-    private val filenameType = String::class.asClassName()
-    private val okMultipartFileType = Pair::class.asClassName().parameterizedBy(okRequestBodyType, filenameType)
-    private val okMultipartFileTypeList = List::class.asClassName().parameterizedBy(okMultipartFileType)
+    class MultipartParameterToSpecBuilder(clientPackage: String) {
+        private val requestBodyWithFilenameType = ClassName.bestGuess("$clientPackage.RequestBodyWithFilename")
+        private val requestBodyWithFilenameTypeList =
+            List::class.asClassName().parameterizedBy(requestBodyWithFilenameType)
 
-    fun multipartParameterToSpecBuilder(): (MultipartParameter) -> ParameterSpec.Builder = {
-        ParameterSpec.builder(
-            name = when {
-                it.isBinaryFile -> it.name
-                else -> it.name
-            },
-            type = when {
-                it.isBinaryFile && it.schema.type == "array" -> okMultipartFileTypeList
-                it.isBinaryFile -> okMultipartFileType
-                else -> it.type
-            }.copy(nullable = !it.isRequired),
-        )
+        fun toSpecBuilder(): (MultipartParameter) -> ParameterSpec.Builder = {
+            ParameterSpec.builder(
+                name = when {
+                    it.isBinaryFile -> it.name
+                    else -> it.name
+                },
+                type = when {
+                    it.isBinaryFile && it.schema.type == "array" -> requestBodyWithFilenameTypeList
+                    it.isBinaryFile -> requestBodyWithFilenameType
+                    else -> it.type
+                }.copy(nullable = !it.isRequired),
+            )
+        }
+
     }
 
 

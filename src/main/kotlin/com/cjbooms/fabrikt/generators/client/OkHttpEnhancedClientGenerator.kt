@@ -10,7 +10,6 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_HEA
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.enhancedClientName
-import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.multipartParameterToSpecBuilder
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
@@ -27,6 +26,7 @@ class OkHttpEnhancedClientGenerator(
     private val api: SourceApi,
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE
 ) {
+    private val multipartParameterToSpecBuilder = ClientGeneratorUtils.MultipartParameterToSpecBuilder(packages.client)
 
     fun generateDynamicClientCode(options: Set<ClientCodeGenOptionType>): Collection<ClientType> =
         options.ifResilience4jIsEnabled {
@@ -47,7 +47,7 @@ class OkHttpEnhancedClientGenerator(
                         )
                         .addIncomingParameters(
                             parameters,
-                            multipartParameterToSpecBuilder = multipartParameterToSpecBuilder()
+                            multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder()
                         )
                         .addParameter(
                             ParameterSpec.builder(

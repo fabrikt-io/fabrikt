@@ -13,7 +13,6 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_QUE
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
-import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.multipartParameterToSpecBuilder
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
@@ -32,6 +31,7 @@ class OkHttpSimpleClientGenerator(
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE
 ) {
 
+    private val multipartParameterToSpecBuilder = ClientGeneratorUtils.MultipartParameterToSpecBuilder(packages.client)
 
     fun generateDynamicClientCode(): Collection<ClientType> {
         return api.openApi3.groupByPathSegment().map { (resourceName, paths) ->
@@ -48,7 +48,7 @@ class OkHttpSimpleClientGenerator(
                         )
                         .addIncomingParameters(
                             parameters,
-                            multipartParameterToSpecBuilder = multipartParameterToSpecBuilder()
+                            multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder()
                         )
                         .addParameter(
                             ParameterSpec.builder(
@@ -269,7 +269,7 @@ data class SimpleClientOperationStatement(
             .forEach { param ->
                 this.add("\n%N?.forEachIndexed { index, fileData ->", param.name)
                 this.add(
-                    "\n      multipartBuilder.addFormDataPart(%S, fileData.second, fileData.first)",
+                    "\n      multipartBuilder.addFormDataPart(%S, fileData.filename, fileData.requestBody)",
                     param.partName,
                 )
                 this.add("\n}")
@@ -282,7 +282,7 @@ data class SimpleClientOperationStatement(
                 when {
                     param.isBinaryFile -> {
                         this.add(
-                            "\n    multipartBuilder.addFormDataPart(%S, %N.second, %N.first)",
+                            "\n    multipartBuilder.addFormDataPart(%S, %N.filename, %N.requestBody)",
                             param.partName,
                             param.name,
                             param.name

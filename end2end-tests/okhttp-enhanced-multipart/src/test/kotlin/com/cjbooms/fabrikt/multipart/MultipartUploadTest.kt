@@ -3,6 +3,7 @@ package com.cjbooms.fabrikt.multipart
 import com.example.multipart.client.ApiUploadClient
 import com.example.multipart.client.ApiUploadMultipleClient
 import com.example.multipart.client.ApiUploadSimpleClient
+import com.example.multipart.client.RequestBodyWithFilename
 import com.example.multipart.models.FileMetadata
 import com.example.multipart.models.FileMetadataCategory
 import com.example.multipart.models.SimpleUploadResult
@@ -26,7 +27,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.net.ServerSocket
 import java.time.OffsetDateTime
-import kotlin.text.toByteArray
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class MultipartUploadTest {
@@ -81,7 +81,7 @@ class MultipartUploadTest {
 
         // Act
         val result = uploadClient.uploadFile(
-            file = fileContent.toRequestBody("image/png".toMediaType()) to "image1.png",
+            file = RequestBodyWithFilename(fileContent.toRequestBody("image/png".toMediaType()), "image1.png"),
             metadata = metadata,
             tags = listOf("test", "example")
         )
@@ -150,7 +150,7 @@ class MultipartUploadTest {
 
         // Act
         val result = uploadMultipleClient.uploadMultipleFiles(
-            files = files,
+            files = files.map { RequestBodyWithFilename(it.first, it.second) },
             commonMetadata = commonMetadata,
             description = "Batch upload test"
         )
@@ -204,7 +204,7 @@ class MultipartUploadTest {
 
         // Act
         val result = uploadClient.uploadFile(
-            file = fileContent.toRequestBody("image/png".toMediaType()) to "image1.png",
+            file = RequestBodyWithFilename(fileContent.toRequestBody("image/png".toMediaType()), "image1.png"),
             metadata = metadata,
             tags = emptyList()
         )
@@ -259,10 +259,13 @@ class MultipartUploadTest {
             body = mapper.writeValueAsString(expectedResponse)
         }
 
-        val fileContent = "Simple file content".toByteArray().toRequestBody("image/png".toMediaType()) to "image1.png"
+        val requestBodyWithFilename = RequestBodyWithFilename(
+            "Simple file content".toByteArray().toRequestBody("image/png".toMediaType()),
+            "image1.png"
+        )
 
         // Act
-        val result = uploadSimpleClient.uploadSingleFile(file = fileContent)
+        val result = uploadSimpleClient.uploadSingleFile(file = requestBodyWithFilename)
 
         // Assert
         assertThat(result.data).isNotNull

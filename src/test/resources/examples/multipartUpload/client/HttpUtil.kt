@@ -7,6 +7,7 @@ import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.Response
 import okhttp3.ResponseBody
 
@@ -79,3 +80,5 @@ private fun Response.isBadRequest(): Boolean = this.code in 400..499
 private fun Response.isServerError(): Boolean = this.code in 500..599
 
 private fun Response.isRedirection(): Boolean = this.code in 300..399
+
+data class RequestBodyWithFilename(val requestBody: RequestBody, val filename: String)

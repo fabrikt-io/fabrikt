@@ -12,8 +12,6 @@ import okhttp3.MultipartBody
 import okhttp3.MultipartBody.Builder
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody
-import kotlin.Pair
 import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.List
@@ -35,7 +33,7 @@ public class ApiUploadClient(
      */
     @Throws(ApiException::class)
     public fun uploadFile(
-        `file`: Pair<RequestBody, String>,
+        `file`: RequestBodyWithFilename,
         metadata: FileMetadata,
         tags: List<String>?,
         additionalHeaders: Map<String, String> = emptyMap(),
@@ -56,7 +54,7 @@ public class ApiUploadClient(
             MultipartBody
                 .Builder()
                 .setType(MultipartBody.FORM)
-        multipartBuilder.addFormDataPart("file", `file`.second, `file`.first)
+        multipartBuilder.addFormDataPart("file", `file`.filename, `file`.requestBody)
         multipartBuilder.addFormDataPart("metadata", objectMapper.writeValueAsString(metadata))
         tags?.let {
             multipartBuilder.addFormDataPart("tags", objectMapper.writeValueAsString(tags))
@@ -87,7 +85,7 @@ public class ApiUploadSimpleClient(
      */
     @Throws(ApiException::class)
     public fun uploadSingleFile(
-        `file`: Pair<RequestBody, String>,
+        `file`: RequestBodyWithFilename,
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<SimpleUploadResult> {
@@ -106,7 +104,7 @@ public class ApiUploadSimpleClient(
             MultipartBody
                 .Builder()
                 .setType(MultipartBody.FORM)
-        multipartBuilder.addFormDataPart("file", `file`.second, `file`.first)
+        multipartBuilder.addFormDataPart("file", `file`.filename, `file`.requestBody)
         val multipartBody = multipartBuilder.build()
         val request: Request =
             Request
@@ -135,7 +133,7 @@ public class ApiUploadMultipleClient(
      */
     @Throws(ApiException::class)
     public fun uploadMultipleFiles(
-        files: List<Pair<RequestBody, String>>,
+        files: List<RequestBodyWithFilename>,
         commonMetadata: FileMetadata,
         description: String?,
         additionalHeaders: Map<String, String> = emptyMap(),
@@ -157,7 +155,7 @@ public class ApiUploadMultipleClient(
                 .Builder()
                 .setType(MultipartBody.FORM)
         files?.forEachIndexed { index, fileData ->
-            multipartBuilder.addFormDataPart("files", fileData.second, fileData.first)
+            multipartBuilder.addFormDataPart("files", fileData.filename, fileData.requestBody)
         }
         multipartBuilder.addFormDataPart(
             "commonMetadata",
