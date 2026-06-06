@@ -14,23 +14,12 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.OasDefault
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringImports.RESPONSE_ENTITY
 import com.cjbooms.fabrikt.generators.model.ModelGenerator.Companion.toModelType
-import com.cjbooms.fabrikt.model.BodyParameter
-import com.cjbooms.fabrikt.model.ClientType
-import com.cjbooms.fabrikt.model.HeaderParam
-import com.cjbooms.fabrikt.model.IncomingParameter
-import com.cjbooms.fabrikt.model.KotlinTypeInfo
-import com.cjbooms.fabrikt.model.MultipartParameter
-import com.cjbooms.fabrikt.model.RequestParameter
+import com.cjbooms.fabrikt.model.*
 import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.reprezen.kaizen.oasparser.model3.Path
-import com.squareup.kotlinpoet.AnnotationSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.asTypeName
 import kotlin.reflect.KClass
 
 object ClientGeneratorUtils {
@@ -54,7 +43,7 @@ object ClientGeneratorUtils {
      * Determines return the return type, with special handling for multiple response schemas.
      * Returns JsonNode for JSON-only responses, Any for mixed content types.
      */
-     fun Operation.getReturnType(): Any {
+    fun Operation.getReturnType(): Any {
         return if (!hasAnySuccessResponseSchemas()) {
             Unit::class
         } else if (hasMultipleSuccessResponseSchemas()) {
@@ -136,8 +125,9 @@ object ClientGeneratorUtils {
                 }
 
                 is MultipartParameter -> {
-                    multipartParameterToSpecBuilder?.invoke(it) ?:
-                        it.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings = true)
+                    multipartParameterToSpecBuilder?.invoke(it) ?: it.toParameterSpecBuilder(
+                        treatAnyTypeHeadersAsStrings = true
+                    )
                 }
             }
             builder.build()
@@ -164,5 +154,25 @@ object ClientGeneratorUtils {
         }
         return this
     }
+
+    private val okRequestBodyType = ClassName.bestGuess("okhttp3.RequestBody")
+    private val filenameType = String::class.asClassName()
+    private val okMultipartFileType = Pair::class.asClassName().parameterizedBy(okRequestBodyType, filenameType)
+    private val okMultipartFileTypeList = List::class.asClassName().parameterizedBy(okMultipartFileType)
+
+    fun multipartParameterToSpecBuilder(): (MultipartParameter) -> ParameterSpec.Builder = {
+        ParameterSpec.builder(
+            name = when {
+                it.isBinaryFile -> it.name
+                else -> it.name
+            },
+            type = when {
+                it.isBinaryFile && it.schema.type == "array" -> okMultipartFileTypeList
+                it.isBinaryFile -> okMultipartFileType
+                else -> it.type
+            }.copy(nullable = !it.isRequired),
+        )
+    }
+
 
 }

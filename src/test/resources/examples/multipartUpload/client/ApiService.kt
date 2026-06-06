@@ -7,7 +7,8 @@ import examples.multipartUpload.models.SimpleUploadResult
 import examples.multipartUpload.models.UploadResult
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import okhttp3.OkHttpClient
-import kotlin.ByteArray
+import okhttp3.RequestBody
+import kotlin.Pair
 import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.List
@@ -35,7 +36,7 @@ public class ApiUploadService(
 
     @Throws(ApiException::class)
     public fun uploadFile(
-        `file`: ByteArray,
+        `file`: Pair<RequestBody, String>,
         metadata: FileMetadata,
         tags: List<String>?,
         additionalHeaders: Map<String, String> = emptyMap(),
@@ -71,9 +72,8 @@ public class ApiUploadSimpleService(
 
     @Throws(ApiException::class)
     public fun uploadSingleFile(
-        `file`: ByteArray,
-        additionalHeaders: Map<String, String> =
-            emptyMap(),
+        `file`: Pair<RequestBody, String>,
+        additionalHeaders: Map<String, String> = emptyMap(),
     ): ApiResponse<SimpleUploadResult> =
         withCircuitBreaker(circuitBreakerRegistry, circuitBreakerName) {
             apiClient.uploadSingleFile(file, additionalHeaders)
@@ -106,7 +106,7 @@ public class ApiUploadMultipleService(
 
     @Throws(ApiException::class)
     public fun uploadMultipleFiles(
-        files: List<ByteArray>,
+        files: List<Pair<RequestBody, String>>,
         commonMetadata: FileMetadata,
         description: String?,
         additionalHeaders: Map<String, String> = emptyMap(),

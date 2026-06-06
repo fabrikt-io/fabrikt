@@ -13,39 +13,18 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_QUE
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.multipartParameterToSpecBuilder
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
-import com.cjbooms.fabrikt.model.BodyParameter
-import com.cjbooms.fabrikt.model.ClientType
-import com.cjbooms.fabrikt.model.Destinations
-import com.cjbooms.fabrikt.model.GeneratedFile
-import com.cjbooms.fabrikt.model.HandlebarsTemplates
-import com.cjbooms.fabrikt.model.HeaderParam
-import com.cjbooms.fabrikt.model.IncomingParameter
-import com.cjbooms.fabrikt.model.KotlinTypeInfo
-import com.cjbooms.fabrikt.model.MultipartParameter
-import com.cjbooms.fabrikt.model.PathParam
-import com.cjbooms.fabrikt.model.QueryParam
-import com.cjbooms.fabrikt.model.RequestParameter
-import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.model.*
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupByPathSegment
+import com.cjbooms.fabrikt.util.toUpperCase
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
-import com.squareup.kotlinpoet.AnnotationSpec
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterSpec
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.asTypeName
+import com.squareup.kotlinpoet.*
 import java.nio.file.Path
-import com.cjbooms.fabrikt.util.toUpperCase
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.asClassName
 
 class OkHttpSimpleClientGenerator(
     private val packages: Packages,
@@ -53,10 +32,6 @@ class OkHttpSimpleClientGenerator(
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE
 ) {
 
-    private val okRequestBodyType = ClassName.bestGuess("okhttp3.RequestBody")
-    private val filenameType = String::class.asClassName()
-    private val okMultipartFileType = Pair::class.asClassName().parameterizedBy(okRequestBodyType, filenameType)
-    private val okMultipartFileTypeList = List::class.asClassName().parameterizedBy(okMultipartFileType)
 
     fun generateDynamicClientCode(): Collection<ClientType> {
         return api.openApi3.groupByPathSegment().map { (resourceName, paths) ->
@@ -71,19 +46,10 @@ class OkHttpSimpleClientGenerator(
                             AnnotationSpec.builder(Throws::class)
                                 .addMember("%T::class", "ApiException".toClassName(packages.client)).build()
                         )
-                        .addIncomingParameters(parameters, multipartParameterToSpecBuilder = {
-                            ParameterSpec.builder(
-                                name = when {
-                                    it.isBinaryFile -> it.name
-                                    else -> it.name
-                                },
-                                type = when {
-                                    it.isBinaryFile && it.schema.type == "array" -> okMultipartFileTypeList
-                                    it.isBinaryFile -> okMultipartFileType
-                                    else -> it.type
-                                }.copy(nullable = !it.isRequired),
-                            )
-                        })
+                        .addIncomingParameters(
+                            parameters,
+                            multipartParameterToSpecBuilder = multipartParameterToSpecBuilder()
+                        )
                         .addParameter(
                             ParameterSpec.builder(
                                 ADDITIONAL_HEADERS_PARAMETER_NAME,
@@ -118,7 +84,8 @@ class OkHttpSimpleClientGenerator(
                 .primaryPropertiesConstructor(
                     PropertySpec.builder("objectMapper", ObjectMapper::class.asTypeName(), KModifier.PRIVATE).build(),
                     PropertySpec.builder("baseUrl", String::class.asTypeName(), KModifier.PRIVATE).build(),
-                    PropertySpec.builder("okHttpClient", "OkHttpClient".toClassName("okhttp3"), KModifier.PRIVATE).build()
+                    PropertySpec.builder("okHttpClient", "OkHttpClient".toClassName("okhttp3"), KModifier.PRIVATE)
+                        .build()
                 )
                 .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "unused").build())
                 .addFunctions(funcSpecs)
@@ -205,6 +172,7 @@ data class SimpleClientOperationStatement(
                         it.name,
                         if (it.explode == null || it.explode) "true" else "false"
                     )
+
                     else -> this.add(
                         "\n.%T(%S, %N)",
                         "queryParam".toClassName(packages.client),
@@ -249,7 +217,11 @@ data class SimpleClientOperationStatement(
             }
         } else {
             // Regular requests
-            this.add("\nval request: %T = %T.Builder()", "Request".toClassName("okhttp3"), "Request".toClassName("okhttp3"))
+            this.add(
+                "\nval request: %T = %T.Builder()",
+                "Request".toClassName("okhttp3"),
+                "Request".toClassName("okhttp3")
+            )
             this.add("\n.url(httpUrl)\n.headers(httpHeaders)")
             when (val op = verb.toUpperCase()) {
                 "PUT" -> this.addRequestSerializerStatement("put")
@@ -268,6 +240,7 @@ data class SimpleClientOperationStatement(
         when (operation.getReturnType()) {
             is KotlinTypeInfo.ByteArray ->
                 this.add("\nreturn request.execute(okHttpClient)\n")
+
             else ->
                 this.add("\nreturn request.execute(okHttpClient, objectMapper, jacksonTypeRef())\n")
         }
@@ -292,44 +265,48 @@ data class SimpleClientOperationStatement(
         this.add("\n.setType(%T.FORM)", "MultipartBody".toClassName("okhttp3"))
 
         // First handle the array binary files with forEach loops
-        parameters.filterIsInstance<MultipartParameter>().filter { it.isBinaryFile && it.schema.type == "array" }.forEach { param ->
-            this.add("\n%N?.forEachIndexed { index, fileData ->", param.name)
-            this.add(
-                "\n      multipartBuilder.addFormDataPart(%S, fileData.second, fileData.first)",
-                param.partName,
-            )
-            this.add("\n}")
-        }
+        parameters.filterIsInstance<MultipartParameter>().filter { it.isBinaryFile && it.schema.type == "array" }
+            .forEach { param ->
+                this.add("\n%N?.forEachIndexed { index, fileData ->", param.name)
+                this.add(
+                    "\n      multipartBuilder.addFormDataPart(%S, fileData.second, fileData.first)",
+                    param.partName,
+                )
+                this.add("\n}")
+            }
 
         // Then handle other parameters using multipartBuilder directly
-        parameters.filterIsInstance<MultipartParameter>().filter { !(it.isBinaryFile && it.schema.type == "array") }.forEach { param ->
-            if (!param.isRequired) this.add("\n%N?.let {", param.name)
-            when {
-                param.isBinaryFile -> {
-                    this.add(
-                        "\n    multipartBuilder.addFormDataPart(%S, %N.second, %N.first)",
-                        param.partName,
-                        param.name,
-                        param.name
-                    )
+        parameters.filterIsInstance<MultipartParameter>().filter { !(it.isBinaryFile && it.schema.type == "array") }
+            .forEach { param ->
+                if (!param.isRequired) this.add("\n%N?.let {", param.name)
+                when {
+                    param.isBinaryFile -> {
+                        this.add(
+                            "\n    multipartBuilder.addFormDataPart(%S, %N.second, %N.first)",
+                            param.partName,
+                            param.name,
+                            param.name
+                        )
+                    }
+
+                    param.contentType == "application/json" -> {
+                        this.add(
+                            "\n    multipartBuilder.addFormDataPart(%S, objectMapper.writeValueAsString(%N))",
+                            param.partName,
+                            param.name
+                        )
+                    }
+
+                    else -> {
+                        this.add(
+                            "\n    multipartBuilder.addFormDataPart(%S, %N.toString())",
+                            param.partName,
+                            param.name
+                        )
+                    }
                 }
-                param.contentType == "application/json" -> {
-                    this.add(
-                        "\n    multipartBuilder.addFormDataPart(%S, objectMapper.writeValueAsString(%N))",
-                        param.partName,
-                        param.name
-                    )
-                }
-                else -> {
-                    this.add(
-                        "\n    multipartBuilder.addFormDataPart(%S, %N.toString())",
-                        param.partName,
-                        param.name
-                    )
-                }
+                if (!param.isRequired) this.add("\n}")
             }
-            if (!param.isRequired) this.add("\n}")
-        }
 
         this.add("\nval multipartBody = multipartBuilder.build()")
     }
