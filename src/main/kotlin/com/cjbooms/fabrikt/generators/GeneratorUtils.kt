@@ -100,7 +100,8 @@ object GeneratorUtils {
             this.addParameter(parameterSpec)
     }
 
-    fun functionName(op: Operation, resource: String, verb: String) = op.operationId?.camelCase() ?: "$verb $resource".toKCodeName()
+    fun functionName(op: Operation, resource: String, verb: String) =
+        op.operationId?.camelCase() ?: "$verb $resource".toKCodeName()
 
     fun Schema.toVarName() = this.name?.toKCodeName() ?: this.toClassName().simpleName.toKCodeName()
 
@@ -130,7 +131,7 @@ object GeneratorUtils {
     fun Operation.hasAnySuccessResponseSchemas(): Boolean = getBodySuccessResponses().isNotEmpty()
 
     fun Operation.hasMultipleSuccessResponseSchemas(): Boolean =
-            getBodySuccessResponses().flatMap { it.contentMediaTypes.values }.map { it.schema.name }.distinct().size > 1
+        getBodySuccessResponses().flatMap { it.contentMediaTypes.values }.map { it.schema.name }.distinct().size > 1
 
     fun Operation.hasOnlyJsonSuccessResponses(): Boolean =
         getBodySuccessResponses()
@@ -152,7 +153,8 @@ object GeneratorUtils {
     private fun Operation.getSuccessResponses(): Map<String, Response> =
         this.responses.filter { it.key.toIntOrNull()?.let { status -> status in 200..399 } ?: false }
 
-    private fun Operation.filterParams(paramType: String): List<Parameter> = this.parameters.filter { it.`in` == paramType }
+    private fun Operation.filterParams(paramType: String): List<Parameter> =
+        this.parameters.filter { it.`in` == paramType }
 
     /**
      * Returns a list of IncomingParameters, ordering logic should be
@@ -171,7 +173,11 @@ object GeneratorUtils {
                 multipartSchema.properties?.map { (partName, partSchema) ->
                     val isBinaryFile = (partSchema.format == "binary" && partSchema.type == "string") ||
                             (partSchema.type == "array" && partSchema.itemsSchema?.format == "binary" && partSchema.itemsSchema?.type == "string")
-                    val type = toModelType(basePackage, KotlinTypeInfo.from(partSchema), !multipartSchema.requiredFields.contains(partName))
+                    val type = toModelType(
+                        basePackage,
+                        KotlinTypeInfo.from(partSchema),
+                        !multipartSchema.requiredFields.contains(partName)
+                    )
                     val contentType = when {
                         isBinaryFile -> "application/octet-stream"
                         partSchema.type == "string" -> "text/plain"
@@ -247,7 +253,9 @@ object GeneratorUtils {
                     partName = p.partName,
                     isBinaryFile = p.isBinaryFile,
                     contentType = p.contentType,
+                    isRequired = p.isRequired,
                 )
+
                 is BodyParameter -> BodyParameter(
                     oasName = "body_${p.oasName}".toKotlinParameterName(),
                     description = p.description,
@@ -255,6 +263,7 @@ object GeneratorUtils {
                     isRequired = p.isRequired,
                     schema = p.schema,
                 )
+
                 is RequestParameter -> RequestParameter(
                     oasName = "${p.parameterLocation}_${p.oasName}".toKotlinParameterName(),
                     description = p.description,
