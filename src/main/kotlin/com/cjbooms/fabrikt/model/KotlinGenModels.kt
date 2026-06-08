@@ -76,10 +76,18 @@ fun <T : GeneratedType> Collection<T>.toFileSpec(): Collection<FileSpec> = this
  */
 sealed class IncomingParameter(val oasName: String, val description: String?, val type: TypeName, val isRequired: Boolean) {
     val name: String = oasName.toKotlinParameterName()
+
+    /**
+     * Whether the generated Kotlin type should be nullable. Optional parameters are nullable unless they
+     * supply a default value, in which case the value is always populated (e.g. Spring's
+     * `@RequestParam(defaultValue = ...)`) and the type stays non-nullable.
+     */
+    open val isNullable: Boolean get() = !isRequired
+
     open fun toParameterSpecBuilder(treatAnyTypeHeadersAsStrings: Boolean = false): ParameterSpec.Builder =
         ParameterSpec.builder(
             name = name,
-            type = if (isRequired) type else type.copy(nullable = true)
+            type = if (isNullable) type.copy(nullable = true) else type
         )
 }
 
@@ -119,11 +127,13 @@ class RequestParameter(
         defaultValue = parameter.schema.default
     )
 
+    override val isNullable: Boolean get() = !isRequired && defaultValue == null
+
     override fun toParameterSpecBuilder(treatAnyTypeHeadersAsStrings: Boolean): ParameterSpec.Builder =
         if (treatAnyTypeHeadersAsStrings && parameterLocation == HeaderParam && typeInfo == KotlinTypeInfo.AnyType) {
             ParameterSpec.builder(
                 name = name,
-                type = if (isRequired) String::class.asTypeName() else String::class.asTypeName().copy(nullable = true)
+                type = if (isNullable) String::class.asTypeName().copy(nullable = true) else String::class.asTypeName()
             )
         } else super.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings)
 }
