@@ -1,0 +1,45 @@
+openapi: "3.0.3"
+info:
+  title: Parameter Defaults Example
+  version: "1.0"
+paths:
+  /example:
+    get:
+      operationId: getExample
+      summary: Echoes back the resolved parameter values
+      parameters:
+        - name: param1
+          in: header
+          required: false
+          schema:
+            type: string
+            default: paramValue
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParameterEcho"
+components:
+  schemas:
+    ParameterEcho:
+      type: object
+      properties:
+        param1:
+          type: string
+        limit:
+          type: integer
+        filter:
+          type: string
