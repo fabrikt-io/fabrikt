@@ -1,0 +1,30 @@
+openapi: 3.0.0
+components:
+  schemas:
+    NormalizedNameConflation:
+      type: object
+      properties:
+        x:
+          type: string
+          description: Description of lowercase x
+        X:
+          type: string
+          description: Description of uppercase X
+        fooBar:
+          type: string
+          description: Description of camel case fooBar
+        foo_bar:
+          type: string
+          description: Description of snake case foo_bar
+        aBC:
+          type: string
+          description: Description of aBC
+        ABC:
+          type: string
+          description: Description of ABC
+        a_b_c:
+          type: string
+          description: Description of a_b_c
+        control_case:
+          type: string
+          description: Description of control_case - this should get normalized because it conflicts with no other property
