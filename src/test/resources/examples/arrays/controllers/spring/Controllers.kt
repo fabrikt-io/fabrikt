@@ -1,6 +1,7 @@
 package examples.arrays.controllers
 
 import examples.arrays.models.ArrayContainingComplexInlined
+import examples.arrays.models.SomeEnum
 import examples.arrays.models.Something
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -19,6 +20,7 @@ public interface ItemsController {
     /**
      * Get items with a status filter
      * Retrieve a list of items filtered by their status.
+     * @param category Filter items by category.
      * @param status Filter items by status.
      */
     @RequestMapping(
@@ -27,6 +29,8 @@ public interface ItemsController {
         method = [RequestMethod.GET],
     )
     public fun `get`(
+        @Valid @RequestParam(value = "category", required = false)
+        category: List<SomeEnum>?,
         @Valid @RequestParam(value = "status", required = false)
         status: List<Something>?,
     ): ResponseEntity<List<ArrayContainingComplexInlined>>
