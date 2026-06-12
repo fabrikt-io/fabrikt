@@ -226,6 +226,7 @@ This section documents the available CLI parameters for controlling what gets ge
 |                                |   `SUSPEND_MODIFIER` - This option adds the suspend modifier to the generated client functions (only for OpenFeign clients) |
 |                                |   `SPRING_RESPONSE_ENTITY_WRAPPER` - This option adds the Spring-ResponseEntity generic around the response to be able to get response headers and status (only for OpenFeign clients). |
 |                                |   `SPRING_CLOUD_OPENFEIGN_STARTER_ANNOTATION` - This option adds the @FeignClient annotation to generated client interface |
+|                                |   `GROUP_BY_TAG` - This option groups clients based on the first tag rather than paths |
 |   `--http-client-target`       | Optionally select the target client that you want to be generated. Defaults to OK_HTTP |
 |                                | CHOOSE ONE OF: |
 |                                |   `OK_HTTP` - Generate OkHttp client. |
