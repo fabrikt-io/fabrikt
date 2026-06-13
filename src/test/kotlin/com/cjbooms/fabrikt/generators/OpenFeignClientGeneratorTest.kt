@@ -31,6 +31,7 @@ class OpenFeignClientGeneratorTest {
         "multiMediaType",
         "pathLevelParameters",
         "parameterNameClash",
+        "tagGrouping",
     )
 
     @BeforeEach
@@ -47,7 +48,7 @@ class OpenFeignClientGeneratorTest {
     @ParameterizedTest
     @MethodSource("fullApiTestCases")
     fun `correct Open Feign interfaces are generated from a full API definition`(testCaseName: String) {
-        runTestCase(testCaseName)
+        runTestCase(testCaseName, options = optionsFor(testCaseName))
     }
 
     @Test
@@ -81,7 +82,7 @@ class OpenFeignClientGeneratorTest {
         val sourceApi = SourceApi(readTextResource("/examples/$testCaseName/api.yaml"))
 
         val expectedModel = "/examples/$testCaseName/models/ClientModels.kt"
-        val expectedClient = "/examples/$testCaseName/client/$clientFileName"
+        val expectedClient = expectedClientPath(testCaseName, clientFileName)
 
         val models = ModelGenerator(
             packages,
@@ -96,8 +97,20 @@ class OpenFeignClientGeneratorTest {
             .toSingleFile()
 
         assertThatGenerated(clientCode).isEqualTo(expectedClient)
-        assertThatGenerated(models).isEqualTo(expectedModel)
+        if (testCaseName != "tagGrouping") {
+            assertThatGenerated(models).isEqualTo(expectedModel)
+        }
     }
+
+    private fun optionsFor(testCaseName: String): Set<ClientCodeGenOptionType> =
+        if (testCaseName == "tagGrouping") setOf(ClientCodeGenOptionType.GROUP_BY_TAG) else emptySet()
+
+    private fun expectedClientPath(testCaseName: String, fileName: String): String =
+        if (testCaseName == "tagGrouping") {
+            "/examples/$testCaseName/client/grouped/$fileName"
+        } else {
+            "/examples/$testCaseName/client/$fileName"
+        }
 
     private fun Collection<ClientType>.toSingleFile(): String {
         val destPackage = if (this.isNotEmpty()) first().destinationPackage else ""

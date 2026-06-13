@@ -14,7 +14,15 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.OasDefault
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringImports.RESPONSE_ENTITY
 import com.cjbooms.fabrikt.generators.model.ModelGenerator.Companion.toModelType
-import com.cjbooms.fabrikt.model.*
+import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.model.BodyParameter
+import com.cjbooms.fabrikt.model.ClientType
+import com.cjbooms.fabrikt.model.HeaderParam
+import com.cjbooms.fabrikt.model.IncomingParameter
+import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.RequestParameter
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupByPathSegment
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPathsByFirstTag
 import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.reprezen.kaizen.oasparser.model3.Path
@@ -28,6 +36,13 @@ object ClientGeneratorUtils {
     const val CONTENT_TYPE_HEADER_NAME = "Content-Type"
     const val ADDITIONAL_HEADERS_PARAMETER_NAME = "additionalHeaders"
     const val ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME = "additionalQueryParameters"
+
+    fun SourceApi.groupedClientPaths(options: Set<ClientCodeGenOptionType>): Map<String, Map<String, Path>> =
+        if (ClientCodeGenOptionType.GROUP_BY_TAG in options) {
+            openApi3.routeToPathsByFirstTag()
+        } else {
+            openApi3.groupByPathSegment()
+        }
 
     /**
      * Gives the Kotlin return type for an API call based on the Content-Types specified in the Operation.

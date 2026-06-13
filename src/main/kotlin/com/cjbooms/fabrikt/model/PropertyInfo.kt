@@ -23,14 +23,16 @@ import com.reprezen.kaizen.oasparser.model3.OpenApi3
 import com.reprezen.kaizen.oasparser.model3.Schema
 
 sealed class PropertyInfo {
+    /**
+     * Property name used in generated code. For most properties, it is derived
+     * from a normalized version of [oasKey].
+     */
+    abstract val name: String
     abstract val oasKey: String
     abstract val typeInfo: KotlinTypeInfo
     abstract val schema: Schema
     open val isRequired: Boolean = false
     open val isInherited: Boolean = false
-
-    val name: String
-        get() = oasKey.camelCase()
 
     companion object {
 
@@ -88,14 +90,33 @@ sealed class PropertyInfo {
             enclosingSchema: Schema? = null,
             additionalRequiredFields: Collection<String> = emptySet()
         ): Collection<PropertyInfo> {
+            // Group raw keys by their normalized names to find any groups that would conflict.
+            // If there are any conflicts, use the raw keys for that group as names, otherwise
+            // use the normalized name. This prevents conflation when two different OAS property
+            // names convert to the same camel case representation (i.e. `T` and `t`, or
+            // `foo_bar` and `fooBar`)
+            val names = properties.keys
+                .groupBy { it.camelCase() }
+                .flatMap { (normalizedName, rawNames) ->
+                    if (rawNames.size > 1) {
+                        rawNames.map { it to it }
+                    } else {
+                        listOf(rawNames.first() to normalizedName)
+                    }
+                }.toMap()
+
             val mainProperties: List<PropertyInfo> = properties.map { property ->
+                val oasKey = property.key
+                val name = names[oasKey]!!
+
                 when (property.value.safeType()) {
                     OasType.Set.type ->
                         ListField(
                             isRequired = isRequired(
                                 api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
                             ),
-                            oasKey = property.key,
+                            name = name,
+                            oasKey = oasKey,
                             schema = property.value,
                             isInherited = settings.markAsInherited,
                             parentSchema = this,
@@ -108,7 +129,8 @@ sealed class PropertyInfo {
                             isRequired = isRequired(
                                 api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
                             ),
-                            oasKey = property.key,
+                            name = name,
+                            oasKey = oasKey,
                             schema = property.value,
                             isInherited = settings.markAsInherited,
                             parentSchema = this,
@@ -122,7 +144,8 @@ sealed class PropertyInfo {
                                 isRequired = isRequired(
                                     api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
                                 ),
-                                oasKey = property.key,
+                                name = name,
+                                oasKey = oasKey,
                                 schema = property.value,
                                 isInherited = settings.markAsInherited,
                                 parentSchema = this
@@ -133,7 +156,8 @@ sealed class PropertyInfo {
                                 isRequired = isRequired(
                                     api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
                                 ),
-                                oasKey = property.key,
+                                name = name,
+                                oasKey = oasKey,
                                 schema = property.value,
                                 isInherited = settings.markAsInherited,
                                 parentSchema = this,
@@ -144,7 +168,8 @@ sealed class PropertyInfo {
                                 isRequired = isRequired(
                                     api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
                                 ),
-                                oasKey = property.key,
+                                name = name,
+                                oasKey = oasKey,
                                 schema = property.value,
                                 isInherited = settings.markAsInherited,
                                 parentSchema = this
@@ -158,7 +183,8 @@ sealed class PropertyInfo {
                                 isRequired = isRequired(
                                     api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
                                 ),
-                                oasKey = property.key,
+                                name = name,
+                                oasKey = oasKey,
                                 schema = property.value,
                                 isInherited = settings.markAsInherited,
                                 isPolymorphicDiscriminator = isDiscriminatorProperty(api, property),
@@ -189,6 +215,7 @@ sealed class PropertyInfo {
 
     data class Field(
         override val isRequired: Boolean,
+        override val name: String,
         override val oasKey: String,
         override val schema: Schema,
         override val isInherited: Boolean,
@@ -216,6 +243,7 @@ sealed class PropertyInfo {
 
     data class ListField(
         override val isRequired: Boolean,
+        override val name: String,
         override val oasKey: String,
         override val schema: Schema,
         override val isInherited: Boolean,
@@ -240,6 +268,7 @@ sealed class PropertyInfo {
 
     data class MapField(
         override val isRequired: Boolean,
+        override val name: String,
         override val oasKey: String,
         override val schema: Schema,
         override val isInherited: Boolean,
@@ -250,6 +279,7 @@ sealed class PropertyInfo {
 
     data class ObjectRefField(
         override val isRequired: Boolean,
+        override val name: String,
         override val oasKey: String,
         override val schema: Schema,
         override val isInherited: Boolean,
@@ -260,6 +290,7 @@ sealed class PropertyInfo {
 
     data class ObjectInlinedField(
         override val isRequired: Boolean,
+        override val name: String,
         override val oasKey: String,
         override val schema: Schema,
         override val isInherited: Boolean,
@@ -279,6 +310,7 @@ sealed class PropertyInfo {
         override val isInherited: Boolean,
         val parentSchema: Schema
     ) : PropertyInfo() {
+        override val name: String = "properties"
         override val oasKey: String = "properties"
         override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, "additionalProperties")
         override val isRequired: Boolean = true
@@ -287,6 +319,7 @@ sealed class PropertyInfo {
     data class OneOfAny(
         override val schema: Schema,
     ) : PropertyInfo() {
+        override val name: String = "oneOf"
         override val oasKey: String = "oneOf"
         override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.AnyType
     }

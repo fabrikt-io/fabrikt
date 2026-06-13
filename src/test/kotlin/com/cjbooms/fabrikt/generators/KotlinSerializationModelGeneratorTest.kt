@@ -34,6 +34,7 @@ class KotlinSerializationModelGeneratorTest {
     private fun testCases(): Stream<String> = Stream.of(
         "discriminatedOneOf",
         "primitiveTypes",
+        "normalizedNameConflation"
     )
 
     @BeforeEach

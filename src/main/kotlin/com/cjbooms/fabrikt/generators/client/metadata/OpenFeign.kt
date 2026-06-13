@@ -20,6 +20,8 @@ object OpenFeignImports {
 
     val PARAM = ClassName(Packages.FEIGN, "Param")
 
+    val COLLECTION_FORMAT = ClassName(Packages.FEIGN, "CollectionFormat")
+
     val FEIGN_CLIENT = ClassName(Packages.SPRING_STARTER, "FeignClient")
 }
 
