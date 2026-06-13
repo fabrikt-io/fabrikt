@@ -23,8 +23,7 @@ ktor = "3.0.1"
 
 # Spring
 spring-boot = "3.4.3"
-spring-webmvc = "6.0.9"
-spring-security = "6.1.0"
+spring-framework = "6.1.0"
 
 # Micronaut
 micronaut = "3.8.7"
@@ -85,8 +84,9 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 validation-api = { module = "javax.validation:validation-api", version.ref = "validation-api" }
 jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
-spring-webmvc = { module = "org.springframework:spring-webmvc", version.ref = "spring-webmvc" }
-spring-security-web = { module = "org.springframework.security:spring-security-web", version.ref = "spring-security" }
+spring-webmvc = { module = "org.springframework:spring-webmvc", version.ref = "spring-framework" }
+spring-test = { module = "org.springframework:spring-test", version.ref = "spring-framework" }
+spring-security-web = { module = "org.springframework.security:spring-security-web", version.ref = "spring-framework" }
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
 micronaut-core = { module = "io.micronaut:micronaut-core", version.ref = "micronaut" }
 micronaut-http = { module = "io.micronaut:micronaut-http", version.ref = "micronaut" }

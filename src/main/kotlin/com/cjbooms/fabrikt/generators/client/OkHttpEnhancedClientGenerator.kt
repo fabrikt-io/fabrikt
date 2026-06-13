@@ -24,14 +24,7 @@ import com.cjbooms.fabrikt.model.SourceApi
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
-import com.squareup.kotlinpoet.AnnotationSpec
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterSpec
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.asTypeName
+import com.squareup.kotlinpoet.*
 import java.nio.file.Path
 
 class OkHttpEnhancedClientGenerator(
@@ -39,6 +32,7 @@ class OkHttpEnhancedClientGenerator(
     private val api: SourceApi,
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE
 ) {
+    private val multipartParameterToSpecBuilder = ClientGeneratorUtils.MultipartParameterToSpecBuilder(packages.client)
 
     fun generateDynamicClientCode(options: Set<ClientCodeGenOptionType>): Collection<ClientType> =
         options.ifResilience4jIsEnabled {
@@ -57,7 +51,10 @@ class OkHttpEnhancedClientGenerator(
                             AnnotationSpec.builder(Throws::class)
                                 .addMember("%T::class", "ApiException".toClassName(packages.client)).build()
                         )
-                        .addIncomingParameters(parameters)
+                        .addIncomingParameters(
+                            parameters,
+                            multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder()
+                        )
                         .addParameter(
                             ParameterSpec.builder(
                                 ADDITIONAL_HEADERS_PARAMETER_NAME,
@@ -68,7 +65,6 @@ class OkHttpEnhancedClientGenerator(
                         )
                         .addCode(
                             Resilience4jClientOperationStatement(
-                                packages,
                                 resource,
                                 verb,
                                 operation,
@@ -135,7 +131,7 @@ class OkHttpEnhancedClientGenerator(
             .resolve(CodeGenerationUtils.packageToPath(packages.base))
             .resolve("client")
         return listOfNotNull(
-            applyTemplateIfOptionIsEnabled(options, ClientCodeGenOptionType.RESILIENCE4J) {
+            applyTemplateIfResilience4jIsEnabled(options) {
                 HandlebarsTemplates.applyTemplate(
                     HandlebarsTemplates.clientHttpResilience4jUtils,
                     packages,
@@ -154,12 +150,11 @@ class OkHttpEnhancedClientGenerator(
             .add("\n@see ApiServerException")
             .build()
 
-    private fun applyTemplateIfOptionIsEnabled(
+    private fun applyTemplateIfResilience4jIsEnabled(
         options: Set<ClientCodeGenOptionType>,
-        target: ClientCodeGenOptionType,
         applyTemplate: () -> SimpleFile
     ): SimpleFile? =
-        options.find { it == target }?.let { applyTemplate() }
+        options.find { it == ClientCodeGenOptionType.RESILIENCE4J }?.let { applyTemplate() }
 
     private fun Set<ClientCodeGenOptionType>.ifResilience4jIsEnabled(
         block: (Set<ClientCodeGenOptionType>) -> Collection<ClientType>
@@ -168,7 +163,6 @@ class OkHttpEnhancedClientGenerator(
 }
 
 class Resilience4jClientOperationStatement(
-    private val packages: Packages,
     private val resource: String,
     private val verb: String,
     private val operation: Operation,
