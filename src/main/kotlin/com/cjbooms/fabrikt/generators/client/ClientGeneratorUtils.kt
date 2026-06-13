@@ -14,13 +14,7 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.OasDefault
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringImports.RESPONSE_ENTITY
 import com.cjbooms.fabrikt.generators.model.ModelGenerator.Companion.toModelType
-import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.model.BodyParameter
-import com.cjbooms.fabrikt.model.ClientType
-import com.cjbooms.fabrikt.model.HeaderParam
-import com.cjbooms.fabrikt.model.IncomingParameter
-import com.cjbooms.fabrikt.model.KotlinTypeInfo
-import com.cjbooms.fabrikt.model.RequestParameter
+import com.cjbooms.fabrikt.model.*
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupByPathSegment
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPathsByFirstTag
 import com.fasterxml.jackson.databind.JsonNode

@@ -18,23 +18,13 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientP
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
-import com.cjbooms.fabrikt.model.BodyParameter
-import com.cjbooms.fabrikt.model.ClientType
-import com.cjbooms.fabrikt.model.Destinations
-import com.cjbooms.fabrikt.model.GeneratedFile
-import com.cjbooms.fabrikt.model.HandlebarsTemplates
-import com.cjbooms.fabrikt.model.HeaderParam
-import com.cjbooms.fabrikt.model.IncomingParameter
-import com.cjbooms.fabrikt.model.KotlinTypeInfo
-import com.cjbooms.fabrikt.model.PathParam
-import com.cjbooms.fabrikt.model.QueryParam
-import com.cjbooms.fabrikt.model.RequestParameter
-import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.model.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.squareup.kotlinpoet.*
 import java.nio.file.Path
+import java.util.Locale.getDefault
 
 class OkHttpSimpleClientGenerator(
     private val packages: Packages,
@@ -220,7 +210,7 @@ data class SimpleClientOperationStatement(
             this.addMultipartBodyStatement()
             this.add("\nval request: %T = Request.Builder()", "Request".toClassName("okhttp3"))
             this.add("\n.url(httpUrl)\n.headers(httpHeaders)")
-            when (val op = verb.toUpperCase()) {
+            when (val op = verb.uppercase(getDefault())) {
                 "PUT" -> this.add("\n.put(multipartBody)")
                 "POST" -> this.add("\n.post(multipartBody)")
                 "PATCH" -> this.add("\n.patch(multipartBody)")
@@ -234,7 +224,7 @@ data class SimpleClientOperationStatement(
                 "Request".toClassName("okhttp3")
             )
             this.add("\n.url(httpUrl)\n.headers(httpHeaders)")
-            when (val op = verb.toUpperCase()) {
+            when (val op = verb.uppercase(getDefault())) {
                 "PUT" -> this.addRequestSerializerStatement("put")
                 "POST" -> this.addRequestSerializerStatement("post")
                 "PATCH" -> this.addRequestSerializerStatement("patch")
