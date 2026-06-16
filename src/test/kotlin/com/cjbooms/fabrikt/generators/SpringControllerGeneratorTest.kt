@@ -52,6 +52,7 @@ class SpringControllerGeneratorTest {
         "tagGrouping",
         "requestBodiesSchema",
         "responsesSchema",
+        "multipartUpload",
     )
 
     private fun setupGithubApiTestEnv(annotations: ValidationAnnotations = JavaxValidationAnnotations) {
