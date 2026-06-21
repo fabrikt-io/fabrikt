@@ -1,6 +1,10 @@
 package com.cjbooms.fabrikt.generators
 
-import com.cjbooms.fabrikt.cli.*
+import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
+import com.cjbooms.fabrikt.cli.CodeGenerationType
+import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
+import com.cjbooms.fabrikt.cli.OutputOptionType
+import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.controller.SpringControllerInterfaceGenerator
 import com.cjbooms.fabrikt.generators.controller.SpringControllers

@@ -7,7 +7,12 @@ import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
 import com.cjbooms.fabrikt.util.NormalisedString.toKotlinParameterName
 import com.reprezen.kaizen.oasparser.model3.Parameter
 import com.reprezen.kaizen.oasparser.model3.Schema
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.asTypeName
 
 sealed class GeneratedType(val spec: TypeSpec, val destinationPackage: String) {
     val className = ClassName(destinationPackage, spec.name!!)
@@ -53,8 +58,7 @@ data class Clients(val clients: Collection<ClientType>) : KotlinTypes(clients) {
             .addType(it.spec)
             .addFileDisclaimer()
         it.imports.forEach { (pkg, name) ->
-            builder
-                .addImport(pkg, name)
+            builder.addImport(pkg, name)
         }
         builder.build()
     }.toSet()
