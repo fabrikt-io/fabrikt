@@ -13,6 +13,7 @@ interface ValidationAnnotations {
     fun lengthRestriction(min: Int?, max: Int?): AnnotationSpec?
     fun minRestriction(min: Number, exclusive: Boolean): AnnotationSpec?
     fun maxRestriction(max: Number, exclusive: Boolean): AnnotationSpec?
+    fun size(min: Int?, max: Int?): AnnotationSpec?
 }
 
 abstract class PackageValidationAnnotations(packageName: String) : ValidationAnnotations {
@@ -48,6 +49,15 @@ abstract class PackageValidationAnnotations(packageName: String) : ValidationAnn
         .builder(maxClass)
         .addMember("%L", value)
         .build()
+
+    override fun size(min: Int?, max: Int?): AnnotationSpec {
+        val specBuilder = AnnotationSpec.builder(sizeClass)
+
+        min?.let { specBuilder.addMember("min = %L", it) }
+        max?.let { specBuilder.addMember("max = %L", it) }
+
+        return specBuilder.build()
+    }
 
     override fun regexPattern(pattern: String) = AnnotationSpec
         .builder(patternClass)
@@ -94,6 +104,8 @@ object NoValidationAnnotations : ValidationAnnotations {
     override fun min(value: Long): AnnotationSpec? = null
 
     override fun max(value: Long): AnnotationSpec? = null
+
+    override fun size(min: Int?, max: Int?): AnnotationSpec? = null
 
     override fun regexPattern(pattern: String): AnnotationSpec? = null
 

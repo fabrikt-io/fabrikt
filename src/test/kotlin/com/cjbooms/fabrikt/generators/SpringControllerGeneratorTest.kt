@@ -1,10 +1,6 @@
 package com.cjbooms.fabrikt.generators
 
-import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
-import com.cjbooms.fabrikt.cli.CodeGenerationType
-import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
-import com.cjbooms.fabrikt.cli.OutputOptionType
-import com.cjbooms.fabrikt.cli.ValidationLibrary
+import com.cjbooms.fabrikt.cli.*
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.controller.SpringControllerInterfaceGenerator
 import com.cjbooms.fabrikt.generators.controller.SpringControllers
@@ -53,6 +49,7 @@ class SpringControllerGeneratorTest {
         "requestBodiesSchema",
         "responsesSchema",
         "multipartUpload",
+        "validationAnnotations"
     )
 
     private fun setupGithubApiTestEnv(annotations: ValidationAnnotations = JavaxValidationAnnotations) {
@@ -273,7 +270,9 @@ class SpringControllerGeneratorTest {
     fun `ensure generates ByteArrayStream body parameter and response for string with format binary`() {
         MutableSettings.addOption(CodeGenTypeOverride.BYTEARRAY_AS_INPUTSTREAM)
         val api = SourceApi(readTextResource("/examples/byteArrayStream/api.yaml"))
-        val controllers = SpringControllerInterfaceGenerator(Packages(basePackage), api, JavaxValidationAnnotations).generate().toSingleFile()
+        val controllers =
+            SpringControllerInterfaceGenerator(Packages(basePackage), api, JavaxValidationAnnotations).generate()
+                .toSingleFile()
         val expectedControllers = "/examples/byteArrayStream/controllers/spring/Controllers.kt"
 
         assertThatGenerated(controllers.trim()).isEqualTo(expectedControllers)
