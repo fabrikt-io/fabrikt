@@ -12,6 +12,7 @@ import okhttp3.MultipartBody
 import okhttp3.MultipartBody.Builder
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import kotlin.Double
 import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.List
@@ -30,12 +31,14 @@ public class ApiUploadClient(
      * @param file The file to upload
      * @param metadata
      * @param tags Optional tags for the file
+     * @param version
      */
     @Throws(ApiException::class)
     public fun uploadFile(
         `file`: RequestBodyWithFilename,
         metadata: FileMetadata,
         tags: List<String>?,
+        version: Double?,
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<UploadResult> {
@@ -58,6 +61,9 @@ public class ApiUploadClient(
         multipartBuilder.addFormDataPart("metadata", objectMapper.writeValueAsString(metadata))
         tags?.let {
             multipartBuilder.addFormDataPart("tags", objectMapper.writeValueAsString(tags))
+        }
+        version?.let {
+            multipartBuilder.addFormDataPart("version", version.toString())
         }
         val multipartBody = multipartBuilder.build()
         val request: Request =

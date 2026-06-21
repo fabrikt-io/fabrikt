@@ -43,6 +43,7 @@ class ApiUploadControllerTest {
                     .file(file)
                     .file(metadataPart)
                     .file(tagsPart)
+                    .param("version", "1.3")
             )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value("id"))

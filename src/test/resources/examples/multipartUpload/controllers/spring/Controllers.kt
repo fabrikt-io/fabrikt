@@ -13,6 +13,7 @@ import org.springframework.web.bind.`annotation`.RequestParam
 import org.springframework.web.bind.`annotation`.RequestPart
 import org.springframework.web.multipart.MultipartFile
 import javax.validation.Valid
+import kotlin.Double
 import kotlin.String
 import kotlin.collections.List
 
@@ -26,6 +27,7 @@ public interface ApiUploadController {
      * @param file The file to upload
      * @param metadata
      * @param tags Optional tags for the file
+     * @param version
      */
     @RequestMapping(
         value = ["/api/upload"],
@@ -37,6 +39,7 @@ public interface ApiUploadController {
         @RequestPart(value = "file", required = true) @Valid `file`: MultipartFile,
         @RequestPart(value = "metadata", required = true) @Valid metadata: FileMetadata,
         @RequestPart(value = "tags", required = false) @Valid tags: List<String>?,
+        @RequestParam(value = "version", required = false) @Valid version: Double?,
     ): ResponseEntity<UploadResult>
 }
 
