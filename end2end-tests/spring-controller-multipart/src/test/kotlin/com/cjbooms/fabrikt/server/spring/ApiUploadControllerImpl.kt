@@ -12,7 +12,8 @@ class ApiUploadControllerImpl : ApiUploadController {
     override fun uploadFile(
         file: MultipartFile,
         metadata: FileMetadata,
-        tags: List<String>?
+        tags: List<String>?,
+        version: Double?,
     ): ResponseEntity<UploadResult> {
         require(file.contentType == "image/jpeg") { "wrong file contentType" }
         require(file.originalFilename == "image.jpg") { "wrong file name" }
@@ -29,6 +30,8 @@ class ApiUploadControllerImpl : ApiUploadController {
 
         requireNotNull(tags)
         require(tags == listOf("foo", "bar")) { "tags invalid" }
+
+        require(version == 1.3) { "version invalid" }
 
         return ResponseEntity.ok(
             UploadResult(

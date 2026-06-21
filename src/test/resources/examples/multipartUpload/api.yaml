@@ -29,6 +29,9 @@ paths:
                   items:
                     type: string
                   description: Optional tags for the file
+                version:
+                  type: number
+                  format: double
               required:
                 - file
                 - metadata
@@ -122,7 +125,7 @@ components:
           description: Original filename
         category:
           type: string
-          enum: [document, image, video, other]
+          enum: [ document, image, video, other ]
         contentType:
           type: string
           description: MIME type of the file

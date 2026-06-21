@@ -83,7 +83,8 @@ class MultipartUploadTest {
         val result = uploadClient.uploadFile(
             file = RequestBodyWithFilename(fileContent.toRequestBody("image/png".toMediaType()), "image1.png"),
             metadata = metadata,
-            tags = listOf("test", "example")
+            tags = listOf("test", "example"),
+            version = 1.3,
         )
 
         // Assert
@@ -102,6 +103,7 @@ class MultipartUploadTest {
             assertThat(request.bodyAsString).contains("Content-Disposition: form-data; name=\"file\"")
             assertThat(request.bodyAsString).contains("Content-Disposition: form-data; name=\"metadata\"")
             assertThat(request.bodyAsString).contains("Content-Disposition: form-data; name=\"tags\"")
+            assertThat(request.bodyAsString).contains("Content-Disposition: form-data; name=\"version\"")
         }
     }
 
@@ -206,7 +208,8 @@ class MultipartUploadTest {
         val result = uploadClient.uploadFile(
             file = RequestBodyWithFilename(fileContent.toRequestBody("image/png".toMediaType()), "image1.png"),
             metadata = metadata,
-            tags = emptyList()
+            tags = emptyList(),
+            version = 1.3,
         )
 
         // Assert
@@ -227,9 +230,11 @@ class MultipartUploadTest {
         // Verify multipart structure
         assertThat(body).contains("Content-Disposition: form-data; name=\"file\"")
         assertThat(body).contains("Content-Disposition: form-data; name=\"metadata\"")
+        assertThat(body).contains("Content-Disposition: form-data; name=\"version\"")
         assertThat(body).contains("boundary test content")
         assertThat(body).contains("\"name\":\"boundary.txt\"")
         assertThat(body).contains("\"category\":\"other\"")
+        assertThat(body).contains("1.3")
 
         // Verify proper boundary formatting
         val boundary = contentType.substringAfter("boundary=")
