@@ -57,8 +57,9 @@ data class Clients(val clients: Collection<ClientType>) : KotlinTypes(clients) {
         val builder = FileSpec.builder(it.destinationPackage, it.className.simpleName)
             .addType(it.spec)
             .addFileDisclaimer()
-        it.imports.forEach { (pkg, name) -> builder
-            .addImport(pkg, name) }
+        it.imports.forEach { (pkg, name) ->
+            builder.addImport(pkg, name)
+        }
         builder.build()
     }.toSet()
 }
@@ -74,7 +75,12 @@ fun <T : GeneratedType> Collection<T>.toFileSpec(): Collection<FileSpec> = this
  * The IncomingParameter class is intended to represent a given name and type
  * of an incoming request, be it either a header, url param, path param, or body
  */
-sealed class IncomingParameter(val oasName: String, val description: String?, val type: TypeName, val isRequired: Boolean) {
+sealed class IncomingParameter(
+    val oasName: String,
+    val description: String?,
+    val type: TypeName,
+    val isRequired: Boolean
+) {
     val name: String = oasName.toKotlinParameterName()
     open fun toParameterSpecBuilder(treatAnyTypeHeadersAsStrings: Boolean = false): ParameterSpec.Builder =
         ParameterSpec.builder(
@@ -112,6 +118,8 @@ class RequestParameter(
     val typeInfo: KotlinTypeInfo,
     val minimum: Number? = null,
     val maximum: Number? = null,
+    val minLength: Number? = null,
+    val maxLength: Number? = null,
     val explode: Boolean? = null,
     val defaultValue: Any? = null,
 ) : IncomingParameter(oasName, description, type, isRequired) {
@@ -125,6 +133,8 @@ class RequestParameter(
         typeInfo = KotlinTypeInfo.from(parameter.schema, oasName),
         minimum = parameter.schema.minimum,
         maximum = parameter.schema.maximum,
+        minLength = parameter.schema.minLength,
+        maxLength = parameter.schema.maxLength,
         explode = parameter.explode,
         defaultValue = parameter.schema.default
     )

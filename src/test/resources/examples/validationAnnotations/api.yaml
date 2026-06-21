@@ -1,4 +1,35 @@
 openapi: 3.0.0
+paths:
+  /example-path-1:
+    get:
+      summary: "GET example path 1"
+      parameters:
+        - name: user_name
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserName'
+        - name: age
+          in: query
+          schema:
+            $ref: '#/components/schemas/Age'
+        - name: bio
+          in: query
+          schema:
+            $ref: '#/components/schemas/Bio'
+        - name: friends
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Friends'
+      responses:
+        200:
+          description: "successful operation"
+          content:
+            text/plain:
+              schema:
+                type: string
+
 components:
   schemas:
     ValidationAnnotations:
@@ -10,22 +41,31 @@ components:
         - friends
       properties:
         user_name:
-          type: string
-          pattern: '[a-zA-Z]'
+          $ref: '#/components/schemas/UserName'
         age:
-          type: integer
-          format: int32
-          minimum: 0
-          maximum: 100
-          exclusiveMinimum: true
-          exclusiveMaximum: false
+          $ref: '#/components/schemas/Age'
         bio:
-          type: string
-          minLength: 20
-          maxLength: 200
+          $ref: '#/components/schemas/Bio'
         friends:
-          type: array
-          items:
-            type: string
-          minItems: 0
-          maxItems: 10
+          $ref: '#/components/schemas/Friends'
+
+    UserName:
+      type: string
+      pattern: '[a-zA-Z]'
+    Age:
+      type: integer
+      format: int32
+      minimum: 0
+      maximum: 100
+      exclusiveMinimum: true
+      exclusiveMaximum: false
+    Friends:
+      type: array
+      items:
+        type: string
+      minItems: 0
+      maxItems: 10
+    Bio:
+      type: string
+      minLength: 20
+      maxLength: 200
