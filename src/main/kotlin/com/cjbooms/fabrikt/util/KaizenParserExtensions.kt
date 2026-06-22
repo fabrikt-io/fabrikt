@@ -421,8 +421,9 @@ object KaizenParserExtensions {
     fun OpenApi3.basePath(): String =
         servers
             .firstOrNull()
-            ?.url?.let { URI.create(it) }
-            ?.path.orEmpty()
+            ?.url
+            ?.let { url -> runCatching { URI.create(url).path }.getOrNull() }
+            .orEmpty()
             .removeSuffix("/")
 
     fun OpenApi3.groupedPaths(groupingStrategy: GroupingStrategy): Map<String, Map<String, Path>> = when (groupingStrategy) {

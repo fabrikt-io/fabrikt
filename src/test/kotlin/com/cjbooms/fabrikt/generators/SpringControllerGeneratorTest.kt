@@ -370,4 +370,46 @@ class SpringControllerGeneratorTest {
         }
     }
 
+    @Test
+    fun `generates controllers without crashing for a templated server url with variables`() {
+        // Issue #596: a server object with a templated url and a variables section caused
+        // URI.create() in basePath() to throw, aborting the whole generation run.
+        val spec =
+            """
+            openapi: 3.1.0
+            info:
+              title: test
+              version: 1.0.0
+            servers:
+              - url: https://{username}.gigantic-server.com:{port}/{basePath}
+                description: The production API server
+                variables:
+                  username:
+                    default: demo
+                  port:
+                    enum:
+                      - '8443'
+                      - '443'
+                    default: '8443'
+                  basePath:
+                    default: v2
+            paths:
+              /ping:
+                get:
+                  operationId: ping
+                  responses:
+                    '200':
+                      description: ok
+            """.trimIndent()
+
+        val api = SourceApi(spec)
+        val generated = SpringControllerInterfaceGenerator(Packages(basePackage), api, JavaxValidationAnnotations)
+            .generate()
+            .files
+
+        assertThat(generated).isNotEmpty()
+        // The templated url has no usable path, so the request mapping falls back to an empty base path.
+        assertThat(generated.toString()).doesNotContain("{username}")
+    }
+
 }
