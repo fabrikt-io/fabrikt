@@ -101,6 +101,16 @@ paths:
         204:
           description: "Operation successful"
 
+  /example-path-4:
+    get:
+      summary: "GET example path 4 - mixed explode list query params"
+      parameters:
+        - $ref: "#/components/parameters/ListQueryParamCsv"
+        - $ref: "#/components/parameters/ListQueryParamExploded"
+      responses:
+        200:
+          description: "successful operation"
+
 components:
   parameters:
     PathParam:

@@ -34,6 +34,7 @@ class SpringHttpInterfaceGeneratorTest {
         "multiMediaType",
         "pathLevelParameters",
         "parameterNameClash",
+        "tagGrouping",
     )
 
     @BeforeEach
@@ -49,7 +50,7 @@ class SpringHttpInterfaceGeneratorTest {
     @ParameterizedTest
     @MethodSource("fullApiTestCases")
     fun `correct Spring HTTP Interface clients are generated from a full API definition`(testCaseName: String) {
-        runTestCase(testCaseName)
+        runTestCase(testCaseName, options = optionsFor(testCaseName))
     }
 
     @Test
@@ -81,7 +82,7 @@ class SpringHttpInterfaceGeneratorTest {
         val sourceApi = SourceApi(readTextResource("/examples/$testCaseName/api.yaml"))
 
         val expectedModel = "/examples/$testCaseName/models/ClientModels.kt"
-        val expectedClient = "/examples/$testCaseName/client/$clientFileName"
+        val expectedClient = expectedClientPath(testCaseName, clientFileName)
 
         val models = ModelGenerator(
             packages,
@@ -96,8 +97,20 @@ class SpringHttpInterfaceGeneratorTest {
             .toSingleFile()
 
         assertThatGenerated(clientCode).isEqualTo(expectedClient)
-        assertThatGenerated(models).isEqualTo(expectedModel)
+        if (testCaseName != "tagGrouping") {
+            assertThatGenerated(models).isEqualTo(expectedModel)
+        }
     }
+
+    private fun optionsFor(testCaseName: String): Set<ClientCodeGenOptionType> =
+        if (testCaseName == "tagGrouping") setOf(ClientCodeGenOptionType.GROUP_BY_TAG) else emptySet()
+
+    private fun expectedClientPath(testCaseName: String, fileName: String): String =
+        if (testCaseName == "tagGrouping") {
+            "/examples/$testCaseName/client/grouped/$fileName"
+        } else {
+            "/examples/$testCaseName/client/$fileName"
+        }
 
     @Test
     fun `adds disclaimer as comment to files if enabled`() {

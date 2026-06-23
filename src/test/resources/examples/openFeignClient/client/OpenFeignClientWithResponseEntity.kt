@@ -3,6 +3,7 @@ package examples.openFeignClient.client
 import examples.openFeignClient.models.Content
 import examples.openFeignClient.models.FirstModel
 import examples.openFeignClient.models.QueryResult
+import feign.CollectionFormat
 import feign.HeaderMap
 import feign.Headers
 import feign.Param
@@ -139,13 +140,37 @@ public interface ExamplePath3SubresourceClient {
      * @param ifMatch The RFC7232 If-Match header field
      * @param csvListQueryParam
      */
-    @RequestLine("PUT /example-path-3/{pathParam}/subresource?csv_list_query_param={csvListQueryParam}")
+    @RequestLine(
+        "PUT /example-path-3/{pathParam}/subresource?csv_list_query_param={csvListQueryParam}",
+        collectionFormat = CollectionFormat.CSV,
+    )
     @Headers("If-Match: {ifMatch}")
     public fun putExamplePath3PathParamSubresource(
         firstModel: FirstModel,
         @Param("pathParam") pathParam: String,
         @Param("ifMatch") ifMatch: String,
         @Param("csvListQueryParam") csvListQueryParam: List<String>? = null,
+        @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
+    ): ResponseEntity<Unit>
+}
+
+@Suppress("unused")
+@FeignClient(
+    name = "test-feign-client-name",
+    contextId = "ExamplePath4",
+)
+public interface ExamplePath4Client {
+    /**
+     * GET example path 4 - mixed explode list query params
+     *
+     * @param csvListQueryParam
+     * @param explodeListQueryParam
+     */
+    @RequestLine("GET /example-path-4?csv_list_query_param={csvListQueryParam}&explode_list_query_param={explodeListQueryParam}")
+    public fun getExamplePath4(
+        @Param("csvListQueryParam") csvListQueryParam: List<String>? = null,
+        @Param("explodeListQueryParam") explodeListQueryParam: List<String>? = null,
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
         @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ResponseEntity<Unit>

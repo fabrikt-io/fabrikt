@@ -6,6 +6,14 @@ paths:
       summary: Get items with a status filter
       description: Retrieve a list of items filtered by their status.
       parameters:
+        - name: category
+          in: query
+          required: false
+          description: Filter items by category.
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SomeEnum'
         - name: status
           in: query
           required: false
@@ -21,6 +29,11 @@ paths:
                 $ref: '#/components/schemas/ArrayContainingComplexInlined'
 components:
   schemas:
+    ContainsEnum:
+      type: object
+      properties:
+        somes:
+          $ref: "#/components/schemas/SomeEnum"
     ContainsArrayOfArrays:
       type: object
       properties:
@@ -60,7 +73,14 @@ components:
         some_value:
           type: integer
           example: 100
-          
+
+    SomeEnum:
+      type: string
+      enum:
+        - foo
+        - bar
+        - baz
+
     ArraySimpleInLined:
       type: object
       required:

@@ -52,6 +52,8 @@ class SpringControllerGeneratorTest {
         "tagGrouping",
         "requestBodiesSchema",
         "responsesSchema",
+        "multipartUpload",
+        "validationAnnotations"
     )
 
     private fun setupGithubApiTestEnv(annotations: ValidationAnnotations = JavaxValidationAnnotations) {
@@ -272,7 +274,9 @@ class SpringControllerGeneratorTest {
     fun `ensure generates ByteArrayStream body parameter and response for string with format binary`() {
         MutableSettings.addOption(CodeGenTypeOverride.BYTEARRAY_AS_INPUTSTREAM)
         val api = SourceApi(readTextResource("/examples/byteArrayStream/api.yaml"))
-        val controllers = SpringControllerInterfaceGenerator(Packages(basePackage), api, JavaxValidationAnnotations).generate().toSingleFile()
+        val controllers =
+            SpringControllerInterfaceGenerator(Packages(basePackage), api, JavaxValidationAnnotations).generate()
+                .toSingleFile()
         val expectedControllers = "/examples/byteArrayStream/controllers/spring/Controllers.kt"
 
         assertThatGenerated(controllers.trim()).isEqualTo(expectedControllers)

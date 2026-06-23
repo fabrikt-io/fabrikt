@@ -8,6 +8,7 @@ import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.configurations.Packages
+import com.cjbooms.fabrikt.generators.client.OkHttpClientGenerator
 import com.cjbooms.fabrikt.generators.client.OkHttpEnhancedClientGenerator
 import com.cjbooms.fabrikt.generators.client.OkHttpSimpleClientGenerator
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
@@ -40,7 +41,11 @@ class OkHttpClientGeneratorTest {
         "pathLevelParameters",
         "parameterNameClash",
         "byteArrayStream",
+        "multipartUpload",
     )
+
+    @Suppress("unused")
+    private fun groupedClientTestCases(): Stream<String> = Stream.concat(fullApiTestCases(), Stream.of("tagGrouping"))
 
     @BeforeEach
     fun init() {
@@ -54,48 +59,55 @@ class OkHttpClientGeneratorTest {
     }
 
     @ParameterizedTest
-    @MethodSource("fullApiTestCases")
+    @MethodSource("groupedClientTestCases")
     fun `correct api simple client is generated from a full API definition`(testCaseName: String) {
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
 
         val expectedModel = "/examples/$testCaseName/models/ClientModels.kt"
-        val expectedClient = "/examples/$testCaseName/client/ApiClient.kt"
+        val expectedClient = expectedClientPath(testCaseName, "ApiClient.kt")
 
         val models = ModelGenerator(
             packages,
             sourceApi
         ).generate().toSingleFile()
-        val simpleClientCode = OkHttpSimpleClientGenerator(
+        val simpleClientCode = OkHttpClientGenerator(
             packages,
-            sourceApi
+            sourceApi,
+            Paths.get("src/main/kotlin")
         )
-            .generateDynamicClientCode()
+            .generate(optionsFor(testCaseName))
+            .clients
             .toSingleFile()
 
-        assertThatGenerated(models).isEqualTo(expectedModel)
+        if (testCaseName != "tagGrouping") {
+            assertThatGenerated(models).isEqualTo(expectedModel)
+        }
         assertThatGenerated(simpleClientCode).isEqualTo(expectedClient)
     }
 
     @ParameterizedTest
-    @MethodSource("fullApiTestCases")
+    @MethodSource("groupedClientTestCases")
     fun `correct api fault-tolerant service client is generated when the resilience4j option is set`(testCaseName: String) {
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
 
         val expectedLibUtil = "/examples/$testCaseName/client/HttpResilience4jUtil.kt"
-        val expectedClientCode = "/examples/$testCaseName/client/ApiService.kt"
+        val expectedClientCode = expectedClientPath(testCaseName, "ApiService.kt")
+        val options = setOf(ClientCodeGenOptionType.RESILIENCE4J) + optionsFor(testCaseName)
 
         val generator =
             OkHttpEnhancedClientGenerator(packages, sourceApi)
-        val enhancedLibUtil = generator.generateLibrary(setOf(ClientCodeGenOptionType.RESILIENCE4J))
+        val enhancedLibUtil = generator.generateLibrary(options)
             .filterIsInstance<SimpleFile>()
             .first { it.path.fileName.toString() == "HttpResilience4jUtil.kt" }
-        val enhancedClientCode = generator.generateDynamicClientCode(setOf(ClientCodeGenOptionType.RESILIENCE4J))
+        val enhancedClientCode = generator.generateDynamicClientCode(options)
 
-        assertThatGenerated(enhancedLibUtil.content).isEqualTo(expectedLibUtil)
+        if (testCaseName != "tagGrouping") {
+            assertThatGenerated(enhancedLibUtil.content).isEqualTo(expectedLibUtil)
+        }
         assertThatGenerated(enhancedClientCode.toSingleFile()).isEqualTo(expectedClientCode)
     }
 
@@ -132,6 +144,16 @@ class OkHttpClientGeneratorTest {
 
         assertThatGenerated(generatedHttpUtils.content).isEqualTo(expectedHttpUtils)
     }
+
+    private fun optionsFor(testCaseName: String): Set<ClientCodeGenOptionType> =
+        if (testCaseName == "tagGrouping") setOf(ClientCodeGenOptionType.GROUP_BY_TAG) else emptySet()
+
+    private fun expectedClientPath(testCaseName: String, fileName: String): String =
+        if (testCaseName == "tagGrouping") {
+            "/examples/$testCaseName/client/grouped/$fileName"
+        } else {
+            "/examples/$testCaseName/client/$fileName"
+        }
 
     @Test
     fun `correct api client and models are generated with external reference solution mode AGGRESSIVE`() {

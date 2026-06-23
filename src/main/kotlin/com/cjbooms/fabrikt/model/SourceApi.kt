@@ -44,9 +44,8 @@ data class SourceApi(
         val inlineEnumParams = openApi3.paths.values.flatMap { path ->
             val allParams = path.parameters + path.operations.values.flatMap { it.parameters }
             allParams.filter { param ->
-                Overlay.of(param.schema).pathFromRoot.contains("paths") &&
-                    (param.schema?.isEnumDefinition() == true ||
-                        (param.schema?.type == "array" && param.schema?.itemsSchema?.isEnumDefinition() == true))
+                isInlineEnum(param.schema) ||
+                        (param.schema?.type == "array" && isInlineEnum(param.schema?.itemsSchema))
             }.map { param ->
                 val schema = if (param.schema?.type == "array") param.schema.itemsSchema else param.schema
                 param.name to schema
@@ -94,6 +93,10 @@ data class SourceApi(
             .plus(inlineEnumParams)
             .map { (key, schema) -> SchemaInfo(key, schema) }
     }
+
+    private fun isInlineEnum(schema: Schema?): Boolean =
+        Overlay.of(schema).pathFromRoot.contains("paths") &&
+                schema?.isEnumDefinition() == true
 
     private fun validateSchemaObjects(api: OpenApi3): List<ValidationError> {
         val schemaErrors = api.schemas.entries.fold(emptyList<ValidationError>()) { errors, entry ->
