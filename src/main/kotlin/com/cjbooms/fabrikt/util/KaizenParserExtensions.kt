@@ -99,10 +99,33 @@ object KaizenParserExtensions {
     @Suppress("UNCHECKED_CAST")
     fun Schema.getEnumValues(): List<String> = when {
         this.hasEnums() -> this.enums.filterNotNull().map { it.toString() }.filterNot { it.isBlank() }
+        this.isOpenEnumDefinition() -> this.getOpenEnumValues()
         !MutableSettings.modelOptions.contains(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS) -> emptyList()
         else -> extensions[EXTENSIBLE_ENUM_KEY]?.let { it as List<String?> }?.filterNotNull()
             ?.filterNot { it.isBlank() } ?: emptyList()
     }
+
+    /**
+     * Detects the "open enum" pattern: an `anyOf` combining a string enum with an open `type: string`, e.g.
+     * ```yaml
+     * anyOf:
+     *   - type: string
+     *     enum: [foo, bar, baz]
+     *   - type: string
+     * ```
+     * Only recognised when the [ModelCodeGenOptionType.FAULT_TOLERANT_OPEN_ENUMS] option is enabled.
+     */
+    fun Schema.isOpenEnumDefinition(): Boolean {
+        if (!MutableSettings.modelOptions.contains(ModelCodeGenOptionType.FAULT_TOLERANT_OPEN_ENUMS)) return false
+        val branches = anyOfSchemas ?: return false
+        if (oneOfSchemas?.isNotEmpty() == true || allOfSchemas?.isNotEmpty() == true) return false
+        if (properties?.isNotEmpty() == true) return false
+        if (!branches.all { it.type == OasType.Text.type }) return false
+        return branches.any { it.hasEnums() } && branches.any { !it.hasEnums() }
+    }
+
+    private fun Schema.getOpenEnumValues(): List<String> =
+        (anyOfSchemas ?: emptyList()).filter { it.hasEnums() }.flatMap { it.getEnumValues() }.distinct()
 
     fun Schema.hasAdditionalProperties(): Boolean = Overlay.of(additionalPropertiesSchema).isPresent && additionalProperties != false
 
