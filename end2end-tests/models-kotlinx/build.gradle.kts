@@ -73,6 +73,13 @@ tasks {
         )
     )
 
+    val generateOpenEnumCodeTask = createGenerateCodeTask(
+        "generateOpenEnumCode",
+        "${rootProject.projectDir}/src/test/resources/examples/openEnum/api.yaml",
+        "com.example.openenum",
+        listOf("--http-model-opts", "FAULT_TOLERANT_OPEN_ENUMS")
+    )
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
             optIn.add("kotlinx.serialization.ExperimentalSerializationApi")
@@ -82,6 +89,7 @@ tasks {
         dependsOn(generateCodeTask)
         dependsOn(generatePrimitiveTypesCodeTask)
         dependsOn(generateStringFormatOverrideCodeTask)
+        dependsOn(generateOpenEnumCodeTask)
     }
 
     withType<Test> {

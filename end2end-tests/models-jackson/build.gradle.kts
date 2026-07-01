@@ -79,6 +79,12 @@ tasks {
         "${rootProject.projectDir}/src/test/resources/examples/discriminatedOneOf/api.yaml",
         "com.example.oneof",
     )
+    val generateOpenEnumCodeTask = createGenerateCodeTask(
+        "generateOpenEnumCode",
+        "${rootProject.projectDir}/src/test/resources/examples/openEnum/api.yaml",
+        "com.example.openenum",
+        listOf("--http-model-opts", "FAULT_TOLERANT_OPEN_ENUMS")
+    )
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
@@ -86,6 +92,7 @@ tasks {
         dependsOn(generatePrimitiveTypesCodeTask)
         dependsOn(generateStringFormatOverrideCodeTask)
         dependsOn(generateOneOfMarkerInterfaceCodeTask)
+        dependsOn(generateOpenEnumCodeTask)
     }
 
     withType<Test> {

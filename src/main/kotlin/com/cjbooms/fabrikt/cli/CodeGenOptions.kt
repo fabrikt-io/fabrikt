@@ -67,6 +67,7 @@ enum class ModelCodeGenOptionType(val description: String) {
     DISABLE_SEALED_INTERFACES_FOR_ONE_OF("This option disables the default sealed interfaces for oneOf behavior in v26+"),
     NON_NULL_MAP_VALUES("This option makes map values non-null. The default (since v15) and most spec compliant is make map values nullable"),
     FAULT_TOLERANT_ENUMS("This option adds an UNRECOGNIZED enum entry as a fallback for unmapped values, preventing deserialization exceptions. If jackson is used, the deserialization option **READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE** will need to be enabled as well"),
+    FAULT_TOLERANT_OPEN_ENUMS("This option converts the \"open enum\" pattern (an `anyOf` combining a string enum with an open `type: string`) into a fault-tolerant enum, i.e. an enum carrying the declared values plus an UNRECOGNIZED fallback, instead of collapsing the type to a plain `String`. Behaves like FAULT_TOLERANT_ENUMS for the affected enums"),
     ;
 
     override fun toString() = "`${super.toString()}` - $description"

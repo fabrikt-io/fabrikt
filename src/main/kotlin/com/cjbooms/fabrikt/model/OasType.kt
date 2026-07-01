@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt.model
 
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isEnumDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isMapTypeAdditionalProperties
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOpenEnumDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSchemaLess
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSet
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSimpleMapDefinition
@@ -90,7 +91,7 @@ sealed class OasType(
                 isStringDefinitionWithFormat("uri") -> Specialization.URI
                 isStringDefinitionWithFormat("byte") -> Specialization.BYTE
                 isStringDefinitionWithFormat("binary") -> Specialization.BINARY
-                isEnumDefinition() -> Specialization.ENUM
+                isEnumDefinition() || isOpenEnumDefinition() -> Specialization.ENUM
                 isMapTypeAdditionalProperties(oasKey) -> Specialization.TYPED_MAP_ADDITIONAL_PROPERTIES
                 isSimpleMapDefinition() -> Specialization.MAP
                 isTypedAdditionalProperties(oasKey) -> Specialization.TYPED_OBJECT_ADDITIONAL_PROPERTIES
