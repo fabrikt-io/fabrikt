@@ -34,7 +34,8 @@ class KotlinSerializationModelGeneratorTest {
     private fun testCases(): Stream<String> = Stream.of(
         "discriminatedOneOf",
         "primitiveTypes",
-        "normalizedNameConflation"
+        "normalizedNameConflation",
+        "openEnum"
     )
 
     @BeforeEach
@@ -55,6 +56,9 @@ class KotlinSerializationModelGeneratorTest {
         print("Testcase: $testCaseName")
         if (testCaseName !in listOf("discriminatedOneOf", "oneOfMarkerInterface")) {
             MutableSettings.addOption(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF)
+        }
+        if (testCaseName == "openEnum") {
+            MutableSettings.addOption(ModelCodeGenOptionType.FAULT_TOLERANT_OPEN_ENUMS)
         }
         val basePackage = "examples.${testCaseName.replace("/", ".")}"
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!

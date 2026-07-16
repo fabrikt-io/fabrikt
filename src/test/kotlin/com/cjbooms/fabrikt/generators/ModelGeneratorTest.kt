@@ -77,6 +77,7 @@ class ModelGeneratorTest {
         "unsupportedInlinedDefinitions",
         "requestBodiesSchema",
         "normalizedNameConflation",
+        "openEnum",
     )
 
     @BeforeEach
@@ -110,6 +111,9 @@ class ModelGeneratorTest {
         }
         if (testCaseName == "faultTolerantEnums") {
             MutableSettings.addOption(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS)
+        }
+        if (testCaseName == "openEnum") {
+            MutableSettings.addOption(ModelCodeGenOptionType.FAULT_TOLERANT_OPEN_ENUMS)
         }
         if (testCaseName == "defaultValues") {
             MutableSettings.addOption(JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL)
@@ -155,6 +159,37 @@ class ModelGeneratorTest {
         }
         assertThatExpectedFiles(Path.of("src/test/resources$expectedModelsPath"))
             .areContainedInGenerated(tempFolderContents)
+
+        tempDirectory.toFile().deleteRecursively()
+    }
+
+    @Test
+    fun `open enum behaviour is unchanged when only FAULT_TOLERANT_ENUMS is enabled`() {
+        // Without FAULT_TOLERANT_OPEN_ENUMS, the open enum anyOf pattern must keep its
+        // current behaviour: it is not detected as an enum and collapses to a plain String.
+        MutableSettings.addOption(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS)
+        val basePackage = "examples.openEnum"
+        val apiLocation = javaClass.getResource("/examples/openEnum/api.yaml")!!
+        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+
+        val models = ModelGenerator(
+            Packages(basePackage),
+            sourceApi,
+        ).generate()
+
+        val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
+        val tempDirectory = Files.createTempDirectory("model_generator_test_openEnum_fault_tolerant")
+        sourceSet.forEach { it.writeFileTo(tempDirectory.toFile()) }
+        val generated = readFolder(
+            tempDirectory.resolve(basePackage.replace(".", File.separator)).resolve("models")
+        )
+
+        // The open enum anyOf is NOT converted: no OpenEnum model is emitted ...
+        assertThat(generated).doesNotContainKey("OpenEnum.kt")
+        // ... and the property still collapses to a plain String
+        assertThat(generated["SomeObj.kt"]).contains("public val openEnum: String? = null")
+        // The regular (closed) enum is still generated, and gets the UNRECOGNIZED fault-tolerant fallback
+        assertThat(generated["CloseEnum.kt"]).contains("UNRECOGNIZED")
 
         tempDirectory.toFile().deleteRecursively()
     }

@@ -1,0 +1,41 @@
+openapi: 3.0.0
+info:
+  title: Open Enum Example
+  version: 1.0.0
+  description: >-
+    Reproduces the "open enum" pattern from
+    https://github.com/fabrikt-io/fabrikt/issues/374 using `anyOf`.
+paths:
+  /some-obj:
+    get:
+      operationId: getSomeObj
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SomeObj'
+components:
+  schemas:
+    SomeObj:
+      type: object
+      properties:
+        open_enum:
+          $ref: '#/components/schemas/OpenEnum'
+        close_enum:
+          $ref: '#/components/schemas/CloseEnum'
+    OpenEnum:
+      anyOf:
+        - type: string
+          enum:
+            - foo
+            - bar
+            - baz
+        - type: string
+    CloseEnum:
+      type: string
+      enum:
+        - foo
+        - bar
+        - baz

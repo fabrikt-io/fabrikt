@@ -45,6 +45,7 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedTypedAdditionalP
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfResolvingToAnyType
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOpenEnumDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isPolymorphicSubType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isPolymorphicSuperType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSimpleType
@@ -479,7 +480,8 @@ class ModelGenerator(
 
     private fun buildEnumClass(schema: Schema, enum: KotlinTypeInfo.Enum): TypeSpec {
         val enumType = generatedType(packages.base, enum.enumClassName)
-        val isFaultTolerant = options.contains(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS)
+        val isFaultTolerant = options.contains(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS) ||
+            schema.isOpenEnumDefinition()
 
         val classBuilder = TypeSpec
             .enumBuilder(enumType)
