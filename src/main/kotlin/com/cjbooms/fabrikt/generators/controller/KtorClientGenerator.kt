@@ -203,7 +203,7 @@ class KtorClientGenerator(
                                 // Catch IOException
                                 .nextControlFlow(
                                     "catch (e: %T)",
-                                    ClassName("java.io", "IOException")
+                                    ClassName("kotlinx.io", "IOException")
                                 )
                                 .addStatement(
                                     "%T.Failure(%T.Network(e))",

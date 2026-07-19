@@ -17,7 +17,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 import io.ktor.serialization.ContentConvertException
 import kotlinx.coroutines.CancellationException
-import java.io.IOException
+import kotlinx.io.IOException
 import java.util.UUID
 import kotlin.Int
 import kotlin.Unit
