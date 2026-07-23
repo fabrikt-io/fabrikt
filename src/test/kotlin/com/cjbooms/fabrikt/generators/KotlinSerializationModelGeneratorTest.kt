@@ -184,6 +184,38 @@ class KotlinSerializationModelGeneratorTest {
     }
 
     @Test
+    fun `ANY_AS_JSONELEMENT override is respected with KOTLINX_SERIALIZATION`() {
+        MutableSettings.addOption(CodeGenTypeOverride.ANY_AS_JSONELEMENT)
+        val basePackage = "examples.anyAsJsonElement"
+        val apiLocation = javaClass.getResource("/examples/anyAsJsonElement/api.yaml")!!
+        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val expectedModels = readFolder(Path.of("src/test/resources/examples/anyAsJsonElement/models/kotlinx/"))
+
+        val models = ModelGenerator(
+            Packages(basePackage),
+            sourceApi,
+        ).generate()
+
+        val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
+        val tempDirectory = Files.createTempDirectory("model_generator_test_kotlinx_jsonelement")
+        sourceSet.forEach {
+            it.writeFileTo(tempDirectory.toFile())
+        }
+
+        val tempFolderContents =
+            readFolder(tempDirectory.resolve(basePackage.replace(".", File.separator)).resolve("models"))
+        tempFolderContents.forEach {
+            if (expectedModels.containsKey(it.key)) {
+                assertThat((it.value)).isEqualTo(expectedModels[it.key])
+            } else {
+                assertThat(it.value).isEqualTo("File not found in expected models")
+            }
+        }
+
+        tempDirectory.toFile().deleteRecursively()
+    }
+
+    @Test
     fun `all AS_STRING overrides are respected with KOTLINX_SERIALIZATION`() {
         MutableSettings.addOption(CodeGenTypeOverride.DATE_AS_STRING)
         MutableSettings.addOption(CodeGenTypeOverride.DATETIME_AS_STRING)

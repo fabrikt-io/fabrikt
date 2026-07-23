@@ -1,0 +1,34 @@
+openapi: 3.0.0
+info:
+  title: Any as JsonElement
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Example:
+      type: object
+      required:
+        - anyValue
+      properties:
+        anyValue: {}
+        optionalAnyValue: {}
+        anyList:
+          type: array
+          items: {}
+        anyListNoItems:
+          type: array
+        nullableAny:
+          nullable: true
+        refAny:
+          $ref: '#/components/schemas/Anything'
+        oneOfAny:
+          oneOf:
+            - type: string
+            - type: integer
+        anyOfAny:
+          anyOf:
+            - type: string
+            - type: integer
+        untypedObject:
+          type: object
+    Anything: {}

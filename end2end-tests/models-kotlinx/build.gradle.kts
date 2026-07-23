@@ -80,6 +80,13 @@ tasks {
         listOf("--http-model-opts", "FAULT_TOLERANT_OPEN_ENUMS")
     )
 
+    val generateAnyAsJsonElementCodeTask = createGenerateCodeTask(
+        "generateAnyAsJsonElementCode",
+        "${rootProject.projectDir}/src/test/resources/examples/anyAsJsonElement/api.yaml",
+        "com.example.jsonelement",
+        listOf("--type-overrides", "ANY_AS_JSONELEMENT")
+    )
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
             optIn.add("kotlinx.serialization.ExperimentalSerializationApi")
@@ -90,6 +97,7 @@ tasks {
         dependsOn(generatePrimitiveTypesCodeTask)
         dependsOn(generateStringFormatOverrideCodeTask)
         dependsOn(generateOpenEnumCodeTask)
+        dependsOn(generateAnyAsJsonElementCodeTask)
     }
 
     withType<Test> {
