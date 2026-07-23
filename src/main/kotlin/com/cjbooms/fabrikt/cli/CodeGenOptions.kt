@@ -104,7 +104,8 @@ enum class CodeGenTypeOverride(val description: String) {
     UUID_AS_STRING("Ignore string format `uuid` and use `String` as the type"),
     DATE_AS_STRING("Ignore string format `date` and use `String` as the type"),
     DATETIME_AS_STRING("Ignore string format `date-time` and use `String` as the type"),
-    BYTEARRAY_AS_INPUTSTREAM("Use `InputStream` as ByteArray type. Defaults to `ByteArray`");
+    BYTEARRAY_AS_INPUTSTREAM("Use `InputStream` as ByteArray type. Defaults to `ByteArray`"),
+    ANY_AS_JSONELEMENT("Use `kotlinx.serialization.json.JsonElement` for untyped (any) schemas and `JsonObject` for untyped objects. Requires the KOTLINX_SERIALIZATION serialization library. Defaults to `Any`");
 
     override fun toString() = "`${super.toString()}` - $description"
 }

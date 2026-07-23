@@ -150,7 +150,9 @@ class RequestParameter(
     override val isNullable: Boolean get() = !isRequired && defaultValue == null
 
     override fun toParameterSpecBuilder(treatAnyTypeHeadersAsStrings: Boolean): ParameterSpec.Builder =
-        if (treatAnyTypeHeadersAsStrings && parameterLocation == HeaderParam && typeInfo == KotlinTypeInfo.AnyType) {
+        if (treatAnyTypeHeadersAsStrings && parameterLocation == HeaderParam &&
+            (typeInfo == KotlinTypeInfo.AnyType || typeInfo == KotlinTypeInfo.JsonElement)
+        ) {
             ParameterSpec.builder(
                 name = name,
                 type = if (isNullable) String::class.asTypeName().copy(nullable = true) else String::class.asTypeName()

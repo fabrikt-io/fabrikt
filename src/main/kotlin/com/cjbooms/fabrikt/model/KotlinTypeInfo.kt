@@ -51,6 +51,8 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
     object Boolean : KotlinTypeInfo(kotlin.Boolean::class)
     object UntypedObject : KotlinTypeInfo(Any::class)
     object AnyType : KotlinTypeInfo(Any::class)
+    object JsonElement : KotlinTypeInfo(kotlinx.serialization.json.JsonElement::class)
+    object JsonObject : KotlinTypeInfo(kotlinx.serialization.json.JsonObject::class)
     data class Object(val simpleClassName: String) : KotlinTypeInfo(GeneratedType::class, simpleClassName)
     data class Array(
         val parameterizedType: KotlinTypeInfo,
@@ -93,7 +95,7 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
                  * Defaults to Any for complex schemas inlined under the paths section.
                  * Necessary until support for generating inlined models like these is added.
                  */
-                return if (schema.isEnumDefinition()) Text else AnyType
+                return if (schema.isEnumDefinition()) Text else getOverridableAnyType()
             }
             return when (schema.toOasType(oasKey)) {
                 OasType.Date -> {
@@ -165,14 +167,14 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
                     SimpleTypedAdditionalProperties(from(schema, OasType.ADDITIONAL_PROPERTIES_VALUE))
 
                 OasType.UntypedObjectAdditionalProperties -> UntypedObjectAdditionalProperties
-                OasType.UntypedObject -> UntypedObject
+                OasType.UntypedObject -> if (isAnyAsJsonElementActive()) JsonObject else UntypedObject
                 OasType.UnknownAdditionalProperties -> UnknownAdditionalProperties
                 OasType.TypedMapAdditionalProperties ->
                     MapTypeAdditionalProperties(
                         from(schema.additionalPropertiesSchema, "", enclosingSchema)
                     )
 
-                OasType.Any -> AnyType
+                OasType.Any -> getOverridableAnyType()
                 OasType.OneOfAny ->
                     if (schema.isOneOfSuperInterfaceWithDiscriminator() ||
                         (schema.isOneOfSuperInterface() &&
@@ -181,7 +183,7 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
                     ) {
                         Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema))
                     } else {
-                        AnyType
+                        getOverridableAnyType()
                     }
             }
         }
@@ -196,8 +198,26 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
                     Object(ModelNameRegistry.getOrRegister(arraySchema, enclosingSchema))
                 arraySchema.hasInlinedItemsSchemaWithOneOf() || arraySchema.hasInlinedItemsSchemaOfTypeObject() ->
                     Object(ModelNameRegistry.getOrRegister(arraySchema))
-                arraySchema.itemsSchema.isNotDefined() -> AnyType
+                arraySchema.itemsSchema.isNotDefined() -> getOverridableAnyType()
                 else -> from(arraySchema.itemsSchema, oasKey, enclosingSchema)
+            }
+        }
+
+        private fun getOverridableAnyType(): KotlinTypeInfo =
+            if (isAnyAsJsonElementActive()) JsonElement else AnyType
+
+        private fun isAnyAsJsonElementActive(): kotlin.Boolean = when {
+            CodeGenTypeOverride.ANY_AS_JSONELEMENT !in MutableSettings.typeOverrides -> false
+            MutableSettings.serializationLibrary == KOTLINX_SERIALIZATION -> true
+            else -> {
+                logger.log(
+                    Level.WARNING,
+                    """
+                        The override flag 'ANY_AS_JSONELEMENT' requires the KOTLINX_SERIALIZATION serialization
+                        library and is ignored. Defaulting to `Any`...
+                    """.trimIndent()
+                )
+                false
             }
         }
 
