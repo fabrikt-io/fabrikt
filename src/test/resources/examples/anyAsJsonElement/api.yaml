@@ -31,4 +31,7 @@ components:
             - type: integer
         untypedObject:
           type: object
+        mapAny:
+          type: object
+          additionalProperties: {}
     Anything: {}

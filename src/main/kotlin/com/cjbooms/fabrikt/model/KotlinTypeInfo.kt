@@ -206,6 +206,14 @@ sealed class KotlinTypeInfo(val modelKClass: KClass<*>, val generatedModelClassN
         private fun getOverridableAnyType(): KotlinTypeInfo =
             if (isAnyAsJsonElementActive()) JsonElement else AnyType
 
+        /**
+         * When the ANY_AS_JSONELEMENT override is active, untyped map values (additional properties
+         * without a schema) are represented as [JsonElement] instead of `Any`. Returns null when the
+         * override is not active, so callers keep their existing `Any`-based type.
+         */
+        fun anyAsJsonElementMapValueOverride(): KotlinTypeInfo? =
+            if (isAnyAsJsonElementActive()) JsonElement else null
+
         private fun isAnyAsJsonElementActive(): kotlin.Boolean = when {
             CodeGenTypeOverride.ANY_AS_JSONELEMENT !in MutableSettings.typeOverrides -> false
             MutableSettings.serializationLibrary == KOTLINX_SERIALIZATION -> true

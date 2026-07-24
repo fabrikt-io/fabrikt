@@ -174,6 +174,10 @@ class ModelGenerator(
                 typeInfo is KotlinTypeInfo.MapTypeAdditionalProperties ->
                     generatedType(basePackage, typeInfo.parameterizedType.generatedModelClassName!!)
 
+                typeInfo is KotlinTypeInfo.UnknownAdditionalProperties &&
+                    KotlinTypeInfo.anyAsJsonElementMapValueOverride() != null ->
+                    KotlinTypeInfo.JsonElement.modelKClass.asTypeName()
+
                 else -> typeInfo.modelKClass.asTypeName()
             }
 

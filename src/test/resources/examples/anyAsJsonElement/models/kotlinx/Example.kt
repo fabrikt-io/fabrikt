@@ -1,7 +1,9 @@
 package examples.anyAsJsonElement.models
 
 import jakarta.validation.constraints.NotNull
+import kotlin.String
 import kotlin.collections.List
+import kotlin.collections.Map
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
@@ -28,4 +30,6 @@ public data class Example(
   public val anyOfAny: JsonElement? = null,
   @SerialName("untypedObject")
   public val untypedObject: JsonObject? = null,
+  @SerialName("mapAny")
+  public val mapAny: Map<String, JsonElement?>? = null,
 )
