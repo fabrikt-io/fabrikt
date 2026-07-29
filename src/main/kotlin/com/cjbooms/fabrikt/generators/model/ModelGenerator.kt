@@ -20,8 +20,6 @@ import com.cjbooms.fabrikt.generators.TypeFactory.createMutableMapOfMapsStringTo
 import com.cjbooms.fabrikt.generators.TypeFactory.createMutableMapOfStringToType
 import com.cjbooms.fabrikt.generators.TypeFactory.createSet
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
-import com.cjbooms.fabrikt.generators.model.JacksonMetadata.basePolymorphicType
-import com.cjbooms.fabrikt.generators.model.JacksonMetadata.polymorphicSubTypes
 import com.cjbooms.fabrikt.model.SerializationAnnotations
 import com.cjbooms.fabrikt.model.Destinations.modelsPackage
 import com.cjbooms.fabrikt.model.GeneratedType
@@ -824,8 +822,8 @@ class ModelGenerator(
         constructorBuilder: FunSpec.Builder = FunSpec.constructorBuilder(),
     ): TypeSpec.Builder {
         this.addModifiers(KModifier.SEALED)
-            .addAnnotation(basePolymorphicType(discriminator.propertyName))
-            .modifiers.remove(KModifier.DATA)
+        serializationAnnotations.addBasePolymorphicTypeAnnotation(this, discriminator.propertyName)
+        this.modifiers.remove(KModifier.DATA)
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {
             val interfaceName = ModelNameRegistry.getBySchema(oneOfSuperInterface) ?: ModelNameRegistry.getOrRegister(oneOfSuperInterface)
@@ -852,8 +850,8 @@ class ModelGenerator(
         val maybeEnumDiscriminator = properties
             .firstOrNull { it.name == discriminator.propertyName }?.typeInfo as? KotlinTypeInfo.Enum
 
-        this.addAnnotation(polymorphicSubTypes(mappings, maybeEnumDiscriminator))
-            .addQuarkusReflectionAnnotation()
+        serializationAnnotations.addPolymorphicSubTypesAnnotation(this, mappings, maybeEnumDiscriminator)
+        this.addQuarkusReflectionAnnotation()
             .addMicronautIntrospectedAnnotation()
             .addMicronautReflectionAnnotation()
 
@@ -901,6 +899,13 @@ class ModelGenerator(
         for (oneOfSuperInterface in oneOfSuperInterfaces) {
             val interfaceName = ModelNameRegistry.getBySchema(oneOfSuperInterface) ?: ModelNameRegistry.getOrRegister(oneOfSuperInterface)
             this.addSuperinterface(generatedType(packages.base, interfaceName))
+        }
+
+        val superTypeDiscriminator = superType.schema.discriminator.takeIf { it.propertyName != null }
+            ?: superType.schema.getDiscriminatorForInlinedObjectUnderAllOf()
+        superTypeDiscriminator?.let { discriminator ->
+            val mappingKey = discriminator.mappingKeyForSchemaName(schemaName) ?: schemaName
+            serializationAnnotations.addSubtypeMappingAnnotation(this, mappingKey)
         }
 
         val properties = superType.schema.getDiscriminatorForInlinedObjectUnderAllOf()?.let { discriminator ->

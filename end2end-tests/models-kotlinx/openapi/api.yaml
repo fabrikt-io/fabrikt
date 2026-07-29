@@ -184,3 +184,75 @@ components:
       properties:
         one:
           type: string
+    # allOf polymorphism: discriminated parent with allOf child schemas (issue #627)
+    ParentAction:
+      type: object
+      discriminator:
+        propertyName: actionType
+        mapping:
+          CHILD_A: '#/components/schemas/ChildActionA'
+          CHILD_B: '#/components/schemas/ChildActionB'
+      properties:
+        actionType:
+          type: string
+          enum:
+            - CHILD_A
+            - CHILD_B
+        createdBy:
+          type: string
+      required:
+        - actionType
+    ChildActionA:
+      allOf:
+        - $ref: '#/components/schemas/ParentAction'
+        - type: object
+          properties:
+            fieldA:
+              type: string
+    ChildActionB:
+      allOf:
+        - $ref: '#/components/schemas/ParentAction'
+        - type: object
+          properties:
+            fieldB:
+              type: integer
+    # oneOf sealed interface over the allOf children, sharing the parent's discriminator
+    ChildActionsAll:
+      type: array
+      items:
+        oneOf:
+          - $ref: '#/components/schemas/ChildActionA'
+          - $ref: '#/components/schemas/ChildActionB'
+        discriminator:
+          propertyName: actionType
+          mapping:
+            CHILD_A: '#/components/schemas/ChildActionA'
+            CHILD_B: '#/components/schemas/ChildActionB'
+    # allOf polymorphism without an explicit discriminator mapping: values default to the
+    # schema names. Also carries a required inherited property.
+    Vehicle:
+      type: object
+      discriminator:
+        propertyName: vehicleType
+      properties:
+        vehicleType:
+          type: string
+        wheels:
+          type: integer
+      required:
+        - vehicleType
+        - wheels
+    Car:
+      allOf:
+        - $ref: '#/components/schemas/Vehicle'
+        - type: object
+          properties:
+            trunkSize:
+              type: string
+    Truck:
+      allOf:
+        - $ref: '#/components/schemas/Vehicle'
+        - type: object
+          properties:
+            payload:
+              type: integer

@@ -4,6 +4,7 @@ import kotlin.Int
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@SerialName("CHILD_B")
 @Serializable
 public data class ChildActionB(
   @SerialName("fieldB")

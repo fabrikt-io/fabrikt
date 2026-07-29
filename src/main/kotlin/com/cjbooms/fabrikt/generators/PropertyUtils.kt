@@ -107,6 +107,11 @@ object PropertyUtils {
             when (classSettings.polymorphyType) {
                 ClassSettings.PolymorphyType.SUPER -> {
                     if (this is PropertyInfo.Field && isPolymorphicDiscriminator) {
+                        if (!serializationAnnotations.supportsBackingPropertyForDiscriminator) {
+                            return // the serializer emits the discriminator, so it must not be a class property
+                        }
+                        property.addModifiers(KModifier.ABSTRACT)
+                    } else if (!serializationAnnotations.supportsInheritedBackingProperties) {
                         property.addModifiers(KModifier.ABSTRACT)
                     } else {
                         property.addModifiers(KModifier.OPEN)
@@ -115,11 +120,16 @@ object PropertyUtils {
 
                 ClassSettings.PolymorphyType.SUB -> {
                     if (this is PropertyInfo.Field && isPolymorphicDiscriminator) {
+                        if (!serializationAnnotations.supportsBackingPropertyForDiscriminator) {
+                            return // the serializer emits the discriminator, so it must not be a class property
+                        }
                         property.addModifiers(KModifier.OVERRIDE)
                     } else {
                         if (isInherited) {
                             property.addModifiers(KModifier.OVERRIDE)
-                            classBuilder.addSuperclassConstructorParameter(name)
+                            if (serializationAnnotations.supportsInheritedBackingProperties) {
+                                classBuilder.addSuperclassConstructorParameter(name)
+                            }
                         }
                         serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
                     }
@@ -162,7 +172,7 @@ object PropertyUtils {
                         constructorBuilder.addParameter(constructorParameter.build())
                     }
                 }
-            } else {
+            } else if (!property.modifiers.contains(KModifier.ABSTRACT)) {
                 property.initializer(name)
                 val constructorParameter: ParameterSpec.Builder = ParameterSpec.builder(name, wrappedType)
                 val oasDefault = getDefaultValue(this, parameterizedType)

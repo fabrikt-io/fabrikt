@@ -12,6 +12,12 @@ sealed interface SerializationAnnotations {
     val supportsBackingPropertyForDiscriminator: Boolean
 
     /**
+     * Whether properties of a polymorphic super type may have backing fields that subtypes
+     * override and pass through the superclass constructor
+     */
+    val supportsInheritedBackingProperties: Boolean
+
+    /**
      * Whether the annotation supports OpenAPI's additional properties
      * https://spec.openapis.org/oas/v3.0.0.html#model-with-map-dictionary-properties
      */
@@ -29,7 +35,11 @@ sealed interface SerializationAnnotations {
     ): PropertySpec.Builder
     fun addClassAnnotation(typeSpecBuilder: TypeSpec.Builder): TypeSpec.Builder
     fun addBasePolymorphicTypeAnnotation(typeSpecBuilder: TypeSpec.Builder, propertyName: String): TypeSpec.Builder
-    fun addPolymorphicSubTypesAnnotation(typeSpecBuilder: TypeSpec.Builder, mappings: Map<String, TypeName>): TypeSpec.Builder
+    fun addPolymorphicSubTypesAnnotation(
+        typeSpecBuilder: TypeSpec.Builder,
+        mappings: Map<String, TypeName>,
+        enumDiscriminator: KotlinTypeInfo.Enum? = null,
+    ): TypeSpec.Builder
 
     /** Discriminator-less polymorphism for the sealed super-interface. No-op for libraries
      *  without a deduction equivalent (e.g. kotlinx). */
