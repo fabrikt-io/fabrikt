@@ -1,10 +1,9 @@
 package com.cjbooms.fabrikt.cli
 
-import com.beust.jcommander.ParameterException
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.SourceApi
-import java.nio.file.Files
+import com.cjbooms.fabrikt.util.ApiFileLoader
 import java.nio.file.Path
 import java.util.logging.Logger
 
@@ -15,9 +14,6 @@ object CodeGen {
     @JvmStatic
     fun main(args: Array<String>) {
         val codeGenArgs = CodeGenArgs.parse(args)
-
-        if (Files.notExists(codeGenArgs.apiFile))
-            throw ParameterException("Could not find api file '${codeGenArgs.apiFile}', Specify its location with the -a option. Use --help for further information.")
 
         MutableSettings.updateSettings(
             genTypes = codeGenArgs.targets,
@@ -38,9 +34,9 @@ object CodeGen {
         )
         generate(
             basePackage = codeGenArgs.basePackage,
-            pathToApi = codeGenArgs.apiFile.toAbsolutePath(),
+            apiFile = codeGenArgs.apiFile,
             outputDir = codeGenArgs.outputDirectory,
-            apiFragments = codeGenArgs.apiFragments.map { it.toFile().readText() },
+            apiFragments = codeGenArgs.apiFragments,
             srcPath = codeGenArgs.srcPath,
             resourcesPath = codeGenArgs.resourcesPath,
         )
@@ -48,20 +44,19 @@ object CodeGen {
 
     private fun generate(
         basePackage: String,
-        pathToApi: Path,
+        apiFile: String,
         outputDir: Path,
         apiFragments: List<String> = emptyList(),
         srcPath: Path,
         resourcesPath: Path,
     ) {
-
-        val suppliedApi = pathToApi.toFile().readText()
-        val baseDir = pathToApi.parent
+        val suppliedApi = ApiFileLoader.load(apiFile, "--api-file")
+        val fragments = apiFragments.map { ApiFileLoader.load(it, "--api-fragment").content }
 
         logger.info("Generating code and dumping to $outputDir/")
 
         val packages = Packages(basePackage)
-        val sourceApi = SourceApi.create(suppliedApi, apiFragments, baseDir)
+        val sourceApi = SourceApi.create(suppliedApi.content, fragments, suppliedApi.baseUri)
         val generator = CodeGenerator(packages, sourceApi, srcPath, resourcesPath)
         generator.generate().forEach { it.writeFileTo(outputDir.toFile()) }
     }

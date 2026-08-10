@@ -18,7 +18,7 @@ class CodeGenArgs {
 
     companion object {
         private const val DEFAULT_API_FILE_NAME = "api.yaml"
-        val DefaultApiPath: Path = Paths.get(".", DEFAULT_API_FILE_NAME)
+        const val DefaultApiFile: String = "./$DEFAULT_API_FILE_NAME"
 
         fun parse(args: Array<String>): CodeGenArgs {
             val codeGenArgs = CodeGenArgs()
@@ -59,17 +59,17 @@ class CodeGenArgs {
 
     @Parameter(
         names = ["--api-file"],
-        description = "This must be a valid Open API v3 spec. All code generation will be based off this input.",
-        converter = PathConverter::class
+        description = "This must be a valid Open API v3 spec. All code generation will be based off this input. " +
+            "Accepts either a local file path or a resolvable http(s) URL."
     )
-    var apiFile: Path = DefaultApiPath
+    var apiFile: String = DefaultApiFile
 
     @Parameter(
         names = ["--api-fragment"],
-        description = "A partial Open API v3 fragment, to be combined with the primary API for code generation purposes.",
-        converter = PathConverter::class
+        description = "A partial Open API v3 fragment, to be combined with the primary API for code generation purposes. " +
+            "Accepts either a local file path or a resolvable http(s) URL."
     )
-    var apiFragments: List<Path> = emptyList()
+    var apiFragments: List<String> = emptyList()
 
     @Parameter(
         names = ["--targets"],

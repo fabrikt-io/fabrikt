@@ -63,7 +63,7 @@ class OkHttpClientGeneratorTest {
     fun `correct api simple client is generated from a full API definition`(testCaseName: String) {
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
         val expectedModel = "/examples/$testCaseName/models/ClientModels.kt"
         val expectedClient = expectedClientPath(testCaseName, "ApiClient.kt")
@@ -92,7 +92,7 @@ class OkHttpClientGeneratorTest {
     fun `correct api fault-tolerant service client is generated when the resilience4j option is set`(testCaseName: String) {
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
         val expectedLibUtil = "/examples/$testCaseName/client/HttpResilience4jUtil.kt"
         val expectedClientCode = expectedClientPath(testCaseName, "ApiService.kt")
@@ -116,7 +116,7 @@ class OkHttpClientGeneratorTest {
     fun `the enhanced client is not generated when no specific options are provided`(testCaseName: String) {
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
         val enhancedClientCode = OkHttpEnhancedClientGenerator(
             packages,
@@ -132,7 +132,7 @@ class OkHttpClientGeneratorTest {
     fun `correct http utility libraries are generated`(testCaseName: String) {
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
         val expectedHttpUtils = "/examples/$testCaseName/client/HttpUtil.kt"
 
@@ -159,7 +159,7 @@ class OkHttpClientGeneratorTest {
     fun `correct api client and models are generated with external reference solution mode AGGRESSIVE`() {
         val packages = Packages("examples.externalReferences.aggressive")
         val apiLocation = javaClass.getResource("/examples/externalReferences/aggressive/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
         val expectedModel = "/examples/externalReferences/aggressive/models/ClientModels.kt"
         val expectedClient = "/examples/externalReferences/aggressive/client/ApiClient.kt"

@@ -126,7 +126,7 @@ class ModelGeneratorTest {
         }
         val basePackage = "examples.${testCaseName.replace("/", ".")}"
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModelsPath = "/examples/$testCaseName/models/"
         val expectedModels = getFileNamesInFolder(Path.of("src/test/resources$expectedModelsPath"))
 
@@ -170,7 +170,7 @@ class ModelGeneratorTest {
         MutableSettings.addOption(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS)
         val basePackage = "examples.openEnum"
         val apiLocation = javaClass.getResource("/examples/openEnum/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
         val models = ModelGenerator(
             Packages(basePackage),
@@ -202,7 +202,7 @@ class ModelGeneratorTest {
         )
         val basePackage = "examples.modelSuffix"
         val apiLocation = javaClass.getResource("/examples/modelSuffix/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModelsPath = "/examples/modelSuffix/models/"
 
         val models = ModelGenerator(
@@ -225,7 +225,7 @@ class ModelGeneratorTest {
         )
         val basePackage = "examples.fileComment"
         val apiLocation = javaClass.getResource("/examples/fileComment/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModelsPath = "/examples/fileComment/models/"
 
         val models = ModelGenerator(
