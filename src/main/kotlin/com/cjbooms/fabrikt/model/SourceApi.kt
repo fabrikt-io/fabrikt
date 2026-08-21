@@ -6,6 +6,7 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.isNotDefined
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.YamlUtils
 import com.cjbooms.fabrikt.validation.ValidationError
+import com.reprezen.jsonoverlay.JsonLoader
 import com.reprezen.jsonoverlay.Overlay
 import com.reprezen.kaizen.oasparser.model3.OpenApi3
 import com.reprezen.kaizen.oasparser.model3.Schema
@@ -20,20 +21,22 @@ data class SchemaInfo(val name: String, val schema: Schema) {
 data class SourceApi(
     private val rawApiSpec: String,
     val baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
+    private val jsonLoader: JsonLoader? = null,
 ) {
     companion object {
         fun create(
             baseApi: String,
             apiFragments: Collection<String>,
             baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
+            jsonLoader: JsonLoader? = null,
         ): SourceApi {
             val combinedApi =
                 apiFragments.fold(YamlUtils.expandYamlAliases(baseApi)) { acc: String, fragment -> YamlUtils.mergeYamlTrees(acc, fragment) }
-            return SourceApi(combinedApi, baseUri)
+            return SourceApi(combinedApi, baseUri, jsonLoader)
         }
     }
 
-    val openApi3: OpenApi3 = YamlUtils.parseOpenApi(rawApiSpec, baseUri)
+    val openApi3: OpenApi3 = YamlUtils.parseOpenApi(rawApiSpec, baseUri, jsonLoader)
     val allSchemas: List<SchemaInfo>
 
     init {

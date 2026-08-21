@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.util
 
 import com.beust.jcommander.ParameterException
+import com.sun.net.httpserver.Headers
 import com.sun.net.httpserver.HttpServer
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.net.InetSocketAddress
+import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -16,11 +18,13 @@ import java.nio.file.Path
 class ApiFileLoaderTest {
 
     private lateinit var server: HttpServer
+    private val recordedHeaders = mutableListOf<Headers>()
 
     @BeforeEach
     fun startServer() {
         server = HttpServer.create(InetSocketAddress("localhost", 0), 0)
         server.start()
+        recordedHeaders.clear()
     }
 
     @AfterEach
@@ -32,6 +36,7 @@ class ApiFileLoaderTest {
 
     private fun HttpServer.stub(path: String, status: Int, body: String? = null) {
         createContext(path) { exchange ->
+            recordedHeaders.add(exchange.requestHeaders)
             val bytes = body?.toByteArray(StandardCharsets.UTF_8)
             exchange.sendResponseHeaders(status, bytes?.size?.toLong() ?: -1)
             bytes?.let { exchange.responseBody.write(it) }
@@ -108,5 +113,162 @@ class ApiFileLoaderTest {
             .isInstanceOf(ParameterException::class.java)
             .hasMessageContaining("not a valid path")
             .hasMessageContaining("--api-file")
+    }
+
+    @Test
+    fun `sends a single auth header on remote fetch`() {
+        server.stub("/secure/api.yaml", 200, "openapi: 3.0.0")
+
+        ApiFileLoader.load(
+            "${baseUrl()}/secure/api.yaml",
+            "--api-file",
+            listOf("Authorization" to "Bearer smoke"),
+        )
+
+        assertThat(recordedHeaders).hasSize(1)
+        assertThat(recordedHeaders.single()["Authorization"]).containsExactly("Bearer smoke")
+    }
+
+    @Test
+    fun `sends multiple auth headers on remote fetch`() {
+        server.stub("/secure/api.yaml", 200, "openapi: 3.0.0")
+
+        ApiFileLoader.load(
+            "${baseUrl()}/secure/api.yaml",
+            "--api-file",
+            listOf("Authorization" to "Bearer smoke", "X-Custom" to "value"),
+        )
+
+        assertThat(recordedHeaders).hasSize(1)
+        assertThat(recordedHeaders.single()["Authorization"]).containsExactly("Bearer smoke")
+        assertThat(recordedHeaders.single()["X-Custom"]).containsExactly("value")
+    }
+
+    @Test
+    fun `sends auth header containing embedded exclamation mark as a literal value`() {
+        server.stub("/secure/api.yaml", 200, "openapi: 3.0.0")
+
+        ApiFileLoader.load(
+            "${baseUrl()}/secure/api.yaml",
+            "--api-file",
+            listOf("Authorization" to "Bearer abc!def"),
+        )
+
+        assertThat(recordedHeaders).hasSize(1)
+        assertThat(recordedHeaders.single()["Authorization"]).containsExactly("Bearer abc!def")
+    }
+
+    @Test
+    fun `local file load ignores auth headers without error`() {
+        val file = Files.createTempFile("api", ".yaml")
+        Files.writeString(file, "openapi: 3.0.0")
+
+        val loaded = ApiFileLoader.load(file.toString(), "--api-file", listOf("Authorization" to "Bearer smoke"))
+
+        assertThat(loaded.content).isEqualTo("openapi: 3.0.0")
+    }
+
+    @Test
+    fun `resolveHeaders substitutes env var placeholders`() {
+        val headers = ApiFileLoader.resolveHeaders(
+            listOf("Authorization: Bearer \${TOKEN}", "X-Other: \${MISSING:-default}"),
+            env = { if (it == "TOKEN") "secret" else null },
+        )
+
+        assertThat(headers).containsExactly(
+            "Authorization" to "Bearer secret",
+            "X-Other" to "default",
+        )
+    }
+
+    @Test
+    fun `resolveHeaders resolves whole value env var name`() {
+        val headers = ApiFileLoader.resolveHeaders(
+            listOf("Authorization: API_TOKEN"),
+            env = { if (it == "API_TOKEN") "env-secret" else null },
+        )
+
+        assertThat(headers).containsExactly("Authorization" to "env-secret")
+    }
+
+    @Test
+    fun `resolveHeaders prefers whole env var name over placeholder expansion`() {
+        // API_TOKEN is a valid env var regex and is set, so it should resolve to the env value,
+        // not be treated as a literal string.
+        val headers = ApiFileLoader.resolveHeaders(
+            listOf("Authorization: API_TOKEN"),
+            env = { if (it == "API_TOKEN") "env-secret" else null },
+        )
+
+        assertThat(headers).containsExactly("Authorization" to "env-secret")
+    }
+
+    @Test
+    fun `resolveHeaders runs shell command for values starting with exclamation mark`() {
+        val headers = ApiFileLoader.resolveHeaders(listOf("Authorization: Bearer !echo smoke"))
+
+        assertThat(headers).containsExactly("Authorization" to "Bearer smoke")
+    }
+
+    @Test
+    fun `resolveHeaders runs shell command when exclamation mark is at value start`() {
+        val headers = ApiFileLoader.resolveHeaders(listOf("Authorization: !echo token"))
+
+        assertThat(headers).containsExactly("Authorization" to "token")
+    }
+
+    @Test
+    fun `resolveHeaders keeps embedded exclamation mark as a literal token`() {
+        val headers = ApiFileLoader.resolveHeaders(listOf("Authorization: Bearer abc!def"))
+
+        assertThat(headers).containsExactly("Authorization" to "Bearer abc!def")
+    }
+
+    @Test
+    fun `resolveHeaders keeps leading exclamation mark followed by whitespace as a literal token`() {
+        val headers = ApiFileLoader.resolveHeaders(listOf("Authorization: Bearer ! abc"))
+
+        assertThat(headers).containsExactly("Authorization" to "Bearer ! abc")
+    }
+
+    @Test
+    fun `resolveHeaders throws when shell command fails`() {
+        assertThatThrownBy { ApiFileLoader.resolveHeaders(listOf("Authorization: !false")) }
+            .isInstanceOf(ParameterException::class.java)
+            .hasMessageContaining("Auth command 'false' failed with exit code 1")
+    }
+
+    @Test
+    fun `resolveHeaders throws when shell command produces no output`() {
+        assertThatThrownBy { ApiFileLoader.resolveHeaders(listOf("Authorization: !echo -n")) }
+            .isInstanceOf(ParameterException::class.java)
+            .hasMessageContaining("produced no output")
+    }
+
+    @Test
+    fun `resolveHeaders throws for header without colon`() {
+        assertThatThrownBy { ApiFileLoader.resolveHeaders(listOf("NoColon")) }
+            .isInstanceOf(ParameterException::class.java)
+            .hasMessageContaining("Invalid --auth 'NoColon'")
+            .hasMessageContaining("Name: value")
+    }
+
+    @Test
+    fun `shell command result is final and not re scanned for env vars`() {
+        // If the command outputs a value that would otherwise look like an env var placeholder,
+        // it must be returned verbatim.
+        val headers = ApiFileLoader.resolveHeaders(listOf("Authorization: !echo '\${TOKEN}'"))
+
+        assertThat(headers).containsExactly("Authorization" to "\${TOKEN}")
+    }
+
+    @Test
+    fun `AuthJsonLoader sends auth headers when fetching remote refs`() {
+        server.stub("/common.yaml", 200, "openapi: 3.0.0\ncomponents:\n  schemas:\n    X:\n      type: object")
+
+        AuthJsonLoader(listOf("Authorization" to "Bearer ref-token")).load(URL("${baseUrl()}/common.yaml"))
+
+        assertThat(recordedHeaders).hasSize(1)
+        assertThat(recordedHeaders.single()["Authorization"]).containsExactly("Bearer ref-token")
     }
 }
