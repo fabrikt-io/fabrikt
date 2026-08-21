@@ -15,6 +15,8 @@ cd fabrikt/
 - **Bug fixes and small improvements** — open a PR directly.
 - **New features or significant changes** — open an issue first to discuss the approach.
 
+AI coding agents: see [AGENTS.md](AGENTS.md) for build/test commands and the golden-file workflow.
+
 ## Tests and Living Documentation
 
 Fabrikt's tests work by comparing generated code against committed example files in `src/test/resources/examples/`. These examples are the living documentation of what fabrikt produces — they show exactly what gets generated for a given spec and set of options.
