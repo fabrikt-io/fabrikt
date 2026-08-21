@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.nio.file.Paths
 import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -36,7 +35,7 @@ class ResourceGeneratorTest {
         print("Testcase: $testCaseName")
         val basePackage = "examples.$testCaseName"
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")
-        val sourceApi = SourceApi(apiLocation!!.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation!!.readText(), baseUri = apiLocation.toURI())
         val expectedResource =
             javaClass.getResource("/examples/$testCaseName/resources/reflection-config.json")!!.readText()
         MutableSettings.updateSettings(

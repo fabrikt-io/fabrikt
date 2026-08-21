@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.nio.file.Paths
 import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -49,7 +48,7 @@ class KtorClientGeneratorTest {
     fun `correct Ktor client code is generated`(testCaseName: String) {
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
         val expectedClient = expectedClientPath(testCaseName, "KtorClient.kt")
 
@@ -69,7 +68,7 @@ class KtorClientGeneratorTest {
     fun `correct Ktor API models are generated`(testCaseName: String) {
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
         val expectedApiModels = "/examples/$testCaseName/client/ktor/KtorApiModels.kt"
 

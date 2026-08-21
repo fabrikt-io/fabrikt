@@ -100,6 +100,11 @@ java -jar fabrikt.jar \
     --http-client-opts resilience4j
 ```
 
+`--api-file` and `--api-fragment` also accept a resolvable `http://`/`https://` URL instead of a local path,
+in which case Fabrikt fetches the spec at generation time.
+Only fetch specs from URLs you trust — Fabrikt performs a plain, unauthenticated HTTP GET, so pointing it at an
+untrusted or attacker-influenced URL carries the same risk as fetching any other untrusted network resource.
+
 __Tip__: You can also run the latest version without a manual download via [JBang](https://www.jbang.dev/):
 
 ```
@@ -213,8 +218,8 @@ This section documents the available CLI parameters for controlling what gets ge
 
 | Parameter                      | Description |
 | ------------------------------ | ------------------------------ |
-|   `--api-file`                 | This must be a valid Open API v3 spec. All code generation will be based off this input. |
-|   `--api-fragment`             | A partial Open API v3 fragment, to be combined with the primary API for code generation purposes. |
+|   `--api-file`                 | This must be a valid Open API v3 spec. All code generation will be based off this input. Accepts either a local file path or a resolvable http(s) URL. |
+|   `--api-fragment`             | A partial Open API v3 fragment, to be combined with the primary API for code generation purposes. Accepts either a local file path or a resolvable http(s) URL. |
 | * `--base-package`             | The base package which all code will be generated under. |
 |   `--external-ref-resolution`  | Specify to which degree referenced schemas from external files are included in model generation. Default: TARGETED |
 |                                | CHOOSE ONE OF: |

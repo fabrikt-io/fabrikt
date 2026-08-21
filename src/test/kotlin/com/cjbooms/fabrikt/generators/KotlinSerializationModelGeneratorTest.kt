@@ -62,7 +62,7 @@ class KotlinSerializationModelGeneratorTest {
         }
         val basePackage = "examples.${testCaseName.replace("/", ".")}"
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModelsPath = "/examples/$testCaseName/models/kotlinx/"
         val expectedModels = getFileNamesInFolder(Path.of("src/test/resources$expectedModelsPath"))
 
@@ -97,7 +97,7 @@ class KotlinSerializationModelGeneratorTest {
     fun `schemas configured with additionalProperties results in UnsupportedOperationException`() {
         val basePackage = "examples.additionalProperties"
         val apiLocation = javaClass.getResource("/examples/additionalProperties/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
         val e = assertThrows<UnsupportedOperationException> {
             ModelGenerator(Packages(basePackage), sourceApi,).generate()
@@ -109,7 +109,7 @@ class KotlinSerializationModelGeneratorTest {
     fun `schemas without properties result in UnsupportedOperationException`() {
         val basePackage = "examples.untypedObject"
         val apiLocation = javaClass.getResource("/examples/untypedObject/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
         val e = assertThrows<UnsupportedOperationException> {
             val models = ModelGenerator(Packages(basePackage), sourceApi,).generate()
@@ -124,7 +124,7 @@ class KotlinSerializationModelGeneratorTest {
         MutableSettings.addOption(CodeGenTypeOverride.DATETIME_AS_INSTANT)
         val basePackage = "examples.kotlinxDateTimeOverrides"
         val apiLocation = javaClass.getResource("/examples/kotlinxDateTimeOverrides/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModels = readFolder(Path.of("src/test/resources/examples/kotlinxDateTimeOverrides/models/instant/"))
 
         val models = ModelGenerator(
@@ -156,7 +156,7 @@ class KotlinSerializationModelGeneratorTest {
         MutableSettings.addOption(CodeGenTypeOverride.DATETIME_AS_LOCALDATETIME)
         val basePackage = "examples.kotlinxDateTimeOverrides"
         val apiLocation = javaClass.getResource("/examples/kotlinxDateTimeOverrides/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModels = readFolder(Path.of("src/test/resources/examples/kotlinxDateTimeOverrides/models/localdatetime/"))
 
         val models = ModelGenerator(
@@ -188,7 +188,7 @@ class KotlinSerializationModelGeneratorTest {
         MutableSettings.addOption(CodeGenTypeOverride.ANY_AS_JSONELEMENT)
         val basePackage = "examples.anyAsJsonElement"
         val apiLocation = javaClass.getResource("/examples/anyAsJsonElement/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModels = readFolder(Path.of("src/test/resources/examples/anyAsJsonElement/models/kotlinx/"))
 
         val models = ModelGenerator(
@@ -225,7 +225,7 @@ class KotlinSerializationModelGeneratorTest {
         MutableSettings.addOption(CodeGenTypeOverride.BINARY_AS_STRING)
         val basePackage = "examples.primitiveTypes"
         val apiLocation = javaClass.getResource("/examples/primitiveTypes/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseDir = Paths.get(apiLocation.toURI()))
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModels = readFolder(Path.of("src/test/resources/examples/primitiveTypes/models/kotlinxAsStringOverrides/"))
 
         val models = ModelGenerator(

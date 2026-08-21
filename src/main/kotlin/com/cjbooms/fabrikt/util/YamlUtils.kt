@@ -14,7 +14,7 @@ import com.reprezen.kaizen.oasparser.model3.OpenApi3
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
-import java.nio.file.Path
+import java.net.URI
 import java.nio.file.Paths
 
 object YamlUtils {
@@ -85,12 +85,12 @@ object YamlUtils {
             ),
         )!!
 
-    fun parseOpenApi(input: String, inputDir: Path = Paths.get("").toAbsolutePath()): OpenApi3 =
+    fun parseOpenApi(input: String, baseUri: URI = Paths.get("").toAbsolutePath().toUri()): OpenApi3 =
         try {
             val root: JsonNode = objectMapper.readTree(input)
             OpenApi31Downgrader.downgradeIncompatibleElements(root)
             cleanEmptyTypes(root)
-            OpenApi3Parser().parse(root, inputDir.toUri().toURL())
+            OpenApi3Parser().parse(root, baseUri.toURL())
         } catch (ex: NullPointerException) {
             throw IllegalArgumentException(
                 "The Kaizen openapi-parser library threw a NPE exception when parsing this API. " +

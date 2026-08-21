@@ -9,7 +9,7 @@ import com.cjbooms.fabrikt.validation.ValidationError
 import com.reprezen.jsonoverlay.Overlay
 import com.reprezen.kaizen.oasparser.model3.OpenApi3
 import com.reprezen.kaizen.oasparser.model3.Schema
-import java.nio.file.Path
+import java.net.URI
 import java.nio.file.Paths
 import java.util.logging.Logger
 
@@ -19,21 +19,21 @@ data class SchemaInfo(val name: String, val schema: Schema) {
 
 data class SourceApi(
     private val rawApiSpec: String,
-    val baseDir: Path = Paths.get("").toAbsolutePath(),
+    val baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
 ) {
     companion object {
         fun create(
             baseApi: String,
             apiFragments: Collection<String>,
-            baseDir: Path = Paths.get("").toAbsolutePath(),
+            baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
         ): SourceApi {
             val combinedApi =
                 apiFragments.fold(YamlUtils.expandYamlAliases(baseApi)) { acc: String, fragment -> YamlUtils.mergeYamlTrees(acc, fragment) }
-            return SourceApi(combinedApi, baseDir)
+            return SourceApi(combinedApi, baseUri)
         }
     }
 
-    val openApi3: OpenApi3 = YamlUtils.parseOpenApi(rawApiSpec, baseDir)
+    val openApi3: OpenApi3 = YamlUtils.parseOpenApi(rawApiSpec, baseUri)
     val allSchemas: List<SchemaInfo>
 
     init {
