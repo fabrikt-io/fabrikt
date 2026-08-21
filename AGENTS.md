@@ -5,8 +5,7 @@ User-facing docs, CLI options, and feature lists live in README.md — reference
 
 ## First-time setup
 
-- The full build needs a JDK 17 installation. The root project targets Java 17 via `sourceCompatibility`/`targetCompatibility`, and the `playground` subproject declares `kotlin { jvmToolchain(17) }`; without JDK 17 Gradle fails with `Cannot find a Java installation ... matching: {languageVersion=17}`. Install JDK 17 and make it discoverable (e.g. `sdk install java 17.0.20-tem`, or another Temurin/Adoptium 17 build).
-- First build downloads Gradle and dependencies; subsequent builds reuse the daemon.
+- The full build needs a JDK 17 installation. The root project targets Java 17 via `sourceCompatibility`/`targetCompatibility`, and the `playground` subproject declares `kotlin { jvmToolchain(17) }`; without JDK 17 Gradle fails with `Cannot find a Java installation ... matching: {languageVersion=17}`. Install JDK 17 and make it discoverable (e.g. `sdk install java 17.0.20-tem`).
 - `CLAUDE.md` is a small pointer file; `AGENTS.md` is the single source of truth. On Windows, if symlinks are checked out as plain text, read `AGENTS.md` directly and treat `.claude/skills` as equivalent to `.agents/skills`.
 
 ## Commands
@@ -15,7 +14,6 @@ User-facing docs, CLI options, and feature lists live in README.md — reference
 - Test: `./gradlew test`
 - Single test class: `./gradlew :test --tests "com.cjbooms.fabrikt.generators.ModelGeneratorTest"`
 - CLI usage: `./gradlew printCodeGenUsage`
-- No standalone lint task. Generated code is formatted by ktlint inside tests (`src/test/kotlin/com/cjbooms/fabrikt/util/Linter.kt`) before comparison — never hand-format it.
 
 ## Layout
 
