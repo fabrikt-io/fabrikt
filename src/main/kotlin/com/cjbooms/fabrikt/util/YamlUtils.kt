@@ -95,8 +95,6 @@ object YamlUtils {
             val root: JsonNode = objectMapper.readTree(input)
             OpenApi31Downgrader.downgradeIncompatibleElements(root)
             cleanEmptyTypes(root)
-            // The 4-arg parse is inherited from OpenApiParser and returns OpenApi<?>, but
-            // OpenApi3Parser always produces an OpenApi3 (its isVersion3 is unconditionally true).
             OpenApi3Parser().parse(root, baseUri.toURL(), false, jsonLoader) as OpenApi3
         } catch (ex: NullPointerException) {
             throw IllegalArgumentException(

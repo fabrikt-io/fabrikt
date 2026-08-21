@@ -62,5 +62,6 @@ JUnit 5 + AssertJ. Generator tests parameterize over example directory names (`S
 ## Boundaries
 
 - Always: run `./gradlew build` before declaring done; review the full golden-file diff before committing regenerated examples.
+- Comments: do not add comments that restate what the code or a good function name already says. Reserve comments for non-obvious external behavior a name cannot convey (e.g. a third-party library's caching contract). This applies to KDoc, inline comments, and test comments alike.
 - Ask first: changes that alter output for existing specs, add dependencies, change `.github/workflows/`, or touch `end2end-tests/` / `playground/` build config.
 - Never: commit with `SHOULD_OVERWRITE_EXAMPLES = true`; hand-edit files under `src/test/resources/examples/`; flip the overwrite flag to silence an unexpected failure; commit secrets or signing keys.

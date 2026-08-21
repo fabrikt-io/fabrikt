@@ -32,8 +32,6 @@ class AuthHeaderResolverTest {
 
     @Test
     fun `resolveHeaders prefers whole env var name over placeholder expansion`() {
-        // API_TOKEN is a valid env var regex and is set, so it should resolve to the env value,
-        // not be treated as a literal string.
         val headers = AuthHeaderResolver.resolveHeaders(
             listOf("Authorization: API_TOKEN"),
             env = { if (it == "API_TOKEN") "env-secret" else null },
@@ -94,8 +92,6 @@ class AuthHeaderResolverTest {
 
     @Test
     fun `shell command result is final and not re scanned for env vars`() {
-        // If the command outputs a value that would otherwise look like an env var placeholder,
-        // it must be returned verbatim.
         val headers = AuthHeaderResolver.resolveHeaders(listOf("Authorization: !echo '\${TOKEN}'"))
 
         assertThat(headers).containsExactly("Authorization" to "\${TOKEN}")
