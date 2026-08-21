@@ -35,7 +35,6 @@ object CodeGen {
         )
 
         val resolvedAuth = ApiFileLoader.resolveHeaders(codeGenArgs.auth, System::getenv)
-        val jsonLoader = if (resolvedAuth.isNotEmpty()) AuthJsonLoader(resolvedAuth) else null
 
         generate(
             basePackage = codeGenArgs.basePackage,
@@ -45,7 +44,6 @@ object CodeGen {
             srcPath = codeGenArgs.srcPath,
             resourcesPath = codeGenArgs.resourcesPath,
             resolvedAuth = resolvedAuth,
-            jsonLoader = jsonLoader,
         )
     }
 
@@ -57,13 +55,13 @@ object CodeGen {
         srcPath: Path,
         resourcesPath: Path,
         resolvedAuth: List<Pair<String, String>> = emptyList(),
-        jsonLoader: com.reprezen.jsonoverlay.JsonLoader? = null,
     ) {
         val suppliedApi = ApiFileLoader.load(apiFile, "--api-file", resolvedAuth)
         val fragments = apiFragments.map { ApiFileLoader.load(it, "--api-fragment", resolvedAuth).content }
 
         logger.info("Generating code and dumping to $outputDir/")
 
+        val jsonLoader = if (resolvedAuth.isNotEmpty()) AuthJsonLoader(resolvedAuth) else null
         val packages = Packages(basePackage)
         val sourceApi = SourceApi.create(suppliedApi.content, fragments, suppliedApi.baseUri, jsonLoader)
         val generator = CodeGenerator(packages, sourceApi, srcPath, resourcesPath)

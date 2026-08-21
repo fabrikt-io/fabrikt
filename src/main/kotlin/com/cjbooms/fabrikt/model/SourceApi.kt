@@ -18,11 +18,16 @@ data class SchemaInfo(val name: String, val schema: Schema) {
     val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, name)
 }
 
-data class SourceApi(
+class SourceApi private constructor(
     private val rawApiSpec: String,
     val baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
-    private val jsonLoader: JsonLoader? = null,
+    private val preloadedOpenApi3: OpenApi3? = null,
 ) {
+    constructor(
+        rawApiSpec: String,
+        baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
+    ) : this(rawApiSpec, baseUri, null)
+
     companion object {
         fun create(
             baseApi: String,
@@ -32,11 +37,11 @@ data class SourceApi(
         ): SourceApi {
             val combinedApi =
                 apiFragments.fold(YamlUtils.expandYamlAliases(baseApi)) { acc: String, fragment -> YamlUtils.mergeYamlTrees(acc, fragment) }
-            return SourceApi(combinedApi, baseUri, jsonLoader)
+            return SourceApi(combinedApi, baseUri, YamlUtils.parseOpenApi(combinedApi, baseUri, jsonLoader))
         }
     }
 
-    val openApi3: OpenApi3 = YamlUtils.parseOpenApi(rawApiSpec, baseUri, jsonLoader)
+    val openApi3: OpenApi3 = preloadedOpenApi3 ?: YamlUtils.parseOpenApi(rawApiSpec, baseUri)
     val allSchemas: List<SchemaInfo>
 
     init {

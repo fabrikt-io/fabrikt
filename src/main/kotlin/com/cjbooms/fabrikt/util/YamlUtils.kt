@@ -96,11 +96,7 @@ object YamlUtils {
             val root: JsonNode = objectMapper.readTree(input)
             OpenApi31Downgrader.downgradeIncompatibleElements(root)
             cleanEmptyTypes(root)
-            if (jsonLoader != null) {
-                OpenApi3Parser().parse(root, baseUri.toURL(), false, jsonLoader) as OpenApi3
-            } else {
-                OpenApi3Parser().parse(root, baseUri.toURL())
-            }
+            OpenApi3Parser().parse(root, baseUri.toURL(), false, jsonLoader) as OpenApi3
         } catch (ex: NullPointerException) {
             throw IllegalArgumentException(
                 "The Kaizen openapi-parser library threw a NPE exception when parsing this API. " +
