@@ -4,6 +4,7 @@ import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.ApiFileLoader
+import com.cjbooms.fabrikt.util.AuthHeaderResolver
 import com.cjbooms.fabrikt.util.AuthJsonLoader
 import java.nio.file.Path
 import java.util.logging.Logger
@@ -34,7 +35,7 @@ object CodeGen {
             outputOptions = codeGenArgs.outputOptions,
         )
 
-        val resolvedAuth = ApiFileLoader.resolveHeaders(codeGenArgs.auth, System::getenv)
+        val resolvedAuth = AuthHeaderResolver.resolveHeaders(codeGenArgs.auth, System::getenv)
 
         generate(
             basePackage = codeGenArgs.basePackage,

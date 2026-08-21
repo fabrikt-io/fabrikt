@@ -19,11 +19,6 @@ object ApiFileLoader {
     fun load(value: String, paramName: String, resolvedAuth: List<Pair<String, String>> = emptyList()): LoadedApi =
         if (isRemote(value)) loadRemote(URI(value), resolvedAuth) else loadLocal(value, paramName)
 
-    fun resolveHeaders(
-        headers: List<String>,
-        env: (String) -> String? = System::getenv,
-    ): List<Pair<String, String>> = AuthHeaderResolver.resolveHeaders(headers, env)
-
     private fun loadLocal(value: String, paramName: String): LoadedApi {
         val path = try {
             Paths.get(value).toAbsolutePath()
