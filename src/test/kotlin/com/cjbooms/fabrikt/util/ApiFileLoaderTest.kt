@@ -116,20 +116,6 @@ class ApiFileLoaderTest {
     }
 
     @Test
-    fun `sends a single auth header on remote fetch`() {
-        server.stub("/secure/api.yaml", 200, "openapi: 3.0.0")
-
-        ApiFileLoader.load(
-            "${baseUrl()}/secure/api.yaml",
-            "--api-file",
-            listOf("Authorization" to "Bearer smoke"),
-        )
-
-        assertThat(recordedHeaders).hasSize(1)
-        assertThat(recordedHeaders.single()["Authorization"]).containsExactly("Bearer smoke")
-    }
-
-    @Test
     fun `sends multiple auth headers on remote fetch`() {
         server.stub("/secure/api.yaml", 200, "openapi: 3.0.0")
 

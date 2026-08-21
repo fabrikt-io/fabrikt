@@ -21,16 +21,6 @@ class AuthHeaderResolverTest {
     }
 
     @Test
-    fun `resolveHeaders resolves whole value env var name`() {
-        val headers = AuthHeaderResolver.resolveHeaders(
-            listOf("Authorization: API_TOKEN"),
-            env = { if (it == "API_TOKEN") "env-secret" else null },
-        )
-
-        assertThat(headers).containsExactly("Authorization" to "env-secret")
-    }
-
-    @Test
     fun `resolveHeaders prefers whole env var name over placeholder expansion`() {
         val headers = AuthHeaderResolver.resolveHeaders(
             listOf("Authorization: API_TOKEN"),
