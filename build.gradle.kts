@@ -80,6 +80,10 @@ dependencies {
 }
 
 tasks {
+    named<Jar>("jar") {
+        enabled = false
+    }
+
     val shadowJar by getting(ShadowJar::class) {
         manifest {
             attributes["Main-Class"] = "io.fabrikt.cli.CodeGen"
