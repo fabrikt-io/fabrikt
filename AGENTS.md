@@ -52,7 +52,7 @@ Read ARCHITECTURE.md first — it maps symptoms (wrong type, missing model, miss
 
 ## Markdown style
 
-README.md and other Markdown docs predate a line-wrapping convention and are mostly hard-wrapped mid-sentence. Do not rewrap existing paragraphs (diff noise). New or rewritten prose uses soft wraps: one sentence per line, no mid-sentence breaks. Never hand-wrap lines inside sentences.
+README.md and other Markdown docs predate a line-wrapping convention and are mostly hard-wrapped mid-sentence. Soft-wrap prose: never break a line mid-sentence; a sentence (or several) stays on one line until it ends. Do not rewrap existing paragraphs as a side effect of other edits — rewrapping is a dedicated chore.
 
 ## Test style
 
