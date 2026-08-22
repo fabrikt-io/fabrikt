@@ -72,7 +72,7 @@ The library currently has support for generating:
 
 ## Examples
 
-Consult test directory for OpenAPI code generation examples.
+Consult the test directory for OpenAPI code generation examples.
 
 It forms a living documentation full of [code examples](src/test/resources/examples) generated from different OpenAPI 3 permutations.
 
