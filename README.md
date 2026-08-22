@@ -100,14 +100,10 @@ java -jar fabrikt.jar \
     --http-client-opts resilience4j
 ```
 
-`--api-file` and `--api-fragment` also accept a resolvable `http://`/`https://` URL instead of a local path,
-in which case Fabrikt fetches the spec at generation time.
-Use `--auth` to send headers on those fetches and on any remote `$ref` the parser resolves;
-values can contain `${ENV_VAR}` placeholders, name an env var, or contain `!cmd` (at start or after whitespace)
-to run a shell command and substitute its trimmed stdout (e.g. `--auth 'Authorization: Bearer !generate-fresh-auth-token'`).
+`--api-file` and `--api-fragment` also accept a resolvable `http://`/`https://` URL instead of a local path, in which case Fabrikt fetches the spec at generation time.
+Use `--auth` to send headers on those fetches and on any remote `$ref` the parser resolves; values can contain `${ENV_VAR}` placeholders, name an env var, or contain `!cmd` (at start or after whitespace) to run a shell command and substitute its trimmed stdout (e.g. `--auth 'Authorization: Bearer !generate-fresh-auth-token'`).
 The `!cmd` form requires a POSIX `sh` on the PATH and is not available on plain Windows.
-Only fetch specs from URLs you trust —
-pointing Fabrikt at an untrusted or attacker-influenced URL carries the same risk as fetching any other untrusted network resource.
+Only fetch specs from URLs you trust — pointing Fabrikt at an untrusted or attacker-influenced URL carries the same risk as fetching any other untrusted network resource.
 
 __Tip__: You can also run the latest version without a manual download via [JBang](https://www.jbang.dev/):
 

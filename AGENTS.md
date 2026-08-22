@@ -50,6 +50,10 @@ Read ARCHITECTURE.md first — it maps symptoms (wrong type, missing model, miss
 - Reuse the existing `is*()` predicates in `KaizenParserExtensions.kt` (e.g. `isOneOfSuperInterface*()`) — never duplicate detection logic.
 - Inline oneOf schemas get their names from `ModelNameRegistry.preRegisterInlineSchema()` / `getBySchema()`.
 
+## Markdown style
+
+README.md and other Markdown docs predate a line-wrapping convention and are mostly hard-wrapped mid-sentence. Do not rewrap existing paragraphs (diff noise). New or rewritten prose uses soft wraps: one sentence per line, no mid-sentence breaks. Never hand-wrap lines inside sentences.
+
 ## Test style
 
 JUnit 5 + AssertJ. Generator tests parameterize over example directory names (`Stream<String>` in `ModelGeneratorTest.kt`) and assert with `assertThatGenerated(...).isEqualTo(...)` / `areContainedInGenerated(...)`. New behavior = new example directory under `src/test/resources/examples/` plus a parameter entry in the matching test.
