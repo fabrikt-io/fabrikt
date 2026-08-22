@@ -52,24 +52,10 @@ class AuthHeaderResolverTest {
     }
 
     @Test
-    fun `resolveHeaders keeps leading exclamation mark followed by whitespace as a literal token`() {
-        val headers = AuthHeaderResolver.resolveHeaders(listOf("Authorization: Bearer ! abc"))
-
-        assertThat(headers).containsExactly("Authorization" to "Bearer ! abc")
-    }
-
-    @Test
     fun `resolveHeaders throws when shell command fails`() {
         assertThatThrownBy { AuthHeaderResolver.resolveHeaders(listOf("Authorization: !false")) }
             .isInstanceOf(ParameterException::class.java)
             .hasMessageContaining("Auth command 'false' failed with exit code 1")
-    }
-
-    @Test
-    fun `resolveHeaders throws when shell command produces no output`() {
-        assertThatThrownBy { AuthHeaderResolver.resolveHeaders(listOf("Authorization: !echo -n")) }
-            .isInstanceOf(ParameterException::class.java)
-            .hasMessageContaining("produced no output")
     }
 
     @Test

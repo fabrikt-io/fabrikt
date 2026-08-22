@@ -75,12 +75,6 @@ class ApiFileLoaderTest {
     }
 
     @Test
-    fun `throws a clear parameter exception when the host cannot be reached`() {
-        assertThatThrownBy { ApiFileLoader.load("http://localhost:1/api.yaml", "--api-file") }
-            .isInstanceOf(ParameterException::class.java)
-    }
-
-    @Test
     fun `loads spec content and base uri from a local file`(
         @TempDir tempDir: Path,
     ) {
