@@ -1,11 +1,8 @@
 # Fabrikt Playground
 
-The Fabrikt Playground is a web based tools that allows you to play around with 
-Fabrikt without installing it locally.
+The Fabrikt Playground is a web based tools that allows you to play around with Fabrikt without installing it locally.
 
-The goal is to make lower the barrier for trying out Fabrikt and to hopefully prove to 
-people that Fabrikt can be a useful tool for the user and encourage them to embed it in 
-their development workflow either via the CLI or via Gradle/Maven.
+The goal is to make lower the barrier for trying out Fabrikt and to hopefully prove to people that Fabrikt can be a useful tool for the user and encourage them to embed it in their development workflow either via the CLI or via Gradle/Maven.
 
 ## Technical Details
 

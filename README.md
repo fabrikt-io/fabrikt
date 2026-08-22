@@ -22,7 +22,7 @@
 
 ## Introduction
 
-This library was built to take advantage of the complex modeling features available in OpenAPI 3. It generates Kotlin data classes with advanced support for features such as: 
+This library was built to take advantage of the complex modeling features available in OpenAPI 3. It generates Kotlin data classes with advanced support for features such as:
  - Null Safety
  - Inlined schema definitions
  - Enumerations 
@@ -72,7 +72,7 @@ The library currently has support for generating:
 
 ## Examples
 
-Consult test directory for OpenAPI code generation examples. 
+Consult test directory for OpenAPI code generation examples.
 
 It forms a living documentation full of [code examples](src/test/resources/examples) generated from different OpenAPI 3 permutations.
 
@@ -86,7 +86,7 @@ Please refer to [Configuration Options](#configuration-options) section for a li
 
 ### Command Line
 
-Fabrikt is packaged as an executable jar, allowing it to be integrated into any build tool. 
+Fabrikt is packaged as an executable jar, allowing it to be integrated into any build tool.
 
 The CLI can be invoked as follows:
 
@@ -113,7 +113,7 @@ jbang run io.fabrikt:fabrikt:RELEASE [args...]
 
 ### Gradle w/ custom task
 
-Here is an example of a Gradle task with code generated to the `build/generated` directory, and execution linked to the compile task. 
+Here is an example of a Gradle task with code generated to the `build/generated` directory, and execution linked to the compile task.
 
 ```kotlin
 val fabrikt: Configuration by configurations.creating
@@ -158,12 +158,9 @@ dependencies {
 
 ### Gradle w/ plugin
 
-The [Fabrikt Gradle plugin](https://github.com/acanda/fabrikt-gradle-plugin) serves as a convenient wrapper for Fabrikt, 
-allowing seamless integration of code generation into a Gradle build.
+The [Fabrikt Gradle plugin](https://github.com/acanda/fabrikt-gradle-plugin) serves as a convenient wrapper for Fabrikt, allowing seamless integration of code generation into a Gradle build.
 
-**Note:** Since the plugin is maintained separately from the Fabrikt library, please refer to the
-[Configuration](https://github.com/acanda/fabrikt-gradle-plugin?tab=readme-ov-file#configuration) section of the 
-plugin's README for the most up-to-date information on how to use it.
+**Note:** Since the plugin is maintained separately from the Fabrikt library, please refer to the [Configuration](https://github.com/acanda/fabrikt-gradle-plugin?tab=readme-ov-file#configuration) section of the plugin's README for the most up-to-date information on how to use it.
 
 Latest version of the plugin: [![Gradle Plugin Portal Version](https://img.shields.io/gradle-plugin-portal/v/ch.acanda.gradle.fabrikt?style=flat)](https://plugins.gradle.org/plugin/ch.acanda.gradle.fabrikt)
 
@@ -205,8 +202,7 @@ The command mounts your current directory to `/workspace` in the container, wher
 
 ### 1. Prefer components to inline schemas
 While inline schemas are perfectly valid they are not supported by Fabrikt in all circumstances.
-This is especially true for request bodies and non-trivial parameters. Instead, define your schemas in the
-components section of the OpenAPI spec (`components.parameters` & `components.requestBodies`). [#20](https://github.com/fabrikt-io/fabrikt/issues/20), [#187](https://github.com/fabrikt-io/fabrikt/issues/187)
+This is especially true for request bodies and non-trivial parameters. Instead, define your schemas in the components section of the OpenAPI spec (`components.parameters` & `components.requestBodies`). [#20](https://github.com/fabrikt-io/fabrikt/issues/20), [#187](https://github.com/fabrikt-io/fabrikt/issues/187)
 
 ### 2. Use `oneOf` with discriminator for polymorphism
 `oneOf` along with the flag `SEALED_INTERFACES_FOR_ONE_OF` will generate polymorphic models with sealed interfaces.
@@ -314,11 +310,7 @@ Usage: <main class> [options]
 
 ## Original Motivation
 
-The team that built the first version of this tool initially contributed to the Kotlin code generation ability in
-[OpenApiTools](https://github.com/OpenAPITools/openapi-generator), but reached the limits of what could be achieved with
-template-based generation. This library leverages the rich OpenAPI 3 model provided by
-[KaiZen-OpenApi-Parser](https://github.com/RepreZen/KaiZen-OpenApi-Parser) and uses [Kotlin Poet](https://square.github.io/kotlinpoet/) to
-programmatically construct Kotlin classes for maximum flexibility.
+The team that built the first version of this tool initially contributed to the Kotlin code generation ability in [OpenApiTools](https://github.com/OpenAPITools/openapi-generator), but reached the limits of what could be achieved with template-based generation. This library leverages the rich OpenAPI 3 model provided by [KaiZen-OpenApi-Parser](https://github.com/RepreZen/KaiZen-OpenApi-Parser) and uses [Kotlin Poet](https://square.github.io/kotlinpoet/) to programmatically construct Kotlin classes for maximum flexibility.
 
 This project was started by engineers from [Zalando Tech](https://opensource.zalando.com/) and is battle-tested heavily in production there.
 
