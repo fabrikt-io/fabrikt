@@ -14,6 +14,7 @@ User-facing docs, CLI options, and feature lists live in README.md — reference
 - Test: `./gradlew test`
 - Single test class: `./gradlew :test --tests "com.cjbooms.fabrikt.generators.ModelGeneratorTest"`
 - CLI usage: `./gradlew printCodeGenUsage`
+- The README CLI options table is generated from `printCodeGenUsage` output — never hand-edit it. After changing any `@Parameter` description in `CodeGenArgs.kt`, regenerate the table section from fresh output and verify the diff contains only your change.
 
 ## Layout
 
