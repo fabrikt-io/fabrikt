@@ -14,6 +14,7 @@ User-facing docs, CLI options, and feature lists live in README.md — reference
 - Test: `./gradlew test`
 - Single test class: `./gradlew :test --tests "com.cjbooms.fabrikt.generators.ModelGeneratorTest"`
 - CLI usage: `./gradlew printCodeGenUsage`
+- The README CLI options table is generated from `printCodeGenUsage` output — never hand-edit it. After changing any `@Parameter` description in `CodeGenArgs.kt`, regenerate the table section from fresh output and verify the diff contains only your change.
 
 ## Layout
 
@@ -49,6 +50,10 @@ Read ARCHITECTURE.md first — it maps symptoms (wrong type, missing model, miss
 - Reuse the existing `is*()` predicates in `KaizenParserExtensions.kt` (e.g. `isOneOfSuperInterface*()`) — never duplicate detection logic.
 - Inline oneOf schemas get their names from `ModelNameRegistry.preRegisterInlineSchema()` / `getBySchema()`.
 
+## Markdown style
+
+README.md and other Markdown docs predate a line-wrapping convention and are mostly hard-wrapped mid-sentence. Do not rewrap existing paragraphs (diff noise). New or rewritten prose uses soft wraps: one sentence per line, no mid-sentence breaks. Never hand-wrap lines inside sentences.
+
 ## Test style
 
 JUnit 5 + AssertJ. Generator tests parameterize over example directory names (`Stream<String>` in `ModelGeneratorTest.kt`) and assert with `assertThatGenerated(...).isEqualTo(...)` / `areContainedInGenerated(...)`. New behavior = new example directory under `src/test/resources/examples/` plus a parameter entry in the matching test.
@@ -62,5 +67,6 @@ JUnit 5 + AssertJ. Generator tests parameterize over example directory names (`S
 ## Boundaries
 
 - Always: run `./gradlew build` before declaring done; review the full golden-file diff before committing regenerated examples.
+- Comments: do not add comments that restate what the code or a good function name already says. Reserve comments for non-obvious external behavior a name cannot convey (e.g. a third-party library's caching contract). This applies to KDoc, inline comments, and test comments alike.
 - Ask first: changes that alter output for existing specs, add dependencies, change `.github/workflows/`, or touch `end2end-tests/` / `playground/` build config.
 - Never: commit with `SHOULD_OVERWRITE_EXAMPLES = true`; hand-edit files under `src/test/resources/examples/`; flip the overwrite flag to silence an unexpected failure; commit secrets or signing keys.

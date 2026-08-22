@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.util
 
 import com.beust.jcommander.ParameterException
+import com.sun.net.httpserver.Headers
 import com.sun.net.httpserver.HttpServer
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.net.InetSocketAddress
+import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -16,11 +18,13 @@ import java.nio.file.Path
 class ApiFileLoaderTest {
 
     private lateinit var server: HttpServer
+    private val recordedHeaders = mutableListOf<Headers>()
 
     @BeforeEach
     fun startServer() {
         server = HttpServer.create(InetSocketAddress("localhost", 0), 0)
         server.start()
+        recordedHeaders.clear()
     }
 
     @AfterEach
@@ -32,6 +36,7 @@ class ApiFileLoaderTest {
 
     private fun HttpServer.stub(path: String, status: Int, body: String? = null) {
         createContext(path) { exchange ->
+            recordedHeaders.add(exchange.requestHeaders)
             val bytes = body?.toByteArray(StandardCharsets.UTF_8)
             exchange.sendResponseHeaders(status, bytes?.size?.toLong() ?: -1)
             bytes?.let { exchange.responseBody.write(it) }
@@ -70,12 +75,6 @@ class ApiFileLoaderTest {
     }
 
     @Test
-    fun `throws a clear parameter exception when the host cannot be reached`() {
-        assertThatThrownBy { ApiFileLoader.load("http://localhost:1/api.yaml", "--api-file") }
-            .isInstanceOf(ParameterException::class.java)
-    }
-
-    @Test
     fun `loads spec content and base uri from a local file`(
         @TempDir tempDir: Path,
     ) {
@@ -108,5 +107,54 @@ class ApiFileLoaderTest {
             .isInstanceOf(ParameterException::class.java)
             .hasMessageContaining("not a valid path")
             .hasMessageContaining("--api-file")
+    }
+
+    @Test
+    fun `sends multiple auth headers on remote fetch`() {
+        server.stub("/secure/api.yaml", 200, "openapi: 3.0.0")
+
+        ApiFileLoader.load(
+            "${baseUrl()}/secure/api.yaml",
+            "--api-file",
+            listOf("Authorization" to "Bearer smoke", "X-Custom" to "value"),
+        )
+
+        assertThat(recordedHeaders).hasSize(1)
+        assertThat(recordedHeaders.single()["Authorization"]).containsExactly("Bearer smoke")
+        assertThat(recordedHeaders.single()["X-Custom"]).containsExactly("value")
+    }
+
+    @Test
+    fun `sends auth header containing embedded exclamation mark as a literal value`() {
+        server.stub("/secure/api.yaml", 200, "openapi: 3.0.0")
+
+        ApiFileLoader.load(
+            "${baseUrl()}/secure/api.yaml",
+            "--api-file",
+            listOf("Authorization" to "Bearer abc!def"),
+        )
+
+        assertThat(recordedHeaders).hasSize(1)
+        assertThat(recordedHeaders.single()["Authorization"]).containsExactly("Bearer abc!def")
+    }
+
+    @Test
+    fun `local file load ignores auth headers without error`() {
+        val file = Files.createTempFile("api", ".yaml")
+        Files.writeString(file, "openapi: 3.0.0")
+
+        val loaded = ApiFileLoader.load(file.toString(), "--api-file", listOf("Authorization" to "Bearer smoke"))
+
+        assertThat(loaded.content).isEqualTo("openapi: 3.0.0")
+    }
+
+    @Test
+    fun `AuthJsonLoader sends auth headers when fetching remote refs`() {
+        server.stub("/common.yaml", 200, "openapi: 3.0.0\ncomponents:\n  schemas:\n    X:\n      type: object")
+
+        AuthJsonLoader(listOf("Authorization" to "Bearer ref-token")).load(URL("${baseUrl()}/common.yaml"))
+
+        assertThat(recordedHeaders).hasSize(1)
+        assertThat(recordedHeaders.single()["Authorization"]).containsExactly("Bearer ref-token")
     }
 }

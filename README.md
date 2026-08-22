@@ -100,10 +100,10 @@ java -jar fabrikt.jar \
     --http-client-opts resilience4j
 ```
 
-`--api-file` and `--api-fragment` also accept a resolvable `http://`/`https://` URL instead of a local path,
-in which case Fabrikt fetches the spec at generation time.
-Only fetch specs from URLs you trust — Fabrikt performs a plain, unauthenticated HTTP GET, so pointing it at an
-untrusted or attacker-influenced URL carries the same risk as fetching any other untrusted network resource.
+`--api-file` and `--api-fragment` also accept a resolvable `http://`/`https://` URL instead of a local path, in which case Fabrikt fetches the spec at generation time.
+Use `--auth` to send headers on those fetches and on any remote `$ref` the parser resolves; values can contain `${ENV_VAR}` placeholders, name an env var, or contain `!cmd` (at start or after whitespace) to run a shell command and substitute its trimmed stdout (e.g. `--auth 'Authorization: Bearer !generate-fresh-auth-token'`).
+The `!cmd` form requires a POSIX `sh` on the PATH and is not available on plain Windows.
+Only fetch specs from URLs you trust — pointing Fabrikt at an untrusted or attacker-influenced URL carries the same risk as fetching any other untrusted network resource.
 
 __Tip__: You can also run the latest version without a manual download via [JBang](https://www.jbang.dev/):
 
@@ -216,10 +216,12 @@ The `discriminator` property is used by Fabrikt to determine the subtypes to be 
 
 This section documents the available CLI parameters for controlling what gets generated. This documentation is generated using: `./gradlew printCodeGenUsage`
 
+Usage: <main class> [options]
 | Parameter                      | Description |
 | ------------------------------ | ------------------------------ |
 |   `--api-file`                 | This must be a valid Open API v3 spec. All code generation will be based off this input. Accepts either a local file path or a resolvable http(s) URL. |
 |   `--api-fragment`             | A partial Open API v3 fragment, to be combined with the primary API for code generation purposes. Accepts either a local file path or a resolvable http(s) URL. |
+|   `--auth`                     | Authorization header(s) sent when fetching a remote --api-file, --api-fragment, or remote $ref. Repeatable, format 'Name: value'. Value may contain ${ENV_VAR} placeholders, name an env var, or contain !cmd (at start or after whitespace) to run a shell command and substitute its trimmed stdout (e.g. --auth "Authorization: Bearer !generate-fresh-auth-token"). |
 | * `--base-package`             | The base package which all code will be generated under. |
 |   `--external-ref-resolution`  | Specify to which degree referenced schemas from external files are included in model generation. Default: TARGETED |
 |                                | CHOOSE ONE OF: |
@@ -309,6 +311,7 @@ This section documents the available CLI parameters for controlling what gets ge
 |                                |   `JAVAX_VALIDATION` - Use `javax.validation` annotations in generated model classes |
 |                                |   `JAKARTA_VALIDATION` - Use `jakarta.validation` annotations in generated model classes (default) |
 |                                |   `NO_VALIDATION` - Use no validation annotations in generated model classes |
+
 ## Original Motivation
 
 The team that built the first version of this tool initially contributed to the Kotlin code generation ability in

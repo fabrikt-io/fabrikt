@@ -9,6 +9,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactoryBuilder
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.reprezen.jsonoverlay.JsonLoader
 import com.reprezen.kaizen.oasparser.OpenApi3Parser
 import com.reprezen.kaizen.oasparser.model3.OpenApi3
 import org.yaml.snakeyaml.DumperOptions
@@ -85,12 +86,16 @@ object YamlUtils {
             ),
         )!!
 
-    fun parseOpenApi(input: String, baseUri: URI = Paths.get("").toAbsolutePath().toUri()): OpenApi3 =
+    fun parseOpenApi(
+        input: String,
+        baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
+        jsonLoader: JsonLoader? = null,
+    ): OpenApi3 =
         try {
             val root: JsonNode = objectMapper.readTree(input)
             OpenApi31Downgrader.downgradeIncompatibleElements(root)
             cleanEmptyTypes(root)
-            OpenApi3Parser().parse(root, baseUri.toURL())
+            OpenApi3Parser().parse(root, baseUri.toURL(), false, jsonLoader) as OpenApi3
         } catch (ex: NullPointerException) {
             throw IllegalArgumentException(
                 "The Kaizen openapi-parser library threw a NPE exception when parsing this API. " +
