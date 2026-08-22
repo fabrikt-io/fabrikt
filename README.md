@@ -291,7 +291,7 @@ Usage: <main class> [options]
 |                                | CHOOSE ONE OF: |
 |                                |   `JACKSON` - Use Jackson for serialization and deserialization |
 |                                |   `KOTLINX_SERIALIZATION` - Use kotlinx.serialization for serialization and deserialization |
-|   `--src-path`                 | Allows the path for generated sources files to be overridden. Defaults to `src/main/kotlin` |
+|   `--src-path`                 | Allows the path for generated source files to be overridden. Defaults to `src/main/kotlin` |
 |   `--targets`                  | Targets are the parts of the application that you want to be generated. |
 |                                | CHOOSE ANY OF: |
 |                                |   `HTTP_MODELS` - Jackson annotated data classes to represent the schema objects defined in the input. |
