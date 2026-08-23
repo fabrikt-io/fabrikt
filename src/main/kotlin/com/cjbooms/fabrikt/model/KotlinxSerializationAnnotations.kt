@@ -23,6 +23,13 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
     override val supportsBackingPropertyForDiscriminator = false
 
     /**
+     * kotlinx serialization includes superclass backing fields in the subclass serial state,
+     * so a subtype overriding a supertype property with its own backing field would produce a
+     * duplicate serial name. Super type properties must be abstract instead.
+     */
+    override val supportsInheritedBackingProperties = false
+
+    /**
      * Supporting "additionalProperties: true" for kotlinx serialization requires additional
      * research and work due to Any type in the map (val properties: MutableMap<String, Any?>)
      *
@@ -98,8 +105,11 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
             typeSpecBuilder.addAnnotation(experimentalSerializationApiAnnotation)
         } else typeSpecBuilder
 
-    override fun addPolymorphicSubTypesAnnotation(typeSpecBuilder: TypeSpec.Builder, mappings: Map<String, TypeName>) =
-        typeSpecBuilder // not applicable
+    override fun addPolymorphicSubTypesAnnotation(
+        typeSpecBuilder: TypeSpec.Builder,
+        mappings: Map<String, TypeName>,
+        enumDiscriminator: KotlinTypeInfo.Enum?,
+    ) = typeSpecBuilder // not applicable — subtypes carry a @SerialName mapping instead
 
     override fun addPolymorphicSubTypeDeductionAnnotation(typeSpecBuilder: TypeSpec.Builder, subTypes: List<TypeName>) =
         typeSpecBuilder // not applicable — kotlinx requires a class discriminator field
