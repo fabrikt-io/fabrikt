@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.util
 
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.basePath
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeyForSchemaName
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Test
@@ -35,6 +36,44 @@ class KaizenParserExtensionsTest {
     @Test
     fun `basePath returns empty when there are no servers`() {
         assertThat(apiWithServerUrl(null).basePath()).isEqualTo("")
+    }
+
+    @Test
+    fun `mappingKeyForSchemaName matches the full schema name, not a suffix of another schema name`() {
+        val spec =
+            """
+            |openapi: 3.0.0
+            |info:
+            |  title: test
+            |  version: 1.0.0
+            |paths: {}
+            |components:
+            |  schemas:
+            |    ParentAction:
+            |      type: object
+            |      discriminator:
+            |        propertyName: actionType
+            |        mapping:
+            |          XCHILD: '#/components/schemas/XChildActionA'
+            |          CHILD: '#/components/schemas/ChildActionA'
+            |      properties:
+            |        actionType:
+            |          type: string
+            |      required:
+            |        - actionType
+            |    ChildActionA:
+            |      allOf:
+            |        - ${'$'}ref: '#/components/schemas/ParentAction'
+            |    XChildActionA:
+            |      allOf:
+            |        - ${'$'}ref: '#/components/schemas/ParentAction'
+            """.trimMargin()
+        val discriminator = YamlUtils.parseOpenApi(spec).schemas["ParentAction"]!!.discriminator
+
+        assertThat(discriminator.mappingKeyForSchemaName("XChildActionA")).isEqualTo("XCHILD")
+        // '#/components/schemas/XChildActionA' ends with 'ChildActionA', so a plain endsWith
+        // match resolves ChildActionA to whichever mapping happens to come first.
+        assertThat(discriminator.mappingKeyForSchemaName("ChildActionA")).isEqualTo("CHILD")
     }
 
     @Test
