@@ -1,0 +1,35 @@
+openapi: 3.0.0
+info:
+  title: Discriminator mapping keys for schema names that are suffixes of each other
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    # XChildActionA ends with ChildActionA, so resolving a schema name to its mapping key
+    # must match the full ref segment, not just a suffix of the mapping value.
+    ParentAction:
+      type: object
+      discriminator:
+        propertyName: actionType
+        mapping:
+          XCHILD: '#/components/schemas/XChildActionA'
+          CHILD: '#/components/schemas/ChildActionA'
+      properties:
+        actionType:
+          type: string
+      required:
+        - actionType
+    ChildActionA:
+      allOf:
+        - $ref: '#/components/schemas/ParentAction'
+        - type: object
+          properties:
+            fieldA:
+              type: string
+    XChildActionA:
+      allOf:
+        - $ref: '#/components/schemas/ParentAction'
+        - type: object
+          properties:
+            fieldX:
+              type: string
