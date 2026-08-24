@@ -23,7 +23,7 @@ class OkHttpClientGenerator(
     }
 
     override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> {
-        val simpleClientLibrary = simpleClientGenerator.generateLibrary()
+        val simpleClientLibrary = simpleClientGenerator.generateLibrary(options)
         val enhancedClientLibrary = enhancedClientGenerator.generateLibrary(options)
 
         return simpleClientLibrary.plus(enhancedClientLibrary)

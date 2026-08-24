@@ -141,7 +141,7 @@ class OkHttpClientGeneratorTest {
         val generatedLibrary = OkHttpSimpleClientGenerator(
             packages,
             sourceApi
-        ).generateLibrary().filterIsInstance<SimpleFile>()
+        ).generateLibrary(emptySet()).filterIsInstance<SimpleFile>()
 
         assertThatGenerated(generatedLibrary.contentOf("HttpUtil.kt")).isEqualTo(expectedHttpUtils)
         assertThatGenerated(generatedLibrary.contentOf("ApiModels.kt")).isEqualTo(expectedApiModels)
@@ -191,7 +191,7 @@ class OkHttpClientGeneratorTest {
             .toSingleFile()
         val enhancedClientCode = generator.generateDynamicClientCode(setOf(ClientCodeGenOptionType.RESILIENCE4J))
             .toSingleFile()
-        val simpleClientLibrary = simpleClientGenerator.generateLibrary().filterIsInstance<SimpleFile>()
+        val simpleClientLibrary = simpleClientGenerator.generateLibrary(emptySet()).filterIsInstance<SimpleFile>()
         val enhancedLibUtil = generator.generateLibrary(setOf(ClientCodeGenOptionType.RESILIENCE4J))
             .filterIsInstance<SimpleFile>()
             .contentOf("HttpResilience4jUtil.kt")
@@ -203,6 +203,35 @@ class OkHttpClientGeneratorTest {
         assertThatGenerated(simpleClientLibrary.contentOf("ApiModels.kt")).isEqualTo(expectedApiModels)
         assertThatGenerated(simpleClientLibrary.contentOf("OAuth.kt")).isEqualTo(expectedOAuth)
         assertThatGenerated(enhancedLibUtil).isEqualTo(expectedLibUtil)
+    }
+
+    @Test
+    fun `correct api client and library files are generated when the non-null response payloads option is set`() {
+        val packages = Packages("examples.okHttpClientNonNullResponsePayloads")
+        val apiLocation = javaClass.getResource("/examples/okHttpClientNonNullResponsePayloads/api.yaml")!!
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
+        val options = setOf(ClientCodeGenOptionType.OKHTTP_NON_NULL_RESPONSE_PAYLOADS)
+
+        val expectedClient = "/examples/okHttpClientNonNullResponsePayloads/client/ApiClient.kt"
+        val expectedHttpUtils = "/examples/okHttpClientNonNullResponsePayloads/client/HttpUtil.kt"
+        val expectedApiModels = "/examples/okHttpClientNonNullResponsePayloads/client/ApiModels.kt"
+
+        val simpleClientCode = OkHttpClientGenerator(
+            packages,
+            sourceApi,
+            Paths.get("src/main/kotlin")
+        )
+            .generate(options)
+            .clients
+            .toSingleFile()
+        val generatedLibrary = OkHttpSimpleClientGenerator(
+            packages,
+            sourceApi
+        ).generateLibrary(options).filterIsInstance<SimpleFile>()
+
+        assertThatGenerated(simpleClientCode).isEqualTo(expectedClient)
+        assertThatGenerated(generatedLibrary.contentOf("HttpUtil.kt")).isEqualTo(expectedHttpUtils)
+        assertThatGenerated(generatedLibrary.contentOf("ApiModels.kt")).isEqualTo(expectedApiModels)
     }
 
     @Test

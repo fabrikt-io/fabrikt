@@ -30,7 +30,8 @@ enum class ClientCodeGenOptionType(private val description: String) {
     SUSPEND_MODIFIER("This option adds the suspend modifier to the generated client functions (only for OpenFeign clients)"),
     SPRING_RESPONSE_ENTITY_WRAPPER("This option adds the Spring-ResponseEntity generic around the response to be able to get response headers and status (only for OpenFeign clients)."),
     SPRING_CLOUD_OPENFEIGN_STARTER_ANNOTATION("This option adds the @FeignClient annotation to generated client interface"),
-    GROUP_BY_TAG("This option groups clients based on the first tag rather than paths")
+    GROUP_BY_TAG("This option groups clients based on the first tag rather than paths"),
+    OKHTTP_NON_NULL_RESPONSE_PAYLOADS("This option makes ApiResponse.data non-null. Responses declared with a body must return one: a missing body, or one that deserializes to null, throws ApiException. An operation that declares both a body response and an empty success response (e.g. 200 and 204) throws on the empty success (only for OkHttp clients)")
     ;
 
     override fun toString() = "`${super.toString()}` - $description"

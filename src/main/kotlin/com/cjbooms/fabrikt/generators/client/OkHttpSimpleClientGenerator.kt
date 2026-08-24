@@ -74,6 +74,7 @@ class OkHttpSimpleClientGenerator(
                                 verb,
                                 operation,
                                 parameters,
+                                options,
                             ).toStatement()
                         )
                         .returns(operation.toClientReturnType(packages))
@@ -96,12 +97,19 @@ class OkHttpSimpleClientGenerator(
         }.toSet()
     }
 
-    fun generateLibrary(): Collection<GeneratedFile> {
+    fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> {
         val codeDir = srcPath.resolve(CodeGenerationUtils.packageToPath(packages.base))
         val clientDir = codeDir.resolve("client")
+        val nonNullDataPayloads = ClientCodeGenOptionType.OKHTTP_NON_NULL_RESPONSE_PAYLOADS in options
         return setOf(
-            SimpleFile(clientDir.resolve("ApiModels.kt"), OkHttpClientLibraryFiles.apiModels(packages).toString()),
-            SimpleFile(clientDir.resolve("HttpUtil.kt"), OkHttpClientLibraryFiles.httpUtil(packages).toString()),
+            SimpleFile(
+                clientDir.resolve("ApiModels.kt"),
+                OkHttpClientLibraryFiles.apiModels(packages, nonNullDataPayloads).toString()
+            ),
+            SimpleFile(
+                clientDir.resolve("HttpUtil.kt"),
+                OkHttpClientLibraryFiles.httpUtil(packages, nonNullDataPayloads).toString()
+            ),
             SimpleFile(clientDir.resolve("OAuth.kt"), OkHttpClientLibraryFiles.oAuth(packages).toString())
         )
     }
@@ -112,7 +120,8 @@ data class SimpleClientOperationStatement(
     private val resource: String,
     private val verb: String,
     private val operation: Operation,
-    private val parameters: List<IncomingParameter>
+    private val parameters: List<IncomingParameter>,
+    private val options: Set<ClientCodeGenOptionType> = emptySet()
 ) {
     fun toStatement(): CodeBlock =
         CodeBlock.builder()
@@ -226,6 +235,13 @@ data class SimpleClientOperationStatement(
         when (operation.getReturnType()) {
             is KotlinTypeInfo.ByteArray ->
                 this.add("\nreturn request.execute(okHttpClient)\n")
+
+            Unit::class ->
+                if (ClientCodeGenOptionType.OKHTTP_NON_NULL_RESPONSE_PAYLOADS in options) {
+                    this.add("\nreturn request.executeWithoutResponseBody(okHttpClient)\n")
+                } else {
+                    this.add("\nreturn request.execute(okHttpClient, objectMapper, jacksonTypeRef())\n")
+                }
 
             else ->
                 this.add("\nreturn request.execute(okHttpClient, objectMapper, jacksonTypeRef())\n")

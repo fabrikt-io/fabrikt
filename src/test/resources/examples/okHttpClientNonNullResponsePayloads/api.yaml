@@ -1,0 +1,84 @@
+openapi: "3.0.0"
+info:
+  title: "Non-null response payloads example"
+  version: "1.0"
+paths:
+  /widgets/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getWidget
+      responses:
+        200:
+          description: "The widget"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Widget"
+    delete:
+      operationId: deleteWidget
+      responses:
+        204:
+          description: "Widget deleted"
+  /widgets/{id}/image:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getWidgetImage
+      responses:
+        200:
+          description: "The widget image"
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /widgets/{id}/summary:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getWidgetSummary
+      responses:
+        200:
+          description: "The full widget"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Widget"
+        202:
+          description: "The widget summary"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WidgetSummary"
+components:
+  schemas:
+    Widget:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    WidgetSummary:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string

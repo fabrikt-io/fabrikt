@@ -13,6 +13,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
+import com.squareup.kotlinpoet.UNIT
 import com.squareup.kotlinpoet.asTypeName
 
 object OkHttpClientLibraryFiles {
@@ -36,8 +37,13 @@ object OkHttpClientLibraryFiles {
     private fun throwsApiException(packages: Packages) =
         AnnotationSpec.builder(Throws::class).addMember("%T::class", apiException(packages)).build()
 
-    fun apiModels(packages: Packages): FileSpec =
-        FileSpec.builder(packages.client, "ApiModels")
+    fun apiModels(packages: Packages, nonNullDataPayloads: Boolean): FileSpec {
+        val dataType =
+            if (nonNullDataPayloads) TypeVariableName("T") else TypeVariableName("T").copy(nullable = true)
+        val dataParameter = ParameterSpec.builder("data", dataType)
+            .apply { if (!nonNullDataPayloads) defaultValue("null") }
+            .build()
+        return FileSpec.builder(packages.client, "ApiModels")
             .indent("    ")
             .addType(
                 TypeSpec.classBuilder("ApiResponse")
@@ -51,20 +57,12 @@ object OkHttpClientLibraryFiles {
                         FunSpec.constructorBuilder()
                             .addParameter("statusCode", Int::class)
                             .addParameter("headers", headers)
-                            .addParameter(
-                                ParameterSpec.builder("data", TypeVariableName("T").copy(nullable = true))
-                                    .defaultValue("null")
-                                    .build()
-                            )
+                            .addParameter(dataParameter)
                             .build()
                     )
                     .addProperty(PropertySpec.builder("statusCode", Int::class).initializer("statusCode").build())
                     .addProperty(PropertySpec.builder("headers", headers).initializer("headers").build())
-                    .addProperty(
-                        PropertySpec.builder("data", TypeVariableName("T").copy(nullable = true))
-                            .initializer("data")
-                            .build()
-                    )
+                    .addProperty(PropertySpec.builder("data", dataType).initializer("data").build())
                     .build()
             )
             .addType(
@@ -101,6 +99,7 @@ object OkHttpClientLibraryFiles {
                     .build()
             )
             .build()
+    }
 
     private fun exceptionType(name: String, kdoc: String, packages: Packages): TypeSpec.Builder =
         TypeSpec.classBuilder(name)
@@ -122,7 +121,7 @@ object OkHttpClientLibraryFiles {
             .superclass(apiException(packages))
             .addSuperclassConstructorParameter("message")
 
-    fun httpUtil(packages: Packages): FileSpec =
+    fun httpUtil(packages: Packages, nonNullDataPayloads: Boolean): FileSpec =
         FileSpec.builder(packages.client, "HttpUtil")
             .indent("    ")
             .addFunction(
@@ -194,13 +193,30 @@ object OkHttpClientLibraryFiles {
                     .addParameter("typeRef", typeReference.parameterizedBy(TypeVariableName("T")))
                     .returns(apiResponse(packages).parameterizedBy(TypeVariableName("T")))
                     .addCode(
-                        CodeBlock.builder()
-                            .add("return doRequest(client)·{·responseBody·->\n")
-                            .indent()
-                            .add("responseBody?.deserialize(objectMapper,·typeRef)\n")
-                            .unindent()
-                            .add("}\n")
-                            .build()
+                        if (nonNullDataPayloads) {
+                            CodeBlock.builder()
+                                .add("return doRequest(client)·{·response·->\n")
+                                .indent()
+                                .add("response.body?.string().isNotBlankOrNull()?.let·{\n")
+                                .indent()
+                                .add("objectMapper.readValue(it,·typeRef)\n")
+                                .indent()
+                                .add("?:·throw·ApiException(\"[\${response.code}]:·Response·body·deserialized·to·null\")\n")
+                                .unindent()
+                                .unindent()
+                                .add("}·?:·throw·ApiException(\"[\${response.code}]:·Response·body·expected·but·not·returned\")\n")
+                                .unindent()
+                                .add("}\n")
+                                .build()
+                        } else {
+                            CodeBlock.builder()
+                                .add("return doRequest(client)·{·responseBody·->\n")
+                                .indent()
+                                .add("responseBody?.deserialize(objectMapper,·typeRef)\n")
+                                .unindent()
+                                .add("}\n")
+                                .build()
+                        }
                     )
                     .build()
             )
@@ -211,16 +227,39 @@ object OkHttpClientLibraryFiles {
                     .addParameter("client", okHttpClient)
                     .returns(apiResponse(packages).parameterizedBy(ByteArray::class.asTypeName()))
                     .addCode(
-                        CodeBlock.builder()
-                            .add("return doRequest(client)·{·responseBody·->\n")
-                            .indent()
-                            .add("responseBody?.deserialize()\n")
-                            .unindent()
-                            .add("}\n")
-                            .build()
+                        if (nonNullDataPayloads) {
+                            CodeBlock.builder()
+                                .add("return doRequest(client)·{·response·->\n")
+                                .indent()
+                                .add("response.body?.deserialize()·?:·ByteArray(0)\n")
+                                .unindent()
+                                .add("}\n")
+                                .build()
+                        } else {
+                            CodeBlock.builder()
+                                .add("return doRequest(client)·{·responseBody·->\n")
+                                .indent()
+                                .add("responseBody?.deserialize()\n")
+                                .unindent()
+                                .add("}\n")
+                                .build()
+                        }
                     )
                     .build()
             )
+            .apply {
+                if (nonNullDataPayloads) {
+                    addFunction(
+                        FunSpec.builder("executeWithoutResponseBody")
+                            .addAnnotation(throwsApiException(packages))
+                            .receiver(request)
+                            .addParameter("client", okHttpClient)
+                            .returns(apiResponse(packages).parameterizedBy(UNIT))
+                            .addStatement("return doRequest(client)·{}")
+                            .build()
+                    )
+                }
+            }
             .addFunction(
                 FunSpec.builder("doRequest")
                     .addModifiers(KModifier.PRIVATE)
@@ -229,10 +268,17 @@ object OkHttpClientLibraryFiles {
                     .addParameter("client", okHttpClient)
                     .addParameter(
                         "bodyReader",
-                        LambdaTypeName.get(
-                            parameters = arrayOf(responseBody.copy(nullable = true)),
-                            returnType = TypeVariableName("T").copy(nullable = true)
-                        )
+                        if (nonNullDataPayloads) {
+                            LambdaTypeName.get(
+                                parameters = arrayOf(response),
+                                returnType = TypeVariableName("T")
+                            )
+                        } else {
+                            LambdaTypeName.get(
+                                parameters = arrayOf(responseBody.copy(nullable = true)),
+                                returnType = TypeVariableName("T").copy(nullable = true)
+                            )
+                        }
                     )
                     .returns(apiResponse(packages).parameterizedBy(TypeVariableName("T")))
                     .addCode(
@@ -242,7 +288,13 @@ object OkHttpClientLibraryFiles {
                             .beginControlFlow("when")
                             .add("response.isSuccessful·->\n")
                             .indent()
-                            .add("ApiResponse(response.code,·response.headers,·bodyReader(response.body))\n")
+                            .add(
+                                if (nonNullDataPayloads) {
+                                    "ApiResponse(response.code,·response.headers,·bodyReader(response))\n"
+                                } else {
+                                    "ApiResponse(response.code,·response.headers,·bodyReader(response.body))\n"
+                                }
+                            )
                             .unindent()
                             .add("response.isRedirection()·->\n")
                             .indent()
@@ -286,22 +338,26 @@ object OkHttpClientLibraryFiles {
                     )
                     .build()
             )
-            .addFunction(
-                FunSpec.builder("deserialize")
-                    .addTypeVariable(TypeVariableName("T"))
-                    .receiver(responseBody)
-                    .addParameter("objectMapper", objectMapper)
-                    .addParameter("typeRef", typeReference.parameterizedBy(TypeVariableName("T")))
-                    .returns(TypeVariableName("T").copy(nullable = true))
-                    .addStatement(
-                        "return·this.string().isNotBlankOrNull()?.let·{·objectMapper.readValue(it,·typeRef)·}"
+            .apply {
+                if (!nonNullDataPayloads) {
+                    addFunction(
+                        FunSpec.builder("deserialize")
+                            .addTypeVariable(TypeVariableName("T"))
+                            .receiver(responseBody)
+                            .addParameter("objectMapper", objectMapper)
+                            .addParameter("typeRef", typeReference.parameterizedBy(TypeVariableName("T")))
+                            .returns(TypeVariableName("T").copy(nullable = true))
+                            .addStatement(
+                                "return·this.string().isNotBlankOrNull()?.let·{·objectMapper.readValue(it,·typeRef)·}"
+                            )
+                            .build()
                     )
-                    .build()
-            )
+                }
+            }
             .addFunction(
                 FunSpec.builder("deserialize")
                     .receiver(responseBody)
-                    .returns(ByteArray::class.asTypeName().copy(nullable = true))
+                    .returns(ByteArray::class.asTypeName().copy(nullable = !nonNullDataPayloads))
                     .addStatement("return this.byteStream().readAllBytes()")
                     .build()
             )
