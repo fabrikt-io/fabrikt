@@ -22,11 +22,10 @@ open class ApiRedirectException(val statusCode: Int, val headers: Headers, overr
 /**
  * API 4xx failure responses returned by API call.
  */
-data class ApiClientException(val statusCode: Int, val headers: Headers, override val message: String) :
-    ApiException(message)
+data class ApiClientException(val statusCode: Int, val headers: Headers, override val message: String) : ApiException(message)
 
 /**
  * API 5xx failure responses returned by API call.
  */
-data class ApiServerException(val statusCode: Int, val headers: Headers, override val message: String) :
-    ApiException(message)
+data class ApiServerException(val statusCode: Int, val headers: Headers, override val message: String) : ApiException(message)
+

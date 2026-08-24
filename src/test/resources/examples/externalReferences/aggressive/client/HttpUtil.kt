@@ -7,6 +7,7 @@ import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.Response
 import okhttp3.ResponseBody
 
@@ -35,10 +36,23 @@ fun Headers.Builder.header(key: String, value: Any?): Headers.Builder = this.app
 
 @Throws(ApiException::class)
 fun <T> Request.execute(client: OkHttpClient, objectMapper: ObjectMapper, typeRef: TypeReference<T>): ApiResponse<T> =
+    doRequest(client) {
+        responseBody -> responseBody?.deserialize(objectMapper, typeRef)
+    }
+
+@Throws(ApiException::class)
+fun Request.execute(client: OkHttpClient): ApiResponse<ByteArray> =
+    doRequest(client) {
+        responseBody -> responseBody?.deserialize()
+    }
+
+private fun <T> Request.doRequest(client: OkHttpClient, bodyReader: (ResponseBody?) -> T?): ApiResponse<T> =
     client.newCall(this).execute().use { response ->
         when {
             response.isSuccessful ->
-                ApiResponse(response.code, response.headers, response.body?.deserialize(objectMapper, typeRef))
+                ApiResponse(response.code, response.headers, bodyReader(response.body))
+            response.isRedirection() ->
+                throw ApiRedirectException(response.code, response.headers, response.errorMessage())
             response.isBadRequest() ->
                 throw ApiClientException(response.code, response.headers, response.errorMessage())
             response.isServerError() ->
@@ -48,13 +62,14 @@ fun <T> Request.execute(client: OkHttpClient, objectMapper: ObjectMapper, typeRe
     }
 
 @Suppress("unused")
-fun String.pathParam(vararg params: Pair<String, Any>): String = params.asSequence()
-    .joinToString { param ->
-        this.replace(param.first, param.second.toString())
-    }
+fun String.pathParam(vararg params: Pair<String, Any>): String = params.fold(this) { acc, param ->
+    acc.replace(param.first, param.second.toString())
+}
 
 fun <T> ResponseBody.deserialize(objectMapper: ObjectMapper, typeRef: TypeReference<T>): T? =
     this.string().isNotBlankOrNull()?.let { objectMapper.readValue(it, typeRef) }
+
+fun ResponseBody.deserialize(): ByteArray? = this.byteStream().readAllBytes()
 
 fun String?.isNotBlankOrNull() = if (this.isNullOrBlank()) null else this
 
@@ -63,3 +78,7 @@ private fun Response.errorMessage(): String = this.body?.string() ?: this.messag
 private fun Response.isBadRequest(): Boolean = this.code in 400..499
 
 private fun Response.isServerError(): Boolean = this.code in 500..599
+
+private fun Response.isRedirection(): Boolean = this.code in 300..399
+
+data class RequestBodyWithFilename(val requestBody: RequestBody, val filename: String)

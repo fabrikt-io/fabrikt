@@ -1,4 +1,4 @@
-package examples.parameterNameClash.client
+package examples.multipartUpload.client
 
 import okhttp3.Headers
 
