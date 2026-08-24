@@ -1,13 +1,16 @@
 package examples.ktorClient.client
 
+import kotlin.String
+import kotlin.collections.Map
+
 /**
  * Configuration for the API.
  * @property basePath The base URL path for the API
  * @property customHeaders A map of custom HTTP headers to include in every request
  */
-class ApiConfiguration(
-    val basePath: String = "https://api.example.com/v1",
-    val customHeaders: Map<String, String> = mapOf()
+public class ApiConfiguration(
+    public val basePath: String = "https://api.example.com/v1",
+    public val customHeaders: Map<String, String> = mapOf(),
 ) {
     /**
      * Creates a copy of this configuration with optional overrides.
@@ -15,10 +18,6 @@ class ApiConfiguration(
      * @param customHeaders The new custom headers, defaults to the current ones
      * @return A new ApiConfiguration instance
      */
-    fun copy(
-        basePath: String = this.basePath,
-        customHeaders: Map<String, String> = this.customHeaders
-    ): ApiConfiguration {
-        return ApiConfiguration(basePath, customHeaders)
-    }
+    public fun copy(basePath: String = this.basePath, customHeaders: Map<String, String> =
+            this.customHeaders): ApiConfiguration = ApiConfiguration(basePath, customHeaders)
 }

@@ -42,7 +42,6 @@ dependencies {
     implementation(platform(libs.jackson.bom))
     implementation(platform(libs.kotlin.bom))
     implementation(libs.kotlin.stdlib.jdk8)
-    implementation(libs.handlebars)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.core)

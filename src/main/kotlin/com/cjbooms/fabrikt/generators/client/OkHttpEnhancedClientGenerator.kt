@@ -17,7 +17,6 @@ import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPOR
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Destinations
 import com.cjbooms.fabrikt.model.GeneratedFile
-import com.cjbooms.fabrikt.model.HandlebarsTemplates
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
@@ -131,14 +130,12 @@ class OkHttpEnhancedClientGenerator(
             .resolve(CodeGenerationUtils.packageToPath(packages.base))
             .resolve("client")
         return listOfNotNull(
-            applyTemplateIfResilience4jIsEnabled(options) {
-                HandlebarsTemplates.applyTemplate(
-                    HandlebarsTemplates.clientHttpResilience4jUtils,
-                    packages,
-                    clientDir,
-                    "HttpResilience4jUtil.kt"
+            if (ClientCodeGenOptionType.RESILIENCE4J in options) {
+                SimpleFile(
+                    clientDir.resolve("HttpResilience4jUtil.kt"),
+                    OkHttpClientLibraryFiles.httpResilience4jUtil(packages).toString()
                 )
-            }
+            } else null
         )
     }
 
@@ -149,12 +146,6 @@ class OkHttpEnhancedClientGenerator(
             .add("\n@see ApiClientException")
             .add("\n@see ApiServerException")
             .build()
-
-    private fun applyTemplateIfResilience4jIsEnabled(
-        options: Set<ClientCodeGenOptionType>,
-        applyTemplate: () -> SimpleFile
-    ): SimpleFile? =
-        options.find { it == ClientCodeGenOptionType.RESILIENCE4J }?.let { applyTemplate() }
 
     private fun Set<ClientCodeGenOptionType>.ifResilience4jIsEnabled(
         block: (Set<ClientCodeGenOptionType>) -> Collection<ClientType>

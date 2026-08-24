@@ -14,7 +14,6 @@ kaizen-openapi-parser = "4.1.0"
 jsonoverlay = "4.0.4"
 
 # Code generation
-handlebars = "4.3.1"
 jcommander = "1.82"
 flogger = "0.7.4"
 
@@ -65,7 +64,6 @@ kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom" }
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test" }
 
-handlebars = { module = "com.github.jknack:handlebars", version.ref = "handlebars" }
 jcommander = { module = "com.beust:jcommander", version.ref = "jcommander" }
 openapi-parser = { module = "io.fabrikt:kaizen-openapi-parser", version.ref = "kaizen-openapi-parser" }
 jsonoverlay = { module = "com.reprezen.jsonoverlay:jsonoverlay", version.ref = "jsonoverlay" }

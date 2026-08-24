@@ -1,5 +1,8 @@
 package examples.multipartUpload.client
 
+import kotlin.Int
+import kotlin.RuntimeException
+import kotlin.String
 import okhttp3.Headers
 
 /**
@@ -7,25 +10,42 @@ import okhttp3.Headers
  *
  * @param <T> The type of data that is deserialized from response body
  */
-data class ApiResponse<T>(val statusCode: Int, val headers: Headers, val data: T? = null)
+public data class ApiResponse<T>(
+    public val statusCode: Int,
+    public val headers: Headers,
+    public val `data`: T? = null,
+)
 
 /**
  * API non-2xx failure responses returned by API call.
  */
-open class ApiException(override val message: String) : RuntimeException(message)
+public open class ApiException(
+    override val message: String,
+) : RuntimeException(message)
 
 /**
  * API 3xx redirect response returned by API call.
  */
-open class ApiRedirectException(val statusCode: Int, val headers: Headers, override val message: String) : ApiException(message)
+public open class ApiRedirectException(
+    public val statusCode: Int,
+    public val headers: Headers,
+    override val message: String,
+) : ApiException(message)
 
 /**
  * API 4xx failure responses returned by API call.
  */
-data class ApiClientException(val statusCode: Int, val headers: Headers, override val message: String) : ApiException(message)
+public data class ApiClientException(
+    public val statusCode: Int,
+    public val headers: Headers,
+    override val message: String,
+) : ApiException(message)
 
 /**
  * API 5xx failure responses returned by API call.
  */
-data class ApiServerException(val statusCode: Int, val headers: Headers, override val message: String) : ApiException(message)
-
+public data class ApiServerException(
+    public val statusCode: Int,
+    public val headers: Headers,
+    override val message: String,
+) : ApiException(message)

@@ -100,24 +100,9 @@ class OkHttpSimpleClientGenerator(
         val codeDir = srcPath.resolve(CodeGenerationUtils.packageToPath(packages.base))
         val clientDir = codeDir.resolve("client")
         return setOf(
-            HandlebarsTemplates.applyTemplate(
-                template = HandlebarsTemplates.clientApiModels,
-                input = packages,
-                path = clientDir,
-                fileName = "ApiModels.kt"
-            ),
-            HandlebarsTemplates.applyTemplate(
-                template = HandlebarsTemplates.clientHttpUtils,
-                input = packages,
-                path = clientDir,
-                fileName = "HttpUtil.kt"
-            ),
-            HandlebarsTemplates.applyTemplate(
-                template = HandlebarsTemplates.clientOAuth,
-                input = packages,
-                path = clientDir,
-                fileName = "OAuth.kt"
-            )
+            SimpleFile(clientDir.resolve("ApiModels.kt"), OkHttpClientLibraryFiles.apiModels(packages).toString()),
+            SimpleFile(clientDir.resolve("HttpUtil.kt"), OkHttpClientLibraryFiles.httpUtil(packages).toString()),
+            SimpleFile(clientDir.resolve("OAuth.kt"), OkHttpClientLibraryFiles.oAuth(packages).toString())
         )
     }
 }
