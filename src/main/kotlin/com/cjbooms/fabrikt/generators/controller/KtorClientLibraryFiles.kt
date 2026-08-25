@@ -25,7 +25,6 @@ object KtorClientLibraryFiles {
         val networkResult = ClassName(clientPackage, "NetworkResult")
         return FileSpec
             .builder(clientPackage, "KtorApiModels")
-            .indent("    ")
             .addType(
                 TypeSpec
                     .interfaceBuilder("NetworkError")
@@ -184,7 +183,6 @@ object KtorClientLibraryFiles {
         val apiConfiguration = ClassName(clientPackage, "ApiConfiguration")
         return FileSpec
             .builder(clientPackage, "KtorApiConfiguration")
-            .indent("    ")
             .addType(
                 TypeSpec
                     .classBuilder("ApiConfiguration")

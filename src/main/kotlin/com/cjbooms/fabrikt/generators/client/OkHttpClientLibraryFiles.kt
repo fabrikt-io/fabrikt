@@ -52,7 +52,6 @@ object OkHttpClientLibraryFiles {
                 .build()
         return FileSpec
             .builder(packages.client, "ApiModels")
-            .indent("    ")
             .addType(
                 TypeSpec
                     .classBuilder("ApiResponse")
@@ -136,7 +135,6 @@ object OkHttpClientLibraryFiles {
     ): FileSpec =
         FileSpec
             .builder(packages.client, "HttpUtil")
-            .indent("    ")
             .addFunction(
                 FunSpec
                     .builder("queryParam")
@@ -146,10 +144,12 @@ object OkHttpClientLibraryFiles {
                     .addParameter("key", String::class)
                     .addParameter("value", TypeVariableName("T").copy(nullable = true))
                     .returns(httpUrlBuilder)
-                    .beginControlFlow("return this.apply")
-                    .addStatement("if·(value·!=·null)·this.addQueryParameter(key,·value.toString())")
-                    .endControlFlow()
-                    .build(),
+                    .addCode(
+                        """
+                        if (value != null) this.addQueryParameter(key, value.toString())
+                        return this
+                        """.trimIndent(),
+                    ).build(),
             ).addFunction(
                 FunSpec
                     .builder("formParam")
@@ -159,10 +159,12 @@ object OkHttpClientLibraryFiles {
                     .addParameter("key", String::class)
                     .addParameter("value", TypeVariableName("T").copy(nullable = true))
                     .returns(formBodyBuilder)
-                    .beginControlFlow("return this.apply")
-                    .addStatement("if·(value·!=·null)·this.add(key,·value.toString())")
-                    .endControlFlow()
-                    .build(),
+                    .addCode(
+                        """
+                        if (value != null) this.add(key, value.toString())
+                        return this
+                        """.trimIndent(),
+                    ).build(),
             ).addFunction(
                 FunSpec
                     .builder("queryParam")
@@ -175,13 +177,15 @@ object OkHttpClientLibraryFiles {
                     ).addParameter(
                         ParameterSpec.builder("explode", Boolean::class).defaultValue("true").build(),
                     ).returns(httpUrlBuilder)
-                    .beginControlFlow("return this.apply")
-                    .beginControlFlow("if (values != null)")
-                    .addStatement("if·(explode)·values.forEach·{·addQueryParameter(key,·it.toString())·}")
-                    .addStatement("else·addQueryParameter(key,·values.joinToString(%S))", ",")
-                    .endControlFlow()
-                    .endControlFlow()
-                    .build(),
+                    .addCode(
+                        """
+                        if (values != null) {
+                            if (explode) values.forEach { addQueryParameter(key, it.toString()) }
+                            else addQueryParameter(key, values.joinToString(","))
+                        }
+                        return this
+                        """.trimIndent(),
+                    ).build(),
             ).addFunction(
                 FunSpec
                     .builder("header")
@@ -190,10 +194,12 @@ object OkHttpClientLibraryFiles {
                     .addParameter("key", String::class)
                     .addParameter("value", Any::class.asTypeName().copy(nullable = true))
                     .returns(headersBuilder)
-                    .beginControlFlow("return this.apply")
-                    .addStatement("if·(value·!=·null)·this.add(key,·value.toString())")
-                    .endControlFlow()
-                    .build(),
+                    .addCode(
+                        """
+                        if (value != null) this.add(key, value.toString())
+                        return this
+                        """.trimIndent(),
+                    ).build(),
             ).addFunction(
                 FunSpec
                     .builder("execute")
@@ -433,7 +439,6 @@ object OkHttpClientLibraryFiles {
         val accessTokenType = LambdaTypeName.get(returnType = String::class.asTypeName())
         return FileSpec
             .builder(packages.client, "OAuth")
-            .indent("    ")
             .addType(
                 TypeSpec
                     .classBuilder("OAuth2")
@@ -487,7 +492,6 @@ object OkHttpClientLibraryFiles {
         val circuitBreakerRegistry = ClassName("io.github.resilience4j.circuitbreaker", "CircuitBreakerRegistry")
         return FileSpec
             .builder(packages.client, "HttpResilience4jUtil")
-            .indent("    ")
             .addFunction(
                 FunSpec
                     .builder("withCircuitBreaker")

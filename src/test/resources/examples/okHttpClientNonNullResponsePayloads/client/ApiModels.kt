@@ -11,41 +11,41 @@ import okhttp3.Headers
  * @param <T> The type of data that is deserialized from response body
  */
 public data class ApiResponse<T>(
-    public val statusCode: Int,
-    public val headers: Headers,
-    public val `data`: T,
+  public val statusCode: Int,
+  public val headers: Headers,
+  public val `data`: T,
 )
 
 /**
  * API non-2xx failure responses returned by API call.
  */
 public open class ApiException(
-    override val message: String,
+  override val message: String,
 ) : RuntimeException(message)
 
 /**
  * API 3xx redirect response returned by API call.
  */
 public open class ApiRedirectException(
-    public val statusCode: Int,
-    public val headers: Headers,
-    override val message: String,
+  public val statusCode: Int,
+  public val headers: Headers,
+  override val message: String,
 ) : ApiException(message)
 
 /**
  * API 4xx failure responses returned by API call.
  */
 public data class ApiClientException(
-    public val statusCode: Int,
-    public val headers: Headers,
-    override val message: String,
+  public val statusCode: Int,
+  public val headers: Headers,
+  override val message: String,
 ) : ApiException(message)
 
 /**
  * API 5xx failure responses returned by API call.
  */
 public data class ApiServerException(
-    public val statusCode: Int,
-    public val headers: Headers,
-    override val message: String,
+  public val statusCode: Int,
+  public val headers: Headers,
+  override val message: String,
 ) : ApiException(message)
