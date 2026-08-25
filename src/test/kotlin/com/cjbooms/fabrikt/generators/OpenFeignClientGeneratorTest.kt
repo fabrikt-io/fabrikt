@@ -24,15 +24,15 @@ import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class OpenFeignClientGeneratorTest {
-
     @Suppress("unused")
-    private fun fullApiTestCases(): Stream<String> = Stream.of(
-        "openFeignClient",
-        "multiMediaType",
-        "pathLevelParameters",
-        "parameterNameClash",
-        "tagGrouping",
-    )
+    private fun fullApiTestCases(): Stream<String> =
+        Stream.of(
+            "openFeignClient",
+            "multiMediaType",
+            "pathLevelParameters",
+            "parameterNameClash",
+            "tagGrouping",
+        )
 
     @BeforeEach
     fun init() {
@@ -65,13 +65,13 @@ class OpenFeignClientGeneratorTest {
         runTestCase(
             testCaseName = "openFeignClient",
             clientFileName = "OpenFeignClientWithResponseEntity.kt",
-            options = setOf(
-                ClientCodeGenOptionType.SPRING_RESPONSE_ENTITY_WRAPPER,
-                ClientCodeGenOptionType.SPRING_CLOUD_OPENFEIGN_STARTER_ANNOTATION
-            )
+            options =
+                setOf(
+                    ClientCodeGenOptionType.SPRING_RESPONSE_ENTITY_WRAPPER,
+                    ClientCodeGenOptionType.SPRING_CLOUD_OPENFEIGN_STARTER_ANNOTATION,
+                ),
         )
     }
-
 
     private fun runTestCase(
         testCaseName: String,
@@ -84,17 +84,18 @@ class OpenFeignClientGeneratorTest {
         val expectedModel = "/examples/$testCaseName/models/ClientModels.kt"
         val expectedClient = expectedClientPath(testCaseName, clientFileName)
 
-        val models = ModelGenerator(
-            packages,
-            sourceApi,
-        ).generate().toSingleFile()
-        val clientCode = OpenFeignInterfaceGenerator(
-            packages,
-            sourceApi,
-        )
-            .generate(options)
-            .clients
-            .toSingleFile()
+        val models =
+            ModelGenerator(
+                packages,
+                sourceApi,
+            ).generate().toSingleFile()
+        val clientCode =
+            OpenFeignInterfaceGenerator(
+                packages,
+                sourceApi,
+            ).generate(options)
+                .clients
+                .toSingleFile()
 
         assertThatGenerated(clientCode).isEqualTo(expectedClient)
         if (testCaseName != "tagGrouping") {
@@ -105,7 +106,10 @@ class OpenFeignClientGeneratorTest {
     private fun optionsFor(testCaseName: String): Set<ClientCodeGenOptionType> =
         if (testCaseName == "tagGrouping") setOf(ClientCodeGenOptionType.GROUP_BY_TAG) else emptySet()
 
-    private fun expectedClientPath(testCaseName: String, fileName: String): String =
+    private fun expectedClientPath(
+        testCaseName: String,
+        fileName: String,
+    ): String =
         if (testCaseName == "tagGrouping") {
             "/examples/$testCaseName/client/grouped/$fileName"
         } else {
@@ -116,8 +120,9 @@ class OpenFeignClientGeneratorTest {
         val destPackage = if (this.isNotEmpty()) first().destinationPackage else ""
         val singleFileBuilder = FileSpec.builder(destPackage, "dummyFilename")
         this.forEach {
-            val builder = singleFileBuilder
-                .addType(it.spec)
+            val builder =
+                singleFileBuilder
+                    .addType(it.spec)
             builder.build()
         }
         return Linter.lintString(singleFileBuilder.build().toString())
@@ -129,8 +134,9 @@ class OpenFeignClientGeneratorTest {
         models
             .sortedBy { it.spec.name }
             .forEach {
-                val builder = singleFileBuilder
-                    .addType(it.spec)
+                val builder =
+                    singleFileBuilder
+                        .addType(it.spec)
                 builder.build()
             }
         return Linter.lintString(singleFileBuilder.build().toString())

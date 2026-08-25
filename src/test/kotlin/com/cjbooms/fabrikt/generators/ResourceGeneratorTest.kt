@@ -16,10 +16,10 @@ import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ResourceGeneratorTest {
-
-    private fun testCases(): Stream<String> = Stream.of(
-        "githubApi",
-    )
+    private fun testCases(): Stream<String> =
+        Stream.of(
+            "githubApi",
+        )
 
     @BeforeEach
     fun init() {

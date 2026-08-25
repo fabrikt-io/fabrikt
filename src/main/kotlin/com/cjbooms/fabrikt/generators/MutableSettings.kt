@@ -54,11 +54,12 @@ object MutableSettings {
      * Otherwise, uses the serialization annotations from the configured serialization library.
      */
     val effectiveSerializationAnnotations: SerializationAnnotations
-        get() = if (ModelCodeGenOptionType.MICRONAUT_SERDEABLE in modelOptions) {
-            MicronautSerdeAnnotations
-        } else {
-            serializationLibrary.serializationAnnotations
-        }
+        get() =
+            if (ModelCodeGenOptionType.MICRONAUT_SERDEABLE in modelOptions) {
+                MicronautSerdeAnnotations
+            } else {
+                serializationLibrary.serializationAnnotations
+            }
 
     /**
      * Returns the effective nullability mode for Jackson serialization. If Jackson
@@ -66,7 +67,6 @@ object MutableSettings {
      */
     val effectiveJacksonNullabilityMode: JacksonNullabilityMode
         get() = if (serializationLibrary == SerializationLibrary.JACKSON) jacksonNullabilityMode else JacksonNullabilityMode.NONE
-
 
     fun updateSettings(
         genTypes: Set<CodeGenerationType> = emptySet(),
@@ -83,7 +83,7 @@ object MutableSettings {
         serializationLibrary: SerializationLibrary = SerializationLibrary.default,
         instantLibrary: InstantLibrary = InstantLibrary.default,
         jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.default,
-        outputOptions: Set<OutputOptionType> = emptySet()
+        outputOptions: Set<OutputOptionType> = emptySet(),
     ) {
         this.generationTypes = genTypes
         this.controllerOptions = controllerOptions
@@ -114,6 +114,5 @@ object MutableSettings {
         jacksonNullabilityMode = mode
     }
 
-    fun isSealedInterfacesForOneOfEnabled(): Boolean =
-        ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF !in modelOptions
+    fun isSealedInterfacesForOneOfEnabled(): Boolean = ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF !in modelOptions
 }

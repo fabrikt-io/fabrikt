@@ -8,7 +8,9 @@ import com.beust.jcommander.Parameterized
 /**
  * Overrides [DefaultUsageFormatter] to provide tabular usage output that looks good in unix and renders a table in markdown.
  */
-class MarkdownUsageFormatter(commander: JCommander) : DefaultUsageFormatter(commander) {
+class MarkdownUsageFormatter(
+    commander: JCommander,
+) : DefaultUsageFormatter(commander) {
     companion object {
         const val FIRST_COL_HEADER = "Parameter"
         const val SECOND_COL_HEADER = "Description"
@@ -25,36 +27,64 @@ class MarkdownUsageFormatter(commander: JCommander) : DefaultUsageFormatter(comm
         out: StringBuilder,
         indentCount: Int,
         indent: String?,
-        sortedParameters: List<ParameterDescription>
+        sortedParameters: List<ParameterDescription>,
     ) {
         if (sortedParameters.isEmpty()) return
 
         val firstColumnWidth = getFirstColumnWidth(sortedParameters)
 
-        out.append(START).append(FIRST_COL_HEADER).append(" ".repeat(firstColumnWidth - FIRST_COL_HEADER.length))
-            .append(BORDER).append(SECOND_COL_HEADER).append(END).append(NEW_LINE)
+        out
+            .append(START)
+            .append(FIRST_COL_HEADER)
+            .append(" ".repeat(firstColumnWidth - FIRST_COL_HEADER.length))
+            .append(BORDER)
+            .append(SECOND_COL_HEADER)
+            .append(END)
+            .append(NEW_LINE)
 
         val titleSeparator = SEPARATOR.repeat(firstColumnWidth)
-        out.append(START).append(titleSeparator).append(" ".repeat(firstColumnWidth - titleSeparator.length))
-            .append(BORDER).append(titleSeparator).append(END).append(NEW_LINE)
+        out
+            .append(START)
+            .append(titleSeparator)
+            .append(" ".repeat(firstColumnWidth - titleSeparator.length))
+            .append(BORDER)
+            .append(titleSeparator)
+            .append(END)
+            .append(NEW_LINE)
 
         sortedParameters
             .filter { !it.isHelp }
             .forEach { param ->
 
                 val parameterKey = param.getParameterKey()
-                out.append(START).append(parameterKey).append(" ".repeat(firstColumnWidth - parameterKey.length))
-                    .append(BORDER).append(param.description).append(END).append(NEW_LINE)
+                out
+                    .append(START)
+                    .append(parameterKey)
+                    .append(" ".repeat(firstColumnWidth - parameterKey.length))
+                    .append(BORDER)
+                    .append(param.description)
+                    .append(END)
+                    .append(NEW_LINE)
 
                 val options = getEnumValues(param.parameterized)
                 if (options.isNotEmpty()) {
                     val valueHeader = if (param.parameterized.isSingleEnum()) SINGLE_VALUE_HEADER else MULTI_VALUE_HEADER
-                    out.append(START).append(" ".repeat(firstColumnWidth))
-                        .append(BORDER).append(valueHeader).append(END).append(NEW_LINE)
+                    out
+                        .append(START)
+                        .append(" ".repeat(firstColumnWidth))
+                        .append(BORDER)
+                        .append(valueHeader)
+                        .append(END)
+                        .append(NEW_LINE)
 
                     options.forEach { option ->
-                        out.append(START).append(" ".repeat(firstColumnWidth))
-                            .append(BORDER).append("  $option").append(END).append(NEW_LINE)
+                        out
+                            .append(START)
+                            .append(" ".repeat(firstColumnWidth))
+                            .append(BORDER)
+                            .append("  $option")
+                            .append(END)
+                            .append(NEW_LINE)
                     }
                 }
             }
@@ -73,16 +103,23 @@ class MarkdownUsageFormatter(commander: JCommander) : DefaultUsageFormatter(comm
     @Suppress("UNCHECKED_CAST")
     private fun getEnumValues(parameterized: Parameterized): List<Enum<*>> {
         val maybeEnumClass =
-            if (parameterized.isSingleEnum())
+            if (parameterized.isSingleEnum()) {
                 parameterized.type
-            else
+            } else {
                 parameterized.findFieldGenericType()?.let { genericType ->
                     (genericType as? Class<*>)?.let { genericClass ->
-                        if (Enum::class.java.isAssignableFrom(genericClass)) genericClass
-                        else null
+                        if (Enum::class.java.isAssignableFrom(genericClass)) {
+                            genericClass
+                        } else {
+                            null
+                        }
                     }
                 }
-        return if (maybeEnumClass != null) (maybeEnumClass.enumConstants as Array<out Enum<*>>).toList()
-        else emptyList()
+            }
+        return if (maybeEnumClass != null) {
+            (maybeEnumClass.enumConstants as Array<out Enum<*>>).toList()
+        } else {
+            emptyList()
+        }
     }
 }

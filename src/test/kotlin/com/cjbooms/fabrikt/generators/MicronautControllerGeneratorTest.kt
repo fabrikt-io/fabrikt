@@ -38,15 +38,16 @@ class MicronautControllerGeneratorTest {
     private lateinit var generated: Collection<FileSpec>
 
     @Suppress("unused")
-    private fun testCases(): Stream<String> = Stream.of(
-        "githubApi",
-        "singleAllOf",
-        "pathLevelParameters",
-        "parameterNameClash",
-        "jakartaValidationAnnotations",
-        "modelSuffix",
-        "tagGrouping",
-    )
+    private fun testCases(): Stream<String> =
+        Stream.of(
+            "githubApi",
+            "singleAllOf",
+            "pathLevelParameters",
+            "parameterNameClash",
+            "jakartaValidationAnnotations",
+            "modelSuffix",
+            "tagGrouping",
+        )
 
     private fun setupGithubApiTestEnv(validationAnnotations: ValidationAnnotations = JavaxValidationAnnotations) {
         val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
@@ -78,12 +79,13 @@ class MicronautControllerGeneratorTest {
 
         val options = if (testCaseName == "tagGrouping") setOf(ControllerCodeGenOptionType.GROUP_BY_TAG) else emptySet()
 
-        val controllers = MicronautControllerInterfaceGenerator(
-            Packages(basePackage),
-            api,
-            JavaxValidationAnnotations,
-            options,
-        ).generate().toSingleFile()
+        val controllers =
+            MicronautControllerInterfaceGenerator(
+                Packages(basePackage),
+                api,
+                JavaxValidationAnnotations,
+                options,
+            ).generate().toSingleFile()
 
         assertThatGenerated(controllers.trim()).isEqualTo(pathToExpected)
     }
@@ -94,12 +96,13 @@ class MicronautControllerGeneratorTest {
         val api = SourceApi(readTextResource("/examples/authentication/api.yaml"))
         val pathToExpected = "/examples/authentication/controllers/micronaut/Controllers.kt"
 
-        val controllers = MicronautControllerInterfaceGenerator(
-            Packages(basePackage),
-            api,
-            JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.AUTHENTICATION),
-        ).generate().toSingleFile()
+        val controllers =
+            MicronautControllerInterfaceGenerator(
+                Packages(basePackage),
+                api,
+                JavaxValidationAnnotations,
+                setOf(ControllerCodeGenOptionType.AUTHENTICATION),
+            ).generate().toSingleFile()
 
         assertThatGenerated(controllers.trim()).isEqualTo(pathToExpected)
     }
@@ -135,7 +138,8 @@ class MicronautControllerGeneratorTest {
     fun `ensure controller has correct annotations`() {
         setupGithubApiTestEnv()
         val controllerAnnotations =
-            generated.flatMap { it.members.flatMap { ts -> (ts as TypeSpec).annotations.map { t -> t.typeName.toString() } } }
+            generated
+                .flatMap { it.members.flatMap { ts -> (ts as TypeSpec).annotations.map { t -> t.typeName.toString() } } }
                 .distinct()
 
         assertThat(controllerAnnotations).containsOnly(
@@ -150,20 +154,22 @@ class MicronautControllerGeneratorTest {
         if (library == ValidationLibrary.NO_VALIDATION) {
             return
         }
-        val desiredPackagePrefix = when (library) {
-            ValidationLibrary.JAVAX_VALIDATION -> "javax.validation."
-            ValidationLibrary.JAKARTA_VALIDATION -> "jakarta.validation."
-            else -> throw IllegalArgumentException("Unknown library: $library")
-        }
-        val parameterValidationAnnotations = generated
-            .flatMap { it.members }
-            .filterIsInstance<TypeSpec>()
-            .flatMap { it.funSpecs }
-            .flatMap { it.parameters }
-            .flatMap { it.annotations }
-            .map { it.typeName.toString() }
-            .filter { ".validation." in it }
-            .distinct()
+        val desiredPackagePrefix =
+            when (library) {
+                ValidationLibrary.JAVAX_VALIDATION -> "javax.validation."
+                ValidationLibrary.JAKARTA_VALIDATION -> "jakarta.validation."
+                else -> throw IllegalArgumentException("Unknown library: $library")
+            }
+        val parameterValidationAnnotations =
+            generated
+                .flatMap { it.members }
+                .filterIsInstance<TypeSpec>()
+                .flatMap { it.funSpecs }
+                .flatMap { it.parameters }
+                .flatMap { it.annotations }
+                .map { it.typeName.toString() }
+                .filter { ".validation." in it }
+                .distinct()
         assertThat(parameterValidationAnnotations).isNotEmpty
         assertThat(parameterValidationAnnotations).allMatch { it.startsWith(desiredPackagePrefix) }
     }
@@ -184,14 +190,16 @@ class MicronautControllerGeneratorTest {
             ),
         )
 
-        val linkedFunctionNames = controllers.files
-            .filter { it.name == "OrganisationsContributorsController" }
-            .flatMap { it.members }
-            .flatMap { (it as TypeSpec).funSpecs.map { t -> t.name } }
-        val ownedFunctionNames = controllers.files
-            .filter { it.name == "RepositoriesPullRequestsController" }
-            .flatMap { it.members }
-            .flatMap { (it as TypeSpec).funSpecs.map { t -> t.name } }
+        val linkedFunctionNames =
+            controllers.files
+                .filter { it.name == "OrganisationsContributorsController" }
+                .flatMap { it.members }
+                .flatMap { (it as TypeSpec).funSpecs.map { t -> t.name } }
+        val ownedFunctionNames =
+            controllers.files
+                .filter { it.name == "RepositoriesPullRequestsController" }
+                .flatMap { it.members }
+                .flatMap { (it as TypeSpec).funSpecs.map { t -> t.name } }
         assertThat(linkedFunctionNames).containsExactlyInAnyOrder(
             "get",
             "getById",
@@ -209,12 +217,13 @@ class MicronautControllerGeneratorTest {
     @Test
     fun `ensure controller methods has the correct modifiers`() {
         val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
-        val controllers = MicronautControllerInterfaceGenerator(
-            Packages(basePackage),
-            api,
-            JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.SUSPEND_MODIFIER),
-        ).generate()
+        val controllers =
+            MicronautControllerInterfaceGenerator(
+                Packages(basePackage),
+                api,
+                JavaxValidationAnnotations,
+                setOf(ControllerCodeGenOptionType.SUSPEND_MODIFIER),
+            ).generate()
 
         assertThat(controllers.files).size().isEqualTo(6)
         assertThat(
@@ -228,14 +237,15 @@ class MicronautControllerGeneratorTest {
     @Test
     fun `adds disclaimer as comment to files if enabled`() {
         MutableSettings.updateSettings(
-            outputOptions = setOf(OutputOptionType.ADD_FILE_DISCLAIMER)
+            outputOptions = setOf(OutputOptionType.ADD_FILE_DISCLAIMER),
         )
         val api = SourceApi(readTextResource("/examples/fileComment/api.yaml"))
-        val generator = MicronautControllerInterfaceGenerator(
-            Packages("examples.fileComment"),
-            api,
-            JavaxValidationAnnotations
-        )
+        val generator =
+            MicronautControllerInterfaceGenerator(
+                Packages("examples.fileComment"),
+                api,
+                JavaxValidationAnnotations,
+            )
 
         val expectedFiles = readFolder(Path.of("src/test/resources/examples/fileComment/controllers/micronaut"))
 
@@ -255,7 +265,8 @@ class MicronautControllerGeneratorTest {
         val destPackage = if (controllers.isNotEmpty()) controllers.first().destinationPackage else ""
         val singleFileBuilder = FileSpec.builder(destPackage, "dummyFilename")
         controllers.forEach {
-            singleFileBuilder.addType(it.spec)
+            singleFileBuilder
+                .addType(it.spec)
                 .addImport(MicronautImports.SECURITY_RULE.first, MicronautImports.SECURITY_RULE.second)
                 .build()
         }
@@ -265,7 +276,12 @@ class MicronautControllerGeneratorTest {
     @Test
     fun `ensure generates ByteArray body parameter and response for string with format binary`() {
         val api = SourceApi(readTextResource("/examples/binary/api.yaml"))
-        val controllers = MicronautControllerInterfaceGenerator(Packages(basePackage), api, JavaxValidationAnnotations).generate().toSingleFile()
+        val controllers =
+            MicronautControllerInterfaceGenerator(
+                Packages(basePackage),
+                api,
+                JavaxValidationAnnotations,
+            ).generate().toSingleFile()
         val expectedControllers = "/examples/binary/controllers/micronaut/Controllers.kt"
 
         assertThatGenerated(controllers.trim()).isEqualTo(expectedControllers)
@@ -275,7 +291,12 @@ class MicronautControllerGeneratorTest {
     fun `ensure generates ByteArrayStream body parameter and response for string with format binary`() {
         MutableSettings.addOption(CodeGenTypeOverride.BYTEARRAY_AS_INPUTSTREAM)
         val api = SourceApi(readTextResource("/examples/byteArrayStream/api.yaml"))
-        val controllers = MicronautControllerInterfaceGenerator(Packages(basePackage), api, JavaxValidationAnnotations).generate().toSingleFile()
+        val controllers =
+            MicronautControllerInterfaceGenerator(
+                Packages(basePackage),
+                api,
+                JavaxValidationAnnotations,
+            ).generate().toSingleFile()
         val expectedControllers = "/examples/byteArrayStream/controllers/micronaut/Controllers.kt"
 
         assertThatGenerated(controllers.trim()).isEqualTo(expectedControllers)

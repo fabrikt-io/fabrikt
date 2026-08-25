@@ -4,7 +4,6 @@ import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 
 object SpringImports {
-
     private object Packages {
         private const val SPRING_BASE = "org.springframework"
 
@@ -75,10 +74,10 @@ object SpringAnnotations {
             .builder(SpringImports.VALIDATED)
             .build()
 
-    fun dateTimeFormat( iso: String ): AnnotationSpec =
+    fun dateTimeFormat(iso: String): AnnotationSpec =
         AnnotationSpec
             .builder(SpringImports.DATE_TIME_FORMAT)
-            .addMember( "iso = %L", iso )
+            .addMember("iso = %L", iso)
             .build()
 
     fun requestMappingBuilder(): AnnotationSpec.Builder =

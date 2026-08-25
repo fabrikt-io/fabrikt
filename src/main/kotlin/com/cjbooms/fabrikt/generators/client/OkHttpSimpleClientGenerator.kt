@@ -18,84 +18,103 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientP
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
-import com.cjbooms.fabrikt.model.*
+import com.cjbooms.fabrikt.model.BodyParameter
+import com.cjbooms.fabrikt.model.ClientType
+import com.cjbooms.fabrikt.model.Destinations
+import com.cjbooms.fabrikt.model.GeneratedFile
+import com.cjbooms.fabrikt.model.HeaderParam
+import com.cjbooms.fabrikt.model.IncomingParameter
+import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.MultipartParameter
+import com.cjbooms.fabrikt.model.PathParam
+import com.cjbooms.fabrikt.model.QueryParam
+import com.cjbooms.fabrikt.model.RequestParameter
+import com.cjbooms.fabrikt.model.SimpleFile
+import com.cjbooms.fabrikt.model.SourceApi
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.asTypeName
 import java.nio.file.Path
 import java.util.Locale.getDefault
 
 class OkHttpSimpleClientGenerator(
     private val packages: Packages,
     private val api: SourceApi,
-    private val srcPath: Path = Destinations.MAIN_KT_SOURCE
+    private val srcPath: Path = Destinations.MAIN_KT_SOURCE,
 ) {
-
     private val multipartParameterToSpecBuilder = ClientGeneratorUtils.MultipartParameterToSpecBuilder(packages.client)
 
-    fun generateDynamicClientCode(options: Set<ClientCodeGenOptionType> = emptySet()): Collection<ClientType> {
-        return api.groupedClientPaths(options).map { (resourceName, paths) ->
-            val funcSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
-                path.operations.map { (verb, operation) ->
-                    val parameters = deriveClientParameters(path, operation, packages.base)
-                    FunSpec
-                        .builder(functionName(operation, resource, verb))
-                        .addModifiers(KModifier.PUBLIC)
-                        .addKdoc(operation.toKdoc(parameters))
-                        .addAnnotation(
-                            AnnotationSpec.builder(Throws::class)
-                                .addMember("%T::class", "ApiException".toClassName(packages.client)).build()
-                        )
-                        .addIncomingParameters(
-                            parameters,
-                            multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder()
-                        )
-                        .addParameter(
-                            ParameterSpec.builder(
-                                ADDITIONAL_HEADERS_PARAMETER_NAME,
-                                TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName())
-                            )
-                                .defaultValue("emptyMap()")
+    fun generateDynamicClientCode(options: Set<ClientCodeGenOptionType> = emptySet()): Collection<ClientType> =
+        api
+            .groupedClientPaths(options)
+            .map { (resourceName, paths) ->
+                val funcSpecs: List<FunSpec> =
+                    paths.flatMap { (resource, path) ->
+                        path.operations.map { (verb, operation) ->
+                            val parameters = deriveClientParameters(path, operation, packages.base)
+                            FunSpec
+                                .builder(functionName(operation, resource, verb))
+                                .addModifiers(KModifier.PUBLIC)
+                                .addKdoc(operation.toKdoc(parameters))
+                                .addAnnotation(
+                                    AnnotationSpec
+                                        .builder(Throws::class)
+                                        .addMember("%T::class", "ApiException".toClassName(packages.client))
+                                        .build(),
+                                ).addIncomingParameters(
+                                    parameters,
+                                    multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder(),
+                                ).addParameter(
+                                    ParameterSpec
+                                        .builder(
+                                            ADDITIONAL_HEADERS_PARAMETER_NAME,
+                                            TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
+                                        ).defaultValue("emptyMap()")
+                                        .build(),
+                                ).addParameter(
+                                    ParameterSpec
+                                        .builder(
+                                            ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME,
+                                            TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
+                                        ).defaultValue("emptyMap()")
+                                        .build(),
+                                ).addCode(
+                                    SimpleClientOperationStatement(
+                                        packages,
+                                        resource,
+                                        verb,
+                                        operation,
+                                        parameters,
+                                        options,
+                                    ).toStatement(),
+                                ).returns(operation.toClientReturnType(packages))
                                 .build()
-                        )
-                        .addParameter(
-                            ParameterSpec.builder(
-                                ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME,
-                                TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName())
-                            )
-                                .defaultValue("emptyMap()")
-                                .build()
-                        )
-                        .addCode(
-                            SimpleClientOperationStatement(
-                                packages,
-                                resource,
-                                verb,
-                                operation,
-                                parameters,
-                                options,
-                            ).toStatement()
-                        )
-                        .returns(operation.toClientReturnType(packages))
-                        .build()
-                }
-            }
+                        }
+                    }
 
-            val clientType = TypeSpec.classBuilder(simpleClientName(resourceName))
-                .primaryPropertiesConstructor(
-                    PropertySpec.builder("objectMapper", ObjectMapper::class.asTypeName(), KModifier.PRIVATE).build(),
-                    PropertySpec.builder("baseUrl", String::class.asTypeName(), KModifier.PRIVATE).build(),
-                    PropertySpec.builder("okHttpClient", "OkHttpClient".toClassName("okhttp3"), KModifier.PRIVATE)
+                val clientType =
+                    TypeSpec
+                        .classBuilder(simpleClientName(resourceName))
+                        .primaryPropertiesConstructor(
+                            PropertySpec.builder("objectMapper", ObjectMapper::class.asTypeName(), KModifier.PRIVATE).build(),
+                            PropertySpec.builder("baseUrl", String::class.asTypeName(), KModifier.PRIVATE).build(),
+                            PropertySpec
+                                .builder("okHttpClient", "OkHttpClient".toClassName("okhttp3"), KModifier.PRIVATE)
+                                .build(),
+                        ).addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "unused").build())
+                        .addFunctions(funcSpecs)
                         .build()
-                )
-                .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "unused").build())
-                .addFunctions(funcSpecs)
-                .build()
 
-            ClientType(clientType, packages.base, setOf(TYPE_REFERENCE_IMPORT))
-        }.toSet()
-    }
+                ClientType(clientType, packages.base, setOf(TYPE_REFERENCE_IMPORT))
+            }.toSet()
 
     fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> {
         val codeDir = srcPath.resolve(CodeGenerationUtils.packageToPath(packages.base))
@@ -104,13 +123,13 @@ class OkHttpSimpleClientGenerator(
         return setOf(
             SimpleFile(
                 clientDir.resolve("ApiModels.kt"),
-                OkHttpClientLibraryFiles.apiModels(packages, nonNullDataPayloads).toString()
+                OkHttpClientLibraryFiles.apiModels(packages, nonNullDataPayloads).toString(),
             ),
             SimpleFile(
                 clientDir.resolve("HttpUtil.kt"),
-                OkHttpClientLibraryFiles.httpUtil(packages, nonNullDataPayloads).toString()
+                OkHttpClientLibraryFiles.httpUtil(packages, nonNullDataPayloads).toString(),
             ),
-            SimpleFile(clientDir.resolve("OAuth.kt"), OkHttpClientLibraryFiles.oAuth(packages).toString())
+            SimpleFile(clientDir.resolve("OAuth.kt"), OkHttpClientLibraryFiles.oAuth(packages).toString()),
         )
     }
 }
@@ -121,10 +140,11 @@ data class SimpleClientOperationStatement(
     private val verb: String,
     private val operation: Operation,
     private val parameters: List<IncomingParameter>,
-    private val options: Set<ClientCodeGenOptionType>
+    private val options: Set<ClientCodeGenOptionType>,
 ) {
     fun toStatement(): CodeBlock =
-        CodeBlock.builder()
+        CodeBlock
+            .builder()
             .addUrlStatement()
             .addPathParamStatement()
             .addQueryParamStatement()
@@ -160,20 +180,22 @@ data class SimpleClientOperationStatement(
             .filter { it.parameterLocation == QueryParam }
             .forEach {
                 when (it.typeInfo) {
-                    is KotlinTypeInfo.Array -> this.add(
-                        "\n.%T(%S, %N, %L)",
-                        "queryParam".toClassName(packages.client),
-                        it.originalName,
-                        it.name,
-                        if (it.explode == null || it.explode) "true" else "false"
-                    )
+                    is KotlinTypeInfo.Array ->
+                        this.add(
+                            "\n.%T(%S, %N, %L)",
+                            "queryParam".toClassName(packages.client),
+                            it.originalName,
+                            it.name,
+                            if (it.explode == null || it.explode) "true" else "false",
+                        )
 
-                    else -> this.add(
-                        "\n.%T(%S, %N)",
-                        "queryParam".toClassName(packages.client),
-                        it.originalName,
-                        it.name
-                    )
+                    else ->
+                        this.add(
+                            "\n.%T(%S, %N)",
+                            "queryParam".toClassName(packages.client),
+                            it.originalName,
+                            it.name,
+                        )
                 }
             }
         this.add("\n.also { builder -> additionalQueryParameters.forEach { builder.queryParam(it.key, it.value) } }")
@@ -190,7 +212,7 @@ data class SimpleClientOperationStatement(
                     "\n.%T(%S, %L)",
                     "header".toClassName(packages.client),
                     it.originalName,
-                    it.name + if (it.typeInfo is KotlinTypeInfo.Enum) "?.value" else ""
+                    it.name + if (it.typeInfo is KotlinTypeInfo.Enum) "?.value" else "",
                 )
             }
         this.add("\nadditionalHeaders.forEach { headerBuilder.header(it.key, it.value) }")
@@ -215,7 +237,7 @@ data class SimpleClientOperationStatement(
             this.add(
                 "\nval request: %T = %T.Builder()",
                 "Request".toClassName("okhttp3"),
-                "Request".toClassName("okhttp3")
+                "Request".toClassName("okhttp3"),
             )
             this.add("\n.url(httpUrl)\n.headers(httpHeaders)")
             when (val op = verb.uppercase(getDefault())) {
@@ -257,7 +279,7 @@ data class SimpleClientOperationStatement(
                 it.name,
                 toRequestBody,
                 requestBody.getPrimaryContentMediaType()?.key,
-                "toMediaType".toClassName("okhttp3.MediaType.Companion")
+                "toMediaType".toClassName("okhttp3.MediaType.Companion"),
             )
         } ?: this.add("\n.%N(ByteArray(0).%T())", verb, toRequestBody)
     }
@@ -267,7 +289,9 @@ data class SimpleClientOperationStatement(
         this.add("\n.setType(%T.FORM)", "MultipartBody".toClassName("okhttp3"))
 
         // First handle the array binary files with forEach loops
-        parameters.filterIsInstance<MultipartParameter>().filter { it.isBinaryFile && it.schema.type == "array" }
+        parameters
+            .filterIsInstance<MultipartParameter>()
+            .filter { it.isBinaryFile && it.schema.type == "array" }
             .forEach { param ->
                 this.add("\n%N?.forEachIndexed { index, fileData ->", param.name)
                 this.add(
@@ -278,7 +302,9 @@ data class SimpleClientOperationStatement(
             }
 
         // Then handle other parameters using multipartBuilder directly
-        parameters.filterIsInstance<MultipartParameter>().filter { !(it.isBinaryFile && it.schema.type == "array") }
+        parameters
+            .filterIsInstance<MultipartParameter>()
+            .filter { !(it.isBinaryFile && it.schema.type == "array") }
             .forEach { param ->
                 if (!param.isRequired) this.add("\n%N?.let {", param.name)
                 when {
@@ -287,7 +313,7 @@ data class SimpleClientOperationStatement(
                             "\n    multipartBuilder.addFormDataPart(%S, %N.filename, %N.requestBody)",
                             param.partName,
                             param.name,
-                            param.name
+                            param.name,
                         )
                     }
 
@@ -295,7 +321,7 @@ data class SimpleClientOperationStatement(
                         this.add(
                             "\n    multipartBuilder.addFormDataPart(%S, objectMapper.writeValueAsString(%N))",
                             param.partName,
-                            param.name
+                            param.name,
                         )
                     }
 
@@ -303,7 +329,7 @@ data class SimpleClientOperationStatement(
                         this.add(
                             "\n    multipartBuilder.addFormDataPart(%S, %N.toString())",
                             param.partName,
-                            param.name
+                            param.name,
                         )
                     }
                 }

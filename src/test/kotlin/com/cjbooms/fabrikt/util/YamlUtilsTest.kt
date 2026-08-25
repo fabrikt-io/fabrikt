@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class YamlUtilsTest {
-
     private val inputYaml =
         """
         | ValidPreferentialCountries:
@@ -227,7 +226,7 @@ class YamlUtilsTest {
         |       responses:
         |         200:
         |           description: Everything OK
-        """.trimMargin()
+            """.trimMargin()
 
         val api = YamlUtils.parseOpenApi(encodingInput)
 

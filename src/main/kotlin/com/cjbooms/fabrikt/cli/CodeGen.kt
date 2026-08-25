@@ -10,7 +10,6 @@ import java.nio.file.Path
 import java.util.logging.Logger
 
 object CodeGen {
-
     private val logger = Logger.getGlobal()
 
     @JvmStatic

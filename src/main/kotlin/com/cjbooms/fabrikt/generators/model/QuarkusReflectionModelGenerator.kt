@@ -14,20 +14,25 @@ class QuarkusReflectionModelGenerator(
     private val models: Models,
 ) {
     private val generationTypes: Set<CodeGenerationType> = MutableSettings.generationTypes
+
     companion object {
         const val RESOURCE_FILE_NAME = "reflection-config.json"
     }
-    private val objectMapper: ObjectMapper = ObjectMapper().registerKotlinModule()
-    private val prettyPrinter = DefaultPrettyPrinter().apply {
-        indentObjectsWith(DefaultIndenter("  ", "\n"))
-    }
 
-    fun generate(): ResourceFile? {
-        return if (generationTypes.any { it == CodeGenerationType.QUARKUS_REFLECTION_CONFIG }) {
-            val reflectionConfigs = models.models.map {
-                QuarkusReflectionModel(it.className.canonicalName)
-            }
+    private val objectMapper: ObjectMapper = ObjectMapper().registerKotlinModule()
+    private val prettyPrinter =
+        DefaultPrettyPrinter().apply {
+            indentObjectsWith(DefaultIndenter("  ", "\n"))
+        }
+
+    fun generate(): ResourceFile? =
+        if (generationTypes.any { it == CodeGenerationType.QUARKUS_REFLECTION_CONFIG }) {
+            val reflectionConfigs =
+                models.models.map {
+                    QuarkusReflectionModel(it.className.canonicalName)
+                }
             ResourceFile(objectMapper.writer(prettyPrinter).writeValueAsString(reflectionConfigs).byteInputStream(), RESOURCE_FILE_NAME)
-        } else null
-    }
+        } else {
+            null
+        }
 }

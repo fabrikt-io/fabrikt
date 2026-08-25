@@ -43,9 +43,12 @@ object OpenApi31Downgrader {
             node.isObject -> {
                 val objectNode = node as ObjectNode
                 if (objectNode.get("type")?.asText() == "array" && !objectNode.has("items")) {
-                    objectNode.set<JsonNode>("items", YamlUtils.objectMapper.createObjectNode().apply {
-                        put("nullable", true)
-                    })
+                    objectNode.set<JsonNode>(
+                        "items",
+                        YamlUtils.objectMapper.createObjectNode().apply {
+                            put("nullable", true)
+                        },
+                    )
                 }
                 objectNode.fields().forEach { (_, value) -> fillMissingArrayItems(value) }
             }
@@ -63,7 +66,7 @@ object OpenApi31Downgrader {
     private fun downgradeNullableSyntax(
         node: JsonNode,
         propertyName: String? = null,
-        parentSchemaObject: ObjectNode? = null
+        parentSchemaObject: ObjectNode? = null,
     ) {
         // Track the schema object through recursion. Top level attributes, e.g. 'required', may be modified.
         var schemaObject = parentSchemaObject
@@ -85,10 +88,10 @@ object OpenApi31Downgrader {
                     }
 
                     // Handle `anyOf` or `oneOf` with a `type: null` entry
-                    if ((key == "oneOf" || key == "anyOf")
-                        && value.isArray
-                        && value.size() == 2
-                        && value.any { it.isObject && it.has("type") && it.get("type") == NULL_TYPE }
+                    if ((key == "oneOf" || key == "anyOf") &&
+                        value.isArray &&
+                        value.size() == 2 &&
+                        value.any { it.isObject && it.has("type") && it.get("type") == NULL_TYPE }
                     ) {
                         val nonNullOption = value.first { !it.has("type") || it.get("type") != NULL_TYPE }
 
@@ -103,10 +106,11 @@ object OpenApi31Downgrader {
                             // referenced schema object or building a new nullable version of that object, we can remove
                             // the field from 'required', which has the same effect on the generated code.
                             if (objectNode.has("\$ref")) {
-                                val nullableRefProperties = schemaObject?.get("x-FABRIKT-INTERNAL-nullable") as? ArrayNode
-                                    ?: schemaObject?.arrayNode().also {
-                                        schemaObject?.replace("x-FABRIKT-INTERNAL-nullable", it)
-                                    }
+                                val nullableRefProperties =
+                                    schemaObject?.get("x-FABRIKT-INTERNAL-nullable") as? ArrayNode
+                                        ?: schemaObject?.arrayNode().also {
+                                            schemaObject?.replace("x-FABRIKT-INTERNAL-nullable", it)
+                                        }
                                 nullableRefProperties?.add(propertyName)
                             }
                             return

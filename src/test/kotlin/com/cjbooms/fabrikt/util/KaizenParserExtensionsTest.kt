@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Test
 
 class KaizenParserExtensionsTest {
-
     private fun apiWithServerUrl(url: String?): com.reprezen.kaizen.oasparser.model3.OpenApi3 {
         val serverBlock = if (url == null) "" else "servers:\n  - url: \"$url\"\n"
-        val spec = serverBlock +
-            """
+        val spec =
+            serverBlock +
+                """
             |openapi: 3.1.0
             |info:
             |  title: test
@@ -23,7 +23,7 @@ class KaizenParserExtensionsTest {
             |      responses:
             |        '200':
             |          description: ok
-            """.trimMargin()
+                """.trimMargin()
         return YamlUtils.parseOpenApi(spec)
     }
 

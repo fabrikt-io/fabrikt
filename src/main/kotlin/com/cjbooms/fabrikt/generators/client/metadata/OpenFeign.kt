@@ -4,7 +4,6 @@ import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 
 object OpenFeignImports {
-
     private object Packages {
         const val FEIGN = "feign"
         const val SPRING_STARTER = "org.springframework.cloud.openfeign"

@@ -45,33 +45,38 @@ class OpenFeignInterfaceGenerator(
     private val api: SourceApi,
 ) : ClientGenerator {
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
-        val clientTypes = api.groupedClientPaths(options).map { (resourceName, paths) ->
-            val funcSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
-                path.operations.map { (verb, operation) ->
-                    buildFunction(path, resource, operation, verb, options)
-                }
-            }
+        val clientTypes =
+            api
+                .groupedClientPaths(options)
+                .map { (resourceName, paths) ->
+                    val funcSpecs: List<FunSpec> =
+                        paths.flatMap { (resource, path) ->
+                            path.operations.map { (verb, operation) ->
+                                buildFunction(path, resource, operation, verb, options)
+                            }
+                        }
 
-            val clientType = TypeSpec.interfaceBuilder(simpleClientName(resourceName))
-                .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "unused").build())
-                .apply {
-                    if (options.contains(ClientCodeGenOptionType.SPRING_CLOUD_OPENFEIGN_STARTER_ANNOTATION)) {
-                        addAnnotation(
-                            OpenFeignAnnotations.feignClientBuilder()
-                                .addMember(
-                                    "name = %S",
-                                    MutableSettings.openfeignClientName
-                                )
-                                .addMember("contextId = %S", resourceName)
-                                .build()
-                        )
-                    }
-                }
-                .addFunctions(funcSpecs)
-                .build()
+                    val clientType =
+                        TypeSpec
+                            .interfaceBuilder(simpleClientName(resourceName))
+                            .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "unused").build())
+                            .apply {
+                                if (options.contains(ClientCodeGenOptionType.SPRING_CLOUD_OPENFEIGN_STARTER_ANNOTATION)) {
+                                    addAnnotation(
+                                        OpenFeignAnnotations
+                                            .feignClientBuilder()
+                                            .addMember(
+                                                "name = %S",
+                                                MutableSettings.openfeignClientName,
+                                            ).addMember("contextId = %S", resourceName)
+                                            .build(),
+                                    )
+                                }
+                            }.addFunctions(funcSpecs)
+                            .build()
 
-            ClientType(clientType, packages.base)
-        }.toSet()
+                    ClientType(clientType, packages.base)
+                }.toSet()
 
         return Clients(clientTypes)
     }
@@ -96,35 +101,32 @@ class OpenFeignInterfaceGenerator(
             .addIncomingParameters(
                 parameters,
                 annotateRequestParameterWith = { parameter ->
-                    OpenFeignAnnotations.paramBuilder()
+                    OpenFeignAnnotations
+                        .paramBuilder()
                         .addMember("%S", parameter.name)
                         .build()
                 },
-            )
-            .addParameter(
-                ParameterSpec.builder(
-                    ADDITIONAL_HEADERS_PARAMETER_NAME,
-                    TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
-                )
-                    .addAnnotation(OpenFeignAnnotations.HEADER_MAP)
+            ).addParameter(
+                ParameterSpec
+                    .builder(
+                        ADDITIONAL_HEADERS_PARAMETER_NAME,
+                        TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
+                    ).addAnnotation(OpenFeignAnnotations.HEADER_MAP)
                     .defaultValue("emptyMap()")
                     .build(),
-            )
-            .addParameter(
-                ParameterSpec.builder(
-                    ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME,
-                    TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
-                )
-                    .addAnnotation(OpenFeignAnnotations.QUERY_MAP)
+            ).addParameter(
+                ParameterSpec
+                    .builder(
+                        ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME,
+                        TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
+                    ).addAnnotation(OpenFeignAnnotations.QUERY_MAP)
                     .defaultValue("emptyMap()")
                     .build(),
-            )
-            .returns(
+            ).returns(
                 operation
                     .getReturnType(packages)
-                    .optionallyParameterizeWithResponseEntity(options)
-            )
-            .build()
+                    .optionallyParameterizeWithResponseEntity(options),
+            ).build()
     }
 
     /**
@@ -163,8 +165,7 @@ class OpenFeignInterfaceGenerator(
             }
         }
 
-        private fun List<IncomingParameter>.getPathAndQueryParameters():
-                Pair<List<RequestParameter>, List<RequestParameter>> {
+        private fun List<IncomingParameter>.getPathAndQueryParameters(): Pair<List<RequestParameter>, List<RequestParameter>> {
             val queryParameters = mutableListOf<RequestParameter>()
             val pathVariables = mutableListOf<RequestParameter>()
             for (parameter in this) {
@@ -196,12 +197,15 @@ class OpenFeignInterfaceGenerator(
 
         fun build(): AnnotationSpec {
             val urlPath = buildUrlPath()
-            val builder = OpenFeignAnnotations.requestLineBuilder()
-                .addMember("%S", "${verb.toUpperCase()} $urlPath")
+            val builder =
+                OpenFeignAnnotations
+                    .requestLineBuilder()
+                    .addMember("%S", "${verb.toUpperCase()} $urlPath")
 
-            val arrayQueryParams = parameters
-                .filterIsInstance<RequestParameter>()
-                .filter { it.parameterLocation is QueryParam && it.typeInfo is KotlinTypeInfo.Array }
+            val arrayQueryParams =
+                parameters
+                    .filterIsInstance<RequestParameter>()
+                    .filter { it.parameterLocation is QueryParam && it.typeInfo is KotlinTypeInfo.Array }
 
             if (arrayQueryParams.isNotEmpty()) {
                 val allExplodeFalse = arrayQueryParams.all { it.explode == false }
@@ -261,7 +265,8 @@ class OpenFeignInterfaceGenerator(
             for (parameter in headerParameters) {
                 headersValueParts.add(buildHeadersAnnotationValue(parameter))
                 acceptHeaderExists =
-                    acceptHeaderExists || parameter.name == ClientGeneratorUtils.ACCEPT_HEADER_NAME
+                    acceptHeaderExists ||
+                    parameter.name == ClientGeneratorUtils.ACCEPT_HEADER_NAME
             }
             // Add default accept header
             if (!acceptHeaderExists) {
@@ -304,8 +309,8 @@ class OpenFeignInterfaceGenerator(
             }.toString()
         }
 
-        private fun getDefaultAcceptHeaderAnnotationValue(): String? {
-            return operation.getPrimaryContentMediaType()?.key?.let { mediaType ->
+        private fun getDefaultAcceptHeaderAnnotationValue(): String? =
+            operation.getPrimaryContentMediaType()?.key?.let { mediaType ->
                 buildCodeBlock {
                     add(
                         "%L",
@@ -313,6 +318,5 @@ class OpenFeignInterfaceGenerator(
                     )
                 }.toString()
             }
-        }
     }
 }

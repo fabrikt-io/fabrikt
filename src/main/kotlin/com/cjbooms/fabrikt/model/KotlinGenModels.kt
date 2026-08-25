@@ -14,24 +14,35 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 
-sealed class GeneratedType(val spec: TypeSpec, val destinationPackage: String) {
+sealed class GeneratedType(
+    val spec: TypeSpec,
+    val destinationPackage: String,
+) {
     val className = ClassName(destinationPackage, spec.name!!)
 }
 
-abstract class KotlinTypes(types: Collection<GeneratedType>) {
-    open val files: Collection<FileSpec> = types.map {
-        FileSpec.builder(types.first().destinationPackage, it.className.simpleName)
-            .addType(it.spec)
-            .build()
-    }.toSet()
+abstract class KotlinTypes(
+    types: Collection<GeneratedType>,
+) {
+    open val files: Collection<FileSpec> =
+        types
+            .map {
+                FileSpec
+                    .builder(types.first().destinationPackage, it.className.simpleName)
+                    .addType(it.spec)
+                    .build()
+            }.toSet()
 }
 
-class ModelType(spec: TypeSpec, basePackage: String) : GeneratedType(spec, modelsPackage(basePackage))
+class ModelType(
+    spec: TypeSpec,
+    basePackage: String,
+) : GeneratedType(spec, modelsPackage(basePackage))
 
 class ClientType(
     spec: TypeSpec,
     basePackage: String,
-    val imports: Set<Pair<String, String>> = emptySet()
+    val imports: Set<Pair<String, String>> = emptySet(),
 ) : GeneratedType(spec, clientPackage(basePackage)) {
     companion object {
         const val SIMPLE_CLIENT_SUFFIX = "Client"
@@ -39,37 +50,53 @@ class ClientType(
     }
 }
 
-class ControllerType(spec: TypeSpec, basePackage: String) : GeneratedType(spec, controllersPackage(basePackage)) {
+class ControllerType(
+    spec: TypeSpec,
+    basePackage: String,
+) : GeneratedType(spec, controllersPackage(basePackage)) {
     companion object {
         const val SUFFIX = "Controller"
     }
 }
 
-class ControllerLibraryType(spec: TypeSpec, basePackage: String) :
-    GeneratedType(spec, controllersPackage(basePackage))
+class ControllerLibraryType(
+    spec: TypeSpec,
+    basePackage: String,
+) : GeneratedType(spec, controllersPackage(basePackage))
 
-data class Models(val models: Collection<ModelType>) : KotlinTypes(models) {
+data class Models(
+    val models: Collection<ModelType>,
+) : KotlinTypes(models) {
     override val files: Collection<FileSpec> = models.toFileSpec()
 }
 
-data class Clients(val clients: Collection<ClientType>) : KotlinTypes(clients) {
-    override val files: Collection<FileSpec> = clients.map {
-        val builder = FileSpec.builder(it.destinationPackage, it.className.simpleName)
-            .addType(it.spec)
-            .addFileDisclaimer()
-        it.imports.forEach { (pkg, name) ->
-            builder.addImport(pkg, name)
-        }
-        builder.build()
-    }.toSet()
+data class Clients(
+    val clients: Collection<ClientType>,
+) : KotlinTypes(clients) {
+    override val files: Collection<FileSpec> =
+        clients
+            .map {
+                val builder =
+                    FileSpec
+                        .builder(it.destinationPackage, it.className.simpleName)
+                        .addType(it.spec)
+                        .addFileDisclaimer()
+                it.imports.forEach { (pkg, name) ->
+                    builder.addImport(pkg, name)
+                }
+                builder.build()
+            }.toSet()
 }
 
-fun <T : GeneratedType> Collection<T>.toFileSpec(): Collection<FileSpec> = this
-    .map {
-        FileSpec.builder(it.destinationPackage, it.className.simpleName)
-            .addFileDisclaimer()
-            .addType(it.spec).build()
-    }
+fun <T : GeneratedType> Collection<T>.toFileSpec(): Collection<FileSpec> =
+    this
+        .map {
+            FileSpec
+                .builder(it.destinationPackage, it.className.simpleName)
+                .addFileDisclaimer()
+                .addType(it.spec)
+                .build()
+        }
 
 /**
  * The IncomingParameter class is intended to represent a given name and type
@@ -79,7 +106,7 @@ sealed class IncomingParameter(
     val oasName: String,
     val description: String?,
     val type: TypeName,
-    val isRequired: Boolean
+    val isRequired: Boolean,
 ) {
     val name: String = oasName.toKotlinParameterName()
 
@@ -93,7 +120,7 @@ sealed class IncomingParameter(
     open fun toParameterSpecBuilder(treatAnyTypeHeadersAsStrings: Boolean = false): ParameterSpec.Builder =
         ParameterSpec.builder(
             name = name,
-            type = if (isNullable) type.copy(nullable = true) else type
+            type = if (isNullable) type.copy(nullable = true) else type,
         )
 }
 
@@ -102,7 +129,7 @@ open class BodyParameter(
     description: String?,
     type: TypeName,
     isRequired: Boolean = false,
-    open val schema: Schema
+    open val schema: Schema,
 ) : IncomingParameter(oasName, description, type, isRequired)
 
 class MultipartParameter(
@@ -113,7 +140,7 @@ class MultipartParameter(
     val schema: Schema,
     val partName: String,
     val isBinaryFile: Boolean = false,
-    val contentType: String? = null
+    val contentType: String? = null,
 ) : IncomingParameter(oasName, description, type, isRequired)
 
 class RequestParameter(
@@ -144,18 +171,21 @@ class RequestParameter(
         minLength = parameter.schema.minLength,
         maxLength = parameter.schema.maxLength,
         explode = parameter.explode,
-        defaultValue = parameter.schema.default
+        defaultValue = parameter.schema.default,
     )
 
     override val isNullable: Boolean get() = !isRequired && defaultValue == null
 
     override fun toParameterSpecBuilder(treatAnyTypeHeadersAsStrings: Boolean): ParameterSpec.Builder =
-        if (treatAnyTypeHeadersAsStrings && parameterLocation == HeaderParam &&
+        if (treatAnyTypeHeadersAsStrings &&
+            parameterLocation == HeaderParam &&
             (typeInfo == KotlinTypeInfo.AnyType || typeInfo == KotlinTypeInfo.JsonElement)
         ) {
             ParameterSpec.builder(
                 name = name,
-                type = if (isNullable) String::class.asTypeName().copy(nullable = true) else String::class.asTypeName()
+                type = if (isNullable) String::class.asTypeName().copy(nullable = true) else String::class.asTypeName(),
             )
-        } else super.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings)
+        } else {
+            super.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings)
+        }
 }

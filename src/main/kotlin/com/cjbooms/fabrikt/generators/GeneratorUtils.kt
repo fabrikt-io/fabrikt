@@ -41,29 +41,32 @@ object GeneratorUtils {
      */
     fun RequestBody.toBodyParameterSpec(basePackage: String): List<ParameterSpec> =
         this.toBodyRequestSchema().map {
-            val modelType = toModelType(
-                basePackage = basePackage,
-                typeInfo = KotlinTypeInfo.from(it),
-                isNullable = !this.isRequired
-            )
-            ParameterSpec.builder(
-                it.toVarName(),
-                modelType
-            ).build()
+            val modelType =
+                toModelType(
+                    basePackage = basePackage,
+                    typeInfo = KotlinTypeInfo.from(it),
+                    isNullable = !this.isRequired,
+                )
+            ParameterSpec
+                .builder(
+                    it.toVarName(),
+                    modelType,
+                ).build()
         }
 
     /**
      * It resolves the given either `query` of `form` parameter to its corresponding function param specification.
      */
     fun Parameter.toParameterSpec(basePackage: String): ParameterSpec =
-        ParameterSpec.builder(
-            this.name.toKCodeName(),
-            toModelType(
-                basePackage = basePackage,
-                typeInfo = KotlinTypeInfo.from(this.schema),
-                isNullable = !this.isRequired && this.schema.default == null
-            )
-        ).build()
+        ParameterSpec
+            .builder(
+                this.name.toKCodeName(),
+                toModelType(
+                    basePackage = basePackage,
+                    typeInfo = KotlinTypeInfo.from(this.schema),
+                    isNullable = !this.isRequired && this.schema.default == null,
+                ),
+            ).build()
 
     /**
      * It converts any string to a variable or function name by removing all non-letter-or-digit characters and transforms
@@ -71,8 +74,15 @@ object GeneratorUtils {
      * e.g. `GET /my-resource/path/{param}` -> getMyResourcePathParam
      */
     fun String.toKCodeName(): String {
-        val delimiters = this.partition(Char::isLetterOrDigit).second.toCharArray().map(Char::toString).toTypedArray()
-        return this.splitToSequence(*delimiters)
+        val delimiters =
+            this
+                .partition(Char::isLetterOrDigit)
+                .second
+                .toCharArray()
+                .map(Char::toString)
+                .toTypedArray()
+        return this
+            .splitToSequence(*delimiters)
             .mapNotNull(String::capitalized)
             .joinToString("")
             .decapitalized()
@@ -82,11 +92,12 @@ object GeneratorUtils {
      * It resolves the schema for the given API operation. If multiple content medias are found, then it will
      * resolve to the schema reference of the first media type.
      */
-    fun RequestBody.toBodyRequestSchema(): List<Schema> =
-        listOfNotNull(this.getPrimaryContentMediaType()?.value?.schema)
+    fun RequestBody.toBodyRequestSchema(): List<Schema> = listOfNotNull(this.getPrimaryContentMediaType()?.value?.schema)
 
-    fun mergeParameters(path: List<Parameter>, operation: List<Parameter>): List<Parameter> =
-        path.filter { pp -> !operation.any { op -> pp.name == op.name && pp.`in` == op.`in` } } + operation
+    fun mergeParameters(
+        path: List<Parameter>,
+        operation: List<Parameter>,
+    ): List<Parameter> = path.filter { pp -> !operation.any { op -> pp.name == op.name && pp.`in` == op.`in` } } + operation
 
     fun Operation.toKdoc(parameters: List<IncomingParameter>): CodeBlock {
         val kdoc = CodeBlock.builder().add("${this.summary.orEmpty()}\n${this.description.orEmpty()}\n")
@@ -98,11 +109,12 @@ object GeneratorUtils {
         return kdoc.build()
     }
 
-    fun Schema.toKDoc(): CodeBlock? {
-        return this.description?.takeIf(String::isNotEmpty)?.let { description ->
-            CodeBlock.builder().add("%L", "$description\n")
-        }?.build()
-    }
+    fun Schema.toKDoc(): CodeBlock? =
+        this.description
+            ?.takeIf(String::isNotEmpty)
+            ?.let { description ->
+                CodeBlock.builder().add("%L", "$description\n")
+            }?.build()
 
     fun TypeSpec.Builder.primaryPropertiesConstructor(vararg properties: PropertySpec): TypeSpec.Builder {
         val propertySpecs = properties.map { it.toBuilder().initializer(it.name).build() }
@@ -114,14 +126,18 @@ object GeneratorUtils {
     fun <T> FunSpec.Builder.addOptionalParameter(
         parameterSpec: ParameterSpec,
         input: T,
-        predicate: Predicate<T>
+        predicate: Predicate<T>,
     ) = apply {
-        if (predicate.test(input))
+        if (predicate.test(input)) {
             this.addParameter(parameterSpec)
+        }
     }
 
-    fun functionName(op: Operation, resource: String, verb: String) =
-        op.operationId?.camelCase() ?: "$verb $resource".toKCodeName()
+    fun functionName(
+        op: Operation,
+        resource: String,
+        verb: String,
+    ) = op.operationId?.camelCase() ?: "$verb $resource".toKCodeName()
 
     fun Schema.toVarName() = this.name?.toKCodeName() ?: this.toClassName().simpleName.toKCodeName()
 
@@ -129,11 +145,9 @@ object GeneratorUtils {
 
     fun String.toClassName(basePackage: String) = ClassName(packageName = basePackage, this)
 
-    fun RequestBody.getPrimaryContentMediaType(): Map.Entry<String, MediaType>? =
-        this.contentMediaTypes.entries.firstOrNull()
+    fun RequestBody.getPrimaryContentMediaType(): Map.Entry<String, MediaType>? = this.contentMediaTypes.entries.firstOrNull()
 
-    fun Response.getPrimaryContentMediaType(): Map.Entry<String, MediaType>? =
-        this.contentMediaTypes.entries.firstOrNull()
+    fun Response.getPrimaryContentMediaType(): Map.Entry<String, MediaType>? = this.contentMediaTypes.entries.firstOrNull()
 
     fun Response.hasMultipleContentMediaTypes(): Boolean = this.contentMediaTypes.entries.size > 1
 
@@ -151,7 +165,11 @@ object GeneratorUtils {
     fun Operation.hasAnySuccessResponseSchemas(): Boolean = getBodySuccessResponses().isNotEmpty()
 
     fun Operation.hasMultipleSuccessResponseSchemas(): Boolean =
-        getBodySuccessResponses().flatMap { it.contentMediaTypes.values }.map { it.schema.name }.distinct().size > 1
+        getBodySuccessResponses()
+            .flatMap { it.contentMediaTypes.values }
+            .map { it.schema.name }
+            .distinct()
+            .size > 1
 
     fun Operation.hasOnlyJsonSuccessResponses(): Boolean =
         getBodySuccessResponses()
@@ -165,16 +183,17 @@ object GeneratorUtils {
     fun Operation.getHeaderParams(): List<Parameter> = this.filterParams("header")
 
     private fun Operation.getBodyResponses(): List<Response> =
-        this.responses.filter { it.key != "default" }.values.filter(Response::hasContentMediaTypes)
+        this.responses
+            .filter { it.key != "default" }
+            .values
+            .filter(Response::hasContentMediaTypes)
 
-    fun Operation.getBodySuccessResponses(): List<Response> =
-        getSuccessResponses().values.filter(Response::hasContentMediaTypes)
+    fun Operation.getBodySuccessResponses(): List<Response> = getSuccessResponses().values.filter(Response::hasContentMediaTypes)
 
     private fun Operation.getSuccessResponses(): Map<String, Response> =
         this.responses.filter { it.key.toIntOrNull()?.let { status -> status in 200..399 } ?: false }
 
-    private fun Operation.filterParams(paramType: String): List<Parameter> =
-        this.parameters.filter { it.`in` == paramType }
+    private fun Operation.filterParams(paramType: String): List<Parameter> = this.parameters.filter { it.`in` == paramType }
 
     /**
      * Returns a list of IncomingParameters, ordering logic should be
@@ -186,77 +205,89 @@ object GeneratorUtils {
         pathParameters: List<Parameter>,
         extraParameters: List<IncomingParameter>,
     ): List<IncomingParameter> {
+        val bodies =
+            if (hasMultipartRequestBody()) {
+                // For multipart requests, create individual parameters for each part
+                requestBody?.getMultipartSchema()?.let { multipartSchema ->
+                    multipartSchema.properties?.map { (partName, partSchema) ->
+                        val isBinaryFile =
+                            (partSchema.format == "binary" && partSchema.type == "string") ||
+                                (
+                                    partSchema.type == "array" &&
+                                        partSchema.itemsSchema?.format == "binary" &&
+                                        partSchema.itemsSchema?.type == "string"
+                                )
+                        val type =
+                            toModelType(
+                                basePackage,
+                                KotlinTypeInfo.from(partSchema),
+                                !multipartSchema.requiredFields.contains(partName),
+                            )
+                        val contentType =
+                            when {
+                                isBinaryFile -> "application/octet-stream"
+                                partSchema.isSimpleType() -> "text/plain"
+                                else -> "application/json"
+                            }
 
-        val bodies = if (hasMultipartRequestBody()) {
-            // For multipart requests, create individual parameters for each part
-            requestBody?.getMultipartSchema()?.let { multipartSchema ->
-                multipartSchema.properties?.map { (partName, partSchema) ->
-                    val isBinaryFile = (partSchema.format == "binary" && partSchema.type == "string") ||
-                            (partSchema.type == "array" && partSchema.itemsSchema?.format == "binary" && partSchema.itemsSchema?.type == "string")
-                    val type = toModelType(
-                        basePackage,
-                        KotlinTypeInfo.from(partSchema),
-                        !multipartSchema.requiredFields.contains(partName)
-                    )
-                    val contentType = when {
-                        isBinaryFile -> "application/octet-stream"
-                        partSchema.isSimpleType() -> "text/plain"
-                        else -> "application/json"
-                    }
-
-                    MultipartParameter(
-                        oasName = partName,
-                        description = partSchema.description,
-                        type = type,
-                        schema = partSchema,
-                        partName = partName,
-                        isBinaryFile = isBinaryFile,
-                        contentType = contentType,
-                        isRequired = !type.isNullable,
-                    )
+                        MultipartParameter(
+                            oasName = partName,
+                            description = partSchema.description,
+                            type = type,
+                            schema = partSchema,
+                            partName = partName,
+                            isBinaryFile = isBinaryFile,
+                            contentType = contentType,
+                            isRequired = !type.isNullable,
+                        )
+                    } ?: emptyList()
                 } ?: emptyList()
-            } ?: emptyList()
-        } else {
-            // Regular body parameters (non-multipart)
-            requestBody.contentMediaTypes.values
-                .map {
-                    BodyParameter(
-                        oasName = it.schema.safeName().toKotlinParameterName().ifEmpty { it.schema.toVarName() },
-                        description = requestBody.description,
-                        type = toModelType(basePackage, KotlinTypeInfo.from(it.schema)),
-                        schema = it.schema,
-                        isRequired = requestBody.isRequired,
-                    )
-                }
-                .distinctBy { it.schema.safeName().toKotlinParameterName().ifEmpty { it.schema.toVarName() } }
-                .reduceOrNull { acc, bodyParam ->
-                    BodyParameter(
-                        oasName = "body",
-                        description = acc.description,
-                        type = acc.type,
-                        schema = acc.schema,
-                        isRequired = acc.isRequired && bodyParam.isRequired,
-                    )
-                }
-                ?.let { listOf(it) } ?: emptyList()
-        }
-
-        val parameters = mergeParameters(pathParameters, parameters)
-            .map {
-                RequestParameter(
-                    it.name,
-                    it.description,
-                    toModelType(basePackage, KotlinTypeInfo.from(it.schema), isNullable(it)),
-                    it
-                )
+            } else {
+                // Regular body parameters (non-multipart)
+                requestBody.contentMediaTypes.values
+                    .map {
+                        BodyParameter(
+                            oasName =
+                                it.schema
+                                    .safeName()
+                                    .toKotlinParameterName()
+                                    .ifEmpty { it.schema.toVarName() },
+                            description = requestBody.description,
+                            type = toModelType(basePackage, KotlinTypeInfo.from(it.schema)),
+                            schema = it.schema,
+                            isRequired = requestBody.isRequired,
+                        )
+                    }.distinctBy {
+                        it.schema
+                            .safeName()
+                            .toKotlinParameterName()
+                            .ifEmpty { it.schema.toVarName() }
+                    }.reduceOrNull { acc, bodyParam ->
+                        BodyParameter(
+                            oasName = "body",
+                            description = acc.description,
+                            type = acc.type,
+                            schema = acc.schema,
+                            isRequired = acc.isRequired && bodyParam.isRequired,
+                        )
+                    }?.let { listOf(it) } ?: emptyList()
             }
-            .sortedBy { it.type.isNullable }
+
+        val parameters =
+            mergeParameters(pathParameters, parameters)
+                .map {
+                    RequestParameter(
+                        it.name,
+                        it.description,
+                        toModelType(basePackage, KotlinTypeInfo.from(it.schema), isNullable(it)),
+                        it,
+                    )
+                }.sortedBy { it.type.isNullable }
 
         return detectAndAvoidNameClashes(bodies + parameters + extraParameters)
     }
 
-    private fun List<IncomingParameter>.hasNameClashes(): Boolean =
-        map { it.name }.toSet().size != size
+    private fun List<IncomingParameter>.hasNameClashes(): Boolean = map { it.name }.toSet().size != size
 
     private fun detectAndAvoidNameClashes(parameters: List<IncomingParameter>): List<IncomingParameter> {
         if (!parameters.hasNameClashes()) {
@@ -265,38 +296,41 @@ object GeneratorUtils {
 
         return parameters.map { p ->
             when (p) {
-                is MultipartParameter -> MultipartParameter(
-                    oasName = "multipart_${p.oasName}".toKotlinParameterName(),
-                    description = p.description,
-                    type = p.type,
-                    schema = p.schema,
-                    partName = p.partName,
-                    isBinaryFile = p.isBinaryFile,
-                    contentType = p.contentType,
-                    isRequired = p.isRequired,
-                )
+                is MultipartParameter ->
+                    MultipartParameter(
+                        oasName = "multipart_${p.oasName}".toKotlinParameterName(),
+                        description = p.description,
+                        type = p.type,
+                        schema = p.schema,
+                        partName = p.partName,
+                        isBinaryFile = p.isBinaryFile,
+                        contentType = p.contentType,
+                        isRequired = p.isRequired,
+                    )
 
-                is BodyParameter -> BodyParameter(
-                    oasName = "body_${p.oasName}".toKotlinParameterName(),
-                    description = p.description,
-                    type = p.type,
-                    isRequired = p.isRequired,
-                    schema = p.schema,
-                )
+                is BodyParameter ->
+                    BodyParameter(
+                        oasName = "body_${p.oasName}".toKotlinParameterName(),
+                        description = p.description,
+                        type = p.type,
+                        isRequired = p.isRequired,
+                        schema = p.schema,
+                    )
 
-                is RequestParameter -> RequestParameter(
-                    oasName = "${p.parameterLocation}_${p.oasName}".toKotlinParameterName(),
-                    description = p.description,
-                    type = p.type,
-                    isRequired = p.isRequired,
-                    originalName = p.originalName,
-                    parameterLocation = p.parameterLocation,
-                    typeInfo = p.typeInfo,
-                    minimum = p.minimum,
-                    maximum = p.maximum,
-                    explode = p.explode,
-                    defaultValue = p.defaultValue,
-                )
+                is RequestParameter ->
+                    RequestParameter(
+                        oasName = "${p.parameterLocation}_${p.oasName}".toKotlinParameterName(),
+                        description = p.description,
+                        type = p.type,
+                        isRequired = p.isRequired,
+                        originalName = p.originalName,
+                        parameterLocation = p.parameterLocation,
+                        typeInfo = p.typeInfo,
+                        minimum = p.minimum,
+                        maximum = p.maximum,
+                        explode = p.explode,
+                        defaultValue = p.defaultValue,
+                    )
             }
         }
     }
@@ -315,7 +349,7 @@ object GeneratorUtils {
             pathParams = requestParams.filter { it.parameterLocation is PathParam },
             queryParams = requestParams.filter { it.parameterLocation is QueryParam },
             headerParams = requestParams.filter { it.parameterLocation is HeaderParam },
-            bodyParams = this.filterIsInstance<BodyParameter>()
+            bodyParams = this.filterIsInstance<BodyParameter>(),
         )
     }
 
@@ -327,13 +361,15 @@ object GeneratorUtils {
     fun TypeSpec.toObjectTypeSpec(): TypeSpec {
         require(name != null) { "Name must be set to convert to object" }
 
-        val objectBuilder = TypeSpec.objectBuilder(name!!)
-            .addAnnotations(annotations)
-            .addModifiers(modifiers)
-            .superclass(superclass)
-            .addProperties(propertySpecs)
-            .addFunctions(funSpecs)
-            .addKdoc(kdoc)
+        val objectBuilder =
+            TypeSpec
+                .objectBuilder(name!!)
+                .addAnnotations(annotations)
+                .addModifiers(modifiers)
+                .superclass(superclass)
+                .addProperties(propertySpecs)
+                .addFunctions(funSpecs)
+                .addKdoc(kdoc)
 
         for ((typeName, _) in superinterfaces) {
             objectBuilder.addSuperinterface(typeName)
@@ -353,25 +389,21 @@ object GeneratorUtils {
     /**
      * Checks if the given RequestBody contains multipart/form-data content type
      */
-    fun RequestBody.isMultipartFormData(): Boolean {
-        return this.contentMediaTypes.keys.any { it.startsWith("multipart/form-data") }
-    }
+    fun RequestBody.isMultipartFormData(): Boolean = this.contentMediaTypes.keys.any { it.startsWith("multipart/form-data") }
 
     /**
      * Gets the multipart/form-data schema from the RequestBody if it exists
      */
-    fun RequestBody.getMultipartSchema(): Schema? {
-        return this.contentMediaTypes.entries
+    fun RequestBody.getMultipartSchema(): Schema? =
+        this.contentMediaTypes.entries
             .find { it.key.startsWith("multipart/form-data") }
-            ?.value?.schema
-    }
+            ?.value
+            ?.schema
 
     /**
      * Checks if the given Operation has a multipart/form-data request body
      */
-    fun Operation.hasMultipartRequestBody(): Boolean {
-        return this.requestBody?.isMultipartFormData() == true
-    }
+    fun Operation.hasMultipartRequestBody(): Boolean = this.requestBody?.isMultipartFormData() == true
 
     fun TypeName.isUnit(): Boolean = this == Unit::class.asTypeName()
 

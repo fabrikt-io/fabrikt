@@ -6,5 +6,6 @@ import com.cjbooms.fabrikt.model.GeneratedFile
 
 interface ClientGenerator {
     fun generate(options: Set<ClientCodeGenOptionType>): Clients
+
     fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile>
 }

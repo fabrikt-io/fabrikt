@@ -7,5 +7,5 @@ data class QuarkusReflectionModel(
     val allDeclaredMethods: Boolean = true,
     val allPublicMethods: Boolean = true,
     val allDeclaredFields: Boolean = true,
-    val allPublicFields: Boolean = true
+    val allPublicFields: Boolean = true,
 )

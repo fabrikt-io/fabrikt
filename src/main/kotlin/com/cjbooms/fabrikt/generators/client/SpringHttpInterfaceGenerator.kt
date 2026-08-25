@@ -40,23 +40,29 @@ import com.squareup.kotlinpoet.buildCodeBlock
 class SpringHttpInterfaceGenerator(
     private val packages: Packages,
     private val api: SourceApi,
-    private val srcPath: java.nio.file.Path = Destinations.MAIN_KT_SOURCE
+    private val srcPath: java.nio.file.Path = Destinations.MAIN_KT_SOURCE,
 ) : ClientGenerator {
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
-        val clientTypes = api.groupedClientPaths(options).map { (resourceName, paths) ->
-            val funcSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
-                path.operations.map { (verb, operation) ->
-                    buildFunction(path, resource, operation, verb, options)
-                }
-            }
+        val clientTypes =
+            api
+                .groupedClientPaths(options)
+                .map { (resourceName, paths) ->
+                    val funcSpecs: List<FunSpec> =
+                        paths.flatMap { (resource, path) ->
+                            path.operations.map { (verb, operation) ->
+                                buildFunction(path, resource, operation, verb, options)
+                            }
+                        }
 
-            val clientType = TypeSpec.interfaceBuilder(simpleClientName(resourceName))
-                .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "unused").build())
-                .addFunctions(funcSpecs)
-                .build()
+                    val clientType =
+                        TypeSpec
+                            .interfaceBuilder(simpleClientName(resourceName))
+                            .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "unused").build())
+                            .addFunctions(funcSpecs)
+                            .build()
 
-            ClientType(clientType, packages.base)
-        }.toSet()
+                    ClientType(clientType, packages.base)
+                }.toSet()
 
         return Clients(clientTypes)
     }
@@ -80,53 +86,53 @@ class SpringHttpInterfaceGenerator(
                 annotateRequestParameterWith = { parameter ->
                     when (parameter.parameterLocation) {
                         is QueryParam -> {
-                            SpringHttpInterfaceAnnotations.requestParamBuilder()
+                            SpringHttpInterfaceAnnotations
+                                .requestParamBuilder()
                                 .addMember("%S", parameter.originalName)
                                 .build()
                         }
 
                         is HeaderParam -> {
-                            SpringHttpInterfaceAnnotations.requestHeaderBuilder()
+                            SpringHttpInterfaceAnnotations
+                                .requestHeaderBuilder()
                                 .addMember("%S", parameter.originalName)
                                 .build()
                         }
 
                         is PathParam -> {
-                            SpringHttpInterfaceAnnotations.pathVariableBuilder()
+                            SpringHttpInterfaceAnnotations
+                                .pathVariableBuilder()
                                 .addMember("%S", parameter.originalName)
                                 .build()
                         }
                     }
                 },
                 annotateBodyParameterWith = { _ ->
-                    SpringHttpInterfaceAnnotations.requestBodyBuilder()
+                    SpringHttpInterfaceAnnotations
+                        .requestBodyBuilder()
                         .build()
-                }
-            )
-            .addParameter(
-                ParameterSpec.builder(
-                    ADDITIONAL_HEADERS_PARAMETER_NAME,
-                    TypeFactory.createMapOfStringToNonNullType(Any::class.asTypeName()),
-                )
-                    .addAnnotation(SpringHttpInterfaceAnnotations.requestHeaderBuilder().build())
+                },
+            ).addParameter(
+                ParameterSpec
+                    .builder(
+                        ADDITIONAL_HEADERS_PARAMETER_NAME,
+                        TypeFactory.createMapOfStringToNonNullType(Any::class.asTypeName()),
+                    ).addAnnotation(SpringHttpInterfaceAnnotations.requestHeaderBuilder().build())
                     .defaultValue("emptyMap()")
                     .build(),
-            )
-            .addParameter(
-                ParameterSpec.builder(
-                    ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME,
-                    TypeFactory.createMapOfStringToNonNullType(Any::class.asTypeName()),
-                )
-                    .addAnnotation(SpringHttpInterfaceAnnotations.requestParamBuilder().build())
+            ).addParameter(
+                ParameterSpec
+                    .builder(
+                        ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME,
+                        TypeFactory.createMapOfStringToNonNullType(Any::class.asTypeName()),
+                    ).addAnnotation(SpringHttpInterfaceAnnotations.requestParamBuilder().build())
                     .defaultValue("emptyMap()")
                     .build(),
-            )
-            .returns(
+            ).returns(
                 operation
                     .getReturnType(packages)
-                    .optionallyParameterizeWithResponseEntity(options)
-            )
-            .build()
+                    .optionallyParameterizeWithResponseEntity(options),
+            ).build()
     }
 
     private fun FunSpec.Builder.addHttpExchangeAnnotation(
@@ -134,10 +140,11 @@ class SpringHttpInterfaceGenerator(
         resource: String,
         parameters: List<IncomingParameter>,
         verb: String,
-    ): FunSpec.Builder = apply {
-        val annotation = HttpExchangeAnnotationBuilder(operation, resource, parameters, verb).build()
-        addAnnotation(annotation)
-    }
+    ): FunSpec.Builder =
+        apply {
+            val annotation = HttpExchangeAnnotationBuilder(operation, resource, parameters, verb).build()
+            addAnnotation(annotation)
+        }
 
     private class HttpExchangeAnnotationBuilder(
         private val operation: Operation,
@@ -148,7 +155,8 @@ class SpringHttpInterfaceGenerator(
         fun build(): AnnotationSpec {
             val headerParams = parameters.getHeaderParameters()
 
-            return SpringHttpInterfaceAnnotations.httpExchangeBuilder()
+            return SpringHttpInterfaceAnnotations
+                .httpExchangeBuilder()
                 .addUrl()
                 .addMember("method=%S", verb.uppercase())
                 .addContentType(headerParams)
@@ -157,71 +165,76 @@ class SpringHttpInterfaceGenerator(
                 .build()
         }
 
-        private fun AnnotationSpec.Builder.addUrl(): AnnotationSpec.Builder = apply {
-            addMember("url=%S", resource)
-        }
-
-        private fun AnnotationSpec.Builder.addContentType(
-            headerParams: List<RequestParameter>
-        ): AnnotationSpec.Builder = apply {
-            val contentType = headerParams.filter { header ->
-                header.typeInfo is KotlinTypeInfo.Enum && header.typeInfo.entries.size == 1
-            }.singleOrNull { header ->
-                header.name == ClientGeneratorUtils.CONTENT_TYPE_HEADER_NAME
+        private fun AnnotationSpec.Builder.addUrl(): AnnotationSpec.Builder =
+            apply {
+                addMember("url=%S", resource)
             }
 
-            if (contentType != null) {
-                contentType.typeInfo as KotlinTypeInfo.Enum
-                addMember("contentType=%S", contentType.typeInfo.entries.first())
-            }
-        }
-
-        private fun AnnotationSpec.Builder.addAccepts(
-            headerParams: List<RequestParameter>,
-        ): AnnotationSpec.Builder = apply {
-            val acceptHeaders = headerParams.filter { header ->
-                header.typeInfo is KotlinTypeInfo.Enum && header.typeInfo.entries.size == 1
-            }.filter { header ->
-                header.name == ClientGeneratorUtils.ACCEPT_HEADER_NAME
-            }.map { header ->
-                header.typeInfo as KotlinTypeInfo.Enum
-                buildCodeBlock {
-                    add("%S", header.typeInfo.entries.first())
-                }
-            }.takeIf { it.isNotEmpty() }
-                ?: run {
-                    // Add default accept header
-                    val block = operation.getPrimaryContentMediaType()?.key?.let { mediaType ->
-                        buildCodeBlock {
-                            add("%S", mediaType)
+        private fun AnnotationSpec.Builder.addContentType(headerParams: List<RequestParameter>): AnnotationSpec.Builder =
+            apply {
+                val contentType =
+                    headerParams
+                        .filter { header ->
+                            header.typeInfo is KotlinTypeInfo.Enum && header.typeInfo.entries.size == 1
+                        }.singleOrNull { header ->
+                            header.name == ClientGeneratorUtils.CONTENT_TYPE_HEADER_NAME
                         }
-                    }
-                    listOfNotNull(block)
-                }
 
-            if (acceptHeaders.isNotEmpty()) {
-                addMember("accept=%L", acceptHeaders)
-            }
-        }
-
-        private fun AnnotationSpec.Builder.addHeaders(
-            headerParams: List<RequestParameter>,
-        ): AnnotationSpec.Builder = apply {
-            val headerValues = headerParams.filter { header ->
-                header.typeInfo is KotlinTypeInfo.Enum && header.typeInfo.entries.size == 1
-            }.filterNot { header ->
-                header.name == ClientGeneratorUtils.ACCEPT_HEADER_NAME
-            }.map { header ->
-                header.typeInfo as KotlinTypeInfo.Enum
-                buildCodeBlock {
-                    add("%S=%S", header.originalName, header.typeInfo.entries.first())
+                if (contentType != null) {
+                    contentType.typeInfo as KotlinTypeInfo.Enum
+                    addMember("contentType=%S", contentType.typeInfo.entries.first())
                 }
             }
 
-            if (headerValues.isNotEmpty()) {
-                addMember("headers=%L", headerValues)
+        private fun AnnotationSpec.Builder.addAccepts(headerParams: List<RequestParameter>): AnnotationSpec.Builder =
+            apply {
+                val acceptHeaders =
+                    headerParams
+                        .filter { header ->
+                            header.typeInfo is KotlinTypeInfo.Enum && header.typeInfo.entries.size == 1
+                        }.filter { header ->
+                            header.name == ClientGeneratorUtils.ACCEPT_HEADER_NAME
+                        }.map { header ->
+                            header.typeInfo as KotlinTypeInfo.Enum
+                            buildCodeBlock {
+                                add("%S", header.typeInfo.entries.first())
+                            }
+                        }.takeIf { it.isNotEmpty() }
+                        ?: run {
+                            // Add default accept header
+                            val block =
+                                operation.getPrimaryContentMediaType()?.key?.let { mediaType ->
+                                    buildCodeBlock {
+                                        add("%S", mediaType)
+                                    }
+                                }
+                            listOfNotNull(block)
+                        }
+
+                if (acceptHeaders.isNotEmpty()) {
+                    addMember("accept=%L", acceptHeaders)
+                }
             }
-        }
+
+        private fun AnnotationSpec.Builder.addHeaders(headerParams: List<RequestParameter>): AnnotationSpec.Builder =
+            apply {
+                val headerValues =
+                    headerParams
+                        .filter { header ->
+                            header.typeInfo is KotlinTypeInfo.Enum && header.typeInfo.entries.size == 1
+                        }.filterNot { header ->
+                            header.name == ClientGeneratorUtils.ACCEPT_HEADER_NAME
+                        }.map { header ->
+                            header.typeInfo as KotlinTypeInfo.Enum
+                            buildCodeBlock {
+                                add("%S=%S", header.originalName, header.typeInfo.entries.first())
+                            }
+                        }
+
+                if (headerValues.isNotEmpty()) {
+                    addMember("headers=%L", headerValues)
+                }
+            }
 
         private fun List<IncomingParameter>.getHeaderParameters(): List<RequestParameter> =
             filterIsInstance<RequestParameter>()

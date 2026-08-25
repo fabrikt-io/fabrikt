@@ -8,8 +8,7 @@ import kotlin.io.path.name
 import kotlin.io.path.readText
 
 object ResourceHelper {
-    fun readTextResource(path: String): String =
-        (javaClass.getResource(path) ?: throw FileNotFoundException(path)).readText()
+    fun readTextResource(path: String): String = (javaClass.getResource(path) ?: throw FileNotFoundException(path)).readText()
 
     fun readFolder(path: Path): Map<String, String> =
         path.listDirectoryEntries().filterNot { it.isDirectory() }.associate { it.name to it.readText() }
@@ -18,5 +17,9 @@ object ResourceHelper {
         path.listDirectoryEntries().filterNot { it.isDirectory() }.associateBy { it.name }
 
     fun getFileNamesInFolder(path: Path): List<String> =
-         path.listDirectoryEntries().filterNot { it.isDirectory() }.map { it.name }.toList()
+        path
+            .listDirectoryEntries()
+            .filterNot { it.isDirectory() }
+            .map { it.name }
+            .toList()
 }

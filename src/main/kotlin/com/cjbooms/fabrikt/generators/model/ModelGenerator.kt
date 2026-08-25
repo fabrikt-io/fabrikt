@@ -20,7 +20,6 @@ import com.cjbooms.fabrikt.generators.TypeFactory.createMutableMapOfMapsStringTo
 import com.cjbooms.fabrikt.generators.TypeFactory.createMutableMapOfStringToType
 import com.cjbooms.fabrikt.generators.TypeFactory.createSet
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
-import com.cjbooms.fabrikt.model.SerializationAnnotations
 import com.cjbooms.fabrikt.model.Destinations.modelsPackage
 import com.cjbooms.fabrikt.model.GeneratedType
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
@@ -30,29 +29,30 @@ import com.cjbooms.fabrikt.model.PropertyInfo
 import com.cjbooms.fabrikt.model.PropertyInfo.Companion.HTTP_SETTINGS
 import com.cjbooms.fabrikt.model.PropertyInfo.Companion.topLevelProperties
 import com.cjbooms.fabrikt.model.SchemaInfo
+import com.cjbooms.fabrikt.model.SerializationAnnotations
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.findOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.getDiscriminatorForInlinedObjectUnderAllOf
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.getSchemaRefName
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.getSuperType
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaOfTypeObject
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaWithOneOf
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isComplexTypedAdditionalProperties
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinitionUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedOneOfSuperInterface
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedOneOfUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedTypedAdditionalProperties
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfResolvingToAnyType
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterface
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOpenEnumDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isPolymorphicSubType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isPolymorphicSuperType
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSimpleType
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaWithOneOf
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaOfTypeObject
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedOneOfUnderTopLevelArrayDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinitionUnderTopLevelArrayDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeyForSchemaName
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSubTypeDeductionEnabled
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeyForSchemaName
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeys
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeName
 import com.cjbooms.fabrikt.util.ModelNameRegistry
@@ -88,6 +88,7 @@ class ModelGenerator(
 
     companion object {
         private val logger = Logger.getGlobal()
+
         fun toModelType(
             basePackage: String,
             typeInfo: KotlinTypeInfo,
@@ -98,73 +99,82 @@ class ModelGenerator(
                     basePackage,
                     typeInfo,
                 )
-            val typeName = when (typeInfo) {
-                is KotlinTypeInfo.Array -> {
-                    val elementType = toModelType(
-                        basePackage,
-                        typeInfo.parameterizedType,
-                        typeInfo.isParameterizedTypeNullable
-                    )
-                    val annotatedElementType = MutableSettings.serializationLibrary.serializationAnnotations
-                        .annotateArrayElementType(elementType, typeInfo.parameterizedType)
-                    if (typeInfo.hasUniqueItems) {
-                        createSet(annotatedElementType)
-                    } else {
-                        createList(annotatedElementType)
-                    }
-                }
-
-                is KotlinTypeInfo.Map ->
-                    when (val paramType = typeInfo.parameterizedType) {
-                        is KotlinTypeInfo.UntypedObjectAdditionalProperties -> createMapOfMapsStringToStringAny()
-                        is KotlinTypeInfo.UnknownAdditionalProperties ->
-                            createMapOfStringToType(
-                                toClassName(
-                                    basePackage,
-                                    paramType,
-                                ),
-                            )
-
-                        is KotlinTypeInfo.GeneratedTypedAdditionalProperties ->
-                            createMapOfStringToType(
-                                toClassName(
-                                    basePackage,
-                                    paramType,
-                                ),
-                            )
-
-                        else -> createMapOfStringToType(
+            val typeName =
+                when (typeInfo) {
+                    is KotlinTypeInfo.Array -> {
+                        val elementType =
                             toModelType(
                                 basePackage,
-                                paramType,
-                            ),
-                        )
+                                typeInfo.parameterizedType,
+                                typeInfo.isParameterizedTypeNullable,
+                            )
+                        val annotatedElementType =
+                            MutableSettings.serializationLibrary.serializationAnnotations
+                                .annotateArrayElementType(elementType, typeInfo.parameterizedType)
+                        if (typeInfo.hasUniqueItems) {
+                            createSet(annotatedElementType)
+                        } else {
+                            createList(annotatedElementType)
+                        }
                     }
 
-                is KotlinTypeInfo.UntypedObject -> createMapOfStringToType(className)
-                is KotlinTypeInfo.UnknownAdditionalProperties -> createMutableMapOfStringToType(className)
-                is KotlinTypeInfo.UntypedObjectAdditionalProperties -> createMutableMapOfStringToType(className)
-                is KotlinTypeInfo.GeneratedTypedAdditionalProperties -> createMutableMapOfStringToType(className)
-                is KotlinTypeInfo.MapTypeAdditionalProperties -> createMutableMapOfMapsStringToStringType(
-                    toModelType(
-                        basePackage,
-                        typeInfo.parameterizedType,
-                    ),
-                )
+                    is KotlinTypeInfo.Map ->
+                        when (val paramType = typeInfo.parameterizedType) {
+                            is KotlinTypeInfo.UntypedObjectAdditionalProperties -> createMapOfMapsStringToStringAny()
+                            is KotlinTypeInfo.UnknownAdditionalProperties ->
+                                createMapOfStringToType(
+                                    toClassName(
+                                        basePackage,
+                                        paramType,
+                                    ),
+                                )
 
-                is KotlinTypeInfo.SimpleTypedAdditionalProperties -> createMutableMapOfStringToType(
-                    toModelType(
-                        basePackage,
-                        typeInfo.parameterizedType,
-                    ),
-                )
+                            is KotlinTypeInfo.GeneratedTypedAdditionalProperties ->
+                                createMapOfStringToType(
+                                    toClassName(
+                                        basePackage,
+                                        paramType,
+                                    ),
+                                )
 
-                else -> className
-            }
+                            else ->
+                                createMapOfStringToType(
+                                    toModelType(
+                                        basePackage,
+                                        paramType,
+                                    ),
+                                )
+                        }
+
+                    is KotlinTypeInfo.UntypedObject -> createMapOfStringToType(className)
+                    is KotlinTypeInfo.UnknownAdditionalProperties -> createMutableMapOfStringToType(className)
+                    is KotlinTypeInfo.UntypedObjectAdditionalProperties -> createMutableMapOfStringToType(className)
+                    is KotlinTypeInfo.GeneratedTypedAdditionalProperties -> createMutableMapOfStringToType(className)
+                    is KotlinTypeInfo.MapTypeAdditionalProperties ->
+                        createMutableMapOfMapsStringToStringType(
+                            toModelType(
+                                basePackage,
+                                typeInfo.parameterizedType,
+                            ),
+                        )
+
+                    is KotlinTypeInfo.SimpleTypedAdditionalProperties ->
+                        createMutableMapOfStringToType(
+                            toModelType(
+                                basePackage,
+                                typeInfo.parameterizedType,
+                            ),
+                        )
+
+                    else -> className
+                }
             return if (isNullable) typeName.copy(nullable = true) else typeName
         }
 
-        private fun toClassName(basePackage: String, typeInfo: KotlinTypeInfo): ClassName =
+        private fun toClassName(
+            basePackage: String,
+            typeInfo: KotlinTypeInfo,
+        ): ClassName =
             when {
                 typeInfo.modelKClass == GeneratedType::class ->
                     generatedType(basePackage, typeInfo.generatedModelClassName!!)
@@ -179,7 +189,10 @@ class ModelGenerator(
                 else -> typeInfo.modelKClass.asTypeName()
             }
 
-        fun generatedType(basePackage: String, modelName: String) = ClassName(modelsPackage(basePackage), modelName)
+        fun generatedType(
+            basePackage: String,
+            modelName: String,
+        ) = ClassName(modelsPackage(basePackage), modelName)
     }
 
     private val externalApiSchemas = mutableMapOf<String, MutableSet<String>>()
@@ -188,8 +201,10 @@ class ModelGenerator(
         val models: MutableSet<TypeSpec> = createModels(sourceApi.openApi3, sourceApi.allSchemas)
         externalApiSchemas.forEach { externalReferences ->
             val api = OpenApi3Parser().parse(URL(externalReferences.key))
-            val schemas = api.schemas.entries.map { (key, schema) -> SchemaInfo(key, schema) }
-                .filterByExternalRefResolutionMode(externalReferences)
+            val schemas =
+                api.schemas.entries
+                    .map { (key, schema) -> SchemaInfo(key, schema) }
+                    .filterByExternalRefResolutionMode(externalReferences)
             val externalModels = createModels(api, schemas)
             externalModels.forEach { additionalModel ->
                 if (models.none { it.name == additionalModel.name }) models.add(additionalModel)
@@ -198,7 +213,10 @@ class ModelGenerator(
         return Models(models.map { ModelType(it, packages.base) })
     }
 
-    private fun createModels(api: OpenApi3, schemas: List<SchemaInfo>) = schemas
+    private fun createModels(
+        api: OpenApi3,
+        schemas: List<SchemaInfo>,
+    ) = schemas
         .filterNot { it.schema.isSimpleType() }
         .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !isSealedInterfacesForOneOfEnabled() }
         .filterNot { it.schema.isOneOfResolvingToAnyType() }
@@ -238,14 +256,15 @@ class ModelGenerator(
         val modelName = ModelNameRegistry.getOrRegister(schemaInfo)
         val schemaName = schemaInfo.schema.getSchemaRefName()
         return when {
-            schemaInfo.schema.isOneOfSuperInterface() -> oneOfSuperInterface(
-                modelName = modelName,
-                discriminator = schemaInfo.schema.discriminator,
-                allSchemas = allSchemas,
-                members = schemaInfo.schema.oneOfSchemas,
-                oneOfSuperInterfaces = schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
-                isSubTypeDeductionEnabled = schemaInfo.schema.isSubTypeDeductionEnabled(),
-            )
+            schemaInfo.schema.isOneOfSuperInterface() ->
+                oneOfSuperInterface(
+                    modelName = modelName,
+                    discriminator = schemaInfo.schema.discriminator,
+                    allSchemas = allSchemas,
+                    members = schemaInfo.schema.oneOfSchemas,
+                    oneOfSuperInterfaces = schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
+                    isSubTypeDeductionEnabled = schemaInfo.schema.isSubTypeDeductionEnabled(),
+                )
 
             schemaInfo.schema.isPolymorphicSuperType() && schemaInfo.schema.isPolymorphicSubType(api) ->
                 polymorphicSuperSubType(
@@ -259,33 +278,36 @@ class ModelGenerator(
                     allSchemas,
                 )
 
-            schemaInfo.schema.isPolymorphicSuperType() -> polymorphicSuperType(
-                modelName,
-                schemaName,
-                properties,
-                schemaInfo.schema.discriminator,
-                schemaInfo.schema.extensions,
-                schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
-                allSchemas,
-            )
+            schemaInfo.schema.isPolymorphicSuperType() ->
+                polymorphicSuperType(
+                    modelName,
+                    schemaName,
+                    properties,
+                    schemaInfo.schema.discriminator,
+                    schemaInfo.schema.extensions,
+                    schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
+                    allSchemas,
+                )
 
-            schemaInfo.schema.isPolymorphicSubType(api) -> polymorphicSubType(
-                modelName,
-                schemaName,
-                properties,
-                schemaInfo.schema.getSuperType(api)!!.let { SchemaInfo(it.name, it) },
-                schemaInfo.schema.extensions,
-                schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
-            )
+            schemaInfo.schema.isPolymorphicSubType(api) ->
+                polymorphicSubType(
+                    modelName,
+                    schemaName,
+                    properties,
+                    schemaInfo.schema.getSuperType(api)!!.let { SchemaInfo(it.name, it) },
+                    schemaInfo.schema.extensions,
+                    schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
+                )
 
             schemaInfo.typeInfo is KotlinTypeInfo.Enum -> buildEnumClass(schemaInfo.schema, schemaInfo.typeInfo)
-            else -> standardDataClass(
-                modelName = modelName,
-                schemaName = schemaName,
-                properties = properties,
-                schema = schemaInfo.schema,
-                oneOfInterfaces = schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
-            )
+            else ->
+                standardDataClass(
+                    modelName = modelName,
+                    schemaName = schemaName,
+                    properties = properties,
+                    schema = schemaInfo.schema,
+                    oneOfInterfaces = schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
+                )
         }
     }
 
@@ -293,19 +315,80 @@ class ModelGenerator(
         topLevelProperties: Collection<PropertyInfo>,
         enclosingSchema: Schema,
         apiDocUrl: String,
-    ): List<TypeSpec> = topLevelProperties.flatMap {
-        if (it.schema.isInExternalDocument(apiDocUrl)) {
-            it.schema.captureMissingExternalSchemas(apiDocUrl)
-            emptySet()
-        } else {
-            when (it) {
-                is PropertyInfo.ObjectInlinedField -> {
-                    when {
-                        it.isInherited -> {
-                            emptySet() // Rely on the parent definition
+    ): List<TypeSpec> =
+        topLevelProperties.flatMap {
+            if (it.schema.isInExternalDocument(apiDocUrl)) {
+                it.schema.captureMissingExternalSchemas(apiDocUrl)
+                emptySet()
+            } else {
+                when (it) {
+                    is PropertyInfo.ObjectInlinedField -> {
+                        when {
+                            it.isInherited -> {
+                                emptySet() // Rely on the parent definition
+                            }
+
+                            it.schema.isOneOfSuperInterface() -> {
+                                setOf(
+                                    oneOfSuperInterface(
+                                        modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
+                                        discriminator = it.schema.discriminator,
+                                        allSchemas = sourceApi.allSchemas,
+                                        members = it.schema.oneOfSchemas,
+                                        oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
+                                        isSubTypeDeductionEnabled = it.schema.isSubTypeDeductionEnabled(),
+                                    ),
+                                )
+                            }
+
+                            else -> {
+                                val props = it.schema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, enclosingSchema)
+                                val currentModel =
+                                    standardDataClass(
+                                        ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
+                                        it.name,
+                                        props,
+                                        it.schema,
+                                        oneOfInterfaces = emptySet(),
+                                    )
+                                val inlinedModels = buildInLinedModels(props, enclosingSchema, apiDocUrl)
+                                inlinedModels + currentModel
+                            }
+                        }
+                    }
+
+                    is PropertyInfo.ObjectRefField -> emptySet() // Not an inlined definition, so do nothing
+                    is PropertyInfo.MapField ->
+                        buildMapModel(it)?.let { mapModel -> setOf(mapModel) } ?: emptySet()
+
+                    is PropertyInfo.AdditionalProperties ->
+                        if (it.schema.isComplexTypedAdditionalProperties("additionalProperties")) {
+                            setOf(
+                                standardDataClass(
+                                    modelName =
+                                        ModelNameRegistry.getOrRegister(
+                                            it.schema,
+                                            valueSuffix = it.schema.isInlinedTypedAdditionalProperties(),
+                                        ),
+                                    schemaName = it.name,
+                                    properties =
+                                        it.schema.topLevelProperties(
+                                            HTTP_SETTINGS,
+                                            sourceApi.openApi3,
+                                            enclosingSchema,
+                                        ),
+                                    schema = it.schema,
+                                    oneOfInterfaces = emptySet(),
+                                ),
+                            )
+                        } else {
+                            emptySet()
                         }
 
-                        it.schema.isOneOfSuperInterface() -> {
+                    is PropertyInfo.Field ->
+                        if (it.typeInfo is KotlinTypeInfo.Enum && !it.isInherited) {
+                            setOf(buildEnumClass(it.schema, it.typeInfo))
+                        } else if (!it.isInherited && it.schema.isOneOfSuperInterface()) {
                             setOf(
                                 oneOfSuperInterface(
                                     modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
@@ -314,92 +397,37 @@ class ModelGenerator(
                                     members = it.schema.oneOfSchemas,
                                     oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
                                     isSubTypeDeductionEnabled = it.schema.isSubTypeDeductionEnabled(),
-                                )
+                                ),
                             )
+                        } else {
+                            emptySet()
                         }
 
-                        else -> {
-                            val props = it.schema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, enclosingSchema)
-                            val currentModel = standardDataClass(
-                                ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
-                                it.name,
-                                props,
-                                it.schema,
-                                oneOfInterfaces = emptySet(),
-                            )
-                            val inlinedModels = buildInLinedModels(props, enclosingSchema, apiDocUrl)
-                            inlinedModels + currentModel
+                    is PropertyInfo.ListField ->
+                        if (it.isInherited || it.schema.hasInlinedItemsSchemaWithOneOf() || it.schema.hasInlinedItemsSchemaOfTypeObject()) {
+                            emptySet() // Top-level array interfaces/classes are generated by createModels()
+                        } else {
+                            buildInlinedListDefinition(it.schema, it.name, enclosingSchema, apiDocUrl)
                         }
-                    }
+
+                    is PropertyInfo.OneOfAny ->
+                        if (it.schema.isOneOfSuperInterface()) {
+                            setOf(
+                                oneOfSuperInterface(
+                                    modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
+                                    discriminator = it.schema.discriminator,
+                                    allSchemas = sourceApi.allSchemas,
+                                    members = it.schema.oneOfSchemas,
+                                    oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
+                                    isSubTypeDeductionEnabled = it.schema.isSubTypeDeductionEnabled(),
+                                ),
+                            )
+                        } else {
+                            emptySet()
+                        }
                 }
-
-                is PropertyInfo.ObjectRefField -> emptySet() // Not an inlined definition, so do nothing
-                is PropertyInfo.MapField ->
-                    buildMapModel(it)?.let { mapModel -> setOf(mapModel) } ?: emptySet()
-
-                is PropertyInfo.AdditionalProperties ->
-                    if (it.schema.isComplexTypedAdditionalProperties("additionalProperties")) {
-                        setOf(
-                            standardDataClass(
-                                modelName = ModelNameRegistry.getOrRegister(
-                                    it.schema,
-                                    valueSuffix = it.schema.isInlinedTypedAdditionalProperties()
-                                ),
-                                schemaName = it.name,
-                                properties = it.schema.topLevelProperties(
-                                    HTTP_SETTINGS,
-                                    sourceApi.openApi3,
-                                    enclosingSchema
-                                ),
-                                schema = it.schema,
-                                oneOfInterfaces = emptySet(),
-                            ),
-                        )
-                    } else {
-                        emptySet()
-                    }
-
-                is PropertyInfo.Field ->
-                    if (it.typeInfo is KotlinTypeInfo.Enum && !it.isInherited) {
-                        setOf(buildEnumClass(it.schema, it.typeInfo))
-                    } else if (!it.isInherited && it.schema.isOneOfSuperInterface()) {
-                        setOf(
-                            oneOfSuperInterface(
-                                modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
-                                discriminator = it.schema.discriminator,
-                                allSchemas = sourceApi.allSchemas,
-                                members = it.schema.oneOfSchemas,
-                                oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
-                                isSubTypeDeductionEnabled = it.schema.isSubTypeDeductionEnabled(),
-                            )
-                        )
-                    } else {
-                        emptySet()
-                    }
-
-                is PropertyInfo.ListField ->
-                    if (it.isInherited || it.schema.hasInlinedItemsSchemaWithOneOf() || it.schema.hasInlinedItemsSchemaOfTypeObject()) {
-                        emptySet() // Top-level array interfaces/classes are generated by createModels()
-                    } else {
-                        buildInlinedListDefinition(it.schema, it.name, enclosingSchema, apiDocUrl)
-                    }
-
-                is PropertyInfo.OneOfAny ->
-                    if (it.schema.isOneOfSuperInterface()) {
-                        setOf(
-                            oneOfSuperInterface(
-                                modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
-                                discriminator = it.schema.discriminator,
-                                allSchemas = sourceApi.allSchemas,
-                                members = it.schema.oneOfSchemas,
-                                oneOfSuperInterfaces = it.schema.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
-                                isSubTypeDeductionEnabled = it.schema.isSubTypeDeductionEnabled(),
-                            )
-                        )
-                    } else emptySet()
             }
         }
-    }
 
     private fun buildInlinedListDefinition(
         schema: Schema,
@@ -415,13 +443,14 @@ class ModelGenerator(
                             topLevelProperties = props,
                             enclosingSchema = enclosingSchema,
                             apiDocUrl = apiDocUrl,
-                        ) + standardDataClass(
-                            modelName = ModelNameRegistry.getOrRegister(schema, enclosingSchema),
-                            schemaName = schemaName,
-                            properties = props,
-                            schema = schema,
-                            oneOfInterfaces = emptySet(),
-                        )
+                        ) +
+                            standardDataClass(
+                                modelName = ModelNameRegistry.getOrRegister(schema, enclosingSchema),
+                                schemaName = schemaName,
+                                properties = props,
+                                schema = schema,
+                                oneOfInterfaces = emptySet(),
+                            )
                     }
 
                 items.isInlinedEnumDefinition() ->
@@ -441,14 +470,17 @@ class ModelGenerator(
                             members = items.oneOfSchemas,
                             oneOfSuperInterfaces = items.findOneOfSuperInterface(sourceApi.allSchemas.map { it.schema }),
                             isSubTypeDeductionEnabled = items.isSubTypeDeductionEnabled(),
-                        )
+                        ),
                     )
 
                 else -> emptySet()
             }
         }
 
-    private fun Schema.captureMissingExternalSchemas(apiDocUrl: String, depth: Int = 0) {
+    private fun Schema.captureMissingExternalSchemas(
+        apiDocUrl: String,
+        depth: Int = 0,
+    ) {
         nestedSchemas().forEach { schema ->
             val docUrl = schema.getDocumentUrl()
             if (docUrl != apiDocUrl) {
@@ -476,30 +508,36 @@ class ModelGenerator(
         (
             allOfSchemas + anyOfSchemas + oneOfSchemas + itemsSchema + additionalPropertiesSchema +
                 this + this.properties.map { it.value }
-            )
-            .filterNotNull()
+        ).filterNotNull()
             .filter { Overlay.of(it).isPresent }
 
-    private fun buildEnumClass(schema: Schema, enum: KotlinTypeInfo.Enum): TypeSpec {
+    private fun buildEnumClass(
+        schema: Schema,
+        enum: KotlinTypeInfo.Enum,
+    ): TypeSpec {
         val enumType = generatedType(packages.base, enum.enumClassName)
-        val isFaultTolerant = options.contains(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS) ||
-            schema.isOpenEnumDefinition()
+        val isFaultTolerant =
+            options.contains(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS) ||
+                schema.isOpenEnumDefinition()
 
-        val classBuilder = TypeSpec
-            .enumBuilder(enumType)
-            .apply { schema.toKDoc()?.let { addKdoc(it) } }
-            .primaryConstructor(
-                FunSpec.constructorBuilder()
-                    .addParameter("value", String::class)
-                    .build(),
-            )
-            .addQuarkusReflectionAnnotation()
-            .addMicronautIntrospectedAnnotation()
-            .addMicronautReflectionAnnotation()
+        val classBuilder =
+            TypeSpec
+                .enumBuilder(enumType)
+                .apply { schema.toKDoc()?.let { addKdoc(it) } }
+                .primaryConstructor(
+                    FunSpec
+                        .constructorBuilder()
+                        .addParameter("value", String::class)
+                        .build(),
+                ).addQuarkusReflectionAnnotation()
+                .addMicronautIntrospectedAnnotation()
+                .addMicronautReflectionAnnotation()
 
         enum.entries.forEach {
-            val enumConstantBuilder = TypeSpec.anonymousClassBuilder()
-                .addSuperclassConstructorParameter("%S", it)
+            val enumConstantBuilder =
+                TypeSpec
+                    .anonymousClassBuilder()
+                    .addSuperclassConstructorParameter("%S", it)
             serializationAnnotations.addEnumConstantAnnotation(enumConstantBuilder, it)
             classBuilder.addEnumConstant(
                 it.toEnumName(),
@@ -509,8 +547,10 @@ class ModelGenerator(
 
         // Add UNRECOGNIZED fallback entry for fault-tolerant enums
         if (isFaultTolerant) {
-            val unrecognizedConstantBuilder = TypeSpec.anonymousClassBuilder()
-                .addSuperclassConstructorParameter("%S", "UNRECOGNIZED")
+            val unrecognizedConstantBuilder =
+                TypeSpec
+                    .anonymousClassBuilder()
+                    .addSuperclassConstructorParameter("%S", "UNRECOGNIZED")
             serializationAnnotations.addEnumConstantAnnotation(unrecognizedConstantBuilder, "UNRECOGNIZED")
             serializationAnnotations.addEnumDefaultAnnotation(unrecognizedConstantBuilder, "UNRECOGNIZED")
             classBuilder.addEnumConstant(
@@ -524,25 +564,31 @@ class ModelGenerator(
         classBuilder.addProperty(valuePropSpecBuilder.build())
 
         // Add toString() override that returns the value property
-        val toStringBuilder = FunSpec.builder("toString")
-            .addModifiers(KModifier.OVERRIDE)
-            .returns(String::class)
-            .addStatement("return value")
+        val toStringBuilder =
+            FunSpec
+                .builder("toString")
+                .addModifiers(KModifier.OVERRIDE)
+                .returns(String::class)
+                .addStatement("return value")
 
         classBuilder.addFunction(toStringBuilder.build())
 
-        val companionBuilder = TypeSpec.companionObjectBuilder()
-            .addProperty(
-                PropertySpec.builder("mapping", createMapOfStringToNonNullType(enumType))
-                    .initializer("entries.associateBy(%T::value)", enumType)
-                    .addModifiers(KModifier.PRIVATE)
-                    .build(),
-            )
+        val companionBuilder =
+            TypeSpec
+                .companionObjectBuilder()
+                .addProperty(
+                    PropertySpec
+                        .builder("mapping", createMapOfStringToNonNullType(enumType))
+                        .initializer("entries.associateBy(%T::value)", enumType)
+                        .addModifiers(KModifier.PRIVATE)
+                        .build(),
+                )
 
         // Modify fromValue to return UNRECOGNIZED for fault-tolerant enums, or nullable for regular enums
         if (isFaultTolerant) {
             companionBuilder.addFunction(
-                FunSpec.builder("fromValue")
+                FunSpec
+                    .builder("fromValue")
                     .addParameter(ParameterSpec.builder("value", String::class).build())
                     .returns(enumType)
                     .addStatement("return mapping[value] ?: UNRECOGNIZED")
@@ -550,7 +596,8 @@ class ModelGenerator(
             )
         } else {
             companionBuilder.addFunction(
-                FunSpec.builder("fromValue")
+                FunSpec
+                    .builder("fromValue")
                     .addParameter(ParameterSpec.builder("value", String::class).build())
                     .returns(enumType.copy(nullable = true))
                     .addStatement("return mapping[value]")
@@ -572,15 +619,17 @@ class ModelGenerator(
         if (mapField.schema.additionalPropertiesSchema.isComplexTypedAdditionalProperties("additionalProperties")) {
             val schema = mapField.schema.additionalPropertiesSchema
             standardDataClass(
-                modelName = ModelNameRegistry.getOrRegister(
-                    schema,
-                    valueSuffix = schema.isInlinedTypedAdditionalProperties()
-                ),
+                modelName =
+                    ModelNameRegistry.getOrRegister(
+                        schema,
+                        valueSuffix = schema.isInlinedTypedAdditionalProperties(),
+                    ),
                 schemaName = schema.safeName(),
-                properties = mapField.schema.additionalPropertiesSchema.topLevelProperties(
-                    HTTP_SETTINGS,
-                    sourceApi.openApi3
-                ),
+                properties =
+                    mapField.schema.additionalPropertiesSchema.topLevelProperties(
+                        HTTP_SETTINGS,
+                        sourceApi.openApi3,
+                    ),
                 schema = schema,
                 oneOfInterfaces = emptySet(),
             )
@@ -603,13 +652,14 @@ class ModelGenerator(
             } else {
                 TypeSpec.classBuilder(name)
             }
-        val classBuilder = builder
-            .apply { schema.toKDoc()?.let { addKdoc(it) } }
-            .addSerializableInterface()
-            .addQuarkusReflectionAnnotation()
-            .addMicronautIntrospectedAnnotation()
-            .addMicronautReflectionAnnotation()
-            .addCompanionObject()
+        val classBuilder =
+            builder
+                .apply { schema.toKDoc()?.let { addKdoc(it) } }
+                .addSerializableInterface()
+                .addQuarkusReflectionAnnotation()
+                .addMicronautIntrospectedAnnotation()
+                .addMicronautReflectionAnnotation()
+                .addCompanionObject()
         for (oneOfInterface in oneOfInterfaces) {
             val interfaceName = ModelNameRegistry.getBySchema(oneOfInterface) ?: ModelNameRegistry.getOrRegister(oneOfInterface)
 
@@ -658,28 +708,28 @@ class ModelGenerator(
         extensions: Map<String, Any>,
         oneOfSuperInterfaces: Set<Schema>,
         allSchemas: List<SchemaInfo>,
-    ): TypeSpec = with(FunSpec.constructorBuilder()) {
-        TypeSpec.classBuilder(generatedType(packages.base, modelName))
-            .buildPolymorphicSubType(
-                schemaName,
-                properties.filter(PropertyInfo::isInherited),
-                superType,
-                extensions,
-                oneOfSuperInterfaces,
-                this,
-            )
-            .buildPolymorphicSuperType(
-                modelName,
-                schemaName,
-                properties.filterNot(PropertyInfo::isInherited),
-                discriminator,
-                extensions,
-                oneOfSuperInterfaces,
-                allSchemas,
-                this,
-            )
-            .build()
-    }
+    ): TypeSpec =
+        with(FunSpec.constructorBuilder()) {
+            TypeSpec
+                .classBuilder(generatedType(packages.base, modelName))
+                .buildPolymorphicSubType(
+                    schemaName,
+                    properties.filter(PropertyInfo::isInherited),
+                    superType,
+                    extensions,
+                    oneOfSuperInterfaces,
+                    this,
+                ).buildPolymorphicSuperType(
+                    modelName,
+                    schemaName,
+                    properties.filterNot(PropertyInfo::isInherited),
+                    discriminator,
+                    extensions,
+                    oneOfSuperInterfaces,
+                    allSchemas,
+                    this,
+                ).build()
+        }
 
     private fun oneOfSuperInterface(
         modelName: String,
@@ -689,8 +739,10 @@ class ModelGenerator(
         oneOfSuperInterfaces: Set<Schema>,
         isSubTypeDeductionEnabled: Boolean,
     ): TypeSpec {
-        val interfaceBuilder = TypeSpec.interfaceBuilder(generatedType(packages.base, modelName))
-            .addModifiers(KModifier.SEALED)
+        val interfaceBuilder =
+            TypeSpec
+                .interfaceBuilder(generatedType(packages.base, modelName))
+                .addModifiers(KModifier.SEALED)
 
         serializationAnnotations.addClassAnnotation(interfaceBuilder)
 
@@ -699,17 +751,19 @@ class ModelGenerator(
 
             val mappings = getFlattenedDiscriminatorMappings(discriminator, members, allSchemas, modelName)
 
-            val kotlinMappings = mappings.mapValues { (_, schema) ->
-                toModelType(
-                    packages.base,
-                    KotlinTypeInfo.from(schema.schema, schema.name),
-                )
-            }
+            val kotlinMappings =
+                mappings.mapValues { (_, schema) ->
+                    toModelType(
+                        packages.base,
+                        KotlinTypeInfo.from(schema.schema, schema.name),
+                    )
+                }
             serializationAnnotations.addPolymorphicSubTypesAnnotation(interfaceBuilder, kotlinMappings)
         } else if (isSubTypeDeductionEnabled) {
-            val subTypeNames = members.map { member ->
-                toModelType(packages.base, KotlinTypeInfo.from(member, member.safeName()))
-            }
+            val subTypeNames =
+                members.map { member ->
+                    toModelType(packages.base, KotlinTypeInfo.from(member, member.safeName()))
+                }
             serializationAnnotations.addPolymorphicSubTypeDeductionAnnotation(interfaceBuilder, subTypeNames)
         }
 
@@ -731,30 +785,33 @@ class ModelGenerator(
         discriminator: Discriminator,
         members: List<Schema>,
         allSchemas: List<SchemaInfo>,
-        modelName: String
+        modelName: String,
     ): Map<String, SchemaInfo> {
         val directMappings = getDiscriminatorMappingsOrDefault(discriminator, members, allSchemas, modelName)
 
         // Expand mappings for members that are themselves oneOf sealed interfaces
-        val expandedMappings = directMappings.flatMap { (key, schemaInfo) ->
-            val schema = schemaInfo.schema
-            if (schema.isOneOfSuperInterface() &&
-                schema.discriminator != null &&
-                schema.discriminator.propertyName == discriminator.propertyName
-            ) {
-                val nestedMappings = getDiscriminatorMappingsOrDefault(
-                    discriminator = schema.discriminator,
-                    members = schema.oneOfSchemas,
-                    allSchemas = allSchemas,
-                    modelName = schema.name
-                )
-                nestedMappings.entries.map { (nestedKey, nestedSchema) ->
-                    nestedKey to nestedSchema
-                }
-            } else {
-                listOf(key to schemaInfo)
-            }
-        }.toMap()
+        val expandedMappings =
+            directMappings
+                .flatMap { (key, schemaInfo) ->
+                    val schema = schemaInfo.schema
+                    if (schema.isOneOfSuperInterface() &&
+                        schema.discriminator != null &&
+                        schema.discriminator.propertyName == discriminator.propertyName
+                    ) {
+                        val nestedMappings =
+                            getDiscriminatorMappingsOrDefault(
+                                discriminator = schema.discriminator,
+                                members = schema.oneOfSchemas,
+                                allSchemas = allSchemas,
+                                modelName = schema.name,
+                            )
+                        nestedMappings.entries.map { (nestedKey, nestedSchema) ->
+                            nestedKey to nestedSchema
+                        }
+                    } else {
+                        listOf(key to schemaInfo)
+                    }
+                }.toMap()
 
         return expandedMappings
     }
@@ -763,31 +820,34 @@ class ModelGenerator(
         discriminator: Discriminator,
         members: List<Schema>,
         allSchemas: List<SchemaInfo>,
-        modelName: String
+        modelName: String,
     ): Map<String, SchemaInfo> {
-        val mappings = if (discriminator.mappings.isNullOrEmpty()) {
-            // No explicit mappings: default to schema name matching
-            members.mapNotNull { member ->
-                val schema = allSchemas.find { it.name == member.name }
-                if (schema == null) {
-                    logger.warning("Could not find schema for member ${member.name} in oneOf super interface $modelName!")
-                    null
-                } else {
-                    member.name to schema  // Key by member name
-                }
-            }.toMap()
-        } else {
-            // Explicit mappings present: key by the mapping key (discriminator value)
-            discriminator.mappings.mapNotNull { (mappingKey, ref) ->
-                val schema = allSchemas.find { ref.endsWith("/${it.name}") }
-                if (schema == null) {
-                    logger.warning("Mapping $mappingKey -> $ref does not match any schema in oneOf super interface $modelName!")
-                    null
-                } else {
-                    mappingKey to schema  // Key by mapping key (not by schema name)
-                }
-            }.toMap()
-        }
+        val mappings =
+            if (discriminator.mappings.isNullOrEmpty()) {
+                // No explicit mappings: default to schema name matching
+                members
+                    .mapNotNull { member ->
+                        val schema = allSchemas.find { it.name == member.name }
+                        if (schema == null) {
+                            logger.warning("Could not find schema for member ${member.name} in oneOf super interface $modelName!")
+                            null
+                        } else {
+                            member.name to schema // Key by member name
+                        }
+                    }.toMap()
+            } else {
+                // Explicit mappings present: key by the mapping key (discriminator value)
+                discriminator.mappings
+                    .mapNotNull { (mappingKey, ref) ->
+                        val schema = allSchemas.find { ref.endsWith("/${it.name}") }
+                        if (schema == null) {
+                            logger.warning("Mapping $mappingKey -> $ref does not match any schema in oneOf super interface $modelName!")
+                            null
+                        } else {
+                            mappingKey to schema // Key by mapping key (not by schema name)
+                        }
+                    }.toMap()
+            }
         return mappings
     }
 
@@ -799,17 +859,18 @@ class ModelGenerator(
         extensions: Map<String, Any>,
         oneOfSuperInterfaces: Set<Schema>,
         allSchemas: List<SchemaInfo>,
-    ): TypeSpec = TypeSpec.classBuilder(generatedType(packages.base, modelName))
-        .buildPolymorphicSuperType(
-            modelName = modelName,
-            schemaName = schemaName,
-            properties = properties,
-            discriminator = discriminator,
-            extensions = extensions,
-            oneOfSuperInterfaces = oneOfSuperInterfaces,
-            allSchemas = allSchemas,
-        )
-        .build()
+    ): TypeSpec =
+        TypeSpec
+            .classBuilder(generatedType(packages.base, modelName))
+            .buildPolymorphicSuperType(
+                modelName = modelName,
+                schemaName = schemaName,
+                properties = properties,
+                discriminator = discriminator,
+                extensions = extensions,
+                oneOfSuperInterfaces = oneOfSuperInterfaces,
+                allSchemas = allSchemas,
+            ).build()
 
     private fun TypeSpec.Builder.buildPolymorphicSuperType(
         modelName: String,
@@ -831,27 +892,33 @@ class ModelGenerator(
             this.addSuperinterface(generatedType(packages.base, interfaceName))
         }
 
-        val subTypes = allSchemas
-            .filter { model ->
-                model.schema.allOfSchemas.any { allOfRef ->
-                    ModelNameRegistry.getOrRegister(allOfRef) == modelName &&
-                        (
-                            allOfRef.discriminator == discriminator ||
-                                allOfRef.allOfSchemas.any { it.discriminator == discriminator }
+        val subTypes =
+            allSchemas
+                .filter { model ->
+                    model.schema.allOfSchemas.any { allOfRef ->
+                        ModelNameRegistry.getOrRegister(allOfRef) == modelName &&
+                            (
+                                allOfRef.discriminator == discriminator ||
+                                    allOfRef.allOfSchemas.any { it.discriminator == discriminator }
                             )
+                    }
                 }
-            }
 
-        val mappings: Map<String, TypeName> = subTypes.map { schemaInfo ->
-            discriminator.getDiscriminatorMappings(schemaInfo)
-        }.toMapList()
-            .firstValueMap()
+        val mappings: Map<String, TypeName> =
+            subTypes
+                .map { schemaInfo ->
+                    discriminator.getDiscriminatorMappings(schemaInfo)
+                }.toMapList()
+                .firstValueMap()
 
-        val maybeEnumDiscriminator = properties
-            .firstOrNull { it.name == discriminator.propertyName }?.typeInfo as? KotlinTypeInfo.Enum
+        val maybeEnumDiscriminator =
+            properties
+                .firstOrNull { it.name == discriminator.propertyName }
+                ?.typeInfo as? KotlinTypeInfo.Enum
 
         serializationAnnotations.addPolymorphicSubTypesAnnotation(this, mappings, maybeEnumDiscriminator)
-        this.addQuarkusReflectionAnnotation()
+        this
+            .addQuarkusReflectionAnnotation()
             .addMicronautIntrospectedAnnotation()
             .addMicronautReflectionAnnotation()
 
@@ -873,8 +940,11 @@ class ModelGenerator(
         superType: SchemaInfo,
         extensions: Map<String, Any>,
         oneOfSuperInterfaces: Set<Schema>,
-    ): TypeSpec = TypeSpec.classBuilder(generatedType(packages.base, modelName))
-        .buildPolymorphicSubType(schemaName, properties, superType, extensions, oneOfSuperInterfaces).build()
+    ): TypeSpec =
+        TypeSpec
+            .classBuilder(generatedType(packages.base, modelName))
+            .buildPolymorphicSubType(schemaName, properties, superType, extensions, oneOfSuperInterfaces)
+            .build()
 
     private fun TypeSpec.Builder.buildPolymorphicSubType(
         schemaName: String,
@@ -884,7 +954,8 @@ class ModelGenerator(
         oneOfSuperInterfaces: Set<Schema>,
         constructorBuilder: FunSpec.Builder = FunSpec.constructorBuilder(),
     ): TypeSpec.Builder {
-        this.addSerializableInterface()
+        this
+            .addSerializableInterface()
             .addQuarkusReflectionAnnotation()
             .addMicronautIntrospectedAnnotation()
             .addMicronautReflectionAnnotation()
@@ -901,23 +972,25 @@ class ModelGenerator(
             this.addSuperinterface(generatedType(packages.base, interfaceName))
         }
 
-        val superTypeDiscriminator = superType.schema.discriminator.takeIf { it.propertyName != null }
-            ?: superType.schema.getDiscriminatorForInlinedObjectUnderAllOf()
+        val superTypeDiscriminator =
+            superType.schema.discriminator.takeIf { it.propertyName != null }
+                ?: superType.schema.getDiscriminatorForInlinedObjectUnderAllOf()
         superTypeDiscriminator?.let { discriminator ->
             val mappingKey = discriminator.mappingKeyForSchemaName(schemaName) ?: schemaName
             serializationAnnotations.addSubtypeMappingAnnotation(this, mappingKey)
         }
 
-        val properties = superType.schema.getDiscriminatorForInlinedObjectUnderAllOf()?.let { discriminator ->
-            allProperties.filterNot {
-                when (it) {
-                    is PropertyInfo.Field ->
-                        it.isPolymorphicDiscriminator && it.name != discriminator.propertyName
+        val properties =
+            superType.schema.getDiscriminatorForInlinedObjectUnderAllOf()?.let { discriminator ->
+                allProperties.filterNot {
+                    when (it) {
+                        is PropertyInfo.Field ->
+                            it.isPolymorphicDiscriminator && it.name != discriminator.propertyName
 
-                    else -> false
+                        else -> false
+                    }
                 }
-            }
-        } ?: allProperties
+            } ?: allProperties
 
         properties.addToClass(
             schemaName,
@@ -939,21 +1012,23 @@ class ModelGenerator(
         this.forEach {
             it.addToClass(
                 schemaName = schemaName,
-                type = toModelType(
-                    packages.base,
-                    it.typeInfo,
-                    it.isNullable(classType),
-                ),
-                parameterizedType = toClassName(
-                    packages.base,
-                    it.typeInfo,
-                ),
+                type =
+                    toModelType(
+                        packages.base,
+                        it.typeInfo,
+                        it.isNullable(classType),
+                    ),
+                parameterizedType =
+                    toClassName(
+                        packages.base,
+                        it.typeInfo,
+                    ),
                 classBuilder = classBuilder,
                 constructorBuilder = constructorBuilder,
                 classSettings = classType,
                 validationAnnotations = validationAnnotations,
                 serializationAnnotations = serializationAnnotations,
-                jacksonNullabilityMode = jacksonNullabilityMode
+                jacksonNullabilityMode = jacksonNullabilityMode,
             )
         }
         if (constructorBuilder.parameters.isNotEmpty() && classBuilder.modifiers.isEmpty()) {
@@ -965,7 +1040,10 @@ class ModelGenerator(
         return classBuilder.primaryConstructor(constructorBuilder.build())
     }
 
-    private fun sortConstructorParameters(constructorBuilder: FunSpec.Builder, classType: ClassSettings) {
+    private fun sortConstructorParameters(
+        constructorBuilder: FunSpec.Builder,
+        classType: ClassSettings,
+    ) {
         if (classType.polymorphyType != ClassSettings.PolymorphyType.NONE) {
             constructorBuilder.parameters.sortBy { it.defaultValue?.toString() != "null" && it.defaultValue != null }
         }
@@ -975,12 +1053,12 @@ class ModelGenerator(
         mappingKeys(schemaInfo.schema)
             .filter { it.value == schemaInfo.schema.name || it.key == schemaInfo.schema.name }
             .map {
-                it.key to toModelType(
-                    packages.base,
-                    KotlinTypeInfo.from(schemaInfo.schema, schemaInfo.name),
-                )
-            }
-            .toMap()
+                it.key to
+                    toModelType(
+                        packages.base,
+                        KotlinTypeInfo.from(schemaInfo.schema, schemaInfo.name),
+                    )
+            }.toMap()
 
     private fun <K, V> List<Map<K, V>>.toMapList(): Map<K, List<V>> =
         asSequence()
@@ -988,8 +1066,7 @@ class ModelGenerator(
                 it.asSequence()
             }.groupBy({ it.key }, { it.value })
 
-    private fun <K, V> Map<K, List<V>>.firstValueMap(): Map<K, V> =
-        map { it.key to it.value.first() }.toMap()
+    private fun <K, V> Map<K, List<V>>.firstValueMap(): Map<K, V> = map { it.key to it.value.first() }.toMap()
 
     private fun TypeSpec.Builder.addSerializableInterface(): TypeSpec.Builder {
         if (options.any { it == ModelCodeGenOptionType.JAVA_SERIALIZATION }) {
@@ -1035,15 +1112,15 @@ class ModelGenerator(
         return this
     }
 
-    private fun List<SchemaInfo>.filterByExternalRefResolutionMode(
-        externalReferences: Map.Entry<String, MutableSet<String>>,
-    ) = when (externalRefResolutionMode) {
-        ExternalReferencesResolutionMode.TARGETED -> this.filter { apiSchema ->
-            externalReferences.value.contains(
-                apiSchema.name
-            )
-        }
+    private fun List<SchemaInfo>.filterByExternalRefResolutionMode(externalReferences: Map.Entry<String, MutableSet<String>>) =
+        when (externalRefResolutionMode) {
+            ExternalReferencesResolutionMode.TARGETED ->
+                this.filter { apiSchema ->
+                    externalReferences.value.contains(
+                        apiSchema.name,
+                    )
+                }
 
-        else -> this
-    }
+            else -> this
+        }
 }

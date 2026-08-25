@@ -5,7 +5,6 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 object AuthHeaderResolver {
-
     private val SHELL_TIMEOUT_SECONDS = 10L
     private val ENV_VAR_NAME_REGEX = Regex("^[A-Za-z_][A-Za-z0-9_]*$")
     private val ENV_VAR_PLACEHOLDER_REGEX = Regex("\\$\\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\\}")
@@ -16,7 +15,10 @@ object AuthHeaderResolver {
         env: (String) -> String? = System::getenv,
     ): List<Pair<String, String>> = headers.map { resolveHeader(it, env) }
 
-    private fun resolveHeader(header: String, env: (String) -> String?): Pair<String, String> {
+    private fun resolveHeader(
+        header: String,
+        env: (String) -> String?,
+    ): Pair<String, String> {
         val colonIndex = header.indexOf(':')
         if (colonIndex == -1) {
             throw ParameterException("Invalid --auth '$header': expected 'Name: value'")
@@ -26,7 +28,10 @@ object AuthHeaderResolver {
         return name to resolveHeaderValue(rawValue, env)
     }
 
-    fun resolveHeaderValue(value: String, env: (String) -> String?): String {
+    fun resolveHeaderValue(
+        value: String,
+        env: (String) -> String?,
+    ): String {
         val trimmed = value.trim()
 
         SHELL_COMMAND_REGEX.find(trimmed)?.let { match ->
@@ -51,22 +56,30 @@ object AuthHeaderResolver {
     }
 
     private fun runCommand(command: String): String {
-        val process = try {
-            ProcessBuilder("sh", "-c", command).start()
-        } catch (e: IOException) {
-            throw ParameterException("Failed to run auth command '$command'", e)
-        }
+        val process =
+            try {
+                ProcessBuilder("sh", "-c", command).start()
+            } catch (e: IOException) {
+                throw ParameterException("Failed to run auth command '$command'", e)
+            }
         if (!process.waitFor(SHELL_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
             process.destroyForcibly()
             throw ParameterException("Auth command '$command' timed out after ${SHELL_TIMEOUT_SECONDS}s")
         }
         if (process.exitValue() != 0) {
-            val stderr = process.errorStream.bufferedReader().use { it.readText() }.trim()
+            val stderr =
+                process.errorStream
+                    .bufferedReader()
+                    .use { it.readText() }
+                    .trim()
             throw ParameterException(
                 "Auth command '$command' failed with exit code ${process.exitValue()}" +
-                    if (stderr.isNotEmpty()) ": $stderr" else ""
+                    if (stderr.isNotEmpty()) ": $stderr" else "",
             )
         }
-        return process.inputStream.bufferedReader().use { it.readText() }.trim()
+        return process.inputStream
+            .bufferedReader()
+            .use { it.readText() }
+            .trim()
     }
 }
