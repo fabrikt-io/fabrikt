@@ -13,6 +13,7 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.enhancedClient
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
+import com.cjbooms.fabrikt.generators.model.JacksonMetadata.OBJECT_MAPPER_CLASS
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Destinations
@@ -20,7 +21,6 @@ import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.squareup.kotlinpoet.AnnotationSpec
@@ -123,7 +123,7 @@ class OkHttpEnhancedClientGenerator(
                                 circuitBreakerRegistryProperty.name,
                                 circuitBreakerRegistryProperty.type,
                             ).build(),
-                        ParameterSpec.builder("objectMapper", ObjectMapper::class.asTypeName()).build(),
+                        ParameterSpec.builder("objectMapper", OBJECT_MAPPER_CLASS).build(),
                         ParameterSpec.builder("baseUrl", String::class.asTypeName()).build(),
                         ParameterSpec.builder("okHttpClient", "OkHttpClient".toClassName("okhttp3")).build(),
                     ),

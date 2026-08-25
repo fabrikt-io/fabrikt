@@ -1,0 +1,48 @@
+openapi: 3.0.0
+info:
+  title: Jackson 3 example
+  version: 1.0.0
+paths:
+  /widgets:
+    get:
+      operationId: getWidgets
+      responses:
+        200:
+          description: Widget available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Widget'
+        202:
+          description: Widget pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PendingWidget'
+    post:
+      operationId: createWidget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Widget'
+      responses:
+        204:
+          description: Widget created
+components:
+  schemas:
+    Widget:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+    PendingWidget:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string

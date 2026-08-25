@@ -17,6 +17,7 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
+import com.cjbooms.fabrikt.generators.model.JacksonMetadata.OBJECT_MAPPER_CLASS
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
 import com.cjbooms.fabrikt.model.BodyParameter
 import com.cjbooms.fabrikt.model.ClientType
@@ -31,7 +32,6 @@ import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.squareup.kotlinpoet.AnnotationSpec
@@ -104,7 +104,7 @@ class OkHttpSimpleClientGenerator(
                     TypeSpec
                         .classBuilder(simpleClientName(resourceName))
                         .primaryPropertiesConstructor(
-                            PropertySpec.builder("objectMapper", ObjectMapper::class.asTypeName(), KModifier.PRIVATE).build(),
+                            PropertySpec.builder("objectMapper", OBJECT_MAPPER_CLASS, KModifier.PRIVATE).build(),
                             PropertySpec.builder("baseUrl", String::class.asTypeName(), KModifier.PRIVATE).build(),
                             PropertySpec
                                 .builder("okHttpClient", "OkHttpClient".toClassName("okhttp3"), KModifier.PRIVATE)

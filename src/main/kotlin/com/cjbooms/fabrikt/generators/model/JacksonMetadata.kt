@@ -1,5 +1,7 @@
 package com.cjbooms.fabrikt.generators.model
 
+import com.cjbooms.fabrikt.cli.SerializationLibrary
+import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.util.NormalisedString.pascalCase
 import com.cjbooms.fabrikt.util.toLowerCase
@@ -9,7 +11,45 @@ import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.TypeName
 
 object JacksonMetadata {
-    val TYPE_REFERENCE_IMPORT = Pair("com.fasterxml.jackson.module.kotlin", "jacksonTypeRef")
+    private const val JACKSON_2_DATABIND_PACKAGE = "com.fasterxml.jackson.databind"
+    private const val JACKSON_2_KOTLIN_PACKAGE = "com.fasterxml.jackson.module.kotlin"
+    private const val JACKSON_2_TYPE_REFERENCE_PACKAGE = "com.fasterxml.jackson.core.type"
+    private const val JACKSON_3_DATABIND_PACKAGE = "tools.jackson.databind"
+    private const val JACKSON_3_KOTLIN_PACKAGE = "tools.jackson.module.kotlin"
+    private const val JACKSON_3_TYPE_REFERENCE_PACKAGE = "tools.jackson.core.type"
+
+    private val isJackson3: Boolean
+        get() = MutableSettings.serializationLibrary == SerializationLibrary.JACKSON_3
+
+    val OBJECT_MAPPER_CLASS: ClassName
+        get() =
+            if (isJackson3) {
+                ClassName("$JACKSON_3_DATABIND_PACKAGE.json", "JsonMapper")
+            } else {
+                ClassName(JACKSON_2_DATABIND_PACKAGE, "ObjectMapper")
+            }
+
+    val JSON_NODE_CLASS: ClassName
+        get() =
+            ClassName(
+                if (isJackson3) JACKSON_3_DATABIND_PACKAGE else JACKSON_2_DATABIND_PACKAGE,
+                "JsonNode",
+            )
+
+    val TYPE_REFERENCE_IMPORT: Pair<String, String>
+        get() =
+            Pair(
+                if (isJackson3) JACKSON_3_KOTLIN_PACKAGE else JACKSON_2_KOTLIN_PACKAGE,
+                "jacksonTypeRef",
+            )
+
+    val TYPE_REFERENCE_CLASS: ClassName
+        get() =
+            ClassName(
+                if (isJackson3) JACKSON_3_TYPE_REFERENCE_PACKAGE else JACKSON_2_TYPE_REFERENCE_PACKAGE,
+                "TypeReference",
+            )
+
     private val JSON_PROPERTY_CLASS = ClassName("com.fasterxml.jackson.annotation", "JsonProperty")
     private val JSON_VALUE_CLASS = ClassName("com.fasterxml.jackson.annotation", "JsonValue")
     private val JSON_TYPE_INFO_CLASS = ClassName("com.fasterxml.jackson.annotation", "JsonTypeInfo")

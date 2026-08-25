@@ -7,7 +7,8 @@ kotlinx-serialization = "1.9.0"
 
 # Jackson / Serialization
 jackson = "2.20.1"
-jackson-databind-nullable = "0.2.6"
+jackson3 = "3.2.0"
+jackson-databind-nullable = "0.2.10"
 
 # OpenAPI
 kaizen-openapi-parser = "4.1.0"
@@ -59,6 +60,9 @@ jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations
 jackson-dataformat-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml" }
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310" }
 jackson-databind-nullable = { module = "org.openapitools:jackson-databind-nullable", version.ref = "jackson-databind-nullable" }
+jackson3-bom = { module = "tools.jackson:jackson-bom", version.ref = "jackson3" }
+jackson3-module-kotlin = { module = "tools.jackson.module:jackson-module-kotlin" }
+jackson3-databind = { module = "tools.jackson.core:jackson-databind" }
 
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom" }
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
