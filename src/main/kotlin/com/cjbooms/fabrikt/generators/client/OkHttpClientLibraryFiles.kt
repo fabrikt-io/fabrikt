@@ -1,6 +1,8 @@
 package com.cjbooms.fabrikt.generators.client
 
 import com.cjbooms.fabrikt.configurations.Packages
+import com.cjbooms.fabrikt.generators.model.JacksonMetadata.OBJECT_MAPPER_CLASS
+import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_CLASS
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -26,8 +28,11 @@ object OkHttpClientLibraryFiles {
     private val requestBody = ClassName("okhttp3", "RequestBody")
     private val response = ClassName("okhttp3", "Response")
     private val responseBody = ClassName("okhttp3", "ResponseBody")
-    private val objectMapper = ClassName("com.fasterxml.jackson.databind", "ObjectMapper")
-    private val typeReference = ClassName("com.fasterxml.jackson.core.type", "TypeReference")
+    private val objectMapper: ClassName
+        get() = OBJECT_MAPPER_CLASS
+
+    private val typeReference: ClassName
+        get() = TYPE_REFERENCE_CLASS
     private val runtimeException = ClassName("kotlin", "RuntimeException")
 
     private val suppressUnused = AnnotationSpec.builder(Suppress::class).addMember("%S", "unused").build()

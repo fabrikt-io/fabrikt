@@ -7,6 +7,7 @@ import com.cjbooms.fabrikt.cli.CodeGenerationType
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.OutputOptionType
+import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.client.OkHttpClientGenerator
 import com.cjbooms.fabrikt.generators.client.OkHttpEnhancedClientGenerator
@@ -36,6 +37,7 @@ class OkHttpClientGeneratorTest {
     private fun fullApiTestCases(): Stream<String> =
         Stream.of(
             "okHttpClient",
+            "jackson3",
             "multiMediaType",
             "okHttpClientPostWithoutRequestBody",
             "pathLevelParameters",
@@ -49,18 +51,24 @@ class OkHttpClientGeneratorTest {
 
     @BeforeEach
     fun init() {
+        updateSettings()
+        ModelNameRegistry.clear()
+    }
+
+    private fun updateSettings(serializationLibrary: SerializationLibrary = SerializationLibrary.default) {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.CLIENT),
             clientTarget = ClientCodeGenTargetType.OK_HTTP,
             modelOptions = setOf(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS, ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
             typeOverrides = setOf(CodeGenTypeOverride.BYTEARRAY_AS_INPUTSTREAM),
+            serializationLibrary = serializationLibrary,
         )
-        ModelNameRegistry.clear()
     }
 
     @ParameterizedTest
     @MethodSource("groupedClientTestCases")
     fun `correct api simple client is generated from a full API definition`(testCaseName: String) {
+        configureSerializationLibrary(testCaseName)
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
@@ -91,6 +99,7 @@ class OkHttpClientGeneratorTest {
     @ParameterizedTest
     @MethodSource("groupedClientTestCases")
     fun `correct api fault-tolerant service client is generated when the resilience4j option is set`(testCaseName: String) {
+        configureSerializationLibrary(testCaseName)
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
@@ -117,6 +126,7 @@ class OkHttpClientGeneratorTest {
     @ParameterizedTest
     @MethodSource("fullApiTestCases")
     fun `the enhanced client is not generated when no specific options are provided`(testCaseName: String) {
+        configureSerializationLibrary(testCaseName)
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
@@ -133,6 +143,7 @@ class OkHttpClientGeneratorTest {
     @ParameterizedTest
     @MethodSource("fullApiTestCases")
     fun `correct client library files are generated`(testCaseName: String) {
+        configureSerializationLibrary(testCaseName)
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
@@ -156,6 +167,12 @@ class OkHttpClientGeneratorTest {
 
     private fun optionsFor(testCaseName: String): Set<ClientCodeGenOptionType> =
         if (testCaseName == "tagGrouping") setOf(ClientCodeGenOptionType.GROUP_BY_TAG) else emptySet()
+
+    private fun configureSerializationLibrary(testCaseName: String) {
+        if (testCaseName == "jackson3") {
+            updateSettings(SerializationLibrary.JACKSON_3)
+        }
+    }
 
     private fun expectedClientPath(
         testCaseName: String,

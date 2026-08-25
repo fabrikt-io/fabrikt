@@ -13,6 +13,7 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toClassName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.OasDefault
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringImports.RESPONSE_ENTITY
+import com.cjbooms.fabrikt.generators.model.JacksonMetadata.JSON_NODE_CLASS
 import com.cjbooms.fabrikt.generators.model.ModelGenerator.Companion.toModelType
 import com.cjbooms.fabrikt.model.BodyParameter
 import com.cjbooms.fabrikt.model.ClientType
@@ -24,7 +25,6 @@ import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupByPathSegment
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPathsByFirstTag
-import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.reprezen.kaizen.oasparser.model3.Path
 import com.squareup.kotlinpoet.AnnotationSpec
@@ -58,6 +58,7 @@ object ClientGeneratorUtils {
     fun Operation.getReturnType(packages: Packages): TypeName =
         when (val returnType = getReturnType()) {
             is KotlinTypeInfo -> toModelType(packages.base, returnType)
+            is TypeName -> returnType
             is KClass<*> -> returnType.asTypeName()
             else -> throw IllegalStateException("Unsupported return type: $returnType")
         }
@@ -70,7 +71,7 @@ object ClientGeneratorUtils {
         if (!hasAnySuccessResponseSchemas()) {
             Unit::class
         } else if (hasMultipleSuccessResponseSchemas()) {
-            if (hasOnlyJsonSuccessResponses()) JsonNode::class else Any::class
+            if (hasOnlyJsonSuccessResponses()) JSON_NODE_CLASS else Any::class
         } else {
             this.getPrimaryContentMediaType()?.let {
                 KotlinTypeInfo.from(it.value.schema)

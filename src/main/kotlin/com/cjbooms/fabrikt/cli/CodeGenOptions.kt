@@ -215,12 +215,16 @@ enum class SerializationLibrary(
     val description: String,
     val serializationAnnotations: SerializationAnnotations,
 ) {
-    JACKSON("Use Jackson for serialization and deserialization", JacksonAnnotations),
+    JACKSON("Use Jackson 2 for serialization and deserialization", JacksonAnnotations),
+    JACKSON_3("Use Jackson 3 for serialization and deserialization", JacksonAnnotations),
     KOTLINX_SERIALIZATION(
         "Use kotlinx.serialization for serialization and deserialization",
         KotlinxSerializationAnnotations,
     ),
     ;
+
+    val isJackson: Boolean
+        get() = this == JACKSON || this == JACKSON_3
 
     override fun toString() = "`${super.toString()}` - $description"
 
