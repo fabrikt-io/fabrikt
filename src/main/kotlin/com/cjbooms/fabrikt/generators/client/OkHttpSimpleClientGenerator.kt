@@ -121,7 +121,7 @@ data class SimpleClientOperationStatement(
     private val verb: String,
     private val operation: Operation,
     private val parameters: List<IncomingParameter>,
-    private val options: Set<ClientCodeGenOptionType> = emptySet()
+    private val options: Set<ClientCodeGenOptionType>
 ) {
     fun toStatement(): CodeBlock =
         CodeBlock.builder()
