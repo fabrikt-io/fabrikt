@@ -57,6 +57,9 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeys
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeName
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
+import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
+import com.cjbooms.fabrikt.util.YamlUtils
+import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.jsonoverlay.Overlay
 import com.reprezen.kaizen.oasparser.OpenApi3Parser
 import com.reprezen.kaizen.oasparser.model3.Discriminator
@@ -202,15 +205,64 @@ class ModelGenerator(
         externalApiSchemas.forEach { externalReferences ->
             val api = OpenApi3Parser().parse(URL(externalReferences.key))
             val schemas =
-                api.schemas.entries
-                    .map { (key, schema) -> SchemaInfo(key, schema) }
-                    .filterByExternalRefResolutionMode(externalReferences)
-            val externalModels = createModels(api, schemas)
+                if (api.schemas.isEmpty()) {
+                    // External document is a bare schema (Relative Schema Document)
+                    loadRootSchema(externalReferences.key, api)?.let(::listOf) ?: emptyList()
+                } else {
+                    api.schemas.entries
+                        .map { (key, schema) -> SchemaInfo(key, schema) }
+                }.filterByExternalRefResolutionMode(externalReferences)
+            val externalApi =
+                if (api.schemas.isEmpty() && schemas.isNotEmpty()) {
+                    schemas.first().schema.let { Overlay.of(it).getModel() as? OpenApi3 } ?: api
+                } else {
+                    api
+                }
+            val externalModels = createModels(externalApi, schemas)
             externalModels.forEach { additionalModel ->
                 if (models.none { it.name == additionalModel.name }) models.add(additionalModel)
             }
         }
         return Models(models.map { ModelType(it, packages.base) })
+    }
+
+    private fun loadRootSchema(
+        documentUrl: String,
+        api: OpenApi3,
+    ): SchemaInfo? {
+        val url = URL(documentUrl)
+        val rootNode = Overlay.of(api).getParsedJson() ?: return null
+        if (!rootNode.isObject || rootNode.has("openapi")) return null
+        val modelName =
+            url.file
+                .substringAfterLast('/')
+                .substringBeforeLast('.')
+                .toModelClassName()
+        val wrapped =
+            YamlUtils.objectMapper.createObjectNode().apply {
+                set<JsonNode>("openapi", textNode("3.0.0"))
+                set<JsonNode>(
+                    "info",
+                    objectNode().apply {
+                        set<JsonNode>("title", textNode(""))
+                        set<JsonNode>("version", textNode(""))
+                    },
+                )
+                set<JsonNode>(
+                    "components",
+                    objectNode().apply {
+                        set<JsonNode>(
+                            "schemas",
+                            objectNode().apply {
+                                set<JsonNode>(modelName, rootNode)
+                            },
+                        )
+                    },
+                )
+            }
+        val wrappedApi = YamlUtils.parseOpenApi(YamlUtils.objectMapper.writeValueAsString(wrapped), url.toURI())
+        val schema = wrappedApi.schemas[modelName] ?: return null
+        return SchemaInfo(modelName, schema)
     }
 
     private fun createModels(

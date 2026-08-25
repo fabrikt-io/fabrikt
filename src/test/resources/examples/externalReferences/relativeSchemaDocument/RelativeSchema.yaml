@@ -1,0 +1,19 @@
+type: object
+properties:
+  name:
+    type: string
+  age:
+    type: integer
+  active:
+    type: boolean
+  tags:
+    type: array
+    items:
+      type: string
+  address:
+    type: object
+    properties:
+      street:
+        type: string
+      city:
+        type: string
