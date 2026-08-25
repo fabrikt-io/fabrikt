@@ -4,6 +4,7 @@ include(
     "end2end-tests:okhttp",
     "end2end-tests:okhttp-multipart",
     "end2end-tests:okhttp-enhanced-multipart",
+    "end2end-tests:okhttp-non-null",
     "end2end-tests:openfeign",
     "end2end-tests:ktor",
     "end2end-tests:ktor-client-kotlinx",

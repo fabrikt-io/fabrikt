@@ -1,4 +1,4 @@
-package examples.okHttpClientPostWithoutRequestBody.client
+package examples.okHttpClientNonNullResponsePayloads.client
 
 import kotlin.Int
 import kotlin.RuntimeException
@@ -13,7 +13,7 @@ import okhttp3.Headers
 public data class ApiResponse<T>(
     public val statusCode: Int,
     public val headers: Headers,
-    public val `data`: T? = null,
+    public val `data`: T,
 )
 
 /**

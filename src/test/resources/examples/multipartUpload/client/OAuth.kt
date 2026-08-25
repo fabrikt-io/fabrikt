@@ -1,4 +1,4 @@
-package examples.byteArrayStream.client
+package examples.multipartUpload.client
 
 import kotlin.String
 import okhttp3.Authenticator

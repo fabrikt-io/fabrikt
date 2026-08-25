@@ -1,4 +1,4 @@
-package examples.parameterNameClash.client
+package examples.okHttpClientNonNullResponsePayloads.client
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -8,6 +8,7 @@ import kotlin.ByteArray
 import kotlin.Pair
 import kotlin.String
 import kotlin.Suppress
+import kotlin.Unit
 import kotlin.collections.List
 import kotlin.jvm.Throws
 import okhttp3.FormBody
@@ -53,21 +54,28 @@ public fun <T> Request.execute(
     client: OkHttpClient,
     objectMapper: ObjectMapper,
     typeRef: TypeReference<T>,
-): ApiResponse<T> = doRequest(client) { responseBody ->
-    responseBody?.deserialize(objectMapper, typeRef)
+): ApiResponse<T> = doRequest(client) { response ->
+    response.body?.string().isNotBlankOrNull()?.let {
+        objectMapper.readValue(it, typeRef)
+            ?: throw ApiException("[${response.code}]: Response body deserialized to null")
+    } ?: throw ApiException("[${response.code}]: Response body expected but not returned")
 }
 
 @Throws(ApiException::class)
 public fun Request.execute(client: OkHttpClient): ApiResponse<ByteArray> =
-        doRequest(client) { responseBody ->
-    responseBody?.deserialize()
+        doRequest(client) { response ->
+    response.body?.deserialize() ?: ByteArray(0)
 }
 
-private fun <T> Request.doRequest(client: OkHttpClient, bodyReader: (ResponseBody?) -> T?):
-        ApiResponse<T> = client.newCall(this).execute().use { response ->
+@Throws(ApiException::class)
+public fun Request.executeWithoutResponseBody(client: OkHttpClient): ApiResponse<Unit> =
+        doRequest(client) {}
+
+private fun <T> Request.doRequest(client: OkHttpClient, bodyReader: (Response) -> T): ApiResponse<T>
+        = client.newCall(this).execute().use { response ->
     when {
         response.isSuccessful ->
-            ApiResponse(response.code, response.headers, bodyReader(response.body))
+            ApiResponse(response.code, response.headers, bodyReader(response))
         response.isRedirection() ->
             throw ApiRedirectException(response.code, response.headers, response.errorMessage())
         response.isBadRequest() ->
@@ -84,10 +92,7 @@ public fun String.pathParam(vararg params: Pair<String, Any>): String =
     acc.replace(param.first, param.second.toString())
 }
 
-public fun <T> ResponseBody.deserialize(objectMapper: ObjectMapper, typeRef: TypeReference<T>): T? =
-        this.string().isNotBlankOrNull()?.let { objectMapper.readValue(it, typeRef) }
-
-public fun ResponseBody.deserialize(): ByteArray? = this.byteStream().readAllBytes()
+public fun ResponseBody.deserialize(): ByteArray = this.byteStream().readAllBytes()
 
 public fun String?.isNotBlankOrNull(): String? = if (this.isNullOrBlank()) null else this
 

@@ -65,23 +65,27 @@ class KtorClientGeneratorTest {
 
     @ParameterizedTest
     @MethodSource("fullApiTestCases")
-    fun `correct Ktor API models are generated`(testCaseName: String) {
+    fun `correct Ktor client library files are generated`(testCaseName: String) {
         val packages = Packages("examples.$testCaseName")
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
         val expectedApiModels = "/examples/$testCaseName/client/ktor/KtorApiModels.kt"
+        val expectedApiConfiguration = "/examples/$testCaseName/client/ktor/KtorApiConfiguration.kt"
 
-        val apiModels = KtorClientGenerator(
+        val generatedLibrary = KtorClientGenerator(
             packages,
             sourceApi
         )
             .generateLibrary(emptySet())
             .filterIsInstance<SimpleFile>()
-            .first { it.path.fileName.toString() == "KtorApiModels.kt" }
 
-        assertThatGenerated(apiModels.content).isEqualTo(expectedApiModels)
+        assertThatGenerated(generatedLibrary.contentOf("KtorApiModels.kt")).isEqualTo(expectedApiModels)
+        assertThatGenerated(generatedLibrary.contentOf("KtorApiConfiguration.kt")).isEqualTo(expectedApiConfiguration)
     }
+
+    private fun Collection<SimpleFile>.contentOf(fileName: String): String =
+        first { it.path.fileName.toString() == fileName }.content
 
     private fun optionsFor(testCaseName: String): Set<ClientCodeGenOptionType> =
         if (testCaseName == "tagGrouping") setOf(ClientCodeGenOptionType.GROUP_BY_TAG) else emptySet()

@@ -1,4 +1,4 @@
-package examples.okHttpClientPostWithoutRequestBody.client
+package examples.multipartUpload.client
 
 import kotlin.Int
 import kotlin.RuntimeException

@@ -13,10 +13,10 @@ import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
 import com.cjbooms.fabrikt.model.Destinations
 import com.cjbooms.fabrikt.model.GeneratedFile
-import com.cjbooms.fabrikt.model.HandlebarsTemplates
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.RequestParameter
+import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
@@ -283,28 +283,16 @@ class KtorClientGenerator(
     override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> {
         val codeDir = srcPath.resolve(CodeGenerationUtils.packageToPath(packages.base))
         val clientDir = codeDir.resolve("client")
-
-        val templateInput: Map<String, Any?> = mapOf(
-            "base" to packages.base,
-            "client" to packages.client,
-            "models" to packages.models,
-            "controllers" to packages.controllers,
-
-            "basePath" to (api.openApi3.servers.firstOrNull()?.url ?: ""),
-        )
+        val basePath = api.openApi3.servers.firstOrNull()?.url ?: ""
 
         return setOf(
-            HandlebarsTemplates.applyTemplate(
-                template = HandlebarsTemplates.ktorClientApiModels,
-                input = templateInput,
-                path = clientDir,
-                fileName = "KtorApiModels.kt"
+            SimpleFile(
+                clientDir.resolve("KtorApiModels.kt"),
+                KtorClientLibraryFiles.ktorApiModels(packages.client).toString()
             ),
-            HandlebarsTemplates.applyTemplate(
-                template = HandlebarsTemplates.ktorClientApiConfiguration,
-                input = templateInput,
-                path = clientDir,
-                fileName = "KtorApiConfiguration.kt"
+            SimpleFile(
+                clientDir.resolve("KtorApiConfiguration.kt"),
+                KtorClientLibraryFiles.ktorApiConfiguration(packages.client, basePath).toString()
             )
         )
     }
