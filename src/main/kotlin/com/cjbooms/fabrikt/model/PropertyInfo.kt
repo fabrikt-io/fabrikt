@@ -4,17 +4,17 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.getKeyIfSingleDiscriminat
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasAdditionalProperties
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasNoDiscriminator
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isDiscriminatorProperty
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectUnderAllOf
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedArrayDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedDiscriminatedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedEnumDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterface
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSubTypeDeductionEnabled
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedItemsSchemaUnderTopLevelArrayDefinition
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectUnderAllOf
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isRequired
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSchemaLess
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSimpleMapDefinition
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSubTypeDeductionEnabled
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeName
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeType
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
@@ -35,12 +35,11 @@ sealed class PropertyInfo {
     open val isInherited: Boolean = false
 
     companion object {
-
         data class Settings(
             val markAsInherited: Boolean = false,
             val markReadWriteOnlyOptional: Boolean = true,
             val markAllOptional: Boolean = false,
-            val excludeWriteOnly: Boolean = false
+            val excludeWriteOnly: Boolean = false,
         )
 
         val HTTP_SETTINGS = Settings()
@@ -49,38 +48,58 @@ sealed class PropertyInfo {
             settings: Settings,
             api: OpenApi3,
             enclosingSchema: Schema? = null,
-            additionalRequiredFields: Collection<String> = emptySet()
+            additionalRequiredFields: Collection<String> = emptySet(),
         ): Collection<PropertyInfo> {
             val combinedRequiredFields = this.requiredFields + additionalRequiredFields
-            
-            val results = mutableListOf<PropertyInfo>() +
-                allOfSchemas.flatMap {
-                    it.topLevelProperties(
-                        settings = maybeMarkInherited(settings, enclosingSchema, it),
-                        api = api,
-                        enclosingSchema = if (this.isInlinedObjectDefinition() || this.isInlinedItemsSchemaUnderTopLevelArrayDefinition()) enclosingSchema else this,
-                        additionalRequiredFields = combinedRequiredFields
-                    )
-                } +
-                (if (oneOfSchemas.isEmpty()) emptyList() else listOf(OneOfAny(oneOfSchemas.first()))) +
-                anyOfSchemas.flatMap {
-                    it.topLevelProperties(
-                        settings = settings.copy(markAllOptional = true),
-                        api = api,
-                        enclosingSchema = if (this.isInlinedObjectDefinition() || this.isInlinedItemsSchemaUnderTopLevelArrayDefinition()) enclosingSchema else this
-                    )
-                } +
-                getInLinedProperties(settings, api, enclosingSchema, combinedRequiredFields)
+
+            val results =
+                mutableListOf<PropertyInfo>() +
+                    allOfSchemas.flatMap {
+                        it.topLevelProperties(
+                            settings = maybeMarkInherited(settings, enclosingSchema, it),
+                            api = api,
+                            enclosingSchema =
+                                if (this.isInlinedObjectDefinition() ||
+                                    this.isInlinedItemsSchemaUnderTopLevelArrayDefinition()
+                                ) {
+                                    enclosingSchema
+                                } else {
+                                    this
+                                },
+                            additionalRequiredFields = combinedRequiredFields,
+                        )
+                    } +
+                    (if (oneOfSchemas.isEmpty()) emptyList() else listOf(OneOfAny(oneOfSchemas.first()))) +
+                    anyOfSchemas.flatMap {
+                        it.topLevelProperties(
+                            settings = settings.copy(markAllOptional = true),
+                            api = api,
+                            enclosingSchema =
+                                if (this.isInlinedObjectDefinition() ||
+                                    this.isInlinedItemsSchemaUnderTopLevelArrayDefinition()
+                                ) {
+                                    enclosingSchema
+                                } else {
+                                    this
+                                },
+                        )
+                    } +
+                    getInLinedProperties(settings, api, enclosingSchema, combinedRequiredFields)
             return results.distinctBy { it.oasKey }
         }
 
-        private fun maybeMarkInherited(settings: Settings, enclosingSchema: Schema?, it: Schema): Settings {
-            val isInherited = when {
-                it.safeName() == enclosingSchema?.name -> false
-                it.hasNoDiscriminator() -> settings.markAsInherited
-                it.isInlinedObjectUnderAllOf() && it.hasNoDiscriminator() -> settings.markAsInherited
-                else -> true
-            }
+        private fun maybeMarkInherited(
+            settings: Settings,
+            enclosingSchema: Schema?,
+            it: Schema,
+        ): Settings {
+            val isInherited =
+                when {
+                    it.safeName() == enclosingSchema?.name -> false
+                    it.hasNoDiscriminator() -> settings.markAsInherited
+                    it.isInlinedObjectUnderAllOf() && it.hasNoDiscriminator() -> settings.markAsInherited
+                    else -> true
+                }
             return settings.copy(markAsInherited = isInherited)
         }
 
@@ -88,127 +107,175 @@ sealed class PropertyInfo {
             settings: Settings,
             api: OpenApi3,
             enclosingSchema: Schema? = null,
-            additionalRequiredFields: Collection<String> = emptySet()
+            additionalRequiredFields: Collection<String> = emptySet(),
         ): Collection<PropertyInfo> {
             // Group raw keys by their normalized names to find any groups that would conflict.
             // If there are any conflicts, use the raw keys for that group as names, otherwise
             // use the normalized name. This prevents conflation when two different OAS property
             // names convert to the same camel case representation (i.e. `T` and `t`, or
             // `foo_bar` and `fooBar`)
-            val names = properties.keys
-                .groupBy { it.camelCase() }
-                .flatMap { (normalizedName, rawNames) ->
-                    if (rawNames.size > 1) {
-                        rawNames.map { it to it }
-                    } else {
-                        listOf(rawNames.first() to normalizedName)
-                    }
-                }.toMap()
-
-            val mainProperties: List<PropertyInfo> = properties.map { property ->
-                val oasKey = property.key
-                val name = names[oasKey]!!
-
-                when (property.value.safeType()) {
-                    OasType.Set.type ->
-                        ListField(
-                            isRequired = isRequired(
-                                api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
-                            ),
-                            name = name,
-                            oasKey = oasKey,
-                            schema = property.value,
-                            isInherited = settings.markAsInherited,
-                            parentSchema = this,
-                            enclosingSchema = enclosingSchema,
-                            hasUniqueItems = property.value.isUniqueItems
-                        )
-
-                    OasType.Array.type ->
-                        ListField(
-                            isRequired = isRequired(
-                                api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
-                            ),
-                            name = name,
-                            oasKey = oasKey,
-                            schema = property.value,
-                            isInherited = settings.markAsInherited,
-                            parentSchema = this,
-                            enclosingSchema = enclosingSchema,
-                            hasUniqueItems = property.value.isUniqueItems
-                        )
-
-                    OasType.Object.type ->
-                        if (property.value.isSimpleMapDefinition() || property.value.isSchemaLess())
-                            MapField(
-                                isRequired = isRequired(
-                                    api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
-                                ),
-                                name = name,
-                                oasKey = oasKey,
-                                schema = property.value,
-                                isInherited = settings.markAsInherited,
-                                parentSchema = this
-                            )
-                        else if (property.value.isInlinedObjectDefinition() ||
-                            (property.value.isOneOfSuperInterface() && property.value.isSubTypeDeductionEnabled()))
-                            ObjectInlinedField(
-                                isRequired = isRequired(
-                                    api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
-                                ),
-                                name = name,
-                                oasKey = oasKey,
-                                schema = property.value,
-                                isInherited = settings.markAsInherited,
-                                parentSchema = this,
-                                enclosingSchema = enclosingSchema
-                            )
-                        else
-                            ObjectRefField(
-                                isRequired = isRequired(
-                                    api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
-                                ),
-                                name = name,
-                                oasKey = oasKey,
-                                schema = property.value,
-                                isInherited = settings.markAsInherited,
-                                parentSchema = this
-                            )
-
-                    else ->
-                        if (property.value.isWriteOnly && settings.excludeWriteOnly) {
-                            null
+            val names =
+                properties.keys
+                    .groupBy { it.camelCase() }
+                    .flatMap { (normalizedName, rawNames) ->
+                        if (rawNames.size > 1) {
+                            rawNames.map { it to it }
                         } else {
-                            Field(
-                                isRequired = isRequired(
-                                    api, property, settings.markReadWriteOnlyOptional, settings.markAllOptional, additionalRequiredFields = additionalRequiredFields
-                                ),
-                                name = name,
-                                oasKey = oasKey,
-                                schema = property.value,
-                                isInherited = settings.markAsInherited,
-                                isPolymorphicDiscriminator = isDiscriminatorProperty(api, property),
-                                maybeDiscriminator = enclosingSchema?.let {
-                                    this.getKeyIfSingleDiscriminatorValue(api, property, it)
-                                },
-                                enclosingSchema = if (property.value.isInlinedEnumDefinition()) this else null
-                            )
+                            listOf(rawNames.first() to normalizedName)
                         }
-                }
-            }.filterNotNull()
+                    }.toMap()
 
-            return if (hasAdditionalProperties())
+            val mainProperties: List<PropertyInfo> =
+                properties
+                    .map { property ->
+                        val oasKey = property.key
+                        val name = names[oasKey]!!
+
+                        when (property.value.safeType()) {
+                            OasType.Set.type ->
+                                ListField(
+                                    isRequired =
+                                        isRequired(
+                                            api,
+                                            property,
+                                            settings.markReadWriteOnlyOptional,
+                                            settings.markAllOptional,
+                                            additionalRequiredFields = additionalRequiredFields,
+                                        ),
+                                    name = name,
+                                    oasKey = oasKey,
+                                    schema = property.value,
+                                    isInherited = settings.markAsInherited,
+                                    parentSchema = this,
+                                    enclosingSchema = enclosingSchema,
+                                    hasUniqueItems = property.value.isUniqueItems,
+                                )
+
+                            OasType.Array.type ->
+                                ListField(
+                                    isRequired =
+                                        isRequired(
+                                            api,
+                                            property,
+                                            settings.markReadWriteOnlyOptional,
+                                            settings.markAllOptional,
+                                            additionalRequiredFields = additionalRequiredFields,
+                                        ),
+                                    name = name,
+                                    oasKey = oasKey,
+                                    schema = property.value,
+                                    isInherited = settings.markAsInherited,
+                                    parentSchema = this,
+                                    enclosingSchema = enclosingSchema,
+                                    hasUniqueItems = property.value.isUniqueItems,
+                                )
+
+                            OasType.Object.type ->
+                                if (property.value.isSimpleMapDefinition() || property.value.isSchemaLess()) {
+                                    MapField(
+                                        isRequired =
+                                            isRequired(
+                                                api,
+                                                property,
+                                                settings.markReadWriteOnlyOptional,
+                                                settings.markAllOptional,
+                                                additionalRequiredFields = additionalRequiredFields,
+                                            ),
+                                        name = name,
+                                        oasKey = oasKey,
+                                        schema = property.value,
+                                        isInherited = settings.markAsInherited,
+                                        parentSchema = this,
+                                    )
+                                } else if (property.value.isInlinedObjectDefinition() ||
+                                    (property.value.isOneOfSuperInterface() && property.value.isSubTypeDeductionEnabled())
+                                ) {
+                                    ObjectInlinedField(
+                                        isRequired =
+                                            isRequired(
+                                                api,
+                                                property,
+                                                settings.markReadWriteOnlyOptional,
+                                                settings.markAllOptional,
+                                                additionalRequiredFields = additionalRequiredFields,
+                                            ),
+                                        name = name,
+                                        oasKey = oasKey,
+                                        schema = property.value,
+                                        isInherited = settings.markAsInherited,
+                                        parentSchema = this,
+                                        enclosingSchema = enclosingSchema,
+                                    )
+                                } else {
+                                    ObjectRefField(
+                                        isRequired =
+                                            isRequired(
+                                                api,
+                                                property,
+                                                settings.markReadWriteOnlyOptional,
+                                                settings.markAllOptional,
+                                                additionalRequiredFields = additionalRequiredFields,
+                                            ),
+                                        name = name,
+                                        oasKey = oasKey,
+                                        schema = property.value,
+                                        isInherited = settings.markAsInherited,
+                                        parentSchema = this,
+                                    )
+                                }
+
+                            else ->
+                                if (property.value.isWriteOnly && settings.excludeWriteOnly) {
+                                    null
+                                } else {
+                                    Field(
+                                        isRequired =
+                                            isRequired(
+                                                api,
+                                                property,
+                                                settings.markReadWriteOnlyOptional,
+                                                settings.markAllOptional,
+                                                additionalRequiredFields = additionalRequiredFields,
+                                            ),
+                                        name = name,
+                                        oasKey = oasKey,
+                                        schema = property.value,
+                                        isInherited = settings.markAsInherited,
+                                        isPolymorphicDiscriminator = isDiscriminatorProperty(api, property),
+                                        maybeDiscriminator =
+                                            enclosingSchema?.let {
+                                                this.getKeyIfSingleDiscriminatorValue(api, property, it)
+                                            },
+                                        enclosingSchema = if (property.value.isInlinedEnumDefinition()) this else null,
+                                    )
+                                }
+                        }
+                    }.filterNotNull()
+
+            return if (hasAdditionalProperties()) {
                 mainProperties
                     .plus(
-                        AdditionalProperties(additionalPropertiesSchema, settings.markAsInherited, this)
+                        AdditionalProperties(additionalPropertiesSchema, settings.markAsInherited, this),
                     )
-            else mainProperties
+            } else {
+                mainProperties
+            }
         }
     }
 
-    sealed class DiscriminatorKey(val stringValue: String, val modelName: String) {
-        class StringKey(value: String, modelName: String) : DiscriminatorKey(value, modelName)
-        class EnumKey(value: String, modelName: String) : DiscriminatorKey(value, modelName) {
+    sealed class DiscriminatorKey(
+        val stringValue: String,
+        val modelName: String,
+    ) {
+        class StringKey(
+            value: String,
+            modelName: String,
+        ) : DiscriminatorKey(value, modelName)
+
+        class EnumKey(
+            value: String,
+            modelName: String,
+        ) : DiscriminatorKey(value, modelName) {
             val enumKey = value.toEnumName()
         }
     }
@@ -221,7 +288,7 @@ sealed class PropertyInfo {
         override val isInherited: Boolean,
         val isPolymorphicDiscriminator: Boolean,
         val maybeDiscriminator: Map<String, DiscriminatorKey>?,
-        val enclosingSchema: Schema? = null
+        val enclosingSchema: Schema? = null,
     ) : PropertyInfo() {
         override val typeInfo: KotlinTypeInfo =
             KotlinTypeInfo.from(schema, oasKey, enclosingSchema)
@@ -250,7 +317,8 @@ sealed class PropertyInfo {
         val parentSchema: Schema,
         val enclosingSchema: Schema?,
         val hasUniqueItems: Boolean,
-    ) : PropertyInfo(), CollectionValidation {
+    ) : PropertyInfo(),
+        CollectionValidation {
         override val typeInfo: KotlinTypeInfo =
             if (isInherited) {
                 KotlinTypeInfo.from(schema, oasKey, parentSchema.takeIf { isInlined() })
@@ -263,7 +331,12 @@ sealed class PropertyInfo {
         private fun isInlined(): Boolean =
             schema
                 .itemsSchema
-                .let { it.isInlinedObjectDefinition() || it.isInlinedEnumDefinition() || it.isInlinedArrayDefinition() || it.isInlinedDiscriminatedOneOfSuperInterface() }
+                .let {
+                    it.isInlinedObjectDefinition() ||
+                        it.isInlinedEnumDefinition() ||
+                        it.isInlinedArrayDefinition() ||
+                        it.isInlinedDiscriminatedOneOfSuperInterface()
+                }
     }
 
     data class MapField(
@@ -272,7 +345,7 @@ sealed class PropertyInfo {
         override val oasKey: String,
         override val schema: Schema,
         override val isInherited: Boolean,
-        val parentSchema: Schema
+        val parentSchema: Schema,
     ) : PropertyInfo() {
         override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, oasKey)
     }
@@ -283,7 +356,7 @@ sealed class PropertyInfo {
         override val oasKey: String,
         override val schema: Schema,
         override val isInherited: Boolean,
-        val parentSchema: Schema
+        val parentSchema: Schema,
     ) : PropertyInfo() {
         override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, oasKey)
     }
@@ -295,7 +368,7 @@ sealed class PropertyInfo {
         override val schema: Schema,
         override val isInherited: Boolean,
         val parentSchema: Schema,
-        val enclosingSchema: Schema?
+        val enclosingSchema: Schema?,
     ) : PropertyInfo() {
         override val typeInfo: KotlinTypeInfo =
             if (isInherited) {
@@ -308,7 +381,7 @@ sealed class PropertyInfo {
     data class AdditionalProperties(
         override val schema: Schema,
         override val isInherited: Boolean,
-        val parentSchema: Schema
+        val parentSchema: Schema,
     ) : PropertyInfo() {
         override val name: String = "properties"
         override val oasKey: String = "properties"

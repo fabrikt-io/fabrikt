@@ -1,11 +1,11 @@
 package com.cjbooms.fabrikt.generators
 
 import com.beust.jcommander.ParameterException
-import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
 import com.cjbooms.fabrikt.cli.CodeGenerationType
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
+import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
@@ -36,49 +36,49 @@ import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ModelGeneratorTest {
-
     @Suppress("unused")
-    private fun testCases(): Stream<String> = Stream.of(
-        "additionalProperties",
-        "arrays",
-        "anyOfOneOfAllOf",
-        "deepNestedSharingReferences",
-        "defaultValues",
-        "duplicatePropertyHandling",
-        "enumExamples",
-        "enumPolymorphicDiscriminator",
-        "externalReferences/targeted",
-        "faultTolerantEnums",
-        "githubApi",
-        "inLinedObject",
-        "mapExamples",
-        "mapExamplesNonNullValues",
-        "mixingCamelSnakeLispCase",
-        "oneOfPolymorphicModels",
-        "optionalVsRequired",
-        "polymorphicModels",
-        "nestedPolymorphicModels",
-        "requiredReadOnly",
-        "validationAnnotations",
-        "wildCardTypes",
-        "singleAllOf",
-        "inlinedAggregatedObjects",
-        "responsesSchema",
-        "webhook",
-        "instantDateTime",
-        "discriminatedOneOf",
-        "openapi310",
-        "binary",
-        "oneOfMarkerInterface",
-        "untypedObject",
-        "primitiveTypes",
-        "leadingUnderscoreProperty",
-        "inlinedEnumParameter",
-        "unsupportedInlinedDefinitions",
-        "requestBodiesSchema",
-        "normalizedNameConflation",
-        "openEnum",
-    )
+    private fun testCases(): Stream<String> =
+        Stream.of(
+            "additionalProperties",
+            "arrays",
+            "anyOfOneOfAllOf",
+            "deepNestedSharingReferences",
+            "defaultValues",
+            "duplicatePropertyHandling",
+            "enumExamples",
+            "enumPolymorphicDiscriminator",
+            "externalReferences/targeted",
+            "faultTolerantEnums",
+            "githubApi",
+            "inLinedObject",
+            "mapExamples",
+            "mapExamplesNonNullValues",
+            "mixingCamelSnakeLispCase",
+            "oneOfPolymorphicModels",
+            "optionalVsRequired",
+            "polymorphicModels",
+            "nestedPolymorphicModels",
+            "requiredReadOnly",
+            "validationAnnotations",
+            "wildCardTypes",
+            "singleAllOf",
+            "inlinedAggregatedObjects",
+            "responsesSchema",
+            "webhook",
+            "instantDateTime",
+            "discriminatedOneOf",
+            "openapi310",
+            "binary",
+            "oneOfMarkerInterface",
+            "untypedObject",
+            "primitiveTypes",
+            "leadingUnderscoreProperty",
+            "inlinedEnumParameter",
+            "unsupportedInlinedDefinitions",
+            "requestBodiesSchema",
+            "normalizedNameConflation",
+            "openEnum",
+        )
 
     @BeforeEach
     fun init() {
@@ -89,8 +89,7 @@ class ModelGeneratorTest {
     }
 
     @Test
-    fun `debug single test`() =
-        `correct models are generated for different OpenApi Specifications`("discriminatedOneOf")
+    fun `debug single test`() = `correct models are generated for different OpenApi Specifications`("discriminatedOneOf")
 
     @ParameterizedTest
     @MethodSource("testCases")
@@ -130,22 +129,24 @@ class ModelGeneratorTest {
         val expectedModelsPath = "/examples/$testCaseName/models/"
         val expectedModels = getFileNamesInFolder(Path.of("src/test/resources$expectedModelsPath"))
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            sourceApi,
-        ).generate()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                sourceApi,
+            ).generate()
 
         val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
         val tempDirectory = Files.createTempDirectory("model_generator_test_${testCaseName.replace("/", ".")}")
         sourceSet.forEach {
             it.writeFileTo(tempDirectory.toFile())
         }
-        val tempFolderContents = tempDirectory
-            .resolve(basePackage.replace(".", File.separator))
-            .resolve("models")
-            .takeIf { Files.exists(it) && Files.isDirectory(it) }
-            ?.let(::readFolder)
-            ?: emptyMap()
+        val tempFolderContents =
+            tempDirectory
+                .resolve(basePackage.replace(".", File.separator))
+                .resolve("models")
+                .takeIf { Files.exists(it) && Files.isDirectory(it) }
+                ?.let(::readFolder)
+                ?: emptyMap()
         tempFolderContents.forEach {
             if (expectedModels.contains(it.key)) {
                 assertThatGenerated(it.value)
@@ -153,7 +154,7 @@ class ModelGeneratorTest {
             } else {
                 failGenerated(it.value).asFileNotFound(
                     "$expectedModelsPath${it.key}",
-                    "File not found in expected models"
+                    "File not found in expected models",
                 )
             }
         }
@@ -172,17 +173,19 @@ class ModelGeneratorTest {
         val apiLocation = javaClass.getResource("/examples/openEnum/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            sourceApi,
-        ).generate()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                sourceApi,
+            ).generate()
 
         val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
         val tempDirectory = Files.createTempDirectory("model_generator_test_openEnum_fault_tolerant")
         sourceSet.forEach { it.writeFileTo(tempDirectory.toFile()) }
-        val generated = readFolder(
-            tempDirectory.resolve(basePackage.replace(".", File.separator)).resolve("models")
-        )
+        val generated =
+            readFolder(
+                tempDirectory.resolve(basePackage.replace(".", File.separator)).resolve("models"),
+            )
 
         // The open enum anyOf is NOT converted: no OpenEnum model is emitted ...
         assertThat(generated).doesNotContainKey("OpenEnum.kt")
@@ -198,22 +201,23 @@ class ModelGeneratorTest {
     fun `generate models with suffix`() {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.HTTP_MODELS),
-            modelSuffix = "Dto"
+            modelSuffix = "Dto",
         )
         val basePackage = "examples.modelSuffix"
         val apiLocation = javaClass.getResource("/examples/modelSuffix/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModelsPath = "/examples/modelSuffix/models/"
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            sourceApi,
-        ).generate()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                sourceApi,
+            ).generate()
 
         models.files.forEach { file ->
             val key = "${file.name}.kt"
             val content = file.toString()
-            assertThatGenerated(content).isEqualTo("$expectedModelsPath${key}")
+            assertThatGenerated(content).isEqualTo("$expectedModelsPath$key")
         }
     }
 
@@ -221,22 +225,23 @@ class ModelGeneratorTest {
     fun `generate models with file comment`() {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.HTTP_MODELS),
-            outputOptions = setOf(OutputOptionType.ADD_FILE_DISCLAIMER)
+            outputOptions = setOf(OutputOptionType.ADD_FILE_DISCLAIMER),
         )
         val basePackage = "examples.fileComment"
         val apiLocation = javaClass.getResource("/examples/fileComment/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModelsPath = "/examples/fileComment/models/"
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            sourceApi,
-        ).generate()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                sourceApi,
+            ).generate()
 
         models.files.forEach { file ->
             val key = "${file.name}.kt"
             val content = file.toString()
-            assertThatGenerated(content).isEqualTo("$expectedModelsPath${key}")
+            assertThatGenerated(content).isEqualTo("$expectedModelsPath$key")
         }
     }
 
@@ -247,12 +252,13 @@ class ModelGeneratorTest {
         val expectedJakartaModel = "/examples/jakartaValidationAnnotations/models/Models.kt"
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.HTTP_MODELS),
-            validationLibrary = ValidationLibrary.JAKARTA_VALIDATION
+            validationLibrary = ValidationLibrary.JAKARTA_VALIDATION,
         )
-        val models = ModelGenerator(
-            Packages(basePackage),
-            SourceApi(spec),
-        ).generate()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                SourceApi(spec),
+            ).generate()
 
         assertThat(models.files.size).isEqualTo(4)
         val validationAnnotationsModel = models.files.first { it.name == "ValidationAnnotations" }
@@ -267,12 +273,13 @@ class ModelGeneratorTest {
         val expectedJakartaModel = "/examples/noValidationAnnotations/models/Models.kt"
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.HTTP_MODELS),
-            validationLibrary = ValidationLibrary.NO_VALIDATION
+            validationLibrary = ValidationLibrary.NO_VALIDATION,
         )
-        val models = ModelGenerator(
-            Packages(basePackage),
-            SourceApi(spec),
-        ).generate()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                SourceApi(spec),
+            ).generate()
 
         assertThat(models.files.size).isEqualTo(4)
         val validationAnnotationsModel = models.files.first { it.name == "ValidationAnnotations" }
@@ -286,52 +293,61 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/javaSerializableModels/api.yaml")
         val expectedModels = "/examples/javaSerializableModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(
-                ModelCodeGenOptionType.JAVA_SERIALIZATION,
-                ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF
-            ),
+            modelOptions =
+                setOf(
+                    ModelCodeGenOptionType.JAVA_SERIALIZATION,
+                    ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF,
+                ),
         )
-        val models = ModelGenerator(
-            Packages(basePackage),
-            SourceApi(spec),
-        )
-            .generate()
-            .toSingleFile()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                SourceApi(spec),
+            ).generate()
+                .toSingleFile()
 
         assertThatGenerated(models).isEqualTo(expectedModels)
     }
 
     @Test
-    fun `missing object reference throws constructive message`() = assertExceptionWithMessage(
-        "/badInput/ErrorMissingRefObject.yaml",
-        "Property 'propB' cannot be parsed to a Schema. Check your input",
-    )
+    fun `missing object reference throws constructive message`() =
+        assertExceptionWithMessage(
+            "/badInput/ErrorMissingRefObject.yaml",
+            "Property 'propB' cannot be parsed to a Schema. Check your input",
+        )
 
     @Test
-    fun `mixing oneOf with object type throws constructive error`() = assertExceptionWithMessage(
-        "/badInput/ErrorMixingOneOfWithObject.yaml",
-        "schema contains an invalid combination of properties and `oneOf | anyOf | allOf`",
-    )
+    fun `mixing oneOf with object type throws constructive error`() =
+        assertExceptionWithMessage(
+            "/badInput/ErrorMixingOneOfWithObject.yaml",
+            "schema contains an invalid combination of properties and `oneOf | anyOf | allOf`",
+        )
 
     @Test
-    fun `mixing anyOf with object type throws constructive error`() = assertExceptionWithMessage(
-        "/badInput/ErrorMixingAnyOfWithObject.yaml",
-        "schema contains an invalid combination of properties and `oneOf | anyOf | allOf`",
-    )
+    fun `mixing anyOf with object type throws constructive error`() =
+        assertExceptionWithMessage(
+            "/badInput/ErrorMixingAnyOfWithObject.yaml",
+            "schema contains an invalid combination of properties and `oneOf | anyOf | allOf`",
+        )
 
     @Test
-    fun `mixing allOf with object type throws constructive error`() = assertExceptionWithMessage(
-        "/badInput/ErrorMixingAllOfWithObject.yaml",
-        "schema contains an invalid combination of properties and `oneOf | anyOf | allOf`",
-    )
+    fun `mixing allOf with object type throws constructive error`() =
+        assertExceptionWithMessage(
+            "/badInput/ErrorMixingAllOfWithObject.yaml",
+            "schema contains an invalid combination of properties and `oneOf | anyOf | allOf`",
+        )
 
-    private fun assertExceptionWithMessage(path: String, expectedMessage: String) {
+    private fun assertExceptionWithMessage(
+        path: String,
+        expectedMessage: String,
+    ) {
         val spec = readTextResource(path)
-        val exception = assertThrows<ParameterException> {
-            ModelGenerator(Packages("blah"), SourceApi(spec))
-                .generate()
-                .toSingleFile()
-        }
+        val exception =
+            assertThrows<ParameterException> {
+                ModelGenerator(Packages("blah"), SourceApi(spec))
+                    .generate()
+                    .toSingleFile()
+            }
         assertThat(exception.message).contains(expectedMessage)
     }
 
@@ -341,18 +357,19 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/quarkusReflectionModels/api.yaml")
         val expectedModels = "/examples/quarkusReflectionModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(
-                ModelCodeGenOptionType.QUARKUS_REFLECTION,
-                ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF
-            ),
+            modelOptions =
+                setOf(
+                    ModelCodeGenOptionType.QUARKUS_REFLECTION,
+                    ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF,
+                ),
         )
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            SourceApi(spec),
-        )
-            .generate()
-            .toSingleFile()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                SourceApi(spec),
+            ).generate()
+                .toSingleFile()
 
         assertThatGenerated(models).isEqualTo(expectedModels)
     }
@@ -363,18 +380,19 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/micronautIntrospectedModels/api.yaml")
         val expectedModels = "/examples/micronautIntrospectedModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(
-                ModelCodeGenOptionType.MICRONAUT_INTROSPECTION,
-                ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF
-            ),
+            modelOptions =
+                setOf(
+                    ModelCodeGenOptionType.MICRONAUT_INTROSPECTION,
+                    ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF,
+                ),
         )
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            SourceApi(spec),
-        )
-            .generate()
-            .toSingleFile()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                SourceApi(spec),
+            ).generate()
+                .toSingleFile()
 
         assertThatGenerated(models).isEqualTo(expectedModels)
     }
@@ -385,18 +403,19 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/micronautSerdeModels/api.yaml")
         val expectedModels = "/examples/micronautSerdeModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(
-                ModelCodeGenOptionType.MICRONAUT_SERDEABLE,
-                ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF
-            ),
+            modelOptions =
+                setOf(
+                    ModelCodeGenOptionType.MICRONAUT_SERDEABLE,
+                    ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF,
+                ),
         )
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            SourceApi(spec),
-        )
-            .generate()
-            .toSingleFile()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                SourceApi(spec),
+            ).generate()
+                .toSingleFile()
 
         assertThatGenerated(models).isEqualTo(expectedModels)
     }
@@ -407,18 +426,19 @@ class ModelGeneratorTest {
         val spec = readTextResource("/examples/micronautReflectionModels/api.yaml")
         val expectedModels = "/examples/micronautReflectionModels/models/Models.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(
-                ModelCodeGenOptionType.MICRONAUT_REFLECTION,
-                ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF
-            ),
+            modelOptions =
+                setOf(
+                    ModelCodeGenOptionType.MICRONAUT_REFLECTION,
+                    ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF,
+                ),
         )
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            SourceApi(spec),
-        )
-            .generate()
-            .toSingleFile()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                SourceApi(spec),
+            ).generate()
+                .toSingleFile()
 
         assertThatGenerated(models).isEqualTo(expectedModels)
     }
@@ -432,12 +452,12 @@ class ModelGeneratorTest {
             modelOptions = setOf(ModelCodeGenOptionType.INCLUDE_COMPANION_OBJECT),
         )
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            SourceApi(spec),
-        )
-            .generate()
-            .toSingleFile()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                SourceApi(spec),
+            ).generate()
+                .toSingleFile()
 
         assertThatGenerated(models).isEqualTo(expectedModels)
     }
@@ -452,12 +472,12 @@ class ModelGeneratorTest {
             validationLibrary = ValidationLibrary.NO_VALIDATION,
         )
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            SourceApi(spec),
-        )
-            .generate()
-            .toSingleFile()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                SourceApi(spec),
+            ).generate()
+                .toSingleFile()
 
         assertThatGenerated(models).isEqualTo(expectedModels)
     }
@@ -468,8 +488,9 @@ class ModelGeneratorTest {
         models
             .sortedBy { it.spec.name }
             .forEach {
-                val builder = singleFileBuilder
-                    .addType(it.spec)
+                val builder =
+                    singleFileBuilder
+                        .addType(it.spec)
                 builder.build()
             }
         return Linter.lintString(singleFileBuilder.build().toString())

@@ -8,7 +8,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class NormalisedStringTest {
-
     @Test
     fun `should transform string with underscores to pascal case`() {
         assertThat("abc_def-hij-øæå-ØÆÅ".pascalCase()).isEqualTo("AbcDefHijØæåØÆÅ")

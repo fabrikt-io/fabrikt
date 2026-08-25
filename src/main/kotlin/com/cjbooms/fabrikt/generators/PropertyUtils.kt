@@ -23,11 +23,11 @@ data class ClassSettings(
     val polymorphyType: PolymorphyType,
     val extensions: Map<String, Any> = emptyMap(),
 ) {
-
     val isMergePatchPattern = extensions["x-json-merge-patch"] as? Boolean ?: false
     val addJsonIncludeNonNullAnnotation = extensions["x-jackson-include-non-null"] as? Boolean ?: false
-    val nullableObjectRefs: Set<String> = (extensions["x-FABRIKT-INTERNAL-nullable"] as? List<*>)?.map { it.toString() }?.toSet()
-        ?: emptySet()
+    val nullableObjectRefs: Set<String> =
+        (extensions["x-FABRIKT-INTERNAL-nullable"] as? List<*>)?.map { it.toString() }?.toSet()
+            ?: emptySet()
 
     enum class PolymorphyType {
         NONE,
@@ -49,8 +49,11 @@ object PropertyUtils {
         serializationAnnotations: SerializationAnnotations = JacksonAnnotations,
         jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.NONE,
     ) {
-        if (this.typeInfo is KotlinTypeInfo.UntypedObject && !serializationAnnotations.supportsAdditionalProperties)
-            throw UnsupportedOperationException("Untyped objects not supported by selected serialization library (${this.oasKey}: ${this.schema})")
+        if (this.typeInfo is KotlinTypeInfo.UntypedObject && !serializationAnnotations.supportsAdditionalProperties) {
+            throw UnsupportedOperationException(
+                "Untyped objects not supported by selected serialization library (${this.oasKey}: ${this.schema})",
+            )
+        }
 
         val wrappedType =
             if (classSettings.isMergePatchPattern && !this.isRequired) {
@@ -61,14 +64,17 @@ object PropertyUtils {
             } else {
                 type
             }
-        val property = PropertySpec.builder(name, wrappedType)
-            .apply {
-                schema.toKDoc()?.let { addKdoc(it) }
-            }
+        val property =
+            PropertySpec
+                .builder(name, wrappedType)
+                .apply {
+                    schema.toKDoc()?.let { addKdoc(it) }
+                }
 
         if (this is PropertyInfo.AdditionalProperties) {
-            if (!serializationAnnotations.supportsAdditionalProperties)
+            if (!serializationAnnotations.supportsAdditionalProperties) {
                 throw UnsupportedOperationException("Additional properties not supported by selected serialization library")
+            }
 
             property.initializer(name)
             serializationAnnotations.addIgnore(property)
@@ -79,11 +85,13 @@ object PropertyUtils {
             val value =
                 when (typeInfo) {
                     is KotlinTypeInfo.MapTypeAdditionalProperties -> {
-                        Map::class.asTypeName()
+                        Map::class
+                            .asTypeName()
                             .parameterizedBy(String::class.asTypeName(), parameterizedType.maybeMakeMapValueNullable())
                     }
                     is KotlinTypeInfo.SimpleTypedAdditionalProperties -> {
-                        typeInfo.parameterizedType.modelKClass.asTypeName()
+                        typeInfo.parameterizedType.modelKClass
+                            .asTypeName()
                             .maybeMakeMapValueNullable()
                     }
                     else -> {
@@ -91,16 +99,20 @@ object PropertyUtils {
                     }
                 }.maybeMakeMapValueNullable()
 
-            val getterSpecBuilder = FunSpec.builder("get")
-                .returns(Map::class.asTypeName().parameterizedBy(String::class.asTypeName(), value))
-                .addStatement("return $name")
+            val getterSpecBuilder =
+                FunSpec
+                    .builder("get")
+                    .returns(Map::class.asTypeName().parameterizedBy(String::class.asTypeName(), value))
+                    .addStatement("return $name")
             serializationAnnotations.addGetter(getterSpecBuilder)
             classBuilder.addFunction(getterSpecBuilder.build())
 
-            val setterSpecBuilder = FunSpec.builder("set")
-                .addParameter("name", String::class)
-                .addParameter("value", value)
-                .addStatement("$name[name] = value")
+            val setterSpecBuilder =
+                FunSpec
+                    .builder("set")
+                    .addParameter("name", String::class)
+                    .addParameter("value", value)
+                    .addStatement("$name[name] = value")
             serializationAnnotations.addSetter(setterSpecBuilder)
             classBuilder.addFunction(setterSpecBuilder.build())
         } else {
@@ -177,15 +189,19 @@ object PropertyUtils {
                 val constructorParameter: ParameterSpec.Builder = ParameterSpec.builder(name, wrappedType)
                 val oasDefault = getDefaultValue(this, parameterizedType)
 
-                val enforceNonNull = jacksonNullabilityMode in setOf(
-                    JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL,
-                    JacksonNullabilityMode.STRICT
-                )
+                val enforceNonNull =
+                    jacksonNullabilityMode in
+                        setOf(
+                            JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL,
+                            JacksonNullabilityMode.STRICT,
+                        )
 
-                val enforceRequiredNullable = jacksonNullabilityMode in setOf(
-                    JacksonNullabilityMode.ENFORCE_REQUIRED_NULLABLE,
-                    JacksonNullabilityMode.STRICT
-                )
+                val enforceRequiredNullable =
+                    jacksonNullabilityMode in
+                        setOf(
+                            JacksonNullabilityMode.ENFORCE_REQUIRED_NULLABLE,
+                            JacksonNullabilityMode.STRICT,
+                        )
 
                 val isSchemaNullable = isSchemaNullable(classSettings)
 
@@ -206,11 +222,12 @@ object PropertyUtils {
                             }
                         constructorParameter.defaultValue(wrappedDefault.getDefault())
                     } else {
-                        val undefinedDefault = if (classSettings.isMergePatchPattern) {
-                            "JsonNullable.undefined()"
-                        } else {
-                            "null"
-                        }
+                        val undefinedDefault =
+                            if (classSettings.isMergePatchPattern) {
+                                "JsonNullable.undefined()"
+                            } else {
+                                "null"
+                            }
                         constructorParameter.defaultValue(undefinedDefault)
                     }
                 }
@@ -233,9 +250,11 @@ object PropertyUtils {
     private fun Map<String, PropertyInfo.DiscriminatorKey>?.getDiscriminatorMappings(
         schemaName: String,
     ): List<PropertyInfo.DiscriminatorKey> =
-        this?.filter {
-            it.value.stringValue == schemaName || it.value.modelName == schemaName
-        }?.map { it.value }.orEmpty()
+        this
+            ?.filter {
+                it.value.stringValue == schemaName || it.value.modelName == schemaName
+            }?.map { it.value }
+            .orEmpty()
 
     private fun PropertyInfo.Field.isSubTypeDiscriminatorWithNoValue(classType: ClassSettings) =
         classType.polymorphyType == ClassSettings.PolymorphyType.SUB &&
@@ -245,32 +264,36 @@ object PropertyUtils {
     private fun PropertyInfo.Field.isSubTypeDiscriminatorWithMultipleValues(
         classType: ClassSettings,
         schemaName: String,
-    ) =
-        classType.polymorphyType == ClassSettings.PolymorphyType.SUB &&
-            isPolymorphicDiscriminator &&
-            maybeDiscriminator.getDiscriminatorMappings(schemaName).size > 1
+    ) = classType.polymorphyType == ClassSettings.PolymorphyType.SUB &&
+        isPolymorphicDiscriminator &&
+        maybeDiscriminator.getDiscriminatorMappings(schemaName).size > 1
 
-    private fun getDefaultValue(propTypeInfo: PropertyInfo, parameterizedType: TypeName): OasDefault? {
-        return when (propTypeInfo) {
-            is PropertyInfo.Field -> propTypeInfo.schema.default?.let {
-                val className = parameterizedType as? ClassName
-                OasDefault.from(propTypeInfo.typeInfo, className, it)
-            }
+    private fun getDefaultValue(
+        propTypeInfo: PropertyInfo,
+        parameterizedType: TypeName,
+    ): OasDefault? =
+        when (propTypeInfo) {
+            is PropertyInfo.Field ->
+                propTypeInfo.schema.default?.let {
+                    val className = parameterizedType as? ClassName
+                    OasDefault.from(propTypeInfo.typeInfo, className, it)
+                }
 
             else -> null
         }
-    }
 
     fun PropertyInfo.isSchemaNullable(classSettings: ClassSettings): Boolean =
         schema.isNullable || classSettings.nullableObjectRefs.contains(oasKey)
 
-    fun PropertyInfo.isNullable(classSettings: ClassSettings) = when (this) {
-        is PropertyInfo.Field -> !isRequired && schema.default == null || isSchemaNullable(classSettings)
-        is PropertyInfo.ListField, is PropertyInfo.MapField,
-        is PropertyInfo.ObjectRefField, is PropertyInfo.ObjectInlinedField ->
-            !isRequired || isSchemaNullable(classSettings)
-        else -> !isRequired
-    }
+    fun PropertyInfo.isNullable(classSettings: ClassSettings) =
+        when (this) {
+            is PropertyInfo.Field -> !isRequired && schema.default == null || isSchemaNullable(classSettings)
+            is PropertyInfo.ListField, is PropertyInfo.MapField,
+            is PropertyInfo.ObjectRefField, is PropertyInfo.ObjectInlinedField,
+            ->
+                !isRequired || isSchemaNullable(classSettings)
+            else -> !isRequired
+        }
 
     /**
      * Current Open API v3 Spec validation keys:

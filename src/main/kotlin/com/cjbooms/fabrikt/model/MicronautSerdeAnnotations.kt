@@ -11,13 +11,11 @@ import com.squareup.kotlinpoet.TypeSpec
 object MicronautSerdeAnnotations : SerializationAnnotations by JacksonAnnotations {
     private val SERDEABLE = ClassName("io.micronaut.serde.annotation", "Serdeable")
 
-    override fun addClassAnnotation(typeSpecBuilder: TypeSpec.Builder) =
-        typeSpecBuilder.addAnnotation(SERDEABLE)
+    override fun addClassAnnotation(typeSpecBuilder: TypeSpec.Builder) = typeSpecBuilder.addAnnotation(SERDEABLE)
 
     /**
      * Micronaut Serde has built-in enum serialization and does not require @JsonValue annotation.
      * Returning the builder as-is (no-op).
      */
-    override fun addEnumPropertyAnnotation(propSpecBuilder: PropertySpec.Builder) =
-        propSpecBuilder
+    override fun addEnumPropertyAnnotation(propSpecBuilder: PropertySpec.Builder) = propSpecBuilder
 }

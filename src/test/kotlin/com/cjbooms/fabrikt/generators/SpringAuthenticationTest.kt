@@ -23,10 +23,11 @@ class SpringAuthenticationTest {
     private val basePackage = "authenticationTest"
 
     @Suppress("unused")
-    private fun testCasesNoAuthentication(): Stream<String> = Stream.of(
-        "global_authentication_prohibited.yml",
-        "global_authentication_none.yml",
-    )
+    private fun testCasesNoAuthentication(): Stream<String> =
+        Stream.of(
+            "global_authentication_prohibited.yml",
+            "global_authentication_none.yml",
+        )
 
     private fun setupTest(testPath: String): Collection<FileSpec> {
         val api = SourceApi(readTextResource("/authenticationTest/$testPath"))
@@ -34,7 +35,7 @@ class SpringAuthenticationTest {
             Packages(basePackage),
             api,
             JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.AUTHENTICATION)
+            setOf(ControllerCodeGenOptionType.AUTHENTICATION),
         ).generate().files
     }
 
@@ -52,8 +53,10 @@ class SpringAuthenticationTest {
     fun `ensure that global authentication set to any authentication will add the required parameter`() {
         val controllers = setupTest("global_authentication_required.yml")
 
-        val functionParameters = controllers.flatMap { it.members }
-            .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.parameters } }
+        val functionParameters =
+            controllers
+                .flatMap { it.members }
+                .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.parameters } }
 
         assertThat(functionParameters).anySatisfy { parameter ->
             assertThat(parameter.name).isEqualTo("authentication")
@@ -64,8 +67,10 @@ class SpringAuthenticationTest {
     fun `ensure that global authentication set to any AND empty authentication will add the optional parameter`() {
         val controllers = setupTest("global_authentication_optional.yml")
 
-        val functionParameters = controllers.flatMap { it.members }
-            .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.parameters } }
+        val functionParameters =
+            controllers
+                .flatMap { it.members }
+                .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.parameters } }
 
         assertThat(functionParameters).anySatisfy { parameter ->
             assertThat(parameter.name).isEqualTo("authentication")
@@ -78,8 +83,10 @@ class SpringAuthenticationTest {
     fun `ensure that global authentication set to empty authentication will add the prohibited parameter`(testCasePath: String) {
         val controllers = setupTest(testCasePath)
 
-        val functionParameters = controllers.flatMap { it.members }
-            .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.parameters } }
+        val functionParameters =
+            controllers
+                .flatMap { it.members }
+                .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.parameters } }
 
         assertThat(functionParameters).noneSatisfy { parameter ->
             assertThat(parameter.name).isEqualTo("authentication")

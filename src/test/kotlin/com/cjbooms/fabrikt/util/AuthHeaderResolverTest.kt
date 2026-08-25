@@ -6,13 +6,13 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 class AuthHeaderResolverTest {
-
     @Test
     fun `resolveHeaders substitutes env var placeholders`() {
-        val headers = AuthHeaderResolver.resolveHeaders(
-            listOf("Authorization: Bearer \${TOKEN}", "X-Other: \${MISSING:-default}"),
-            env = { if (it == "TOKEN") "secret" else null },
-        )
+        val headers =
+            AuthHeaderResolver.resolveHeaders(
+                listOf("Authorization: Bearer \${TOKEN}", "X-Other: \${MISSING:-default}"),
+                env = { if (it == "TOKEN") "secret" else null },
+            )
 
         assertThat(headers).containsExactly(
             "Authorization" to "Bearer secret",
@@ -22,10 +22,11 @@ class AuthHeaderResolverTest {
 
     @Test
     fun `resolveHeaders prefers whole env var name over placeholder expansion`() {
-        val headers = AuthHeaderResolver.resolveHeaders(
-            listOf("Authorization: API_TOKEN"),
-            env = { if (it == "API_TOKEN") "env-secret" else null },
-        )
+        val headers =
+            AuthHeaderResolver.resolveHeaders(
+                listOf("Authorization: API_TOKEN"),
+                env = { if (it == "API_TOKEN") "env-secret" else null },
+            )
 
         assertThat(headers).containsExactly("Authorization" to "env-secret")
     }

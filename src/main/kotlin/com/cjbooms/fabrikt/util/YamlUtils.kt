@@ -19,30 +19,31 @@ import java.net.URI
 import java.nio.file.Paths
 
 object YamlUtils {
-
     val objectMapper: ObjectMapper =
         ObjectMapper(
-            YAMLFactory.builder()
+            YAMLFactory
+                .builder()
                 .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
                 .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
                 .increaseMaxFileSize()
-                .build()
-        )
-            .registerKotlinModule()
+                .build(),
+        ).registerKotlinModule()
             .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
     private val internalMapper: ObjectMapper =
         ObjectMapper(
-            YAMLFactory.builder()
+            YAMLFactory
+                .builder()
                 .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
                 .increaseMaxFileSize()
-                .build()
+                .build(),
         )
 
-    private fun YAMLFactoryBuilder.increaseMaxFileSize(): YAMLFactoryBuilder = loaderOptions(
-        LoaderOptions().apply {
-            codePointLimit = 100 * 1024 * 1024 // 100MB
-        }
-    )
+    private fun YAMLFactoryBuilder.increaseMaxFileSize(): YAMLFactoryBuilder =
+        loaderOptions(
+            LoaderOptions().apply {
+                codePointLimit = 100 * 1024 * 1024 // 100MB
+            },
+        )
 
     /**
      * Returns true only if the content contains at least one anchor definition that is also
@@ -72,19 +73,22 @@ object YamlUtils {
         return Yaml(options).dump(deepCopy(data))
     }
 
-    private fun deepCopy(value: Any?): Any? = when (value) {
-        is Map<*, *> -> value.entries.associateTo(LinkedHashMap()) { (k, v) -> k to deepCopy(v) }
-        is List<*> -> value.map { deepCopy(it) }
-        else -> value
-    }
+    private fun deepCopy(value: Any?): Any? =
+        when (value) {
+            is Map<*, *> -> value.entries.associateTo(LinkedHashMap()) { (k, v) -> k to deepCopy(v) }
+            is List<*> -> value.map { deepCopy(it) }
+            else -> value
+        }
 
-    fun mergeYamlTrees(mainTree: String, updateTree: String) =
-        internalMapper.writeValueAsString(
-            mergeNodes(
-                internalMapper.readTree(mainTree),
-                internalMapper.readTree(updateTree),
-            ),
-        )!!
+    fun mergeYamlTrees(
+        mainTree: String,
+        updateTree: String,
+    ) = internalMapper.writeValueAsString(
+        mergeNodes(
+            internalMapper.readTree(mainTree),
+            internalMapper.readTree(updateTree),
+        ),
+    )!!
 
     fun parseOpenApi(
         input: String,
@@ -130,7 +134,10 @@ object YamlUtils {
      * The below merge function has been shamelessly stolen from Stackoverflow: https://stackoverflow.com/a/32447591/1026785
      * and converted to much nicer Kotlin implementation
      */
-    private fun mergeNodes(currentTree: JsonNode, incomingTree: JsonNode): JsonNode {
+    private fun mergeNodes(
+        currentTree: JsonNode,
+        incomingTree: JsonNode,
+    ): JsonNode {
         incomingTree.fieldNames().forEach { fieldName ->
             val currentNode = currentTree.get(fieldName)
             val incomingNode = incomingTree.get(fieldName)

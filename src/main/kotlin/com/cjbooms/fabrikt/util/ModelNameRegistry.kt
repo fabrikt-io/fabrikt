@@ -31,7 +31,7 @@ object ModelNameRegistry {
     ): String {
         val modelClassName = schema.toModelClassName(schemaInfoName, enclosingSchema, valueSuffix)
         var suggestion = modelClassName
-        
+
         if (allocate) {
             while (allocatedNames.contains(suggestion)) {
                 suggestion += SUFFIX
@@ -53,38 +53,42 @@ object ModelNameRegistry {
         schemaInfoName: String? = null,
         enclosingSchema: Schema? = null,
         valueSuffix: Boolean = false,
-    ): String = buildString {
-        val enclosingClassName = enclosingSchema?.toModelClassName()
-        if (enclosingClassName != null && enclosingSchema.type != "array") {
-            append(enclosingClassName)
+    ): String =
+        buildString {
+            val enclosingClassName = enclosingSchema?.toModelClassName()
+            if (enclosingClassName != null && enclosingSchema.type != "array") {
+                append(enclosingClassName)
+            }
+            val modelClassName = schemaInfoName?.toModelClassName() ?: safeName().toModelClassName()
+            append(modelClassName)
+            if (valueSuffix) {
+                append("Value")
+            }
+            val modelClassNameSuffix = MutableSettings.modelSuffix
+            append(modelClassNameSuffix)
         }
-        val modelClassName = schemaInfoName?.toModelClassName() ?: safeName().toModelClassName()
-        append(modelClassName)
-        if (valueSuffix) {
-            append("Value")
-        }
-        val modelClassNameSuffix = MutableSettings.modelSuffix
-        append(modelClassNameSuffix)
-    }
 
     private fun resolveTag(
         schema: Schema,
         enclosingSchema: Schema? = null,
         valueSuffix: Boolean = false,
         schemaInfoName: String? = null,
-    ): String =
-        resolveTag(schema, schema.toModelClassName(schemaInfoName, enclosingSchema, valueSuffix))
+    ): String = resolveTag(schema, schema.toModelClassName(schemaInfoName, enclosingSchema, valueSuffix))
 
-    private fun resolveTag(schema: Schema, modelClassName: String): String {
+    private fun resolveTag(
+        schema: Schema,
+        modelClassName: String,
+    ): String {
         val overlay = Overlay.of(schema)
         val uri = URL(overlay.jsonReference)
         return "file:${uri.file}#$modelClassName"
     }
 
     /** Retrieve a model class name created with [ModelNameRegistry.register]. */
-    operator fun get(tag: String): Result<String> = runCatching {
-        requireNotNull(tagToName[tag]) { "unknown tag: $tag" }
-    }
+    operator fun get(tag: String): Result<String> =
+        runCatching {
+            requireNotNull(tagToName[tag]) { "unknown tag: $tag" }
+        }
 
     fun getOrRegister(
         schema: Schema,
@@ -96,15 +100,16 @@ object ModelNameRegistry {
             .getOrElse { register(schema, enclosingSchema, valueSuffix) }
     }
 
-    fun getOrRegister(
-        schemaInfo: SchemaInfo,
-    ): String {
+    fun getOrRegister(schemaInfo: SchemaInfo): String {
         getByReference(schemaInfo.schema)?.let { return it }
         return this[resolveTag(schemaInfo.schema, schemaInfoName = schemaInfo.name)]
             .getOrElse { register(schemaInfo.schema, schemaInfoName = schemaInfo.name) }
     }
 
-    fun preRegisterByReference(schema: Schema, name: String) {
+    fun preRegisterByReference(
+        schema: Schema,
+        name: String,
+    ) {
         val ref = Overlay.of(schema).jsonReference
         if (!referenceToName.containsKey(ref)) {
             val modelClassName = name.toModelClassName() + MutableSettings.modelSuffix
@@ -123,20 +128,21 @@ object ModelNameRegistry {
     }
 
     private val inlineSchemaTracking: MutableMap<Schema, String> = mutableMapOf()
-    
+
     /**
      * Pre-compute what name an inline schema will get without allocating it yet.
      * Called from findOneOfSuperInterface to map schema -> future name.
      */
-    fun preRegisterInlineSchema(schema: Schema, enclosingSchema: Schema) {
+    fun preRegisterInlineSchema(
+        schema: Schema,
+        enclosingSchema: Schema,
+    ) {
         if (inlineSchemaTracking.containsKey(schema)) return
         val modelClassName = register(schema, enclosingSchema, valueSuffix = false, schemaInfoName = null, allocate = false)
         inlineSchemaTracking[schema] = modelClassName
     }
-    
 
-    fun getBySchema(schema: Schema): String? =
-        inlineSchemaTracking[schema]
+    fun getBySchema(schema: Schema): String? = inlineSchemaTracking[schema]
 
     fun clear() {
         allocatedNames.clear()

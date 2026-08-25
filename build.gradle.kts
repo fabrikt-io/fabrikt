@@ -6,6 +6,7 @@ plugins {
     id("com.gradleup.shadow") version "8.3.9"
     id("org.jetbrains.dokka") version "1.8.10"
     id("com.palantir.git-version") version "3.0.0"
+    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
     id("maven-publish")
     id("signing")
 
@@ -98,9 +99,10 @@ tasks {
         relocate("com.google.thirdparty", "com.cjbooms.fabrikt.shaded.com.google.thirdparty")
     }
 
-    val dokka = getByName<DokkaTask>("dokkaHtml") {
-        outputDirectory.set(file("$buildDir/dokka"))
-    }
+    val dokka =
+        getByName<DokkaTask>("dokkaHtml") {
+            outputDirectory.set(file("$buildDir/dokka"))
+        }
 
     create("sourcesJar", Jar::class) {
         archiveClassifier.set("sources")

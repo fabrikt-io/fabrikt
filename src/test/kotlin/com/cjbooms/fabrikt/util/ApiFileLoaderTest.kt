@@ -16,7 +16,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 class ApiFileLoaderTest {
-
     private lateinit var server: HttpServer
     private val recordedHeaders = mutableListOf<Headers>()
 
@@ -34,7 +33,11 @@ class ApiFileLoaderTest {
 
     private fun baseUrl() = "http://localhost:${server.address.port}"
 
-    private fun HttpServer.stub(path: String, status: Int, body: String? = null) {
+    private fun HttpServer.stub(
+        path: String,
+        status: Int,
+        body: String? = null,
+    ) {
         createContext(path) { exchange ->
             recordedHeaders.add(exchange.requestHeaders)
             val bytes = body?.toByteArray(StandardCharsets.UTF_8)

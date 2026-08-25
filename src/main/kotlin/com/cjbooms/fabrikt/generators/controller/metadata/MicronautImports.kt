@@ -4,7 +4,6 @@ import com.cjbooms.fabrikt.util.toUpperCase
 import com.squareup.kotlinpoet.ClassName
 
 object MicronautImports {
-
     private object Packages {
         const val MICRONAUT_BASE = "io.micronaut"
 
@@ -18,7 +17,7 @@ object MicronautImports {
 
         const val MICRONAUT_AUTHENTICATION = "$MICRONAUT_SECURITY.authentication"
 
-        const val MICRONAUT_RULE= "$MICRONAUT_SECURITY.rules"
+        const val MICRONAUT_RULE = "$MICRONAUT_SECURITY.rules"
     }
 
     val CONSUMES = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "Consumes")
@@ -37,7 +36,6 @@ object MicronautImports {
     val HEADER = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "Header")
     val QUERY_VALUE = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "QueryValue")
     val PATH_VARIABLE = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "PathVariable")
-
 
     object HttpMethods {
         val GET = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "Get")

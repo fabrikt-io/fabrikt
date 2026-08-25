@@ -19,40 +19,54 @@ abstract class AnnotationBasedControllerInterfaceGenerator(
     private val api: SourceApi,
     private val validationAnnotations: ValidationAnnotations,
 ) {
-    abstract fun buildFunction(path: Path, op: Operation, verb: String): FunSpec
+    abstract fun buildFunction(
+        path: Path,
+        op: Operation,
+        verb: String,
+    ): FunSpec
 
-    abstract fun controllerBuilder(className: String, basePath: String): TypeSpec.Builder
+    abstract fun controllerBuilder(
+        className: String,
+        basePath: String,
+    ): TypeSpec.Builder
 
-    fun buildController(resourceName: String, paths: Collection<Path>): ControllerType {
-        val typeBuilder: TypeSpec.Builder = controllerBuilder(
-            className = ControllerGeneratorUtils.controllerName(resourceName),
-            basePath = api.openApi3.basePath()
-        )
+    fun buildController(
+        resourceName: String,
+        paths: Collection<Path>,
+    ): ControllerType {
+        val typeBuilder: TypeSpec.Builder =
+            controllerBuilder(
+                className = ControllerGeneratorUtils.controllerName(resourceName),
+                basePath = api.openApi3.basePath(),
+            )
 
-        paths.flatMap { path ->
-            path.operations
-                .filter { it.key.toUpperCase() != "HEAD" }
-                .map { op ->
-                    buildFunction(
-                        path,
-                        op.value,
-                        op.key,
-                    )
-                }
-        }.forEach { typeBuilder.addFunction(it) }
+        paths
+            .flatMap { path ->
+                path.operations
+                    .filter { it.key.toUpperCase() != "HEAD" }
+                    .map { op ->
+                        buildFunction(
+                            path,
+                            op.value,
+                            op.key,
+                        )
+                    }
+            }.forEach { typeBuilder.addFunction(it) }
 
         return ControllerType(
             typeBuilder.build(),
-            packages.base
+            packages.base,
         )
     }
 
     fun ParameterSpec.Builder.addValidationAnnotations(parameter: RequestParameter): ParameterSpec.Builder {
         if (parameter.minimum != null) this.maybeAddAnnotation(validationAnnotations.min(parameter.minimum.toLong()))
         if (parameter.maximum != null) this.maybeAddAnnotation(validationAnnotations.max(parameter.maximum.toLong()))
-        if (parameter.minLength != null || parameter.maxLength != null) this.maybeAddAnnotation(
-            (validationAnnotations.size(parameter.minLength?.toInt(), parameter.maxLength?.toInt()))
-        )
+        if (parameter.minLength != null || parameter.maxLength != null) {
+            this.maybeAddAnnotation(
+                (validationAnnotations.size(parameter.minLength?.toInt(), parameter.maxLength?.toInt())),
+            )
+        }
         if (parameter.typeInfo.isComplexType) this.maybeAddAnnotation(validationAnnotations.parameterValid())
         return this
     }

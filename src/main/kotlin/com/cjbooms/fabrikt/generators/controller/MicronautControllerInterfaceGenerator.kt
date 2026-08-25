@@ -7,9 +7,9 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKdoc
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.SecuritySupport
-import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.toSuccessResponseType
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.methodName
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.securitySupport
+import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.toSuccessResponseType
 import com.cjbooms.fabrikt.generators.controller.metadata.MicronautImports
 import com.cjbooms.fabrikt.generators.controller.metadata.MicronautImports.SECURITY_RULE_IS_ANONYMOUS
 import com.cjbooms.fabrikt.generators.controller.metadata.MicronautImports.SECURITY_RULE_IS_AUTHENTICATED
@@ -18,15 +18,15 @@ import com.cjbooms.fabrikt.model.ControllerLibraryType
 import com.cjbooms.fabrikt.model.ControllerType
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.KotlinTypes
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
-import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
 import com.cjbooms.fabrikt.util.GroupingStrategy
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSingleResource
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupedPaths
+import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSingleResource
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.reprezen.kaizen.oasparser.model3.Path
 import com.squareup.kotlinpoet.AnnotationSpec
@@ -42,8 +42,8 @@ class MicronautControllerInterfaceGenerator(
     private val api: SourceApi,
     private val validationAnnotations: ValidationAnnotations,
     private val options: Set<ControllerCodeGenOptionType> = emptySet(),
-) : ControllerInterfaceGenerator, AnnotationBasedControllerInterfaceGenerator(packages, api, validationAnnotations) {
-
+) : AnnotationBasedControllerInterfaceGenerator(packages, api, validationAnnotations),
+    ControllerInterfaceGenerator {
     private val useSuspendModifier: Boolean
         get() = options.any { it == ControllerCodeGenOptionType.SUSPEND_MODIFIER }
 
@@ -55,9 +55,11 @@ class MicronautControllerInterfaceGenerator(
 
     override fun generate(): MicronautControllers =
         MicronautControllers(
-            api.openApi3.groupedPaths(groupingStrategy).map { (resourceName, paths) ->
-                buildController(resourceName, paths.values)
-            }.toSet(),
+            api.openApi3
+                .groupedPaths(groupingStrategy)
+                .map { (resourceName, paths) ->
+                    buildController(resourceName, paths.values)
+                }.toSet(),
             addAuthenticationParameter,
         )
 
@@ -66,13 +68,13 @@ class MicronautControllerInterfaceGenerator(
     override fun controllerBuilder(
         className: String,
         basePath: String,
-    ) =
-        TypeSpec.interfaceBuilder(className)
-            .addAnnotation(
-                AnnotationSpec
-                    .builder(MicronautImports.CONTROLLER)
-                    .build(),
-            )
+    ) = TypeSpec
+        .interfaceBuilder(className)
+        .addAnnotation(
+            AnnotationSpec
+                .builder(MicronautImports.CONTROLLER)
+                .build(),
+        )
 
     override fun buildFunction(
         path: Path,
@@ -82,20 +84,22 @@ class MicronautControllerInterfaceGenerator(
         val methodName = methodName(op, verb, path.pathString.isSingleResource())
         val returnType = MicronautImports.RESPONSE.parameterizedBy(op.toSuccessResponseType(packages.base))
         val parameters = op.toIncomingParameters(packages.base, path.parameters, emptyList())
-        val globalSecurity = this.api.openApi3.securityRequirements.securitySupport()
+        val globalSecurity =
+            this.api.openApi3.securityRequirements
+                .securitySupport()
 
         // Main method builder
-        val funcSpec = FunSpec
-            .builder(methodName)
-            .addModifiers(KModifier.ABSTRACT)
-            .addKdoc(op.toKdoc(parameters))
-            .addMicronautFunAnnotation(op, verb, path.pathString)
-            .apply {
-                if (useSuspendModifier) {
-                    addModifiers(KModifier.SUSPEND)
-                }
-            }
-            .returns(returnType)
+        val funcSpec =
+            FunSpec
+                .builder(methodName)
+                .addModifiers(KModifier.ABSTRACT)
+                .addKdoc(op.toKdoc(parameters))
+                .addMicronautFunAnnotation(op, verb, path.pathString)
+                .apply {
+                    if (useSuspendModifier) {
+                        addModifiers(KModifier.SUSPEND)
+                    }
+                }.returns(returnType)
 
         // Function parameters
         parameters
@@ -109,9 +113,9 @@ class MicronautControllerInterfaceGenerator(
                             .toParameterSpecBuilder()
                             .addAnnotation(
                                 AnnotationSpec
-                                    .builder(MicronautImports.BODY).build(),
-                            )
-                            .maybeAddAnnotation(validationAnnotations.parameterValid())
+                                    .builder(MicronautImports.BODY)
+                                    .build(),
+                            ).maybeAddAnnotation(validationAnnotations.parameterValid())
                             .build()
 
                     is RequestParameter ->
@@ -121,8 +125,7 @@ class MicronautControllerInterfaceGenerator(
                             .addMicronautParamAnnotation(it)
                             .build()
                 }
-            }
-            .forEach { funcSpec.addParameter(it) }
+            }.forEach { funcSpec.addParameter(it) }
 
         // Add authentication
         if (addAuthenticationParameter) {
@@ -143,22 +146,29 @@ class MicronautControllerInterfaceGenerator(
         return funcSpec.build()
     }
 
-    private fun FunSpec.Builder.addMicronautFunAnnotation(op: Operation, verb: String, path: String): FunSpec.Builder {
+    private fun FunSpec.Builder.addMicronautFunAnnotation(
+        op: Operation,
+        verb: String,
+        path: String,
+    ): FunSpec.Builder {
         val globalSecurity =
             api.openApi3.securityRequirements.securitySupport()
 
-        val produces = op.responses
-            .flatMap { it.value.contentMediaTypes.keys }
-            .toTypedArray()
+        val produces =
+            op.responses
+                .flatMap { it.value.contentMediaTypes.keys }
+                .toTypedArray()
 
-        val consumes = op.requestBody
-            .contentMediaTypes.keys
-            .toTypedArray()
+        val consumes =
+            op.requestBody
+                .contentMediaTypes.keys
+                .toTypedArray()
 
         this.addAnnotation(
             AnnotationSpec
                 .builder(MicronautImports.HttpMethods.byName(verb))
-                .addMember("uri = %S", path).build(),
+                .addMember("uri = %S", path)
+                .build(),
         )
 
         if (consumes.isNotEmpty()) {
@@ -173,8 +183,7 @@ class MicronautControllerInterfaceGenerator(
                             separator = ", ",
                             transform = { "\"$it\"" },
                         ),
-                    )
-                    .build(),
+                    ).build(),
             )
         }
 
@@ -190,18 +199,18 @@ class MicronautControllerInterfaceGenerator(
                             separator = ", ",
                             transform = { "\"$it\"" },
                         ),
-                    )
-                    .build(),
+                    ).build(),
             )
         }
 
         if (addAuthenticationParameter) {
-            val securityRule = when (op.securitySupport(globalSecurity)) {
-                SecuritySupport.AUTHENTICATION_REQUIRED -> SECURITY_RULE_IS_AUTHENTICATED
-                SecuritySupport.AUTHENTICATION_PROHIBITED -> SECURITY_RULE_IS_ANONYMOUS
-                SecuritySupport.AUTHENTICATION_OPTIONAL -> "$SECURITY_RULE_IS_AUTHENTICATED, $SECURITY_RULE_IS_ANONYMOUS"
-                else -> ""
-            }
+            val securityRule =
+                when (op.securitySupport(globalSecurity)) {
+                    SecuritySupport.AUTHENTICATION_REQUIRED -> SECURITY_RULE_IS_AUTHENTICATED
+                    SecuritySupport.AUTHENTICATION_PROHIBITED -> SECURITY_RULE_IS_ANONYMOUS
+                    SecuritySupport.AUTHENTICATION_OPTIONAL -> "$SECURITY_RULE_IS_AUTHENTICATED, $SECURITY_RULE_IS_ANONYMOUS"
+                    else -> ""
+                }
 
             if (securityRule != "") {
                 this.addAnnotation(
@@ -209,8 +218,7 @@ class MicronautControllerInterfaceGenerator(
                         .builder(MicronautImports.SECURED)
                         .addMember(
                             securityRule,
-                        )
-                        .build(),
+                        ).build(),
                 )
             }
         }
@@ -243,17 +251,17 @@ class MicronautControllerInterfaceGenerator(
 
 data class MicronautControllers(
     val controllers: Collection<ControllerType>,
-    val addAuthenticationParameter: Boolean
+    val addAuthenticationParameter: Boolean,
 ) : KotlinTypes(controllers) {
-
-    override val files: Collection<FileSpec> = super.files.map {
-        it.toBuilder()
-            .addFileDisclaimer()
-            .apply {
-                if (addAuthenticationParameter) {
-                    addImport(MicronautImports.SECURITY_RULE.first, MicronautImports.SECURITY_RULE.second)
-                }
-            }
-            .build()
-    }
+    override val files: Collection<FileSpec> =
+        super.files.map {
+            it
+                .toBuilder()
+                .addFileDisclaimer()
+                .apply {
+                    if (addAuthenticationParameter) {
+                        addImport(MicronautImports.SECURITY_RULE.first, MicronautImports.SECURITY_RULE.second)
+                    }
+                }.build()
+        }
 }

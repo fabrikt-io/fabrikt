@@ -29,21 +29,21 @@ import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class KotlinSerializationModelGeneratorTest {
-
     @Suppress("unused")
-    private fun testCases(): Stream<String> = Stream.of(
-        "discriminatedOneOf",
-        "discriminatorMappingSuffix",
-        "primitiveTypes",
-        "normalizedNameConflation",
-        "openEnum"
-    )
+    private fun testCases(): Stream<String> =
+        Stream.of(
+            "discriminatedOneOf",
+            "discriminatorMappingSuffix",
+            "primitiveTypes",
+            "normalizedNameConflation",
+            "openEnum",
+        )
 
     @BeforeEach
     fun init() {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.HTTP_MODELS),
-            serializationLibrary = SerializationLibrary.KOTLINX_SERIALIZATION
+            serializationLibrary = SerializationLibrary.KOTLINX_SERIALIZATION,
         )
         ModelNameRegistry.clear()
     }
@@ -67,10 +67,11 @@ class KotlinSerializationModelGeneratorTest {
         val expectedModelsPath = "/examples/$testCaseName/models/kotlinx/"
         val expectedModels = getFileNamesInFolder(Path.of("src/test/resources$expectedModelsPath"))
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            sourceApi,
-        ).generate()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                sourceApi,
+            ).generate()
 
         val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
         val tempDirectory = Files.createTempDirectory("model_generator_test_${testCaseName.replace("/", ".")}")
@@ -83,7 +84,7 @@ class KotlinSerializationModelGeneratorTest {
         tempFolderContents.forEach {
             if (expectedModels.contains(it.key)) {
                 assertThatGenerated(it.value)
-                    .isEqualTo( "$expectedModelsPath${it.key}")
+                    .isEqualTo("$expectedModelsPath${it.key}")
             } else {
                 failGenerated(it.value).asFileNotFound("$expectedModelsPath${it.key}", "File not found in expected models")
             }
@@ -100,9 +101,10 @@ class KotlinSerializationModelGeneratorTest {
         val apiLocation = javaClass.getResource("/examples/additionalProperties/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
-        val e = assertThrows<UnsupportedOperationException> {
-            ModelGenerator(Packages(basePackage), sourceApi,).generate()
-        }
+        val e =
+            assertThrows<UnsupportedOperationException> {
+                ModelGenerator(Packages(basePackage), sourceApi).generate()
+            }
         assertThat(e.message).isEqualTo("Additional properties not supported by selected serialization library")
     }
 
@@ -112,12 +114,17 @@ class KotlinSerializationModelGeneratorTest {
         val apiLocation = javaClass.getResource("/examples/untypedObject/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
-        val e = assertThrows<UnsupportedOperationException> {
-            val models = ModelGenerator(Packages(basePackage), sourceApi,).generate()
-            val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
-            println(sourceSet)
-        }
-        assertThat(e.message).isEqualTo("Untyped objects not supported by selected serialization library (data: {\"type\":\"object\",\"description\":\"Any data. Object has no schema.\"})")
+        val e =
+            assertThrows<UnsupportedOperationException> {
+                val models = ModelGenerator(Packages(basePackage), sourceApi).generate()
+                val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
+                println(sourceSet)
+            }
+        assertThat(
+            e.message,
+        ).isEqualTo(
+            "Untyped objects not supported by selected serialization library (data: {\"type\":\"object\",\"description\":\"Any data. Object has no schema.\"})",
+        )
     }
 
     @Test
@@ -128,10 +135,11 @@ class KotlinSerializationModelGeneratorTest {
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModels = readFolder(Path.of("src/test/resources/examples/kotlinxDateTimeOverrides/models/instant/"))
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            sourceApi,
-        ).generate()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                sourceApi,
+            ).generate()
 
         val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
         val tempDirectory = Files.createTempDirectory("model_generator_test_kotlinx_instant")
@@ -160,10 +168,11 @@ class KotlinSerializationModelGeneratorTest {
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModels = readFolder(Path.of("src/test/resources/examples/kotlinxDateTimeOverrides/models/localdatetime/"))
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            sourceApi,
-        ).generate()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                sourceApi,
+            ).generate()
 
         val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
         val tempDirectory = Files.createTempDirectory("model_generator_test_kotlinx_localdatetime")
@@ -192,10 +201,11 @@ class KotlinSerializationModelGeneratorTest {
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModels = readFolder(Path.of("src/test/resources/examples/anyAsJsonElement/models/kotlinx/"))
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            sourceApi,
-        ).generate()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                sourceApi,
+            ).generate()
 
         val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
         val tempDirectory = Files.createTempDirectory("model_generator_test_kotlinx_jsonelement")
@@ -229,10 +239,11 @@ class KotlinSerializationModelGeneratorTest {
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
         val expectedModels = readFolder(Path.of("src/test/resources/examples/primitiveTypes/models/kotlinxAsStringOverrides/"))
 
-        val models = ModelGenerator(
-            Packages(basePackage),
-            sourceApi,
-        ).generate()
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                sourceApi,
+            ).generate()
 
         val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
         val tempDirectory = Files.createTempDirectory("model_generator_test_kotlinx_string_overrides")

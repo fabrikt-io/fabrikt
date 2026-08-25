@@ -48,16 +48,24 @@ object ControllerGeneratorUtils {
 
     fun controllerName(resourceName: String) = "$resourceName${ControllerType.SUFFIX}"
 
-    fun methodName(op: Operation, verb: String, isSingleResource: Boolean) =
-        op.operationId?.camelCase() ?: httpVerbMethodName(verb, isSingleResource)
+    fun methodName(
+        op: Operation,
+        verb: String,
+        isSingleResource: Boolean,
+    ) = op.operationId?.camelCase() ?: httpVerbMethodName(verb, isSingleResource)
 
-    private fun httpVerbMethodName(verb: String, isSingleResource: Boolean) =
-        if (isSingleResource) "${verb}ById" else verb
+    private fun httpVerbMethodName(
+        verb: String,
+        isSingleResource: Boolean,
+    ) = if (isSingleResource) "${verb}ById" else verb
 
     /**
      * Enum definition for different cases of security checks for a given operation.
      */
-    enum class SecuritySupport(val allowsAuthenticated: Boolean, val allowsAnonymous: Boolean) {
+    enum class SecuritySupport(
+        val allowsAuthenticated: Boolean,
+        val allowsAnonymous: Boolean,
+    ) {
         /**
          * When the operation does not support any way of security checks.
          */

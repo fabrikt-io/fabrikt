@@ -29,13 +29,14 @@ import java.util.stream.Stream
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SpringHttpInterfaceGeneratorTest {
     @Suppress("unused")
-    private fun fullApiTestCases(): Stream<String> = Stream.of(
-        "springHttpInterfaceClient",
-        "multiMediaType",
-        "pathLevelParameters",
-        "parameterNameClash",
-        "tagGrouping",
-    )
+    private fun fullApiTestCases(): Stream<String> =
+        Stream.of(
+            "springHttpInterfaceClient",
+            "multiMediaType",
+            "pathLevelParameters",
+            "parameterNameClash",
+            "tagGrouping",
+        )
 
     @BeforeEach
     fun init() {
@@ -67,9 +68,10 @@ class SpringHttpInterfaceGeneratorTest {
         runTestCase(
             "springHttpInterfaceClient",
             clientFileName = "SpringHttpInterfaceClientWithResponseEntity.kt",
-            options = setOf(
-                ClientCodeGenOptionType.SPRING_RESPONSE_ENTITY_WRAPPER,
-            )
+            options =
+                setOf(
+                    ClientCodeGenOptionType.SPRING_RESPONSE_ENTITY_WRAPPER,
+                ),
         )
     }
 
@@ -84,17 +86,18 @@ class SpringHttpInterfaceGeneratorTest {
         val expectedModel = "/examples/$testCaseName/models/ClientModels.kt"
         val expectedClient = expectedClientPath(testCaseName, clientFileName)
 
-        val models = ModelGenerator(
-            packages,
-            sourceApi,
-        ).generate().toSingleFile()
-        val clientCode = SpringHttpInterfaceGenerator(
-            packages,
-            sourceApi,
-        )
-            .generate(options)
-            .clients
-            .toSingleFile()
+        val models =
+            ModelGenerator(
+                packages,
+                sourceApi,
+            ).generate().toSingleFile()
+        val clientCode =
+            SpringHttpInterfaceGenerator(
+                packages,
+                sourceApi,
+            ).generate(options)
+                .clients
+                .toSingleFile()
 
         assertThatGenerated(clientCode).isEqualTo(expectedClient)
         if (testCaseName != "tagGrouping") {
@@ -105,7 +108,10 @@ class SpringHttpInterfaceGeneratorTest {
     private fun optionsFor(testCaseName: String): Set<ClientCodeGenOptionType> =
         if (testCaseName == "tagGrouping") setOf(ClientCodeGenOptionType.GROUP_BY_TAG) else emptySet()
 
-    private fun expectedClientPath(testCaseName: String, fileName: String): String =
+    private fun expectedClientPath(
+        testCaseName: String,
+        fileName: String,
+    ): String =
         if (testCaseName == "tagGrouping") {
             "/examples/$testCaseName/client/grouped/$fileName"
         } else {
@@ -115,13 +121,14 @@ class SpringHttpInterfaceGeneratorTest {
     @Test
     fun `adds disclaimer as comment to files if enabled`() {
         MutableSettings.updateSettings(
-            outputOptions = setOf(OutputOptionType.ADD_FILE_DISCLAIMER)
+            outputOptions = setOf(OutputOptionType.ADD_FILE_DISCLAIMER),
         )
         val api = SourceApi(readTextResource("/examples/fileComment/api.yaml"))
-        val generator = SpringHttpInterfaceGenerator(
-            Packages("examples.fileComment"),
-            api,
-        )
+        val generator =
+            SpringHttpInterfaceGenerator(
+                Packages("examples.fileComment"),
+                api,
+            )
         val expectedFiles = readFolder(Path.of("src/test/resources/examples/fileComment/client/spring"))
 
         val clientFiles = generator.generate(emptySet()).files
@@ -137,8 +144,9 @@ class SpringHttpInterfaceGeneratorTest {
         val destPackage = if (this.isNotEmpty()) first().destinationPackage else ""
         val singleFileBuilder = FileSpec.builder(destPackage, "dummyFilename")
         this.forEach {
-            val builder = singleFileBuilder
-                .addType(it.spec)
+            val builder =
+                singleFileBuilder
+                    .addType(it.spec)
             builder.build()
         }
         return Linter.lintString(singleFileBuilder.build().toString())
@@ -150,8 +158,9 @@ class SpringHttpInterfaceGeneratorTest {
         models
             .sortedBy { it.spec.name }
             .forEach {
-                val builder = singleFileBuilder
-                    .addType(it.spec)
+                val builder =
+                    singleFileBuilder
+                        .addType(it.spec)
                 builder.build()
             }
         return Linter.lintString(singleFileBuilder.build().toString())

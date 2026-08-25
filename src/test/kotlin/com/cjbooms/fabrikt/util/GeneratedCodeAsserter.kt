@@ -11,7 +11,10 @@ import java.nio.file.Path
 import kotlin.io.path.writeText
 import kotlin.io.path.Path as KPath
 
-class GeneratedCodeAsserter(val generatedCode: String, val expectedFiles: Path? = null) {
+class GeneratedCodeAsserter(
+    val generatedCode: String,
+    val expectedFiles: Path? = null,
+) {
     val expectedModelNames: Map<String, Path>? = expectedFiles?.let { getFileNamesAndPathsInFolder(it) }
 
     companion object {
@@ -24,12 +27,18 @@ class GeneratedCodeAsserter(val generatedCode: String, val expectedFiles: Path? 
 
         fun failGenerated(generatedCode: String) = GeneratedCodeAsserter(generatedCode)
 
-        fun maybeGenerateMissingFile(resourcePath: String, generatedCode: String) {
+        fun maybeGenerateMissingFile(
+            resourcePath: String,
+            generatedCode: String,
+        ) {
             if (SHOULD_OVERWRITE_EXAMPLES) {
                 println("Mismatch found. Attempting to fix the source file.")
                 val sourceFilePath: Path = KPath("src", "test", "resources", resourcePath)
                 println("Overwriting existing, or creating absent, file: $sourceFilePath")
-                sourceFilePath.parent?.let { java.nio.file.Files.createDirectories(it) }
+                sourceFilePath.parent?.let {
+                    java.nio.file.Files
+                        .createDirectories(it)
+                }
                 sourceFilePath.writeText(generatedCode)
             }
         }
@@ -58,7 +67,10 @@ class GeneratedCodeAsserter(val generatedCode: String, val expectedFiles: Path? 
         }
     }
 
-    fun asFileNotFound(expectedPath: String, failureMessage: String) {
+    fun asFileNotFound(
+        expectedPath: String,
+        failureMessage: String,
+    ) {
         try {
             fail(failureMessage + expectedPath)
         } catch (ex: AssertionError) {
@@ -91,4 +103,3 @@ class OverWriteProtectionTest {
         assertThat(SHOULD_OVERWRITE_EXAMPLES).isFalse()
     }
 }
-

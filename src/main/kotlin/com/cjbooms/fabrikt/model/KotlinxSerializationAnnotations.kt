@@ -39,29 +39,29 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
      */
     override val supportsAdditionalProperties = false
 
-    override fun addIgnore(propertySpecBuilder: PropertySpec.Builder) =
-        propertySpecBuilder // not applicable
+    override fun addIgnore(propertySpecBuilder: PropertySpec.Builder) = propertySpecBuilder // not applicable
 
-    override fun addGetter(funSpecBuilder: FunSpec.Builder) =
-        funSpecBuilder // not applicable
+    override fun addGetter(funSpecBuilder: FunSpec.Builder) = funSpecBuilder // not applicable
 
-    override fun addSetter(funSpecBuilder: FunSpec.Builder) =
-        funSpecBuilder // not applicable
+    override fun addSetter(funSpecBuilder: FunSpec.Builder) = funSpecBuilder // not applicable
 
     override fun addProperty(
         propertySpecBuilder: PropertySpec.Builder,
         oasKey: String,
-        kotlinTypeInfo: KotlinTypeInfo
+        kotlinTypeInfo: KotlinTypeInfo,
     ): PropertySpec.Builder {
         if (needsContextualAnnotation(kotlinTypeInfo)) {
             propertySpecBuilder.addAnnotation(AnnotationSpec.builder(Contextual::class).build())
         }
         return propertySpecBuilder.addAnnotation(
-            AnnotationSpec.builder(SerialName::class).addMember("%S", oasKey).build()
+            AnnotationSpec.builder(SerialName::class).addMember("%S", oasKey).build(),
         )
     }
 
-    override fun annotateArrayElementType(elementType: TypeName, elementTypeInfo: KotlinTypeInfo): TypeName =
+    override fun annotateArrayElementType(
+        elementType: TypeName,
+        elementTypeInfo: KotlinTypeInfo,
+    ): TypeName =
         if (needsContextualAnnotation(elementTypeInfo)) {
             val contextualAnnotation = AnnotationSpec.builder(Contextual::class).build()
             elementType.copy(annotations = listOf(contextualAnnotation))
@@ -78,7 +78,8 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
             is KotlinTypeInfo.Instant,
             is KotlinTypeInfo.Date,
             is KotlinTypeInfo.DateTime,
-            is KotlinTypeInfo.LocalDateTime -> true
+            is KotlinTypeInfo.LocalDateTime,
+            -> true
             else -> false
         }
 
@@ -93,17 +94,23 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
         typeSpecBuilder.addAnnotation(AnnotationSpec.builder(Serializable::class).build())
 
     @OptIn(ExperimentalSerializationApi::class)
-    override fun addBasePolymorphicTypeAnnotation(typeSpecBuilder: TypeSpec.Builder, propertyName: String) =
-        if (propertyName != DEFAULT_JSON_CLASS_DISCRIMINATOR) {
-            typeSpecBuilder.addAnnotation(
-                AnnotationSpec.builder(JsonClassDiscriminator::class).addMember("%S", propertyName).build()
-            )
-            val experimentalSerializationApiAnnotation = AnnotationSpec.builder(
-                // necessary because ExperimentalSerializationApi "can only be used as an annotation or as an argument to @OptIn"
-                ClassName("kotlinx.serialization", "ExperimentalSerializationApi")
-            ).build()
-            typeSpecBuilder.addAnnotation(experimentalSerializationApiAnnotation)
-        } else typeSpecBuilder
+    override fun addBasePolymorphicTypeAnnotation(
+        typeSpecBuilder: TypeSpec.Builder,
+        propertyName: String,
+    ) = if (propertyName != DEFAULT_JSON_CLASS_DISCRIMINATOR) {
+        typeSpecBuilder.addAnnotation(
+            AnnotationSpec.builder(JsonClassDiscriminator::class).addMember("%S", propertyName).build(),
+        )
+        val experimentalSerializationApiAnnotation =
+            AnnotationSpec
+                .builder(
+                    // necessary because ExperimentalSerializationApi "can only be used as an annotation or as an argument to @OptIn"
+                    ClassName("kotlinx.serialization", "ExperimentalSerializationApi"),
+                ).build()
+        typeSpecBuilder.addAnnotation(experimentalSerializationApiAnnotation)
+    } else {
+        typeSpecBuilder
+    }
 
     override fun addPolymorphicSubTypesAnnotation(
         typeSpecBuilder: TypeSpec.Builder,
@@ -111,18 +118,25 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
         enumDiscriminator: KotlinTypeInfo.Enum?,
     ) = typeSpecBuilder // not applicable — subtypes carry a @SerialName mapping instead
 
-    override fun addPolymorphicSubTypeDeductionAnnotation(typeSpecBuilder: TypeSpec.Builder, subTypes: List<TypeName>) =
-        typeSpecBuilder // not applicable — kotlinx requires a class discriminator field
+    override fun addPolymorphicSubTypeDeductionAnnotation(
+        typeSpecBuilder: TypeSpec.Builder,
+        subTypes: List<TypeName>,
+    ) = typeSpecBuilder // not applicable — kotlinx requires a class discriminator field
 
-    override fun addSubtypeMappingAnnotation(typeSpecBuilder: TypeSpec.Builder, mapping: String) =
-        typeSpecBuilder.addAnnotation(AnnotationSpec.builder(SerialName::class).addMember("%S", mapping).build())
+    override fun addSubtypeMappingAnnotation(
+        typeSpecBuilder: TypeSpec.Builder,
+        mapping: String,
+    ) = typeSpecBuilder.addAnnotation(AnnotationSpec.builder(SerialName::class).addMember("%S", mapping).build())
 
-    override fun addEnumPropertyAnnotation(propSpecBuilder: PropertySpec.Builder) =
-        propSpecBuilder // not applicable
+    override fun addEnumPropertyAnnotation(propSpecBuilder: PropertySpec.Builder) = propSpecBuilder // not applicable
 
-    override fun addEnumConstantAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String) =
-        enumSpecBuilder.addAnnotation(AnnotationSpec.builder(SerialName::class).addMember("%S", enumValue).build())
+    override fun addEnumConstantAnnotation(
+        enumSpecBuilder: TypeSpec.Builder,
+        enumValue: String,
+    ) = enumSpecBuilder.addAnnotation(AnnotationSpec.builder(SerialName::class).addMember("%S", enumValue).build())
 
-    override fun addEnumDefaultAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String) =
-        enumSpecBuilder // not applicable
+    override fun addEnumDefaultAnnotation(
+        enumSpecBuilder: TypeSpec.Builder,
+        enumValue: String,
+    ) = enumSpecBuilder // not applicable
 }

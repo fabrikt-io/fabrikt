@@ -23,11 +23,12 @@ class MicronautAuthenticationTest {
     private val basePackage = "authenticationTest"
 
     @Suppress("unused")
-    private fun testCases(): Stream<Pair<String, String>> = Stream.of(
-        Pair("global_authentication_required.yml", "SecurityRule.IS_AUTHENTICATED"),
-        Pair("global_authentication_prohibited.yml", "SecurityRule.IS_ANONYMOUS"),
-        Pair("global_authentication_optional.yml", "SecurityRule.IS_AUTHENTICATED, SecurityRule.IS_ANONYMOUS"),
-    )
+    private fun testCases(): Stream<Pair<String, String>> =
+        Stream.of(
+            Pair("global_authentication_required.yml", "SecurityRule.IS_AUTHENTICATED"),
+            Pair("global_authentication_prohibited.yml", "SecurityRule.IS_ANONYMOUS"),
+            Pair("global_authentication_optional.yml", "SecurityRule.IS_AUTHENTICATED, SecurityRule.IS_ANONYMOUS"),
+        )
 
     private fun setupTest(testPath: String): Collection<FileSpec> {
         val api = SourceApi(readTextResource("/authenticationTest/$testPath"))
@@ -35,7 +36,7 @@ class MicronautAuthenticationTest {
             Packages(basePackage),
             api,
             JavaxValidationAnnotations,
-            setOf(ControllerCodeGenOptionType.AUTHENTICATION)
+            setOf(ControllerCodeGenOptionType.AUTHENTICATION),
         ).generate().files
     }
 
@@ -54,11 +55,15 @@ class MicronautAuthenticationTest {
     @MethodSource("testCases")
     fun `ensure that global authentication set to any authentication will add the required parameter`(testCase: Pair<String, String>) {
         val controllers = setupTest(testCase.first)
-        val functionAnnotations = controllers.flatMap { it.members }
-            .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.annotations } }
+        val functionAnnotations =
+            controllers
+                .flatMap { it.members }
+                .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.annotations } }
 
-        val functionParameters = controllers.flatMap { it.members }
-            .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.parameters } }
+        val functionParameters =
+            controllers
+                .flatMap { it.members }
+                .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.parameters } }
 
         assertThat(functionAnnotations).anySatisfy { annotation ->
             assertThat(annotation.typeName.toString()).isEqualTo("io.micronaut.security.`annotation`.Secured")
@@ -79,11 +84,15 @@ class MicronautAuthenticationTest {
     @Test
     fun `ensure that no authentication defined will add no parameter`() {
         val controllers = setupTest("global_authentication_none.yml")
-        val functionAnnotations = controllers.flatMap { it.members }
-            .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.annotations } }
+        val functionAnnotations =
+            controllers
+                .flatMap { it.members }
+                .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.annotations } }
 
-        val functionParameters = controllers.flatMap { it.members }
-            .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.parameters } }
+        val functionParameters =
+            controllers
+                .flatMap { it.members }
+                .flatMap { (it as TypeSpec).funSpecs.flatMap { t -> t.parameters } }
 
         assertThat(functionAnnotations).noneSatisfy { annotation ->
             assertThat(annotation.typeName.toString()).isEqualTo("Secured")

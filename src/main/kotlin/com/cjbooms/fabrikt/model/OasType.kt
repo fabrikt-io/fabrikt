@@ -24,27 +24,49 @@ sealed class OasType(
     val specialization: Specialization = Specialization.NONE,
 ) {
     object Any : OasType(null)
+
     object OneOfAny : OasType(WILD_CARD_TYPE, specialization = Specialization.ONE_OF_ANY)
+
     object Boolean : OasType("boolean")
+
     object Date : OasType("string", "date")
+
     object DateTime : OasType("string", "date-time")
+
     object Text : OasType("string")
+
     object Float : OasType("number", "float")
+
     object Double : OasType("number", "double")
+
     object Number : OasType("number")
+
     object Int32 : OasType("integer", "int32")
+
     object Int64 : OasType("integer", "int64")
+
     object Integer : OasType("integer")
+
     object Object : OasType("object")
+
     object Array : OasType("array")
+
     object Set : OasType("array", specialization = Specialization.SET)
+
     object UntypedObject : OasType("object", specialization = Specialization.UNTYPED_OBJECT)
+
     object Enum : OasType("string", specialization = Specialization.ENUM)
+
     object Uuid : OasType("string", specialization = Specialization.UUID)
+
     object Uri : OasType("string", specialization = Specialization.URI)
+
     object Base64String : OasType("string", specialization = Specialization.BYTE)
+
     object Binary : OasType("string", specialization = Specialization.BINARY)
+
     object Map : OasType("object", specialization = Specialization.MAP)
+
     object UnknownAdditionalProperties :
         OasType("object", specialization = Specialization.UNKNOWN_ADDITIONAL_PROPERTIES)
 
@@ -53,6 +75,7 @@ sealed class OasType(
 
     object TypedObjectAdditionalProperties :
         OasType("object", specialization = Specialization.TYPED_OBJECT_ADDITIONAL_PROPERTIES)
+
     object SimpleTypedAdditionalProperties :
         OasType(WILD_CARD_TYPE, specialization = Specialization.SIMPLE_TYPED_ADDITIONAL_PROPERTIES)
 
@@ -62,6 +85,7 @@ sealed class OasType(
     companion object {
         private const val WILD_CARD_TYPE: String = "wildcard"
         const val ADDITIONAL_PROPERTIES_VALUE: String = "additionalPropertiesValue"
+
         fun Schema.toOasType(oasKey: String): OasType =
             values(OasType::class)
                 .filter {
@@ -69,20 +93,25 @@ sealed class OasType(
                         it.type == WILD_CARD_TYPE &&
                         listOf(
                             Specialization.ONE_OF_ANY,
-                            Specialization.SIMPLE_TYPED_ADDITIONAL_PROPERTIES
+                            Specialization.SIMPLE_TYPED_ADDITIONAL_PROPERTIES,
                         ).contains(getSpecialization(oasKey))
-                }
-                .filter { it.specialization == getSpecialization(oasKey) }
+                }.filter { it.specialization == getSpecialization(oasKey) }
                 .filter { it.format == format || it.format == null }
                 .let { candidates ->
-                    if (candidates.size > 1) candidates.find { it.format == format }
-                    else candidates.firstOrNull()
+                    if (candidates.size > 1) {
+                        candidates.find { it.format == format }
+                    } else {
+                        candidates.firstOrNull()
+                    }
                 } ?: throw IllegalStateException(
-                "Unknown OAS type: ${safeType()} and format: $format and specialization: ${getSpecialization(oasKey)} for path: ${this.printPathFromRoot()}"
+                "Unknown OAS type: ${safeType()} and format: $format and specialization: ${getSpecialization(
+                    oasKey,
+                )} for path: ${this.printPathFromRoot()}",
             )
 
         private fun values(clazz: KClass<OasType>) =
-            clazz.nestedClasses.filter { it.isFinal && it.isSubclassOf(clazz) }
+            clazz.nestedClasses
+                .filter { it.isFinal && it.isSubclassOf(clazz) }
                 .map { it.objectInstance as OasType }
 
         private fun Schema.getSpecialization(oasKey: String): Specialization =
@@ -121,6 +150,6 @@ sealed class OasType(
         ONE_OF_ANY,
         BYTE,
         BINARY,
-        SET
+        SET,
     }
 }

@@ -35,25 +35,27 @@ class KtorControllerInterfaceGeneratorTest {
     private lateinit var generated: Collection<FileSpec>
 
     @Suppress("unused")
-    private fun testCases(): Stream<String> = Stream.of(
-        "githubApi",
-        "singleAllOf",
-        "pathLevelParameters",
-        "parameterNameClash",
-        "requestBodyAsArray",
-        "jakartaValidationAnnotations",
-        "modelSuffix",
-        "queryParameters",
-        "pathParameters",
-        "tagGrouping",
-    )
+    private fun testCases(): Stream<String> =
+        Stream.of(
+            "githubApi",
+            "singleAllOf",
+            "pathLevelParameters",
+            "parameterNameClash",
+            "requestBodyAsArray",
+            "jakartaValidationAnnotations",
+            "modelSuffix",
+            "queryParameters",
+            "pathParameters",
+            "tagGrouping",
+        )
 
     private fun setupGithubApiTestEnv() {
         val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
-        generated = KtorControllerInterfaceGenerator(
-            Packages(basePackage),
-            api
-        ).generate().files
+        generated =
+            KtorControllerInterfaceGenerator(
+                Packages(basePackage),
+                api,
+            ).generate().files
     }
 
     @BeforeEach
@@ -81,11 +83,12 @@ class KtorControllerInterfaceGeneratorTest {
 
         val options = if (testCaseName == "tagGrouping") setOf(ControllerCodeGenOptionType.GROUP_BY_TAG) else emptySet()
 
-        val ktorControllers = KtorControllerInterfaceGenerator(
-            Packages(basePackage),
-            api,
-            options,
-        )
+        val ktorControllers =
+            KtorControllerInterfaceGenerator(
+                Packages(basePackage),
+                api,
+                options,
+            )
 
         val library = ktorControllers.generateLibrary()
         val controllers = ktorControllers.generate().toSingleFile(library)
@@ -99,11 +102,12 @@ class KtorControllerInterfaceGeneratorTest {
         val api = SourceApi(readTextResource("/examples/authentication/api.yaml"))
         val expectedPath = "/examples/authentication/controllers/ktor/Controllers.kt"
 
-        val generator = KtorControllerInterfaceGenerator(
-            Packages(basePackage),
-            api,
-            setOf(ControllerCodeGenOptionType.AUTHENTICATION),
-        )
+        val generator =
+            KtorControllerInterfaceGenerator(
+                Packages(basePackage),
+                api,
+                setOf(ControllerCodeGenOptionType.AUTHENTICATION),
+            )
         val library = generator.generateLibrary()
         val controllers = generator.generate().toSingleFile(library)
 
@@ -140,10 +144,11 @@ class KtorControllerInterfaceGeneratorTest {
     @Test
     fun `ensure that subresource specific controllers are created`() {
         val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
-        val controllers = KtorControllerInterfaceGenerator(
-            Packages(basePackage),
-            api
-        ).generate()
+        val controllers =
+            KtorControllerInterfaceGenerator(
+                Packages(basePackage),
+                api,
+            ).generate()
 
         assertThat(controllers.files).size().isEqualTo(6)
         assertThat(controllers.files.map { it.name }).containsAll(
@@ -156,14 +161,16 @@ class KtorControllerInterfaceGeneratorTest {
             ),
         )
 
-        val linkedFunctionNames = controllers.files
-            .filter { it.name == "OrganisationsContributorsController" }
-            .flatMap { it.members }
-            .flatMap { (it as TypeSpec).funSpecs.map { t -> t.name } }
-        val ownedFunctionNames = controllers.files
-            .filter { it.name == "RepositoriesPullRequestsController" }
-            .flatMap { it.members }
-            .flatMap { (it as TypeSpec).funSpecs.map { t -> t.name } }
+        val linkedFunctionNames =
+            controllers.files
+                .filter { it.name == "OrganisationsContributorsController" }
+                .flatMap { it.members }
+                .flatMap { (it as TypeSpec).funSpecs.map { t -> t.name } }
+        val ownedFunctionNames =
+            controllers.files
+                .filter { it.name == "RepositoriesPullRequestsController" }
+                .flatMap { it.members }
+                .flatMap { (it as TypeSpec).funSpecs.map { t -> t.name } }
         assertThat(linkedFunctionNames).containsExactlyInAnyOrder(
             "get",
             "getById",
@@ -181,10 +188,11 @@ class KtorControllerInterfaceGeneratorTest {
     @Test
     fun `ensure controller methods has the suspend modifier`() {
         val api = SourceApi(readTextResource("/examples/githubApi/api.yaml"))
-        val controllers = KtorControllerInterfaceGenerator(
-            Packages(basePackage),
-            api
-        ).generate()
+        val controllers =
+            KtorControllerInterfaceGenerator(
+                Packages(basePackage),
+                api,
+            ).generate()
 
         assertThat(controllers.files).size().isEqualTo(6)
         assertThat(
@@ -198,13 +206,14 @@ class KtorControllerInterfaceGeneratorTest {
     @Test
     fun `adds disclaimer as comment to files if enabled`() {
         MutableSettings.updateSettings(
-            outputOptions = setOf(OutputOptionType.ADD_FILE_DISCLAIMER)
+            outputOptions = setOf(OutputOptionType.ADD_FILE_DISCLAIMER),
         )
         val api = SourceApi(readTextResource("/examples/fileComment/api.yaml"))
-        val generator = KtorControllerInterfaceGenerator(
-            Packages("examples.fileComment"),
-            api
-        )
+        val generator =
+            KtorControllerInterfaceGenerator(
+                Packages("examples.fileComment"),
+                api,
+            )
 
         val expectedFiles = readFolder(Path.of("src/test/resources/examples/fileComment/controllers/ktor"))
 
@@ -240,10 +249,11 @@ class KtorControllerInterfaceGeneratorTest {
     @Test
     fun `ensure generates ByteArray body parameter and response for string with format binary`() {
         val api = SourceApi(readTextResource("/examples/binary/api.yaml"))
-        val generator = KtorControllerInterfaceGenerator(
-            Packages(basePackage),
-            api
-        )
+        val generator =
+            KtorControllerInterfaceGenerator(
+                Packages(basePackage),
+                api,
+            )
         val controllers = generator.generate()
         val lib = generator.generateLibrary()
 
@@ -256,10 +266,11 @@ class KtorControllerInterfaceGeneratorTest {
     fun `ensure generates ByteArrayStream body parameter and response for string with format binary`() {
         MutableSettings.addOption(CodeGenTypeOverride.BYTEARRAY_AS_INPUTSTREAM)
         val api = SourceApi(readTextResource("/examples/byteArrayStream/api.yaml"))
-        val generator = KtorControllerInterfaceGenerator(
-            Packages(basePackage),
-            api
-        )
+        val generator =
+            KtorControllerInterfaceGenerator(
+                Packages(basePackage),
+                api,
+            )
         val controllers = generator.generate()
         val lib = generator.generateLibrary()
 
@@ -269,4 +280,3 @@ class KtorControllerInterfaceGeneratorTest {
         assertThatGenerated(fileStr).isEqualTo(expectedControllers)
     }
 }
-

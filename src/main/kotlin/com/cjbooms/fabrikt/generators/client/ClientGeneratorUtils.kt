@@ -14,14 +14,28 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.OasDefault
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringImports.RESPONSE_ENTITY
 import com.cjbooms.fabrikt.generators.model.ModelGenerator.Companion.toModelType
-import com.cjbooms.fabrikt.model.*
+import com.cjbooms.fabrikt.model.BodyParameter
+import com.cjbooms.fabrikt.model.ClientType
+import com.cjbooms.fabrikt.model.HeaderParam
+import com.cjbooms.fabrikt.model.IncomingParameter
+import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.MultipartParameter
+import com.cjbooms.fabrikt.model.RequestParameter
+import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupByPathSegment
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPathsByFirstTag
 import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.kaizen.oasparser.model3.Operation
 import com.reprezen.kaizen.oasparser.model3.Path
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.asClassName
+import com.squareup.kotlinpoet.asTypeName
 import kotlin.reflect.KClass
 
 object ClientGeneratorUtils {
@@ -52,8 +66,8 @@ object ClientGeneratorUtils {
      * Determines return the return type, with special handling for multiple response schemas.
      * Returns JsonNode for JSON-only responses, Any for mixed content types.
      */
-    fun Operation.getReturnType(): Any {
-        return if (!hasAnySuccessResponseSchemas()) {
+    fun Operation.getReturnType(): Any =
+        if (!hasAnySuccessResponseSchemas()) {
             Unit::class
         } else if (hasMultipleSuccessResponseSchemas()) {
             if (hasOnlyJsonSuccessResponses()) JsonNode::class else Any::class
@@ -62,42 +76,55 @@ object ClientGeneratorUtils {
                 KotlinTypeInfo.from(it.value.schema)
             } ?: Unit::class
         }
-    }
 
-    fun Operation.toClientReturnType(packages: Packages): TypeName {
-        return "ApiResponse".toClassName(packages.client).parameterizedBy(getReturnType(packages))
-    }
+    fun Operation.toClientReturnType(packages: Packages): TypeName =
+        "ApiResponse".toClassName(packages.client).parameterizedBy(getReturnType(packages))
 
     fun simpleClientName(resourceName: String) = "$resourceName${ClientType.SIMPLE_CLIENT_SUFFIX}"
 
     fun enhancedClientName(resourceName: String) = "$resourceName${ClientType.ENHANCED_CLIENT_SUFFIX}"
 
-    fun deriveClientParameters(path: Path, operation: Operation, basePackage: String): List<IncomingParameter> {
-        fun needsAcceptHeaderParameter(path: Path, operation: Operation): Boolean {
-            val hasAcceptParameter = GeneratorUtils.mergeParameters(path.parameters, operation.parameters)
-                .any { parameter ->
-                    parameter.`in` == "header" && parameter.name.equals(
-                        ACCEPT_HEADER_NAME,
-                        ignoreCase = true
-                    )
-                }
+    fun deriveClientParameters(
+        path: Path,
+        operation: Operation,
+        basePackage: String,
+    ): List<IncomingParameter> {
+        fun needsAcceptHeaderParameter(
+            path: Path,
+            operation: Operation,
+        ): Boolean {
+            val hasAcceptParameter =
+                GeneratorUtils
+                    .mergeParameters(path.parameters, operation.parameters)
+                    .any { parameter ->
+                        parameter.`in` == "header" &&
+                            parameter.name.equals(
+                                ACCEPT_HEADER_NAME,
+                                ignoreCase = true,
+                            )
+                    }
             return operation.hasMultipleContentMediaTypes() == true && !hasAcceptParameter
         }
 
-        val extra = if (needsAcceptHeaderParameter(path, operation)) listOf(
-            RequestParameter(
-                oasName = ACCEPT_HEADER_VARIABLE_NAME,
-                description = null,
-                type = toModelType(basePackage, KotlinTypeInfo.Text, false),
-                isRequired = true,
-                originalName = ACCEPT_HEADER_NAME,
-                parameterLocation = HeaderParam,
-                typeInfo = KotlinTypeInfo.Text,
-                minimum = null,
-                maximum = null,
-                defaultValue = operation.getPrimaryContentMediaTypeKey(),
-            )
-        ) else emptyList()
+        val extra =
+            if (needsAcceptHeaderParameter(path, operation)) {
+                listOf(
+                    RequestParameter(
+                        oasName = ACCEPT_HEADER_VARIABLE_NAME,
+                        description = null,
+                        type = toModelType(basePackage, KotlinTypeInfo.Text, false),
+                        isRequired = true,
+                        originalName = ACCEPT_HEADER_NAME,
+                        parameterLocation = HeaderParam,
+                        typeInfo = KotlinTypeInfo.Text,
+                        minimum = null,
+                        maximum = null,
+                        defaultValue = operation.getPrimaryContentMediaTypeKey(),
+                    ),
+                )
+            } else {
+                emptyList()
+            }
 
         return operation.toIncomingParameters(
             basePackage,
@@ -110,37 +137,43 @@ object ClientGeneratorUtils {
         parameters: List<IncomingParameter>,
         annotateRequestParameterWith: ((parameter: RequestParameter) -> AnnotationSpec?)? = null,
         annotateBodyParameterWith: ((parameter: BodyParameter) -> AnnotationSpec?)? = null,
-        multipartParameterToSpecBuilder: ((parameter: MultipartParameter) -> ParameterSpec.Builder)? = null
+        multipartParameterToSpecBuilder: ((parameter: MultipartParameter) -> ParameterSpec.Builder)? = null,
     ): FunSpec.Builder {
-        val specs = parameters.map {
-            val builder = when (it) {
-                is RequestParameter -> {
-                    val builder = it.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings = true)
-                    if (it.defaultValue != null) OasDefault.from(it.typeInfo, it.type, it.defaultValue)
-                        ?.let { t -> builder.defaultValue(t.getDefault()) }
-                    else if (!it.isRequired) builder.defaultValue("null")
-                    annotateRequestParameterWith?.invoke(it)?.let { annotationSpec ->
-                        builder.addAnnotation(annotationSpec)
-                    }
-                    builder
-                }
+        val specs =
+            parameters.map {
+                val builder =
+                    when (it) {
+                        is RequestParameter -> {
+                            val builder = it.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings = true)
+                            if (it.defaultValue != null) {
+                                OasDefault
+                                    .from(it.typeInfo, it.type, it.defaultValue)
+                                    ?.let { t -> builder.defaultValue(t.getDefault()) }
+                            } else if (!it.isRequired) {
+                                builder.defaultValue("null")
+                            }
+                            annotateRequestParameterWith?.invoke(it)?.let { annotationSpec ->
+                                builder.addAnnotation(annotationSpec)
+                            }
+                            builder
+                        }
 
-                is BodyParameter -> {
-                    val builder = it.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings = true)
-                    annotateBodyParameterWith?.invoke(it)?.let { annotationSpec ->
-                        builder.addAnnotation(annotationSpec)
-                    }
-                    builder
-                }
+                        is BodyParameter -> {
+                            val builder = it.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings = true)
+                            annotateBodyParameterWith?.invoke(it)?.let { annotationSpec ->
+                                builder.addAnnotation(annotationSpec)
+                            }
+                            builder
+                        }
 
-                is MultipartParameter -> {
-                    multipartParameterToSpecBuilder?.invoke(it) ?: it.toParameterSpecBuilder(
-                        treatAnyTypeHeadersAsStrings = true
-                    )
-                }
+                        is MultipartParameter -> {
+                            multipartParameterToSpecBuilder?.invoke(it) ?: it.toParameterSpecBuilder(
+                                treatAnyTypeHeadersAsStrings = true,
+                            )
+                        }
+                    }
+                builder.build()
             }
-            builder.build()
-        }
         return this.addParameters(specs)
     }
 
@@ -164,26 +197,28 @@ object ClientGeneratorUtils {
         return this
     }
 
-    class MultipartParameterToSpecBuilder(clientPackage: String) {
+    class MultipartParameterToSpecBuilder(
+        clientPackage: String,
+    ) {
         private val requestBodyWithFilenameType = ClassName.bestGuess("$clientPackage.RequestBodyWithFilename")
         private val requestBodyWithFilenameTypeList =
             List::class.asClassName().parameterizedBy(requestBodyWithFilenameType)
 
-        fun toSpecBuilder(): (MultipartParameter) -> ParameterSpec.Builder = {
-            ParameterSpec.builder(
-                name = when {
-                    it.isBinaryFile -> it.name
-                    else -> it.name
-                },
-                type = when {
-                    it.isBinaryFile && it.schema.type == "array" -> requestBodyWithFilenameTypeList
-                    it.isBinaryFile -> requestBodyWithFilenameType
-                    else -> it.type
-                }.copy(nullable = !it.isRequired),
-            )
-        }
-
+        fun toSpecBuilder(): (MultipartParameter) -> ParameterSpec.Builder =
+            {
+                ParameterSpec.builder(
+                    name =
+                        when {
+                            it.isBinaryFile -> it.name
+                            else -> it.name
+                        },
+                    type =
+                        when {
+                            it.isBinaryFile && it.schema.type == "array" -> requestBodyWithFilenameTypeList
+                            it.isBinaryFile -> requestBodyWithFilenameType
+                            else -> it.type
+                        }.copy(nullable = !it.isRequired),
+                )
+            }
     }
-
-
 }

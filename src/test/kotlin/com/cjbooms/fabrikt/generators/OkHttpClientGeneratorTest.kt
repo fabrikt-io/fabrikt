@@ -16,11 +16,11 @@ import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.util.TestFileUtils.toSingleFile
-import com.cjbooms.fabrikt.util.Linter
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
+import com.cjbooms.fabrikt.util.Linter
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.ResourceHelper.readTextResource
+import com.cjbooms.fabrikt.util.TestFileUtils.toSingleFile
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -32,17 +32,17 @@ import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class OkHttpClientGeneratorTest {
-
     @Suppress("unused")
-    private fun fullApiTestCases(): Stream<String> = Stream.of(
-        "okHttpClient",
-        "multiMediaType",
-        "okHttpClientPostWithoutRequestBody",
-        "pathLevelParameters",
-        "parameterNameClash",
-        "byteArrayStream",
-        "multipartUpload",
-    )
+    private fun fullApiTestCases(): Stream<String> =
+        Stream.of(
+            "okHttpClient",
+            "multiMediaType",
+            "okHttpClientPostWithoutRequestBody",
+            "pathLevelParameters",
+            "parameterNameClash",
+            "byteArrayStream",
+            "multipartUpload",
+        )
 
     @Suppress("unused")
     private fun groupedClientTestCases(): Stream<String> = Stream.concat(fullApiTestCases(), Stream.of("tagGrouping"))
@@ -53,7 +53,7 @@ class OkHttpClientGeneratorTest {
             genTypes = setOf(CodeGenerationType.CLIENT),
             clientTarget = ClientCodeGenTargetType.OK_HTTP,
             modelOptions = setOf(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS, ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
-            typeOverrides = setOf(CodeGenTypeOverride.BYTEARRAY_AS_INPUTSTREAM)
+            typeOverrides = setOf(CodeGenTypeOverride.BYTEARRAY_AS_INPUTSTREAM),
         )
         ModelNameRegistry.clear()
     }
@@ -68,18 +68,19 @@ class OkHttpClientGeneratorTest {
         val expectedModel = "/examples/$testCaseName/models/ClientModels.kt"
         val expectedClient = expectedClientPath(testCaseName, "ApiClient.kt")
 
-        val models = ModelGenerator(
-            packages,
-            sourceApi
-        ).generate().toSingleFile()
-        val simpleClientCode = OkHttpClientGenerator(
-            packages,
-            sourceApi,
-            Paths.get("src/main/kotlin")
-        )
-            .generate(optionsFor(testCaseName))
-            .clients
-            .toSingleFile()
+        val models =
+            ModelGenerator(
+                packages,
+                sourceApi,
+            ).generate().toSingleFile()
+        val simpleClientCode =
+            OkHttpClientGenerator(
+                packages,
+                sourceApi,
+                Paths.get("src/main/kotlin"),
+            ).generate(optionsFor(testCaseName))
+                .clients
+                .toSingleFile()
 
         if (testCaseName != "tagGrouping") {
             assertThatGenerated(models).isEqualTo(expectedModel)
@@ -100,9 +101,11 @@ class OkHttpClientGeneratorTest {
 
         val generator =
             OkHttpEnhancedClientGenerator(packages, sourceApi)
-        val enhancedLibUtil = generator.generateLibrary(options)
-            .filterIsInstance<SimpleFile>()
-            .contentOf("HttpResilience4jUtil.kt")
+        val enhancedLibUtil =
+            generator
+                .generateLibrary(options)
+                .filterIsInstance<SimpleFile>()
+                .contentOf("HttpResilience4jUtil.kt")
         val enhancedClientCode = generator.generateDynamicClientCode(options)
 
         if (testCaseName != "tagGrouping") {
@@ -118,11 +121,11 @@ class OkHttpClientGeneratorTest {
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
-        val enhancedClientCode = OkHttpEnhancedClientGenerator(
-            packages,
-            sourceApi
-        )
-            .generateDynamicClientCode(emptySet())
+        val enhancedClientCode =
+            OkHttpEnhancedClientGenerator(
+                packages,
+                sourceApi,
+            ).generateDynamicClientCode(emptySet())
 
         assertThat(enhancedClientCode).isEqualTo(emptySet<ClientType>())
     }
@@ -138,23 +141,26 @@ class OkHttpClientGeneratorTest {
         val expectedApiModels = "/examples/$testCaseName/client/ApiModels.kt"
         val expectedOAuth = "/examples/$testCaseName/client/OAuth.kt"
 
-        val generatedLibrary = OkHttpSimpleClientGenerator(
-            packages,
-            sourceApi
-        ).generateLibrary(emptySet()).filterIsInstance<SimpleFile>()
+        val generatedLibrary =
+            OkHttpSimpleClientGenerator(
+                packages,
+                sourceApi,
+            ).generateLibrary(emptySet()).filterIsInstance<SimpleFile>()
 
         assertThatGenerated(generatedLibrary.contentOf("HttpUtil.kt")).isEqualTo(expectedHttpUtils)
         assertThatGenerated(generatedLibrary.contentOf("ApiModels.kt")).isEqualTo(expectedApiModels)
         assertThatGenerated(generatedLibrary.contentOf("OAuth.kt")).isEqualTo(expectedOAuth)
     }
 
-    private fun Collection<SimpleFile>.contentOf(fileName: String): String =
-        first { it.path.fileName.toString() == fileName }.content
+    private fun Collection<SimpleFile>.contentOf(fileName: String): String = first { it.path.fileName.toString() == fileName }.content
 
     private fun optionsFor(testCaseName: String): Set<ClientCodeGenOptionType> =
         if (testCaseName == "tagGrouping") setOf(ClientCodeGenOptionType.GROUP_BY_TAG) else emptySet()
 
-    private fun expectedClientPath(testCaseName: String, fileName: String): String =
+    private fun expectedClientPath(
+        testCaseName: String,
+        fileName: String,
+    ): String =
         if (testCaseName == "tagGrouping") {
             "/examples/$testCaseName/client/grouped/$fileName"
         } else {
@@ -179,22 +185,28 @@ class OkHttpClientGeneratorTest {
             externalRefResolutionMode = ExternalReferencesResolutionMode.AGGRESSIVE,
         )
 
-        val models = ModelGenerator(
-            packages,
-            sourceApi,
-        ).generate().toSingleFile()
+        val models =
+            ModelGenerator(
+                packages,
+                sourceApi,
+            ).generate().toSingleFile()
         val generator =
             OkHttpEnhancedClientGenerator(packages, sourceApi)
         val simpleClientGenerator = OkHttpSimpleClientGenerator(packages, sourceApi)
-        val simpleClientCode = simpleClientGenerator
-            .generateDynamicClientCode()
-            .toSingleFile()
-        val enhancedClientCode = generator.generateDynamicClientCode(setOf(ClientCodeGenOptionType.RESILIENCE4J))
-            .toSingleFile()
+        val simpleClientCode =
+            simpleClientGenerator
+                .generateDynamicClientCode()
+                .toSingleFile()
+        val enhancedClientCode =
+            generator
+                .generateDynamicClientCode(setOf(ClientCodeGenOptionType.RESILIENCE4J))
+                .toSingleFile()
         val simpleClientLibrary = simpleClientGenerator.generateLibrary(emptySet()).filterIsInstance<SimpleFile>()
-        val enhancedLibUtil = generator.generateLibrary(setOf(ClientCodeGenOptionType.RESILIENCE4J))
-            .filterIsInstance<SimpleFile>()
-            .contentOf("HttpResilience4jUtil.kt")
+        val enhancedLibUtil =
+            generator
+                .generateLibrary(setOf(ClientCodeGenOptionType.RESILIENCE4J))
+                .filterIsInstance<SimpleFile>()
+                .contentOf("HttpResilience4jUtil.kt")
 
         assertThatGenerated(models).isEqualTo(expectedModel)
         assertThatGenerated(simpleClientCode).isEqualTo(expectedClient)
@@ -216,18 +228,19 @@ class OkHttpClientGeneratorTest {
         val expectedHttpUtils = "/examples/okHttpClientNonNullResponsePayloads/client/HttpUtil.kt"
         val expectedApiModels = "/examples/okHttpClientNonNullResponsePayloads/client/ApiModels.kt"
 
-        val simpleClientCode = OkHttpClientGenerator(
-            packages,
-            sourceApi,
-            Paths.get("src/main/kotlin")
-        )
-            .generate(options)
-            .clients
-            .toSingleFile()
-        val generatedLibrary = OkHttpSimpleClientGenerator(
-            packages,
-            sourceApi
-        ).generateLibrary(options).filterIsInstance<SimpleFile>()
+        val simpleClientCode =
+            OkHttpClientGenerator(
+                packages,
+                sourceApi,
+                Paths.get("src/main/kotlin"),
+            ).generate(options)
+                .clients
+                .toSingleFile()
+        val generatedLibrary =
+            OkHttpSimpleClientGenerator(
+                packages,
+                sourceApi,
+            ).generateLibrary(options).filterIsInstance<SimpleFile>()
 
         assertThatGenerated(simpleClientCode).isEqualTo(expectedClient)
         assertThatGenerated(generatedLibrary.contentOf("HttpUtil.kt")).isEqualTo(expectedHttpUtils)
@@ -239,19 +252,25 @@ class OkHttpClientGeneratorTest {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.CLIENT),
             clientTarget = ClientCodeGenTargetType.OK_HTTP,
-            outputOptions = setOf(OutputOptionType.ADD_FILE_DISCLAIMER)
+            outputOptions = setOf(OutputOptionType.ADD_FILE_DISCLAIMER),
         )
         val api = SourceApi(readTextResource("/examples/fileComment/api.yaml"))
-        val generator = OkHttpSimpleClientGenerator(
-            Packages("examples.fileComment"),
-            api
-        )
+        val generator =
+            OkHttpSimpleClientGenerator(
+                Packages("examples.fileComment"),
+                api,
+            )
 
         val expectedClient = readTextResource("/examples/fileComment/client/okhttp/PetsClient.kt")
 
         val clientTypes = generator.generateDynamicClientCode()
 
-        val content = Clients(clientTypes).files.first().toString().let { Linter.lintString(it) }
+        val content =
+            Clients(clientTypes)
+                .files
+                .first()
+                .toString()
+                .let { Linter.lintString(it) }
 
         assertThat(content).isEqualTo(expectedClient)
     }

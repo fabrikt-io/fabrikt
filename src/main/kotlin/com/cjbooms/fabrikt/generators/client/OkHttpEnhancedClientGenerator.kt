@@ -23,13 +23,20 @@ import com.cjbooms.fabrikt.model.SourceApi
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.reprezen.kaizen.oasparser.model3.Operation
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.asTypeName
 import java.nio.file.Path
 
 class OkHttpEnhancedClientGenerator(
     private val packages: Packages,
     private val api: SourceApi,
-    private val srcPath: Path = Destinations.MAIN_KT_SOURCE
+    private val srcPath: Path = Destinations.MAIN_KT_SOURCE,
 ) {
     private val multipartParameterToSpecBuilder = ClientGeneratorUtils.MultipartParameterToSpecBuilder(packages.client)
 
@@ -38,109 +45,125 @@ class OkHttpEnhancedClientGenerator(
             generateResilience4jClientCode(options)
         }
 
-    private fun generateResilience4jClientCode(options: Set<ClientCodeGenOptionType>): Collection<ClientType> {
-        return api.groupedClientPaths(options).map { (resourceName, paths) ->
-            val funSpecs: List<FunSpec> = paths.flatMap { (resource, path) ->
-                path.operations.map { (verb, operation) ->
-                    val parameters = deriveClientParameters(path, operation, packages.base)
-                    FunSpec
-                        .builder(functionName(operation, resource, verb))
-                        .addModifiers(KModifier.PUBLIC)
-                        .addAnnotation(
-                            AnnotationSpec.builder(Throws::class)
-                                .addMember("%T::class", "ApiException".toClassName(packages.client)).build()
-                        )
-                        .addIncomingParameters(
-                            parameters,
-                            multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder()
-                        )
-                        .addParameter(
-                            ParameterSpec.builder(
-                                ADDITIONAL_HEADERS_PARAMETER_NAME,
-                                TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName())
-                            )
-                                .defaultValue("emptyMap()")
+    private fun generateResilience4jClientCode(options: Set<ClientCodeGenOptionType>): Collection<ClientType> =
+        api
+            .groupedClientPaths(options)
+            .map { (resourceName, paths) ->
+                val funSpecs: List<FunSpec> =
+                    paths.flatMap { (resource, path) ->
+                        path.operations.map { (verb, operation) ->
+                            val parameters = deriveClientParameters(path, operation, packages.base)
+                            FunSpec
+                                .builder(functionName(operation, resource, verb))
+                                .addModifiers(KModifier.PUBLIC)
+                                .addAnnotation(
+                                    AnnotationSpec
+                                        .builder(Throws::class)
+                                        .addMember("%T::class", "ApiException".toClassName(packages.client))
+                                        .build(),
+                                ).addIncomingParameters(
+                                    parameters,
+                                    multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder(),
+                                ).addParameter(
+                                    ParameterSpec
+                                        .builder(
+                                            ADDITIONAL_HEADERS_PARAMETER_NAME,
+                                            TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
+                                        ).defaultValue("emptyMap()")
+                                        .build(),
+                                ).addCode(
+                                    Resilience4jClientOperationStatement(
+                                        resource,
+                                        verb,
+                                        operation,
+                                        parameters,
+                                    ).toStatement(),
+                                ).returns(operation.toClientReturnType(packages))
                                 .build()
-                        )
-                        .addCode(
-                            Resilience4jClientOperationStatement(
-                                resource,
-                                verb,
-                                operation,
-                                parameters,
-                            ).toStatement()
-                        )
-                        .returns(operation.toClientReturnType(packages))
-                        .build()
-                }
-            }
+                        }
+                    }
 
-            generateCircuitBreakerClientCode(resourceName, funSpecs)
-        }.toSet()
-    }
+                generateCircuitBreakerClientCode(resourceName, funSpecs)
+            }.toSet()
 
-    private fun generateCircuitBreakerClientCode(resourceName: String, funSpecs: List<FunSpec>): ClientType {
+    private fun generateCircuitBreakerClientCode(
+        resourceName: String,
+        funSpecs: List<FunSpec>,
+    ): ClientType {
         val apiClientClassName = simpleClientName(resourceName).toClassName(packages.client)
         val circuitBreakerRegistryClassName =
             "CircuitBreakerRegistry".toClassName("io.github.resilience4j.circuitbreaker")
 
         val configurableCircuitBreakerNameProperty =
-            PropertySpec.builder("circuitBreakerName", String::class.asTypeName())
+            PropertySpec
+                .builder("circuitBreakerName", String::class.asTypeName())
                 .mutable()
                 .initializer("%S", apiClientClassName.simpleName.toKCodeName())
                 .build()
 
-        val clientProperty = PropertySpec.builder("apiClient", apiClientClassName, KModifier.PRIVATE)
-            .initializer("%T(objectMapper, baseUrl, okHttpClient)", apiClientClassName)
-            .build()
+        val clientProperty =
+            PropertySpec
+                .builder("apiClient", apiClientClassName, KModifier.PRIVATE)
+                .initializer("%T(objectMapper, baseUrl, okHttpClient)", apiClientClassName)
+                .build()
 
         val circuitBreakerRegistryProperty =
-            PropertySpec.builder("circuitBreakerRegistry", circuitBreakerRegistryClassName, KModifier.PRIVATE)
+            PropertySpec
+                .builder("circuitBreakerRegistry", circuitBreakerRegistryClassName, KModifier.PRIVATE)
                 .initializer("circuitBreakerRegistry")
                 .build()
 
-        val constructor = FunSpec.constructorBuilder()
-            .addParameters(
-                listOf(
-                    ParameterSpec.builder(
-                        circuitBreakerRegistryProperty.name,
-                        circuitBreakerRegistryProperty.type
-                    ).build(),
-                    ParameterSpec.builder("objectMapper", ObjectMapper::class.asTypeName()).build(),
-                    ParameterSpec.builder("baseUrl", String::class.asTypeName()).build(),
-                    ParameterSpec.builder("okHttpClient", "OkHttpClient".toClassName("okhttp3")).build()
-                )
-            ).build()
+        val constructor =
+            FunSpec
+                .constructorBuilder()
+                .addParameters(
+                    listOf(
+                        ParameterSpec
+                            .builder(
+                                circuitBreakerRegistryProperty.name,
+                                circuitBreakerRegistryProperty.type,
+                            ).build(),
+                        ParameterSpec.builder("objectMapper", ObjectMapper::class.asTypeName()).build(),
+                        ParameterSpec.builder("baseUrl", String::class.asTypeName()).build(),
+                        ParameterSpec.builder("okHttpClient", "OkHttpClient".toClassName("okhttp3")).build(),
+                    ),
+                ).build()
 
-        val clientType = TypeSpec.classBuilder(enhancedClientName(resourceName))
-            .addKdoc(addClientKDoc())
-            .primaryConstructor(constructor)
-            .addProperty(circuitBreakerRegistryProperty)
-            .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "unused").build())
-            .addProperty(configurableCircuitBreakerNameProperty)
-            .addProperty(clientProperty)
-            .addFunctions(funSpecs)
-            .build()
+        val clientType =
+            TypeSpec
+                .classBuilder(enhancedClientName(resourceName))
+                .addKdoc(addClientKDoc())
+                .primaryConstructor(constructor)
+                .addProperty(circuitBreakerRegistryProperty)
+                .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%S", "unused").build())
+                .addProperty(configurableCircuitBreakerNameProperty)
+                .addProperty(clientProperty)
+                .addFunctions(funSpecs)
+                .build()
 
         return ClientType(clientType, packages.base, setOf(TYPE_REFERENCE_IMPORT))
     }
 
     fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> {
-        val clientDir = srcPath
-            .resolve(CodeGenerationUtils.packageToPath(packages.base))
-            .resolve("client")
+        val clientDir =
+            srcPath
+                .resolve(CodeGenerationUtils.packageToPath(packages.base))
+                .resolve("client")
         return listOfNotNull(
             if (ClientCodeGenOptionType.RESILIENCE4J in options) {
                 SimpleFile(
                     clientDir.resolve("HttpResilience4jUtil.kt"),
-                    OkHttpClientLibraryFiles.httpResilience4jUtil(packages).toString()
+                    OkHttpClientLibraryFiles.httpResilience4jUtil(packages).toString(),
                 )
-            } else null
+            } else {
+                null
+            },
         )
     }
 
     private fun addClientKDoc(): CodeBlock =
-        CodeBlock.builder()
+        CodeBlock
+            .builder()
             .add("The circuit breaker registry should have the proper configuration to correctly action on circuit breaker ")
             .add("transitions based on the client exceptions [ApiClientException], [ApiServerException] and [IOException].\n")
             .add("\n@see ApiClientException")
@@ -148,9 +171,8 @@ class OkHttpEnhancedClientGenerator(
             .build()
 
     private fun Set<ClientCodeGenOptionType>.ifResilience4jIsEnabled(
-        block: (Set<ClientCodeGenOptionType>) -> Collection<ClientType>
-    ): Collection<ClientType> =
-        if (this.any { it == ClientCodeGenOptionType.RESILIENCE4J }) block(this) else emptySet()
+        block: (Set<ClientCodeGenOptionType>) -> Collection<ClientType>,
+    ): Collection<ClientType> = if (this.any { it == ClientCodeGenOptionType.RESILIENCE4J }) block(this) else emptySet()
 }
 
 class Resilience4jClientOperationStatement(
@@ -160,7 +182,8 @@ class Resilience4jClientOperationStatement(
     private val parameters: List<IncomingParameter>,
 ) {
     fun toStatement(): CodeBlock =
-        CodeBlock.builder()
+        CodeBlock
+            .builder()
             .addCircuitBreakerStatement(parameters)
             .build()
 

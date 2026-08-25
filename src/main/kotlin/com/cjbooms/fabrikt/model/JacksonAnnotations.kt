@@ -16,17 +16,18 @@ object JacksonAnnotations : SerializationAnnotations {
     override val supportsBackingPropertyForDiscriminator = true
     override val supportsInheritedBackingProperties = true
     override val supportsAdditionalProperties = true
-    override fun addIgnore(propertySpecBuilder: PropertySpec.Builder) =
-        propertySpecBuilder.addAnnotation(JacksonMetadata.ignore)
 
-    override fun addGetter(funSpecBuilder: FunSpec.Builder) =
-        funSpecBuilder.addAnnotation(JacksonMetadata.anyGetter)
+    override fun addIgnore(propertySpecBuilder: PropertySpec.Builder) = propertySpecBuilder.addAnnotation(JacksonMetadata.ignore)
 
-    override fun addSetter(funSpecBuilder: FunSpec.Builder) =
-        funSpecBuilder.addAnnotation(JacksonMetadata.anySetter)
+    override fun addGetter(funSpecBuilder: FunSpec.Builder) = funSpecBuilder.addAnnotation(JacksonMetadata.anyGetter)
 
-    override fun addProperty(propertySpecBuilder: PropertySpec.Builder, oasKey: String, kotlinTypeInfo: KotlinTypeInfo): PropertySpec.Builder =
-        propertySpecBuilder.addAnnotation(JacksonMetadata.jacksonPropertyAnnotation(oasKey))
+    override fun addSetter(funSpecBuilder: FunSpec.Builder) = funSpecBuilder.addAnnotation(JacksonMetadata.anySetter)
+
+    override fun addProperty(
+        propertySpecBuilder: PropertySpec.Builder,
+        oasKey: String,
+        kotlinTypeInfo: KotlinTypeInfo,
+    ): PropertySpec.Builder = propertySpecBuilder.addAnnotation(JacksonMetadata.jacksonPropertyAnnotation(oasKey))
 
     override fun addParameter(
         propertySpecBuilder: PropertySpec.Builder,
@@ -34,14 +35,15 @@ object JacksonAnnotations : SerializationAnnotations {
         isRequired: Boolean,
         typeInfo: KotlinTypeInfo,
     ) = propertySpecBuilder.addAnnotation(
-        JacksonMetadata.jacksonParameterAnnotation(oasKey, required = isRequired && typeInfo.isPrimitiveType)
+        JacksonMetadata.jacksonParameterAnnotation(oasKey, required = isRequired && typeInfo.isPrimitiveType),
     )
 
-    override fun addClassAnnotation(typeSpecBuilder: TypeSpec.Builder) =
-        typeSpecBuilder
+    override fun addClassAnnotation(typeSpecBuilder: TypeSpec.Builder) = typeSpecBuilder
 
-    override fun addBasePolymorphicTypeAnnotation(typeSpecBuilder: TypeSpec.Builder, propertyName: String) =
-        typeSpecBuilder.addAnnotation(basePolymorphicType(propertyName))
+    override fun addBasePolymorphicTypeAnnotation(
+        typeSpecBuilder: TypeSpec.Builder,
+        propertyName: String,
+    ) = typeSpecBuilder.addAnnotation(basePolymorphicType(propertyName))
 
     override fun addPolymorphicSubTypesAnnotation(
         typeSpecBuilder: TypeSpec.Builder,
@@ -49,23 +51,32 @@ object JacksonAnnotations : SerializationAnnotations {
         enumDiscriminator: KotlinTypeInfo.Enum?,
     ) = typeSpecBuilder.addAnnotation(polymorphicSubTypes(mappings, enumDiscriminator))
 
-    override fun addPolymorphicSubTypeDeductionAnnotation(typeSpecBuilder: TypeSpec.Builder, subTypes: List<TypeName>) =
-        typeSpecBuilder
-            .addAnnotation(deductionPolymorphicType())
-            .addAnnotation(deductionPolymorphicSubTypes(subTypes))
+    override fun addPolymorphicSubTypeDeductionAnnotation(
+        typeSpecBuilder: TypeSpec.Builder,
+        subTypes: List<TypeName>,
+    ) = typeSpecBuilder
+        .addAnnotation(deductionPolymorphicType())
+        .addAnnotation(deductionPolymorphicSubTypes(subTypes))
 
-    override fun addSubtypeMappingAnnotation(typeSpecBuilder: TypeSpec.Builder, mapping: String) =
-        typeSpecBuilder
+    override fun addSubtypeMappingAnnotation(
+        typeSpecBuilder: TypeSpec.Builder,
+        mapping: String,
+    ) = typeSpecBuilder
 
-    override fun addEnumPropertyAnnotation(propSpecBuilder: PropertySpec.Builder) =
-        propSpecBuilder.addAnnotation(JSON_VALUE)
+    override fun addEnumPropertyAnnotation(propSpecBuilder: PropertySpec.Builder) = propSpecBuilder.addAnnotation(JSON_VALUE)
 
-    override fun addEnumConstantAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String) =
-        enumSpecBuilder // not applicable
+    override fun addEnumConstantAnnotation(
+        enumSpecBuilder: TypeSpec.Builder,
+        enumValue: String,
+    ) = enumSpecBuilder // not applicable
 
-    override fun addEnumDefaultAnnotation(enumSpecBuilder: TypeSpec.Builder, enumValue: String) =
-        enumSpecBuilder.addAnnotation(JSON_ENUM_DEFAULT_VALUE)
+    override fun addEnumDefaultAnnotation(
+        enumSpecBuilder: TypeSpec.Builder,
+        enumValue: String,
+    ) = enumSpecBuilder.addAnnotation(JSON_ENUM_DEFAULT_VALUE)
 
-    override fun annotateArrayElementType(elementType: TypeName, elementTypeInfo: KotlinTypeInfo): TypeName =
-        elementType // Jackson doesn't need array element annotations
+    override fun annotateArrayElementType(
+        elementType: TypeName,
+        elementTypeInfo: KotlinTypeInfo,
+    ): TypeName = elementType // Jackson doesn't need array element annotations
 }

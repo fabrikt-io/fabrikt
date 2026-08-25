@@ -7,11 +7,11 @@ import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.controller.KtorClientGenerator
+import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.util.TestFileUtils.toSingleFile
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
 import com.cjbooms.fabrikt.util.ModelNameRegistry
-import com.cjbooms.fabrikt.model.SimpleFile
+import com.cjbooms.fabrikt.util.TestFileUtils.toSingleFile
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,12 +22,12 @@ import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class KtorClientGeneratorTest {
-
     @Suppress("unused")
-    private fun fullApiTestCases(): Stream<String> = Stream.of(
-        "ktorClient",
-        "parameterNameClash",
-    )
+    private fun fullApiTestCases(): Stream<String> =
+        Stream.of(
+            "ktorClient",
+            "parameterNameClash",
+        )
 
     @Suppress("unused")
     private fun groupedClientTestCases(): Stream<String> = Stream.concat(fullApiTestCases(), Stream.of("tagGrouping"))
@@ -52,13 +52,13 @@ class KtorClientGeneratorTest {
 
         val expectedClient = expectedClientPath(testCaseName, "KtorClient.kt")
 
-        val clientCode = KtorClientGenerator(
-            packages,
-            sourceApi
-        )
-            .generate(optionsFor(testCaseName))
-            .clients
-            .toSingleFile()
+        val clientCode =
+            KtorClientGenerator(
+                packages,
+                sourceApi,
+            ).generate(optionsFor(testCaseName))
+                .clients
+                .toSingleFile()
 
         assertThatGenerated(clientCode).isEqualTo(expectedClient)
     }
@@ -73,24 +73,26 @@ class KtorClientGeneratorTest {
         val expectedApiModels = "/examples/$testCaseName/client/ktor/KtorApiModels.kt"
         val expectedApiConfiguration = "/examples/$testCaseName/client/ktor/KtorApiConfiguration.kt"
 
-        val generatedLibrary = KtorClientGenerator(
-            packages,
-            sourceApi
-        )
-            .generateLibrary(emptySet())
-            .filterIsInstance<SimpleFile>()
+        val generatedLibrary =
+            KtorClientGenerator(
+                packages,
+                sourceApi,
+            ).generateLibrary(emptySet())
+                .filterIsInstance<SimpleFile>()
 
         assertThatGenerated(generatedLibrary.contentOf("KtorApiModels.kt")).isEqualTo(expectedApiModels)
         assertThatGenerated(generatedLibrary.contentOf("KtorApiConfiguration.kt")).isEqualTo(expectedApiConfiguration)
     }
 
-    private fun Collection<SimpleFile>.contentOf(fileName: String): String =
-        first { it.path.fileName.toString() == fileName }.content
+    private fun Collection<SimpleFile>.contentOf(fileName: String): String = first { it.path.fileName.toString() == fileName }.content
 
     private fun optionsFor(testCaseName: String): Set<ClientCodeGenOptionType> =
         if (testCaseName == "tagGrouping") setOf(ClientCodeGenOptionType.GROUP_BY_TAG) else emptySet()
 
-    private fun expectedClientPath(testCaseName: String, fileName: String): String =
+    private fun expectedClientPath(
+        testCaseName: String,
+        fileName: String,
+    ): String =
         if (testCaseName == "tagGrouping") {
             "/examples/$testCaseName/client/ktor/grouped/$fileName"
         } else {
@@ -99,7 +101,8 @@ class KtorClientGeneratorTest {
 
     @Test
     fun `operationId with dots is sanitized to valid Kotlin function name`() {
-        val spec = """
+        val spec =
+            """
             openapi: "3.0.0"
             info:
               title: Test API
@@ -115,15 +118,16 @@ class KtorClientGeneratorTest {
                         application/json:
                           schema:
                             type: string
-        """.trimIndent()
+            """.trimIndent()
 
         val packages = Packages("com.test")
         val sourceApi = SourceApi(spec)
 
-        val clientCode = KtorClientGenerator(packages, sourceApi)
-            .generate(emptySet())
-            .clients
-            .toSingleFile()
+        val clientCode =
+            KtorClientGenerator(packages, sourceApi)
+                .generate(emptySet())
+                .clients
+                .toSingleFile()
 
         assertThat(clientCode).contains("fun appGetApplicationApiUsage(")
         assertThat(clientCode).doesNotContain("app.GetApplicationApiUsage")

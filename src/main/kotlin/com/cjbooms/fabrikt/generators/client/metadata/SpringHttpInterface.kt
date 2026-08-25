@@ -18,18 +18,23 @@ object SpringHttpInterfaceImports {
 }
 
 object SpringHttpInterfaceAnnotations {
-    fun requestParamBuilder(): AnnotationSpec.Builder = AnnotationSpec
-        .builder(SpringHttpInterfaceImports.REQUEST_PARAM)
+    fun requestParamBuilder(): AnnotationSpec.Builder =
+        AnnotationSpec
+            .builder(SpringHttpInterfaceImports.REQUEST_PARAM)
 
-    fun requestHeaderBuilder(): AnnotationSpec.Builder = AnnotationSpec
-        .builder(SpringHttpInterfaceImports.REQUEST_HEADER)
+    fun requestHeaderBuilder(): AnnotationSpec.Builder =
+        AnnotationSpec
+            .builder(SpringHttpInterfaceImports.REQUEST_HEADER)
 
-    fun requestBodyBuilder(): AnnotationSpec.Builder = AnnotationSpec
-        .builder(SpringHttpInterfaceImports.REQUEST_BODY)
+    fun requestBodyBuilder(): AnnotationSpec.Builder =
+        AnnotationSpec
+            .builder(SpringHttpInterfaceImports.REQUEST_BODY)
 
-    fun pathVariableBuilder(): AnnotationSpec.Builder = AnnotationSpec
-        .builder(SpringHttpInterfaceImports.PATH_VARIABLE)
+    fun pathVariableBuilder(): AnnotationSpec.Builder =
+        AnnotationSpec
+            .builder(SpringHttpInterfaceImports.PATH_VARIABLE)
 
-    fun httpExchangeBuilder(): AnnotationSpec.Builder = AnnotationSpec
-        .builder(SpringHttpInterfaceImports.HTTP_EXCHANGE)
+    fun httpExchangeBuilder(): AnnotationSpec.Builder =
+        AnnotationSpec
+            .builder(SpringHttpInterfaceImports.HTTP_EXCHANGE)
 }

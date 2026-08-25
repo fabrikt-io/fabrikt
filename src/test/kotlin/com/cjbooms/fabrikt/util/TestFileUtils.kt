@@ -21,8 +21,9 @@ object TestFileUtils {
         models
             .sortedBy { it.spec.name }
             .forEach {
-                val builder = singleFileBuilder
-                    .addType(it.spec)
+                val builder =
+                    singleFileBuilder
+                        .addType(it.spec)
                 builder.build()
             }
         return Linter.lintString(singleFileBuilder.build().toString())
