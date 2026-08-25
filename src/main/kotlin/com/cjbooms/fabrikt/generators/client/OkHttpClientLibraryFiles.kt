@@ -132,9 +132,12 @@ object OkHttpClientLibraryFiles {
                     .addParameter("key", String::class)
                     .addParameter("value", TypeVariableName("T").copy(nullable = true))
                     .returns(httpUrlBuilder)
-                    .beginControlFlow("return this.apply")
-                    .addStatement("if·(value·!=·null)·this.addQueryParameter(key,·value.toString())")
-                    .endControlFlow()
+                    .addCode(
+                        """
+                        if (value != null) this.addQueryParameter(key, value.toString())
+                        return this
+                        """.trimIndent()
+                    )
                     .build()
             )
             .addFunction(
@@ -145,9 +148,12 @@ object OkHttpClientLibraryFiles {
                     .addParameter("key", String::class)
                     .addParameter("value", TypeVariableName("T").copy(nullable = true))
                     .returns(formBodyBuilder)
-                    .beginControlFlow("return this.apply")
-                    .addStatement("if·(value·!=·null)·this.add(key,·value.toString())")
-                    .endControlFlow()
+                    .addCode(
+                        """
+                        if (value != null) this.add(key, value.toString())
+                        return this
+                        """.trimIndent()
+                    )
                     .build()
             )
             .addFunction(
@@ -163,12 +169,15 @@ object OkHttpClientLibraryFiles {
                         ParameterSpec.builder("explode", Boolean::class).defaultValue("true").build()
                     )
                     .returns(httpUrlBuilder)
-                    .beginControlFlow("return this.apply")
-                    .beginControlFlow("if (values != null)")
-                    .addStatement("if·(explode)·values.forEach·{·addQueryParameter(key,·it.toString())·}")
-                    .addStatement("else·addQueryParameter(key,·values.joinToString(%S))", ",")
-                    .endControlFlow()
-                    .endControlFlow()
+                    .addCode(
+                        """
+                        if (values != null) {
+                            if (explode) values.forEach { addQueryParameter(key, it.toString()) }
+                            else addQueryParameter(key, values.joinToString(","))
+                        }
+                        return this
+                        """.trimIndent()
+                    )
                     .build()
             )
             .addFunction(
@@ -178,9 +187,12 @@ object OkHttpClientLibraryFiles {
                     .addParameter("key", String::class)
                     .addParameter("value", Any::class.asTypeName().copy(nullable = true))
                     .returns(headersBuilder)
-                    .beginControlFlow("return this.apply")
-                    .addStatement("if·(value·!=·null)·this.add(key,·value.toString())")
-                    .endControlFlow()
+                    .addCode(
+                        """
+                        if (value != null) this.add(key, value.toString())
+                        return this
+                        """.trimIndent()
+                    )
                     .build()
             )
             .addFunction(

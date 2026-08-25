@@ -20,15 +20,15 @@ import okhttp3.Response
 import okhttp3.ResponseBody
 
 @Suppress("unused")
-public fun <T : Any> HttpUrl.Builder.queryParam(key: String, `value`: T?): HttpUrl.Builder =
-        this.apply {
+public fun <T : Any> HttpUrl.Builder.queryParam(key: String, `value`: T?): HttpUrl.Builder {
     if (value != null) this.addQueryParameter(key, value.toString())
+    return this
 }
 
 @Suppress("unused")
-public fun <T : Any> FormBody.Builder.formParam(key: String, `value`: T?): FormBody.Builder =
-        this.apply {
+public fun <T : Any> FormBody.Builder.formParam(key: String, `value`: T?): FormBody.Builder {
     if (value != null) this.add(key, value.toString())
+    return this
 }
 
 @Suppress("unused")
@@ -36,16 +36,18 @@ public fun HttpUrl.Builder.queryParam(
     key: String,
     values: List<Any>?,
     explode: Boolean = true,
-): HttpUrl.Builder = this.apply {
+): HttpUrl.Builder {
     if (values != null) {
         if (explode) values.forEach { addQueryParameter(key, it.toString()) }
         else addQueryParameter(key, values.joinToString(","))
     }
+    return this
 }
 
 @Suppress("unused")
-public fun Headers.Builder.`header`(key: String, `value`: Any?): Headers.Builder = this.apply {
+public fun Headers.Builder.`header`(key: String, `value`: Any?): Headers.Builder {
     if (value != null) this.add(key, value.toString())
+    return this
 }
 
 @Throws(ApiException::class)
