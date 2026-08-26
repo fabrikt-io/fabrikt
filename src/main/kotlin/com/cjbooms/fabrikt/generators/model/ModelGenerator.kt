@@ -20,6 +20,7 @@ import com.cjbooms.fabrikt.generators.TypeFactory.createMutableMapOfMapsStringTo
 import com.cjbooms.fabrikt.generators.TypeFactory.createMutableMapOfStringToType
 import com.cjbooms.fabrikt.generators.TypeFactory.createSet
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
+import com.cjbooms.fabrikt.generators.model.RelativeSchemaHandler.maybeConvertRelativeSchemaFile
 import com.cjbooms.fabrikt.model.Destinations.modelsPackage
 import com.cjbooms.fabrikt.model.GeneratedType
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
@@ -200,7 +201,10 @@ class ModelGenerator(
     fun generate(): Models {
         val models: MutableSet<TypeSpec> = createModels(sourceApi.openApi3, sourceApi.allSchemas)
         externalApiSchemas.forEach { externalReferences ->
-            val api = OpenApi3Parser().parse(URL(externalReferences.key))
+            val api =
+                OpenApi3Parser().parse(URL(externalReferences.key)).let { input ->
+                    maybeConvertRelativeSchemaFile(externalReferences.key, input)
+                }
             val schemas =
                 api.schemas.entries
                     .map { (key, schema) -> SchemaInfo(key, schema) }

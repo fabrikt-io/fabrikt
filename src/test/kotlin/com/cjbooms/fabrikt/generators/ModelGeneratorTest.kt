@@ -25,6 +25,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -48,6 +49,7 @@ class ModelGeneratorTest {
             "enumExamples",
             "enumPolymorphicDiscriminator",
             "externalReferences/targeted",
+            "externalReferences/relativeSchemaDocument",
             "faultTolerantEnums",
             "githubApi",
             "inLinedObject",
@@ -480,6 +482,23 @@ class ModelGeneratorTest {
                 .toSingleFile()
 
         assertThatGenerated(models).isEqualTo(expectedModels)
+    }
+
+    @Test
+    fun `relative schema document does not crash with empty path from root`() {
+        val basePackage = "examples.externalReferences.relativeSchemaDocument"
+        val apiLocation = javaClass.getResource("/examples/externalReferences/relativeSchemaDocument/api.yaml")!!
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
+
+        val models =
+            assertDoesNotThrow {
+                ModelGenerator(
+                    Packages(basePackage),
+                    sourceApi,
+                ).generate()
+            }
+
+        assertThat(models.models.map { it.spec.name }).contains("RelativeSchema")
     }
 
     private fun Models.toSingleFile(): String {

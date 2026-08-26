@@ -47,6 +47,21 @@ object KaizenParserExtensions {
 
     fun Schema.printPathFromRoot(): String = Overlay.of(this).pathFromRoot
 
+    private fun Schema.documentUrl(): String? =
+        Overlay
+            .of(this)
+            .positionInfo
+            ?.orElse(null)
+            ?.documentUrl
+
+    private fun Schema.isRelativeSchemaDocument(): Boolean = Overlay.of(this).pathFromRoot.isEmpty()
+
+    private fun Schema.relativeSchemaDocumentName(): String? =
+        documentUrl()
+            ?.substringAfterLast('/')
+            ?.substringBeforeLast('.')
+            ?.toModelClassName()
+
     fun Schema.isUnsupportedComplexInlinedDefinition() =
         Overlay.of(this).pathFromRoot.contains("paths") &&
             name == null &&
@@ -369,8 +384,8 @@ object KaizenParserExtensions {
 
     fun Schema.hasDiscriminator(): Boolean = !hasNoDiscriminator()
 
-    fun Schema.safeName(): String =
-        when {
+    fun Schema.safeName(): String {
+        return when {
             isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !(isOneOfSuperInterfaceWithDiscriminator()) ->
                 this.oneOfSchemas
                     .first()
@@ -379,7 +394,10 @@ object KaizenParserExtensions {
                     .safeName()
             isInlinedAggregationOfExactlyOne() -> combinedAnyOfAndAllOfSchemas().first().safeName()
             name != null -> name
-            else ->
+            else -> {
+                if (isRelativeSchemaDocument()) {
+                    relativeSchemaDocumentName()?.let { return it }
+                }
                 Overlay
                     .of(this)
                     .pathFromRoot
@@ -388,7 +406,9 @@ object KaizenParserExtensions {
                     .filter { it.toIntOrNull() == null } // Ignore numeric-identifiers path-parts in: allOf / oneOf / anyOf
                     .last()
                     .replace("~1", "-") // so application~1octet-stream becomes application-octet-stream
+            }
         }
+    }
 
     fun Schema.safeType(): String? {
         // 1. Direct type is always authoritative

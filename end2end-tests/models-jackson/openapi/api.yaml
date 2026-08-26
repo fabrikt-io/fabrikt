@@ -473,6 +473,14 @@ components:
           format: double
           default: 0.1
 
+    RelativePetHolder:
+      type: object
+      properties:
+        pet:
+          $ref: './RelativePet.yaml'
+        owner:
+          $ref: './RelativeOwner.yaml'
+
     # Required primitives - for testing issue #489
     RequiredPrimitives:
       type: object
