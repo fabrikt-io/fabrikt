@@ -6,7 +6,7 @@ Fabrikt is a build-time code generation tool — it is not deployed as a runtime
 
 ## Supported Versions
 
-The latest release on [Maven Central](https://central.sonatype.com/artifact/com.cjbooms/fabrikt) is the only supported version.
+The latest release on [Maven Central](https://central.sonatype.com/artifact/io.fabrikt/fabrikt) is the only supported version.
 
 ## Reporting a Vulnerability
 
