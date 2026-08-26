@@ -44,6 +44,7 @@ class ModelGeneratorTest {
             "arrays",
             "anyOfOneOfAllOf",
             "deepNestedSharingReferences",
+            "boundedModelNameCollisions",
             "defaultValues",
             "duplicatePropertyHandling",
             "enumExamples",

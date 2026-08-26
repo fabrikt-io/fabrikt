@@ -1,0 +1,53 @@
+openapi: "3.0.0"
+info:
+  title: "Bounded Model Name Collisions"
+  version: "1.0.0"
+paths:
+  /a:
+    get:
+      operationId: getA
+      parameters:
+        - name: $select
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - Alpha
+                - Beta
+      responses:
+        200:
+          description: "ok"
+  /b:
+    get:
+      operationId: getB
+      parameters:
+        - name: $select
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - Gamma
+                - Delta
+      responses:
+        200:
+          description: "ok"
+  /c:
+    get:
+      operationId: getC
+      parameters:
+        - name: $select
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - Epsilon
+                - Zeta
+      responses:
+        200:
+          description: "ok"
