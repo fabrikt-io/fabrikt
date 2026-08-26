@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
  * This is needed because some OpenAPI 3.1 features are not supported by the kaizen parser.
  */
 object OpenApi31Downgrader {
-    private val NULL_TYPE: JsonNode = YamlUtils.objectMapper.valueToTree("null")
+    private val NULL_TYPE: JsonNode = YamlObjectMapper.instance.valueToTree("null")
     private const val TARGET_MAJOR = 3
     private const val TARGET_MINOR = 0
 
@@ -45,7 +45,7 @@ object OpenApi31Downgrader {
                 if (objectNode.get("type")?.asText() == "array" && !objectNode.has("items")) {
                     objectNode.set<JsonNode>(
                         "items",
-                        YamlUtils.objectMapper.createObjectNode().apply {
+                        YamlObjectMapper.instance.createObjectNode().apply {
                             put("nullable", true)
                         },
                     )

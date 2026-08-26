@@ -1,0 +1,62 @@
+package com.cjbooms.fabrikt.parser
+
+import com.cjbooms.fabrikt.util.YamlUtils
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
+
+class OpenApiDocumentParserTest {
+    @Test
+    fun `preserves the source document before applying Kaizen compatibility transformations`() {
+        val input =
+            """
+            openapi: 3.1.0
+            info:
+              title: Test
+              version: "1.0"
+            paths: {}
+            components:
+              schemas:
+                Name:
+                  type:
+                    - string
+                    - "null"
+            """.trimIndent()
+
+        val parsedDocument = OpenApiDocumentParser.parse(input)
+        val source = YamlUtils.objectMapper.readTree(parsedDocument.sourceContent)
+
+        assertThat(source.at("/components/schemas/Name/type").map { it.textValue() })
+            .containsExactly("string", "null")
+        assertThat(parsedDocument.kaizenModel.schemas["Name"]!!.type).isEqualTo("string")
+        assertThat(parsedDocument.kaizenModel.schemas["Name"]!!.nullable).isTrue()
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "3.0.4, 3, 0, 4",
+        "3.1.2, 3, 1, 2",
+        "3.2.0, 3, 2, 0",
+    )
+    fun `exposes the source OpenAPI version before compatibility transformations`(
+        value: String,
+        major: Int,
+        minor: Int,
+        patch: Int,
+    ) {
+        val input =
+            """
+            openapi: $value
+            info:
+              title: Test
+              version: "1.0"
+            paths: {}
+            """.trimIndent()
+
+        val version = OpenApiDocumentParser.parse(input).version
+
+        assertThat(version)
+            .isEqualTo(OpenApiVersion(value, major, minor, patch))
+    }
+}

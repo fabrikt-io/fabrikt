@@ -1,16 +1,14 @@
 package com.cjbooms.fabrikt.util
 
-import com.fasterxml.jackson.core.JsonParser
+import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
+import com.cjbooms.fabrikt.parser.OpenApiInputCleaner
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactoryBuilder
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.reprezen.jsonoverlay.JsonLoader
-import com.reprezen.kaizen.oasparser.OpenApi3Parser
 import com.reprezen.kaizen.oasparser.model3.OpenApi3
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.LoaderOptions
@@ -19,16 +17,7 @@ import java.net.URI
 import java.nio.file.Paths
 
 object YamlUtils {
-    val objectMapper: ObjectMapper =
-        ObjectMapper(
-            YAMLFactory
-                .builder()
-                .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-                .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
-                .increaseMaxFileSize()
-                .build(),
-        ).registerKotlinModule()
-            .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
+    val objectMapper: ObjectMapper = YamlObjectMapper.instance
     private val internalMapper: ObjectMapper =
         ObjectMapper(
             YAMLFactory
@@ -36,13 +25,6 @@ object YamlUtils {
                 .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
                 .increaseMaxFileSize()
                 .build(),
-        )
-
-    private fun YAMLFactoryBuilder.increaseMaxFileSize(): YAMLFactoryBuilder =
-        loaderOptions(
-            LoaderOptions().apply {
-                codePointLimit = 100 * 1024 * 1024 // 100MB
-            },
         )
 
     /**
@@ -94,41 +76,9 @@ object YamlUtils {
         input: String,
         baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
         jsonLoader: JsonLoader? = null,
-    ): OpenApi3 =
-        try {
-            val root: JsonNode = objectMapper.readTree(input)
-            OpenApi31Downgrader.downgradeIncompatibleElements(root)
-            cleanEmptyTypes(root)
-            OpenApi3Parser().parse(root, baseUri.toURL(), false, jsonLoader) as OpenApi3
-        } catch (ex: NullPointerException) {
-            throw IllegalArgumentException(
-                "The Kaizen openapi-parser library threw a NPE exception when parsing this API. " +
-                    "This is commonly due to an external schema reference that is unresolvable, " +
-                    "possibly due to a lack of internet connection",
-                ex,
-            )
-        }
+    ): OpenApi3 = OpenApiDocumentParser.parse(input, baseUri, jsonLoader).kaizenModel
 
-    fun cleanEmptyTypes(node: JsonNode) {
-        when {
-            node.isObject -> {
-                val objectNode = node as ObjectNode
-                val fieldsToProcess = objectNode.fields().asSequence().toList()
-
-                for ((key, value) in fieldsToProcess) {
-                    if (key == "type" && (value.isNull || (value.isTextual && value.asText().isBlank()))) {
-                        objectNode.remove("type")
-                    } else {
-                        cleanEmptyTypes(value)
-                    }
-                }
-            }
-
-            node.isArray -> {
-                node.forEach { cleanEmptyTypes(it) }
-            }
-        }
-    }
+    fun cleanEmptyTypes(node: JsonNode) = OpenApiInputCleaner.cleanEmptyTypes(node)
 
     /**
      * The below merge function has been shamelessly stolen from Stackoverflow: https://stackoverflow.com/a/32447591/1026785

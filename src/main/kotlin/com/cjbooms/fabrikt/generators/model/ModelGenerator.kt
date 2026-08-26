@@ -32,6 +32,7 @@ import com.cjbooms.fabrikt.model.PropertyInfo.Companion.topLevelProperties
 import com.cjbooms.fabrikt.model.SchemaInfo
 import com.cjbooms.fabrikt.model.SerializationAnnotations
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.parser.KaizenParserAdapter
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.findOneOfSuperInterface
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.getDiscriminatorForInlinedObjectUnderAllOf
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.getSchemaRefName
@@ -59,7 +60,6 @@ import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeName
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.reprezen.jsonoverlay.Overlay
-import com.reprezen.kaizen.oasparser.OpenApi3Parser
 import com.reprezen.kaizen.oasparser.model3.Discriminator
 import com.reprezen.kaizen.oasparser.model3.OpenApi3
 import com.reprezen.kaizen.oasparser.model3.Schema
@@ -202,7 +202,7 @@ class ModelGenerator(
         val models: MutableSet<TypeSpec> = createModels(sourceApi.openApi3, sourceApi.allSchemas)
         externalApiSchemas.forEach { externalReferences ->
             val api =
-                OpenApi3Parser().parse(URL(externalReferences.key)).let { input ->
+                KaizenParserAdapter.parse(URL(externalReferences.key)).let { input ->
                     maybeConvertRelativeSchemaFile(externalReferences.key, input)
                 }
             val schemas =

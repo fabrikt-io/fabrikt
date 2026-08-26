@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.model
 
 import com.beust.jcommander.ParameterException
+import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isEnumDefinition
 import com.cjbooms.fabrikt.util.KaizenParserExtensions.isNotDefined
 import com.cjbooms.fabrikt.util.ModelNameRegistry
@@ -43,7 +44,8 @@ class SourceApi private constructor(
         }
     }
 
-    val openApi3: OpenApi3 = YamlUtils.parseOpenApi(rawApiSpec, baseUri, jsonLoader)
+    internal val parsedDocument = OpenApiDocumentParser.parse(rawApiSpec, baseUri, jsonLoader)
+    val openApi3: OpenApi3 = parsedDocument.kaizenModel
     val allSchemas: List<SchemaInfo>
 
     init {
