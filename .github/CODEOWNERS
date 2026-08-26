@@ -1,0 +1,3 @@
+# This will default to assigning the core-maintainers team 
+# for any file changed in the repository.
+*       @fabrikt-io/core-maintainers
