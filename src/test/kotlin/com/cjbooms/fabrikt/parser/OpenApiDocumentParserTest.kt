@@ -3,6 +3,8 @@ package com.cjbooms.fabrikt.parser
 import com.cjbooms.fabrikt.util.YamlUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 
 class OpenApiDocumentParserTest {
     @Test
@@ -29,5 +31,32 @@ class OpenApiDocumentParserTest {
             .containsExactly("string", "null")
         assertThat(parsedDocument.kaizenModel.schemas["Name"]!!.type).isEqualTo("string")
         assertThat(parsedDocument.kaizenModel.schemas["Name"]!!.nullable).isTrue()
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "3.0.4, 3, 0, 4",
+        "3.1.2, 3, 1, 2",
+        "3.2.0, 3, 2, 0",
+    )
+    fun `exposes the source OpenAPI version before compatibility transformations`(
+        value: String,
+        major: Int,
+        minor: Int,
+        patch: Int,
+    ) {
+        val input =
+            """
+            openapi: $value
+            info:
+              title: Test
+              version: "1.0"
+            paths: {}
+            """.trimIndent()
+
+        val version = OpenApiDocumentParser.parse(input).version
+
+        assertThat(version)
+            .isEqualTo(OpenApiVersion(value, major, minor, patch))
     }
 }
