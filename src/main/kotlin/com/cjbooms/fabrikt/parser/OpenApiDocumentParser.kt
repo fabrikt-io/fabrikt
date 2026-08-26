@@ -7,7 +7,7 @@ import com.reprezen.kaizen.oasparser.model3.OpenApi3
 import java.net.URI
 import java.nio.file.Paths
 
-internal class ParsedOpenApiDocument(
+internal data class ParsedOpenApiDocument(
     val sourceContent: String,
     val version: OpenApiVersion?,
     val kaizenModel: OpenApi3,
