@@ -150,6 +150,7 @@ enum class CodeGenTypeOverride(
     ANY_AS_JSONELEMENT(
         "Use `kotlinx.serialization.json.JsonElement` for untyped (any) schemas and `JsonObject` for untyped objects. Requires the KOTLINX_SERIALIZATION serialization library. Defaults to `Any`",
     ),
+    DATETIME_AS_ZONEDDATETIME("Use `ZonedDateTime` as the datetime type. Defaults to `OffsetDateTime`"),
     ;
 
     override fun toString() = "`${super.toString()}` - $description"

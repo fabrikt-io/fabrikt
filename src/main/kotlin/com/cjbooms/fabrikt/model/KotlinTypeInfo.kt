@@ -49,6 +49,8 @@ sealed class KotlinTypeInfo(
 
     object LocalDateTime : KotlinTypeInfo(java.time.LocalDateTime::class)
 
+    object ZonedDateTime : KotlinTypeInfo(java.time.ZonedDateTime::class)
+
     object Double : KotlinTypeInfo(kotlin.Double::class)
 
     object Float : KotlinTypeInfo(kotlin.Float::class)
@@ -159,6 +161,8 @@ sealed class KotlinTypeInfo(
                         Instant
                     } else if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.DATETIME_AS_LOCALDATETIME)) {
                         LocalDateTime
+                    } else if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.DATETIME_AS_ZONEDDATETIME)) {
+                        ZonedDateTime
                     } else if (MutableSettings.serializationLibrary == KOTLINX_SERIALIZATION) {
                         if (MutableSettings.instantLibrary == InstantLibrary.KOTLINX_INSTANT) {
                             KotlinxInstant
