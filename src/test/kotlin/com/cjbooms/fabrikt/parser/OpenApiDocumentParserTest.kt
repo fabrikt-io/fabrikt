@@ -1,6 +1,5 @@
 package com.cjbooms.fabrikt.parser
 
-import com.cjbooms.fabrikt.util.YamlUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -25,7 +24,7 @@ class OpenApiDocumentParserTest {
             """.trimIndent()
 
         val parsedDocument = OpenApiDocumentParser.parse(input)
-        val source = YamlUtils.objectMapper.readTree(parsedDocument.sourceContent)
+        val source = parsedDocument.source.root
 
         assertThat(source.at("/components/schemas/Name/type").map { it.textValue() })
             .containsExactly("string", "null")
