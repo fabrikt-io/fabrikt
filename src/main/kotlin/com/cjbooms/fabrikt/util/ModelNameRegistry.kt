@@ -30,14 +30,9 @@ object ModelNameRegistry {
         allocate: Boolean = true,
     ): String {
         val modelClassName = schema.toModelClassName(schemaInfoName, enclosingSchema, valueSuffix)
-        var suggestion = modelClassName
+        val suggestion = if (allocate) allocateUniqueName(modelClassName) else modelClassName
 
         if (allocate) {
-            while (allocatedNames.contains(suggestion)) {
-                suggestion += SUFFIX
-            }
-            allocatedNames.add(suggestion)
-
             val tag = resolveTag(schema, modelClassName)
             val replaced = tagToName.put(tag, suggestion)
             if (replaced != null) {
@@ -47,6 +42,18 @@ object ModelNameRegistry {
         }
 
         return suggestion
+    }
+
+    private fun allocateUniqueName(modelClassName: String): String {
+        if (allocatedNames.add(modelClassName)) return modelClassName
+
+        var collisionIndex = 1
+        while (true) {
+            val numericSuffix = if (collisionIndex == 1) "" else collisionIndex.toString()
+            val suggestion = "$modelClassName$SUFFIX$numericSuffix"
+            if (allocatedNames.add(suggestion)) return suggestion
+            collisionIndex++
+        }
     }
 
     private fun Schema.toModelClassName(
@@ -113,12 +120,7 @@ object ModelNameRegistry {
         val ref = Overlay.of(schema).jsonReference
         if (!referenceToName.containsKey(ref)) {
             val modelClassName = name.toModelClassName() + MutableSettings.modelSuffix
-            var suggestion = modelClassName
-            while (allocatedNames.contains(suggestion)) {
-                suggestion += SUFFIX
-            }
-            allocatedNames.add(suggestion)
-            referenceToName[ref] = suggestion
+            referenceToName[ref] = allocateUniqueName(modelClassName)
         }
     }
 

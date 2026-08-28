@@ -40,6 +40,7 @@ class SpringControllerGeneratorTest {
     private fun testCases(): Stream<String> =
         Stream.of(
             "arrays",
+            "boundedModelNameCollisions",
             "githubApi",
             "singleAllOf",
             "pathLevelParameters",
