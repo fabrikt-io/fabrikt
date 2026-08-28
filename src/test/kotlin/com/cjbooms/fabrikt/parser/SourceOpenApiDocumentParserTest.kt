@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import org.junit.jupiter.params.provider.ValueSource
 import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -70,6 +71,61 @@ class SourceOpenApiDocumentParserTest {
         assertThat(schema.reference).isEqualTo("#/components/schemas/Target")
         assertThat(schema.node["description"].textValue()).isEqualTo("Retained reference sibling")
         assertThat(schema.node.at("/futureKeyword/nested").booleanValue()).isTrue()
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["3.0.4", "3.1.2", "3.2.0"])
+    fun `models nested schema structures recursively across OpenAPI versions`(version: String) {
+        val document =
+            SourceOpenApiDocumentParser.parse(
+                document(
+                    version,
+                    """
+                    Value:
+                      type: object
+                      properties:
+                        child~with/slash:
+                          type: array
+                          items:
+                            oneOf:
+                              - type: string
+                              - type: integer
+                      allOf:
+                        - type: object
+                      anyOf:
+                        - type: string
+                      oneOf:
+                        - type: number
+                      not:
+                        type: integer
+                      additionalProperties:
+                        type: boolean
+                    """,
+                ),
+            )
+        val value = document.componentSchemas["Value"] as SourceObjectSchema
+        val property = value.properties["child~with/slash"] as SourceObjectSchema
+        val items = property.items as SourceObjectSchema
+
+        assertThat(property.location).isEqualTo("#/components/schemas/Value/properties/child~0with~1slash")
+        assertThat(property.types).containsExactly(SourceSchemaType.ARRAY)
+        assertThat(items.location).isEqualTo("#/components/schemas/Value/properties/child~0with~1slash/items")
+        assertThat(items.oneOf.map(SourceSchema::location))
+            .containsExactly(
+                "#/components/schemas/Value/properties/child~0with~1slash/items/oneOf/0",
+                "#/components/schemas/Value/properties/child~0with~1slash/items/oneOf/1",
+            )
+        assertThat((items.oneOf[0] as SourceObjectSchema).types).containsExactly(SourceSchemaType.STRING)
+        assertThat((items.oneOf[1] as SourceObjectSchema).types).containsExactly(SourceSchemaType.INTEGER)
+        assertThat(value.allOf.single().location).isEqualTo("#/components/schemas/Value/allOf/0")
+        assertThat(value.anyOf.single().location).isEqualTo("#/components/schemas/Value/anyOf/0")
+        assertThat((value.anyOf.single() as SourceObjectSchema).types).containsExactly(SourceSchemaType.STRING)
+        assertThat(value.oneOf.single().location).isEqualTo("#/components/schemas/Value/oneOf/0")
+        assertThat(value.not!!.location).isEqualTo("#/components/schemas/Value/not")
+        assertThat((value.not as SourceObjectSchema).types).containsExactly(SourceSchemaType.INTEGER)
+        assertThat(value.additionalProperties!!.location).isEqualTo("#/components/schemas/Value/additionalProperties")
+        assertThat((value.additionalProperties as SourceObjectSchema).types)
+            .containsExactly(SourceSchemaType.BOOLEAN)
     }
 
     @Suppress("unused")

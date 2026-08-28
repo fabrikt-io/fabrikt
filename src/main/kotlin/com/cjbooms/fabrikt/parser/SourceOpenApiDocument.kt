@@ -47,8 +47,50 @@ internal object SourceOpenApiDocumentParser {
                 node = node,
                 types = readTypes(node, version),
                 reference = node["\$ref"]?.takeIf(JsonNode::isTextual)?.textValue(),
+                properties = readNamedSchemas(node["properties"], "$location/properties", version),
+                items = readOptionalSchema(node["items"], "$location/items", version),
+                allOf = readSchemaList(node["allOf"], "$location/allOf", version),
+                anyOf = readSchemaList(node["anyOf"], "$location/anyOf", version),
+                oneOf = readSchemaList(node["oneOf"], "$location/oneOf", version),
+                not = readOptionalSchema(node["not"], "$location/not", version),
+                additionalProperties =
+                    readOptionalSchema(
+                        node["additionalProperties"],
+                        "$location/additionalProperties",
+                        version,
+                    ),
             )
         }
+
+    private fun readNamedSchemas(
+        node: JsonNode?,
+        location: String,
+        version: OpenApiVersion?,
+    ): Map<String, SourceSchema> {
+        if (node?.isObject != true) return emptyMap()
+
+        return node.properties().associate { (name, schema) ->
+            name to readSchema(schema, "$location/${name.toJsonPointerToken()}", version)
+        }
+    }
+
+    private fun readOptionalSchema(
+        node: JsonNode?,
+        location: String,
+        version: OpenApiVersion?,
+    ): SourceSchema? = node?.takeIf { it.isObject || it.isBoolean }?.let { readSchema(it, location, version) }
+
+    private fun readSchemaList(
+        node: JsonNode?,
+        location: String,
+        version: OpenApiVersion?,
+    ): List<SourceSchema> {
+        if (node?.isArray != true) return emptyList()
+
+        return node.mapIndexedNotNull { index, schema ->
+            schema.takeIf { it.isObject || it.isBoolean }?.let { readSchema(it, "$location/$index", version) }
+        }
+    }
 
     private fun readTypes(
         node: JsonNode,
