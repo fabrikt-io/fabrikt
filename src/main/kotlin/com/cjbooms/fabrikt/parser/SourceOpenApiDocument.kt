@@ -8,30 +8,61 @@ internal data class SourceOpenApiDocument(
     val root: JsonNode,
     val version: OpenApiVersion?,
     val componentSchemas: Map<String, SourceSchema>,
+    val schemaEntryPoints: Map<String, SourceSchema>,
+    val schemasByLocation: Map<String, SourceSchema>,
 )
 
 internal object SourceOpenApiDocumentParser {
     fun parse(input: String): SourceOpenApiDocument {
         val root = YamlObjectMapper.instance.readTree(input)
         val version = OpenApiVersion.parse(root["openapi"]?.asText())
+        val schemaEntryPoints =
+            SourceSchemaEntryPointCollector
+                .collect(root, version)
+                .mapValues { (location, node) -> readSchema(node, location, version) }
         return SourceOpenApiDocument(
             content = input,
             root = root,
             version = version,
-            componentSchemas = readComponentSchemas(root, version),
+            componentSchemas = readComponentSchemas(root, schemaEntryPoints),
+            schemaEntryPoints = schemaEntryPoints,
+            schemasByLocation = indexSchemas(schemaEntryPoints.values),
         )
     }
 
     private fun readComponentSchemas(
         root: JsonNode,
-        version: OpenApiVersion?,
+        schemaEntryPoints: Map<String, SourceSchema>,
     ): Map<String, SourceSchema> {
         val schemas = root.path("components").path("schemas")
         if (!schemas.isObject) return emptyMap()
 
-        return schemas.properties().associate { (name, node) ->
-            name to readSchema(node, "#/components/schemas/${name.toJsonPointerToken()}", version)
+        return schemas.properties().associate { (name, _) ->
+            name to schemaEntryPoints.getValue("#/components/schemas/${name.toJsonPointerToken()}")
         }
+    }
+
+    private fun indexSchemas(entryPoints: Collection<SourceSchema>): Map<String, SourceSchema> =
+        buildMap {
+            entryPoints.forEach { entryPoint ->
+                entryPoint.visitRecursively { schema ->
+                    check(schema.location !in this) { "Duplicate source schema location: ${schema.location}" }
+                    put(schema.location, schema)
+                }
+            }
+        }
+
+    private fun SourceSchema.visitRecursively(visitor: (SourceSchema) -> Unit) {
+        visitor(this)
+        if (this !is SourceObjectSchema) return
+
+        properties.values.forEach { it.visitRecursively(visitor) }
+        items?.visitRecursively(visitor)
+        allOf.forEach { it.visitRecursively(visitor) }
+        anyOf.forEach { it.visitRecursively(visitor) }
+        oneOf.forEach { it.visitRecursively(visitor) }
+        not?.visitRecursively(visitor)
+        additionalProperties?.visitRecursively(visitor)
     }
 
     private fun readSchema(
