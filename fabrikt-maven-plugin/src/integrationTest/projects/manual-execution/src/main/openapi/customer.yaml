@@ -1,0 +1,12 @@
+openapi: 3.0.3
+info:
+  title: Customer API
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Customer:
+      type: object
+      properties:
+        name:
+          type: string

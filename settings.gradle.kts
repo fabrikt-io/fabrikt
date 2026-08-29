@@ -1,6 +1,7 @@
 rootProject.name = "fabrikt"
 
 include(
+    "fabrikt-maven-plugin",
     "end2end-tests:okhttp",
     "end2end-tests:okhttp-jackson3",
     "end2end-tests:okhttp-multipart",

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.fabrikt.test</groupId>
+    <artifactId>invalid-configuration</artifactId>
+    <version>1.0.0</version>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>fabrikt-integration-test</id>
+            <url>@TEST_REPOSITORY@</url>
+        </pluginRepository>
+    </pluginRepositories>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabrikt</groupId>
+                <artifactId>fabrikt-maven-plugin</artifactId>
+                <version>@FABRIKT_VERSION@</version>
+                <executions>
+                    <execution>
+                        <id>generate-invalid-api</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputFile>missing.yaml</inputFile>
+                            <arguments>
+                                <basePackage>com.example.invalid</basePackage>
+                                <targets>
+                                    <value>http_models</value>
+                                </targets>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

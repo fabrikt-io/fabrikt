@@ -180,7 +180,45 @@ fabrikt {
 
 ### Maven
 
-The [exec-maven-plugin](https://www.mojohaus.org/exec-maven-plugin/examples/example-exec-using-plugin-dependencies.html) is capable of downloading the Fabrikt library from Maven Central and executing its main method with defined arguments.
+The official Fabrikt Maven plugin runs the Fabrikt version matching the plugin version in a separate JVM. Configure one execution per OpenAPI specification:
+
+```xml
+<plugin>
+    <groupId>io.fabrikt</groupId>
+    <artifactId>fabrikt-maven-plugin</artifactId>
+    <version>${fabrikt.version}</version>
+    <configuration>
+        <arguments>
+            <serializationLibrary>JACKSON_3</serializationLibrary>
+        </arguments>
+    </configuration>
+    <executions>
+        <execution>
+            <id>generate-customer-api</id>
+            <phase>generate-sources</phase>
+            <goals>
+                <goal>generate</goal>
+            </goals>
+            <configuration>
+                <inputFile>src/main/openapi/customer.yaml</inputFile>
+                <arguments>
+                    <basePackage>com.example.customer</basePackage>
+                    <targets>
+                        <value>http_models</value>
+                        <value>client</value>
+                    </targets>
+                </arguments>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
+
+Names inside `arguments` map from camelCase to the corresponding kebab-case Fabrikt CLI options listed under [Configuration Options](#configuration-options). Plugin-level configuration supplies shared defaults and execution-level configuration overrides them. Repeatable options use nested `value` elements as shown above.
+
+Binding an execution to `generate-sources` runs it during Maven's normal lifecycle. Leave out the phase to run it only when explicitly requested with `mvn fabrikt:generate@generate-customer-api`.
+
+The default output directory is `${project.build.directory}/generated-sources`. The plugin registers generated `src/main/kotlin` and `src/test/kotlin` directories with the Maven project. It does not clean generated files or maintain an incremental cache; use Maven's normal `clean` lifecycle when a clean generation is required.
 
 ### Docker
 

@@ -1,0 +1,14 @@
+openapi: 3.0.3
+info:
+  title: Order API
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Order:
+      type: object
+      required:
+        - reference
+      properties:
+        reference:
+          type: string
