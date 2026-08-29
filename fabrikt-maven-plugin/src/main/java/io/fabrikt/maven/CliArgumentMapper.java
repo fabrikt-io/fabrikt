@@ -12,7 +12,7 @@ import org.codehaus.plexus.configuration.PlexusConfiguration;
 final class CliArgumentMapper {
     private static final Pattern CAMEL_CASE_BOUNDARY = Pattern.compile("([a-z0-9])([A-Z])");
     private static final Pattern REMOTE_INPUT = Pattern.compile("(?i)^https?://.*");
-    private static final Set<String> RESERVED_ARGUMENTS = Set.of("apiFile", "inputFile", "outputDirectory");
+    private static final Set<String> RESERVED_ARGUMENTS = Set.of("api-file", "input-file", "output-directory");
 
     List<String> map(
             Path projectDirectory,
@@ -23,7 +23,7 @@ final class CliArgumentMapper {
         if (inputFile == null || inputFile.isBlank()) {
             throw new MojoFailureException("inputFile must be configured for every Fabrikt execution");
         }
-        if (configuredArguments == null || values(configuredArguments.getChild("basePackage", false)).isEmpty()) {
+        if (!hasValue(configuredArguments, "base-package")) {
             throw new MojoFailureException("arguments.basePackage must be configured for every Fabrikt execution");
         }
 
@@ -34,11 +34,12 @@ final class CliArgumentMapper {
         result.add(resolveInput(projectDirectory, inputFile));
 
         for (PlexusConfiguration argument : configuredArguments.getChildren()) {
-            if (RESERVED_ARGUMENTS.contains(argument.getName())) {
+            String argumentName = toKebabCase(argument.getName());
+            if (RESERVED_ARGUMENTS.contains(argumentName)) {
                 throw new MojoFailureException(
                         "arguments." + argument.getName() + " is managed by the Maven plugin and cannot be overridden");
             }
-            String option = "--" + toKebabCase(argument.getName());
+            String option = "--" + argumentName;
             for (String value : values(argument)) {
                 if ("true".equalsIgnoreCase(value)) {
                     result.add(option);
@@ -56,6 +57,19 @@ final class CliArgumentMapper {
             return inputFile;
         }
         return projectDirectory.resolve(inputFile).toAbsolutePath().normalize().toString();
+    }
+
+    private boolean hasValue(PlexusConfiguration configuration, String argumentName) {
+        if (configuration == null) {
+            return false;
+        }
+        for (PlexusConfiguration child : configuration.getChildren()) {
+            if (argumentName.equals(toKebabCase(child.getName()))
+                    && values(child).stream().anyMatch(value -> !value.isBlank())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<String> values(PlexusConfiguration configuration) {

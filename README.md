@@ -210,11 +210,24 @@ The official Fabrikt Maven plugin runs the Fabrikt version matching the plugin v
                 </arguments>
             </configuration>
         </execution>
+        <execution>
+            <id>generate-order-api</id>
+            <phase>generate-sources</phase>
+            <goals>
+                <goal>generate</goal>
+            </goals>
+            <configuration>
+                <inputFile>src/main/openapi/order.yaml</inputFile>
+                <arguments>
+                    <basePackage>com.example.order</basePackage>
+                </arguments>
+            </configuration>
+        </execution>
     </executions>
 </plugin>
 ```
 
-Names inside `arguments` map from camelCase to the corresponding kebab-case Fabrikt CLI options listed under [Configuration Options](#configuration-options). Plugin-level configuration supplies shared defaults and execution-level configuration overrides them. Repeatable options use nested `value` elements as shown above.
+Names inside `arguments` can use camelCase, which maps to the corresponding kebab-case Fabrikt CLI options listed under [Configuration Options](#configuration-options). Existing kebab-case CLI names are also accepted unchanged. Plugin-level configuration supplies shared defaults and execution-level configuration overrides them. Repeatable options use nested `value` elements as shown above.
 
 Binding an execution to `generate-sources` runs it during Maven's normal lifecycle. Leave out the phase to run it only when explicitly requested with `mvn fabrikt:generate@generate-customer-api`.
 

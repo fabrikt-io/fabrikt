@@ -28,7 +28,7 @@
                         <configuration>
                             <inputFile>src/main/openapi/customer.yaml</inputFile>
                             <arguments>
-                                <basePackage>com.example.customer</basePackage>
+                                <base-package>com.example.customer</base-package>
                                 <targets>
                                     <value>http_models</value>
                                 </targets>

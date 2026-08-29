@@ -9,6 +9,8 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.configuration.DefaultPlexusConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class CliArgumentMapperTest {
     private final CliArgumentMapper mapper = new CliArgumentMapper();
@@ -52,6 +54,23 @@ class CliArgumentMapperTest {
     }
 
     @Test
+    void acceptsKebabCaseArgumentNames() throws Exception {
+        DefaultPlexusConfiguration arguments = new DefaultPlexusConfiguration("arguments");
+        arguments.addChild(value("base-package", "com.example.customer"));
+        arguments.addChild(value("serialization-library", "JACKSON_3"));
+
+        List<String> result = mapper.map(
+                projectDirectory, "customer.yaml", projectDirectory.resolve("generated"), arguments);
+
+        assertThat(result)
+                .containsSubsequence(
+                        "--base-package",
+                        "com.example.customer",
+                        "--serialization-library",
+                        "JACKSON_3");
+    }
+
+    @Test
     void keepsRemoteInputUrlsUnchanged() throws Exception {
         List<String> result = mapper.map(
                 projectDirectory,
@@ -73,10 +92,11 @@ class CliArgumentMapperTest {
                 .hasMessage("arguments.basePackage must be configured for every Fabrikt execution");
     }
 
-    @Test
-    void rejectsArgumentsManagedByThePlugin() {
+    @ParameterizedTest
+    @ValueSource(strings = {"outputDirectory", "output-directory"})
+    void rejectsArgumentsManagedByThePlugin(String argumentName) {
         DefaultPlexusConfiguration arguments = arguments("com.example.customer");
-        arguments.addChild(value("outputDirectory", "other"));
+        arguments.addChild(value(argumentName, "other"));
 
         assertThatThrownBy(() -> mapper.map(
                         projectDirectory,
@@ -84,7 +104,7 @@ class CliArgumentMapperTest {
                         projectDirectory.resolve("generated"),
                         arguments))
                 .isInstanceOf(MojoFailureException.class)
-                .hasMessage("arguments.outputDirectory is managed by the Maven plugin and cannot be overridden");
+                .hasMessage("arguments." + argumentName + " is managed by the Maven plugin and cannot be overridden");
     }
 
     private DefaultPlexusConfiguration arguments(String basePackage) {
