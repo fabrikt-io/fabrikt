@@ -54,15 +54,7 @@ internal object SourceOpenApiDocumentParser {
 
     private fun SourceSchema.visitRecursively(visitor: (SourceSchema) -> Unit) {
         visitor(this)
-        if (this !is SourceObjectSchema) return
-
-        properties.values.forEach { it.visitRecursively(visitor) }
-        items?.visitRecursively(visitor)
-        allOf.forEach { it.visitRecursively(visitor) }
-        anyOf.forEach { it.visitRecursively(visitor) }
-        oneOf.forEach { it.visitRecursively(visitor) }
-        not?.visitRecursively(visitor)
-        additionalProperties?.visitRecursively(visitor)
+        childSchemas().forEach { it.visitRecursively(visitor) }
     }
 
     private fun readSchema(
@@ -78,8 +70,27 @@ internal object SourceOpenApiDocumentParser {
                 node = node,
                 types = readTypes(node, version),
                 reference = node["\$ref"]?.takeIf(JsonNode::isTextual)?.textValue(),
+                definitions = readNamedSchemas(node["\$defs"], "$location/\$defs", version),
                 properties = readNamedSchemas(node["properties"], "$location/properties", version),
+                patternProperties =
+                    readNamedSchemas(
+                        node["patternProperties"],
+                        "$location/patternProperties",
+                        version,
+                    ),
+                dependentSchemas =
+                    readNamedSchemas(
+                        node["dependentSchemas"],
+                        "$location/dependentSchemas",
+                        version,
+                    ),
+                prefixItems = readSchemaList(node["prefixItems"], "$location/prefixItems", version),
                 items = readOptionalSchema(node["items"], "$location/items", version),
+                contains = readOptionalSchema(node["contains"], "$location/contains", version),
+                propertyNames = readOptionalSchema(node["propertyNames"], "$location/propertyNames", version),
+                ifSchema = readOptionalSchema(node["if"], "$location/if", version),
+                thenSchema = readOptionalSchema(node["then"], "$location/then", version),
+                elseSchema = readOptionalSchema(node["else"], "$location/else", version),
                 allOf = readSchemaList(node["allOf"], "$location/allOf", version),
                 anyOf = readSchemaList(node["anyOf"], "$location/anyOf", version),
                 oneOf = readSchemaList(node["oneOf"], "$location/oneOf", version),
@@ -90,6 +101,19 @@ internal object SourceOpenApiDocumentParser {
                         "$location/additionalProperties",
                         version,
                     ),
+                unevaluatedItems =
+                    readOptionalSchema(
+                        node["unevaluatedItems"],
+                        "$location/unevaluatedItems",
+                        version,
+                    ),
+                unevaluatedProperties =
+                    readOptionalSchema(
+                        node["unevaluatedProperties"],
+                        "$location/unevaluatedProperties",
+                        version,
+                    ),
+                contentSchema = readOptionalSchema(node["contentSchema"], "$location/contentSchema", version),
             )
         }
 
