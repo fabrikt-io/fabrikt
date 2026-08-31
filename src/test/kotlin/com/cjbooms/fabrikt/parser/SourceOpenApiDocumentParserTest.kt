@@ -26,12 +26,13 @@ class SourceOpenApiDocumentParserTest {
     fun `preserves boolean schemas that cannot be represented by Kaizen`() {
         val document =
             SourceOpenApiDocumentParser.parse(
-                document(
-                    "3.1.2",
-                    """
+                createOpenApi3Document(
+                    version = "3.1.2",
+                    componentSchemas =
+                        """
                     AllowsAnything: true
                     AllowsNothing: false
-                    """,
+                        """,
                 ),
             )
 
@@ -52,15 +53,16 @@ class SourceOpenApiDocumentParserTest {
     @Test
     fun `preserves references siblings unknown keywords and escaped source locations`() {
         val input =
-            document(
-                "3.2.0",
-                """
+            createOpenApi3Document(
+                version = "3.2.0",
+                componentSchemas =
+                    """
                 Value~with/slash:
                   ${'$'}ref: '#/components/schemas/Target'
                   description: Retained reference sibling
                   futureKeyword:
                     nested: true
-                """,
+                    """,
             )
         val document =
             SourceOpenApiDocumentParser.parse(input)
@@ -78,9 +80,10 @@ class SourceOpenApiDocumentParserTest {
     fun `models nested schema structures recursively across OpenAPI versions`(version: String) {
         val document =
             SourceOpenApiDocumentParser.parse(
-                document(
-                    version,
-                    """
+                createOpenApi3Document(
+                    version = version,
+                    componentSchemas =
+                        """
                     Value:
                       type: object
                       properties:
@@ -100,7 +103,7 @@ class SourceOpenApiDocumentParserTest {
                         type: integer
                       additionalProperties:
                         type: boolean
-                    """,
+                        """,
                 ),
             )
         val value = document.componentSchemas["Value"] as SourceObjectSchema
@@ -128,36 +131,61 @@ class SourceOpenApiDocumentParserTest {
             .containsExactly(SourceSchemaType.BOOLEAN)
     }
 
+    @Test
+    fun `preserves unrecognised schema types`() {
+        val document =
+            SourceOpenApiDocumentParser.parse(
+                createOpenApi3Document(
+                    version = "3.1.2",
+                    componentSchemas =
+                        """
+                        Unknown:
+                          type: future
+                        Mixed:
+                          type: [string, future]
+                        """,
+                ),
+            )
+
+        assertThat((document.componentSchemas["Unknown"] as SourceObjectSchema).types)
+            .containsExactly(SourceSchemaType.Unrecognised("future"))
+        assertThat((document.componentSchemas["Mixed"] as SourceObjectSchema).types)
+            .containsExactly(SourceSchemaType.STRING, SourceSchemaType.Unrecognised("future"))
+    }
+
     @Suppress("unused")
     private fun nullableStringDocuments(): Stream<String> =
         Stream.of(
-            document(
-                "3.0.4",
-                """
+            createOpenApi3Document(
+                version = "3.0.4",
+                componentSchemas =
+                    """
                 Value:
                   type: string
                   nullable: true
-                """,
+                    """,
             ),
-            document(
-                "3.1.2",
-                """
+            createOpenApi3Document(
+                version = "3.1.2",
+                componentSchemas =
+                    """
                 Value:
                   type: [string, 'null']
-                """,
+                    """,
             ),
-            document(
-                "3.2.0",
-                """
+            createOpenApi3Document(
+                version = "3.2.0",
+                componentSchemas =
+                    """
                 Value:
                   type: [string, 'null']
-                """,
+                    """,
             ),
         )
 
-    private fun document(
+    private fun createOpenApi3Document(
         version: String,
-        schemas: String,
+        componentSchemas: String,
     ): String =
         """
         openapi: $version
@@ -167,6 +195,6 @@ class SourceOpenApiDocumentParserTest {
         paths: {}
         components:
           schemas:
-${schemas.trimIndent().prependIndent("            ")}
+${componentSchemas.trimIndent().prependIndent("            ")}
         """.trimIndent()
 }

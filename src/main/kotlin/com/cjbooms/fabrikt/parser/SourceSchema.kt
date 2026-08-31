@@ -27,19 +27,34 @@ internal data class SourceObjectSchema(
     val additionalProperties: SourceSchema?,
 ) : SourceSchema
 
-internal enum class SourceSchemaType(
-    val value: String,
-) {
-    ARRAY("array"),
-    BOOLEAN("boolean"),
-    INTEGER("integer"),
-    NULL("null"),
-    NUMBER("number"),
-    OBJECT("object"),
-    STRING("string"),
-    ;
+internal sealed interface SourceSchemaType {
+    val value: String
+
+    enum class Recognised(
+        override val value: String,
+    ) : SourceSchemaType {
+        ARRAY("array"),
+        BOOLEAN("boolean"),
+        INTEGER("integer"),
+        NULL("null"),
+        NUMBER("number"),
+        OBJECT("object"),
+        STRING("string"),
+    }
+
+    data class Unrecognised(
+        override val value: String,
+    ) : SourceSchemaType
 
     companion object {
-        fun from(value: String): SourceSchemaType? = entries.firstOrNull { it.value == value }
+        val ARRAY: SourceSchemaType = Recognised.ARRAY
+        val BOOLEAN: SourceSchemaType = Recognised.BOOLEAN
+        val INTEGER: SourceSchemaType = Recognised.INTEGER
+        val NULL: SourceSchemaType = Recognised.NULL
+        val NUMBER: SourceSchemaType = Recognised.NUMBER
+        val OBJECT: SourceSchemaType = Recognised.OBJECT
+        val STRING: SourceSchemaType = Recognised.STRING
+
+        fun from(value: String): SourceSchemaType = Recognised.entries.firstOrNull { it.value == value } ?: Unrecognised(value)
     }
 }

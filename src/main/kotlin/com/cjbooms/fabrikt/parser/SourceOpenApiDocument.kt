@@ -102,7 +102,7 @@ internal object SourceOpenApiDocumentParser {
                 typeNode?.isTextual == true -> sequenceOf(typeNode.textValue())
                 typeNode?.isArray == true -> typeNode.asSequence().filter(JsonNode::isTextual).map(JsonNode::textValue)
                 else -> emptySequence()
-            }.mapNotNull(SourceSchemaType::from)
+            }.map(SourceSchemaType::from)
                 .toCollection(linkedSetOf())
 
         if (version?.major == 3 && version.minor == 0 && declaredTypes.isNotEmpty() && node["nullable"]?.asBoolean() == true) {
