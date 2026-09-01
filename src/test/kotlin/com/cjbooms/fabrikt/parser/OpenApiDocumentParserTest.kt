@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import java.net.URI
 
 class OpenApiDocumentParserTest {
     @Test
@@ -57,5 +58,34 @@ class OpenApiDocumentParserTest {
 
         assertThat(version)
             .isEqualTo(OpenApiVersion(value, major, minor, patch))
+    }
+
+    @Test
+    fun `uses the supplied base URI for source reference resolution`() {
+        val input =
+            """
+            openapi: 3.1.0
+            info:
+              title: Test
+              version: "1.0"
+            paths: {}
+            components:
+              schemas:
+                Name:
+                  type: string
+                Alias:
+                  ${'$'}ref: '#/components/schemas/Name'
+            """.trimIndent()
+        val baseUri = URI("https://example.test/specs%20with%20spaces/openapi.yaml")
+
+        val source = OpenApiDocumentParser.parse(input, baseUri).source
+        val resolution =
+            source.schemaReferenceResolutions.getValue("#/components/schemas/Alias") as
+                SourceSchemaReferenceResolution.Resolved
+
+        assertThat(source.baseUri).isEqualTo(baseUri)
+        assertThat(resolution.uri)
+            .isEqualTo(URI("https://example.test/specs%20with%20spaces/openapi.yaml#/components/schemas/Name"))
+        assertThat(resolution.target).isSameAs(source.componentSchemas.getValue("Name"))
     }
 }

@@ -16,6 +16,8 @@ internal data class SourceBooleanSchema(
 internal data class SourceObjectSchema(
     override val location: String,
     override val node: JsonNode,
+    val identifier: String?,
+    val anchor: String?,
     val types: Set<SourceSchemaType>,
     val reference: String?,
     val definitions: Map<String, SourceSchema>,

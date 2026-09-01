@@ -12,8 +12,8 @@ internal object SourceSchemaEntryPointCollector {
         version: OpenApiVersion?,
     ) {
         private val entryPoints = linkedMapOf<String, JsonNode>()
-        private val supportsOpenApi31 = version.isAtLeast(3, 1)
-        private val supportsOpenApi32 = version.isAtLeast(3, 2)
+        private val supportsOpenApi31 = version?.isAtLeast(3, 1) == true
+        private val supportsOpenApi32 = version?.isAtLeast(3, 2) == true
 
         fun collect(root: JsonNode): Map<String, JsonNode> {
             collectComponents(root["components"], "#/components")
@@ -212,11 +212,6 @@ internal object SourceSchemaEntryPointCollector {
         }
 
         private fun JsonNode?.isInlineObject(): Boolean = this?.isObject == true && this["\$ref"]?.isTextual != true
-
-        private fun OpenApiVersion?.isAtLeast(
-            major: Int,
-            minor: Int,
-        ): Boolean = this != null && (this.major > major || this.major == major && this.minor >= minor)
 
         private fun String.isSpecificationExtension(): Boolean = startsWith("x-", ignoreCase = true)
 

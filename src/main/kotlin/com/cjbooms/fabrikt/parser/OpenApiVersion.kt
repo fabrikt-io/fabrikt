@@ -6,6 +6,11 @@ internal data class OpenApiVersion(
     val minor: Int,
     val patch: Int?,
 ) {
+    fun isAtLeast(
+        major: Int,
+        minor: Int,
+    ): Boolean = this.major > major || this.major == major && this.minor >= minor
+
     companion object {
         private val versionPattern = Regex("""^(\d+)\.(\d+)(?:\.(\d+))?(?:[-+].*)?$""")
 
