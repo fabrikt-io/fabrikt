@@ -25,3 +25,10 @@ internal sealed interface SourceSchemaReferenceResolution {
         override val value: String,
     ) : SourceSchemaReferenceResolution
 }
+
+internal data class SourceSchemaReferenceIndex(
+    val documentUri: URI,
+    val schemasByUri: Map<URI, SourceSchema>,
+    val resourceUris: Set<URI>,
+    val resolutionsByLocation: Map<String, SourceSchemaReferenceResolution>,
+)
