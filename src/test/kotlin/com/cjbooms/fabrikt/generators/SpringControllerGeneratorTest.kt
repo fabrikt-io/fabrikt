@@ -56,6 +56,7 @@ class SpringControllerGeneratorTest {
             "responsesSchema",
             "multipartUpload",
             "validationAnnotations",
+            "cookieParameters",
         )
 
     private fun setupGithubApiTestEnv(annotations: ValidationAnnotations = JavaxValidationAnnotations) {

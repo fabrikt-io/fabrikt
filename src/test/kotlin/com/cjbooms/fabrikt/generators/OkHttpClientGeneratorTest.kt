@@ -47,7 +47,7 @@ class OkHttpClientGeneratorTest {
         )
 
     @Suppress("unused")
-    private fun groupedClientTestCases(): Stream<String> = Stream.concat(fullApiTestCases(), Stream.of("tagGrouping"))
+    private fun groupedClientTestCases(): Stream<String> = Stream.concat(fullApiTestCases(), Stream.of("tagGrouping", "cookieParameters"))
 
     @BeforeEach
     fun init() {
@@ -117,7 +117,7 @@ class OkHttpClientGeneratorTest {
                 .contentOf("HttpResilience4jUtil.kt")
         val enhancedClientCode = generator.generateDynamicClientCode(options)
 
-        if (testCaseName != "tagGrouping") {
+        if (testCaseName != "tagGrouping" && testCaseName != "cookieParameters") {
             assertThatGenerated(enhancedLibUtil).isEqualTo(expectedLibUtil)
         }
         assertThatGenerated(enhancedClientCode.toSingleFile()).isEqualTo(expectedClientCode)

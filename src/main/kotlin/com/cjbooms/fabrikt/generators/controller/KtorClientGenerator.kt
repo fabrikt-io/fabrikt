@@ -67,7 +67,7 @@ class KtorClientGenerator(
                                 emptyList(),
                             )
 
-                        val (pathParams, queryParams, headerParams, bodyParams) = params.splitByType()
+                        val (pathParams, queryParams, headerParams, cookieParams, bodyParams) = params.splitByType()
 
                         val responseType = operation.toSuccessResponseType(packages.base)
                         val returnType = networkResultClassName.parameterizedBy(responseType)
@@ -166,6 +166,93 @@ class KtorClientGenerator(
                                                     it.name,
                                                 )
                                             }
+                                            cookieParams.forEach { parameter ->
+                                                val cookieFunction = MemberName("io.ktor.client.request", "cookie")
+                                                when (parameter.typeInfo) {
+                                                    is KotlinTypeInfo.Array -> {
+                                                        val itemValue =
+                                                            if (parameter.typeInfo.parameterizedType is KotlinTypeInfo.Enum) {
+                                                                "it.value"
+                                                            } else {
+                                                                "it.toString()"
+                                                            }
+                                                        if (parameter.explode == false) {
+                                                            if (parameter.isRequired) {
+                                                                if (parameter.typeInfo.parameterizedType is KotlinTypeInfo.Enum) {
+                                                                    addStatement(
+                                                                        "%M(%S, %N.joinToString(%S) { it.value })",
+                                                                        cookieFunction,
+                                                                        parameter.originalName,
+                                                                        parameter.name,
+                                                                        ",",
+                                                                    )
+                                                                } else {
+                                                                    addStatement(
+                                                                        "%M(%S, %N.joinToString(%S))",
+                                                                        cookieFunction,
+                                                                        parameter.originalName,
+                                                                        parameter.name,
+                                                                        ",",
+                                                                    )
+                                                                }
+                                                            } else {
+                                                                if (parameter.typeInfo.parameterizedType is KotlinTypeInfo.Enum) {
+                                                                    addStatement(
+                                                                        "%N?.let { values -> %M(%S, values.joinToString(%S) { it.value }) }",
+                                                                        parameter.name,
+                                                                        cookieFunction,
+                                                                        parameter.originalName,
+                                                                        ",",
+                                                                    )
+                                                                } else {
+                                                                    addStatement(
+                                                                        "%N?.let { %M(%S, it.joinToString(%S)) }",
+                                                                        parameter.name,
+                                                                        cookieFunction,
+                                                                        parameter.originalName,
+                                                                        ",",
+                                                                    )
+                                                                }
+                                                            }
+                                                        } else if (parameter.isRequired) {
+                                                            addStatement(
+                                                                "%N.forEach { %M(%S, %L) }",
+                                                                parameter.name,
+                                                                cookieFunction,
+                                                                parameter.originalName,
+                                                                itemValue,
+                                                            )
+                                                        } else {
+                                                            addStatement(
+                                                                "%N?.forEach { %M(%S, %L) }",
+                                                                parameter.name,
+                                                                cookieFunction,
+                                                                parameter.originalName,
+                                                                itemValue,
+                                                            )
+                                                        }
+                                                    }
+
+                                                    else ->
+                                                        if (parameter.isRequired) {
+                                                            addStatement(
+                                                                "%M(%S, %N%L)",
+                                                                cookieFunction,
+                                                                parameter.originalName,
+                                                                parameter.name,
+                                                                if (parameter.typeInfo is KotlinTypeInfo.Enum) ".value" else ".toString()",
+                                                            )
+                                                        } else {
+                                                            addStatement(
+                                                                "%N?.let { %M(%S, it%L) }",
+                                                                parameter.name,
+                                                                cookieFunction,
+                                                                parameter.originalName,
+                                                                if (parameter.typeInfo is KotlinTypeInfo.Enum) ".value" else ".toString()",
+                                                            )
+                                                        }
+                                                }
+                                            }
 
                                             addStatement("%M {", MemberName("io.ktor.client.request", "headers"))
                                             indent()
@@ -257,7 +344,7 @@ class KtorClientGenerator(
                                     .build(),
                             )
                         }
-                        (pathParams + queryParams + headerParams).forEach { param ->
+                        (pathParams + queryParams + headerParams + cookieParams).forEach { param ->
                             val defaultValue = if (!param.isRequired) "null" else null
                             clientFunctionBuilder.addParameter(
                                 ParameterSpec
@@ -326,7 +413,7 @@ class KtorClientGenerator(
         operation: Operation,
         parameters: List<IncomingParameter>,
     ): CodeBlock {
-        val (pathParams, queryParams, headerParams, bodyParams) = parameters.splitByType()
+        val (pathParams, queryParams, headerParams, cookieParams, bodyParams) = parameters.splitByType()
         val kDoc = CodeBlock.builder()
 
         // add summary and description
@@ -339,7 +426,7 @@ class KtorClientGenerator(
         // document parameters
         if (parameters.isNotEmpty()) {
             kDoc.add("Parameters:\n")
-            (bodyParams + pathParams + queryParams + headerParams).forEach {
+            (bodyParams + pathParams + queryParams + headerParams + cookieParams).forEach {
                 kDoc.add("\t @param %L %L\n", it.name.toKCodeName(), it.description?.trimIndent().orEmpty()).build()
             }
         }

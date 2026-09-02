@@ -47,6 +47,7 @@ class MicronautControllerGeneratorTest {
             "jakartaValidationAnnotations",
             "modelSuffix",
             "tagGrouping",
+            "cookieParameters",
         )
 
     private fun setupGithubApiTestEnv(validationAnnotations: ValidationAnnotations = JavaxValidationAnnotations) {

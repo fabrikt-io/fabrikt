@@ -16,6 +16,7 @@ import com.cjbooms.fabrikt.generators.controller.metadata.MicronautImports.SECUR
 import com.cjbooms.fabrikt.model.BodyParameter
 import com.cjbooms.fabrikt.model.ControllerLibraryType
 import com.cjbooms.fabrikt.model.ControllerType
+import com.cjbooms.fabrikt.model.CookieParam
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.KotlinTypes
 import com.cjbooms.fabrikt.model.MultipartParameter
@@ -239,6 +240,10 @@ class MicronautControllerInterfaceGenerator(
             PathParam ->
                 AnnotationSpec
                     .builder(MicronautImports.PATH_VARIABLE)
+
+            CookieParam ->
+                AnnotationSpec
+                    .builder(MicronautImports.COOKIE_VALUE)
         }.let {
             it.addMember("value = %S", parameter.oasName)
 

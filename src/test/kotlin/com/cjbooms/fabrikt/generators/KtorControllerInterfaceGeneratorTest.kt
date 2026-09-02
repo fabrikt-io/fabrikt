@@ -47,6 +47,7 @@ class KtorControllerInterfaceGeneratorTest {
             "queryParameters",
             "pathParameters",
             "tagGrouping",
+            "cookieParameters",
         )
 
     private fun setupGithubApiTestEnv() {
