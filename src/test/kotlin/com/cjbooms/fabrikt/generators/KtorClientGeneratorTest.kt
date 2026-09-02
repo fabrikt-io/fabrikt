@@ -30,7 +30,7 @@ class KtorClientGeneratorTest {
         )
 
     @Suppress("unused")
-    private fun groupedClientTestCases(): Stream<String> = Stream.concat(fullApiTestCases(), Stream.of("tagGrouping"))
+    private fun groupedClientTestCases(): Stream<String> = Stream.concat(fullApiTestCases(), Stream.of("tagGrouping", "cookieParameters"))
 
     @BeforeEach
     fun init() {

@@ -10,15 +10,11 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toKCodeName
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.SecuritySupport
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.securitySupport
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.toSuccessResponseType
-import com.cjbooms.fabrikt.model.BodyParameter
 import com.cjbooms.fabrikt.model.ControllerLibraryType
 import com.cjbooms.fabrikt.model.ControllerType
-import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.KotlinTypes
-import com.cjbooms.fabrikt.model.PathParam
-import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
@@ -131,9 +127,9 @@ class KtorControllerInterfaceGenerator(
                 .addModifiers(setOf(KModifier.SUSPEND, KModifier.ABSTRACT))
 
         val params = operation.toIncomingParameters(packages.base, path.value.parameters, emptyList())
-        val (pathParams, queryParams, headerParams, bodyParams) = params.splitByType()
+        val (pathParams, queryParams, headerParams, cookieParams, bodyParams) = params.splitByType()
 
-        headerParams.forEach { param ->
+        (headerParams + cookieParams).forEach { param ->
             // TODO: Consider handling header parameter types. Currently everything is a string.
             if (param.isRequired) {
                 builder.addParameter(ParameterSpec.builder(param.name, String::class).build())
@@ -211,7 +207,7 @@ class KtorControllerInterfaceGenerator(
         }
 
         val params = operation.toIncomingParameters(packages.base, path.value.parameters, emptyList())
-        val (pathParams, queryParams, headerParams, bodyParams) = params.splitByType()
+        val (pathParams, queryParams, headerParams, cookieParams, bodyParams) = params.splitByType()
 
         val methodName = getMethodName(operation, verb, path)
 
@@ -255,6 +251,21 @@ class KtorControllerInterfaceGenerator(
             }
         }
 
+        cookieParams.forEach { param ->
+            if (param.isRequired) {
+                builder.addStatement(
+                    "val ${param.name} = %M.request.cookies[\"${param.originalName}\"] ?: throw %M(\"${param.originalName}\")",
+                    MemberName("io.ktor.server.application", "call"),
+                    MemberName("io.ktor.server.plugins", "MissingRequestParameterException"),
+                )
+            } else {
+                builder.addStatement(
+                    "val ${param.name} = %M.request.cookies[\"${param.originalName}\"]",
+                    MemberName("io.ktor.server.application", "call"),
+                )
+            }
+        }
+
         queryParams.forEach { param ->
             val typeName = param.type.copy(nullable = false) // not nullable because we handle that in the queryParameters.get* below
             val queryMethodName = if (param.isRequired) "getTypedOrFail" else "getTyped"
@@ -285,7 +296,7 @@ class KtorControllerInterfaceGenerator(
         }
 
         val methodParameters =
-            listOf(headerParams, pathParams, queryParams, bodyParams)
+            listOf(headerParams, cookieParams, pathParams, queryParams, bodyParams)
                 .asSequence()
                 .flatten()
                 .map { it.name }
@@ -593,24 +604,6 @@ class KtorControllerInterfaceGenerator(
             }
     }
 }
-
-private fun List<IncomingParameter>.splitByType(): IncomingParametersByType {
-    val requestParams = this.filterIsInstance<RequestParameter>()
-
-    return IncomingParametersByType(
-        pathParams = requestParams.filter { it.parameterLocation is PathParam },
-        queryParams = requestParams.filter { it.parameterLocation is QueryParam },
-        headerParams = requestParams.filter { it.parameterLocation is HeaderParam },
-        bodyParams = this.filterIsInstance<BodyParameter>(),
-    )
-}
-
-private data class IncomingParametersByType(
-    val pathParams: List<RequestParameter>,
-    val queryParams: List<RequestParameter>,
-    val headerParams: List<RequestParameter>,
-    val bodyParams: List<BodyParameter>,
-)
 
 private fun TypeName.isUnit(): Boolean = this == Unit::class.asTypeName()
 

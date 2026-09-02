@@ -158,6 +158,13 @@ class RequestParameter(
     val explode: Boolean? = null,
     val defaultValue: Any? = null,
 ) : IncomingParameter(oasName, description, type, isRequired) {
+    init {
+        require(parameterLocation !is CookieParam || typeInfo.supportsCookieSerialization()) {
+            "Cookie parameter '$originalName' has an unsupported type. " +
+                "Cookie parameters support scalar values, enums, and arrays of those types."
+        }
+    }
+
     constructor(oasName: String, description: String?, type: TypeName, parameter: Parameter) : this(
         oasName = oasName,
         description = description,
@@ -189,3 +196,24 @@ class RequestParameter(
             super.toParameterSpecBuilder(treatAnyTypeHeadersAsStrings)
         }
 }
+
+private fun KotlinTypeInfo.supportsCookieSerialization(): Boolean =
+    when (this) {
+        KotlinTypeInfo.AnyType,
+        KotlinTypeInfo.ByteArray,
+        KotlinTypeInfo.InputStream,
+        KotlinTypeInfo.JsonElement,
+        KotlinTypeInfo.JsonObject,
+        KotlinTypeInfo.UnknownAdditionalProperties,
+        KotlinTypeInfo.UntypedObject,
+        KotlinTypeInfo.UntypedObjectAdditionalProperties,
+        is KotlinTypeInfo.GeneratedTypedAdditionalProperties,
+        is KotlinTypeInfo.Map,
+        is KotlinTypeInfo.MapTypeAdditionalProperties,
+        is KotlinTypeInfo.Object,
+        is KotlinTypeInfo.SimpleTypedAdditionalProperties,
+        -> false
+
+        is KotlinTypeInfo.Array -> parameterizedType.supportsCookieSerialization() && parameterizedType !is KotlinTypeInfo.Array
+        else -> true
+    }

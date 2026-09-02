@@ -30,6 +30,8 @@ object SpringImports {
 
     val REQUEST_HEADER = ClassName(Packages.WEB_BIND_ANNOTATION, "RequestHeader")
 
+    val COOKIE_VALUE = ClassName(Packages.WEB_BIND_ANNOTATION, "CookieValue")
+
     val REQUEST_BODY = ClassName(Packages.WEB_BIND_ANNOTATION, "RequestBody")
 
     val REQUEST_PART = ClassName(Packages.WEB_BIND_ANNOTATION, "RequestPart")
@@ -87,6 +89,10 @@ object SpringAnnotations {
     fun requestHeaderBuilder(): AnnotationSpec.Builder =
         AnnotationSpec
             .builder(SpringImports.REQUEST_HEADER)
+
+    fun cookieValueBuilder(): AnnotationSpec.Builder =
+        AnnotationSpec
+            .builder(SpringImports.COOKIE_VALUE)
 
     fun requestBodyBuilder(): AnnotationSpec.Builder =
         AnnotationSpec

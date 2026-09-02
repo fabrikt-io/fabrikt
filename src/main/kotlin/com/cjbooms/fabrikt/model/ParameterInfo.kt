@@ -7,6 +7,7 @@ sealed class RequestParameterLocation {
                 "query" -> QueryParam
                 "header" -> HeaderParam
                 "path" -> PathParam
+                "cookie" -> CookieParam
                 else -> throw IllegalStateException("Invalid request parameter location: $location")
             }
     }
@@ -22,4 +23,8 @@ object HeaderParam : RequestParameterLocation() {
 
 object PathParam : RequestParameterLocation() {
     override fun toString() = "path"
+}
+
+object CookieParam : RequestParameterLocation() {
+    override fun toString() = "cookie"
 }

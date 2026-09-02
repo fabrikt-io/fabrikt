@@ -3,6 +3,7 @@ package com.cjbooms.fabrikt.generators
 import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.generators.model.ModelGenerator.Companion.toModelType
 import com.cjbooms.fabrikt.model.BodyParameter
+import com.cjbooms.fabrikt.model.CookieParam
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
@@ -182,6 +183,8 @@ object GeneratorUtils {
 
     fun Operation.getHeaderParams(): List<Parameter> = this.filterParams("header")
 
+    fun Operation.getCookieParams(): List<Parameter> = this.filterParams("cookie")
+
     private fun Operation.getBodyResponses(): List<Response> =
         this.responses
             .filter { it.key != "default" }
@@ -339,6 +342,7 @@ object GeneratorUtils {
         val pathParams: List<RequestParameter>,
         val queryParams: List<RequestParameter>,
         val headerParams: List<RequestParameter>,
+        val cookieParams: List<RequestParameter>,
         val bodyParams: List<BodyParameter>,
     )
 
@@ -349,6 +353,7 @@ object GeneratorUtils {
             pathParams = requestParams.filter { it.parameterLocation is PathParam },
             queryParams = requestParams.filter { it.parameterLocation is QueryParam },
             headerParams = requestParams.filter { it.parameterLocation is HeaderParam },
+            cookieParams = requestParams.filter { it.parameterLocation is CookieParam },
             bodyParams = this.filterIsInstance<BodyParameter>(),
         )
     }

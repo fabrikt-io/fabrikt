@@ -15,6 +15,7 @@ import com.cjbooms.fabrikt.generators.controller.metadata.SpringImports
 import com.cjbooms.fabrikt.model.BodyParameter
 import com.cjbooms.fabrikt.model.ControllerLibraryType
 import com.cjbooms.fabrikt.model.ControllerType
+import com.cjbooms.fabrikt.model.CookieParam
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.KotlinTypes
@@ -210,6 +211,7 @@ class SpringControllerInterfaceGenerator(
             QueryParam -> SpringAnnotations.requestParamBuilder()
             HeaderParam -> SpringAnnotations.requestHeaderBuilder()
             PathParam -> SpringAnnotations.requestPathVariableBuilder()
+            CookieParam -> SpringAnnotations.cookieValueBuilder()
         }.let {
             it.addMember("value = %S", parameter.oasName)
             it.addMember("required = %L", parameter.isRequired)

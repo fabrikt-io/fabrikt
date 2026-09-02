@@ -11,6 +11,7 @@ object SpringHttpInterfaceImports {
 
     val REQUEST_PARAM = ClassName(Packages.BIND_ANNOTATION, "RequestParam")
     val REQUEST_HEADER = ClassName(Packages.BIND_ANNOTATION, "RequestHeader")
+    val COOKIE_VALUE = ClassName(Packages.BIND_ANNOTATION, "CookieValue")
     val REQUEST_BODY = ClassName(Packages.BIND_ANNOTATION, "RequestBody")
     val PATH_VARIABLE = ClassName(Packages.BIND_ANNOTATION, "PathVariable")
 
@@ -25,6 +26,10 @@ object SpringHttpInterfaceAnnotations {
     fun requestHeaderBuilder(): AnnotationSpec.Builder =
         AnnotationSpec
             .builder(SpringHttpInterfaceImports.REQUEST_HEADER)
+
+    fun cookieValueBuilder(): AnnotationSpec.Builder =
+        AnnotationSpec
+            .builder(SpringHttpInterfaceImports.COOKIE_VALUE)
 
     fun requestBodyBuilder(): AnnotationSpec.Builder =
         AnnotationSpec

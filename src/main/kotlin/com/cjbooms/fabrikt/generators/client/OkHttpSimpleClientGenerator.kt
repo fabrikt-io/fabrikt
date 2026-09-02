@@ -21,6 +21,7 @@ import com.cjbooms.fabrikt.generators.model.JacksonMetadata.OBJECT_MAPPER_CLASS
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
 import com.cjbooms.fabrikt.model.BodyParameter
 import com.cjbooms.fabrikt.model.ClientType
+import com.cjbooms.fabrikt.model.CookieParam
 import com.cjbooms.fabrikt.model.Destinations
 import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.HeaderParam
@@ -215,9 +216,38 @@ data class SimpleClientOperationStatement(
                     it.name + if (it.typeInfo is KotlinTypeInfo.Enum) "?.value" else "",
                 )
             }
+        addCookieParams()
         this.add("\nadditionalHeaders.forEach { headerBuilder.header(it.key, it.value) }")
 
         return this.add("\nval httpHeaders: %T = headerBuilder.build()\n", "Headers".toClassName("okhttp3"))
+    }
+
+    private fun CodeBlock.Builder.addCookieParams() {
+        val cookieParameters =
+            parameters
+                .filterIsInstance<RequestParameter>()
+                .filter { it.parameterLocation == CookieParam }
+        if (cookieParameters.isEmpty()) return
+
+        add("\nval cookieValues = buildList {")
+        cookieParameters.forEach { parameter ->
+            val receiver = parameter.name + if (parameter.isRequired) "" else "?"
+            when (parameter.typeInfo) {
+                is KotlinTypeInfo.Array ->
+                    if (parameter.explode == false) {
+                        add("\n%L.let { add(%S + it.joinToString(%S)) }", receiver, "${parameter.originalName}=", ",")
+                    } else {
+                        add("\n%L.forEach { add(%S + it) }", receiver, "${parameter.originalName}=")
+                    }
+
+                else -> {
+                    val value = if (parameter.typeInfo is KotlinTypeInfo.Enum) "it.value" else "it"
+                    add("\n%L.let { add(%S + %L) }", receiver, "${parameter.originalName}=", value)
+                }
+            }
+        }
+        add("\n}")
+        add("\nif (cookieValues.isNotEmpty()) headerBuilder.add(%S, cookieValues.joinToString(%S))", "Cookie", "; ")
     }
 
     private fun CodeBlock.Builder.addRequestStatement(): CodeBlock.Builder {

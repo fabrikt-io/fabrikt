@@ -18,6 +18,7 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientNa
 import com.cjbooms.fabrikt.generators.client.metadata.SpringHttpInterfaceAnnotations
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
+import com.cjbooms.fabrikt.model.CookieParam
 import com.cjbooms.fabrikt.model.Destinations
 import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.HeaderParam
@@ -103,6 +104,14 @@ class SpringHttpInterfaceGenerator(
                             SpringHttpInterfaceAnnotations
                                 .pathVariableBuilder()
                                 .addMember("%S", parameter.originalName)
+                                .build()
+                        }
+
+                        is CookieParam -> {
+                            SpringHttpInterfaceAnnotations
+                                .cookieValueBuilder()
+                                .addMember("%S", parameter.originalName)
+                                .addMember("required = %L", parameter.isRequired)
                                 .build()
                         }
                     }

@@ -1,0 +1,62 @@
+openapi: 3.0.3
+info:
+  title: Cookie parameters
+  version: 1.0.0
+paths:
+  /cookies/{id}:
+    get:
+      operationId: getCookiePreferences
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sessionId
+          in: cookie
+          required: true
+          schema:
+            type: string
+        - name: locale
+          in: cookie
+          schema:
+            type: string
+        - name: displayMode
+          in: cookie
+          required: true
+          schema:
+            type: string
+            enum:
+              - compact
+              - detailed
+        - name: features
+          in: cookie
+          required: true
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: scopes
+          in: cookie
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Cookie preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CookiePreferences'
+components:
+  schemas:
+    CookiePreferences:
+      type: object
+      required:
+        - locale
+      properties:
+        locale:
+          type: string
