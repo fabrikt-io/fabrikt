@@ -66,6 +66,7 @@ class ApiFileLoaderTest {
 
         assertThat(loaded.content).isEqualTo("openapi: 3.0.0")
         assertThat(loaded.baseUri.toString()).isEqualTo("${baseUrl()}/specs/")
+        assertThat(loaded.documentUri.toString()).isEqualTo("${baseUrl()}/specs/api.yaml")
     }
 
     @Test
@@ -88,6 +89,7 @@ class ApiFileLoaderTest {
 
         assertThat(loaded.content).isEqualTo("openapi: 3.0.0")
         assertThat(loaded.baseUri).isEqualTo(tempDir.toUri())
+        assertThat(loaded.documentUri).isEqualTo(file.toUri())
     }
 
     @Test

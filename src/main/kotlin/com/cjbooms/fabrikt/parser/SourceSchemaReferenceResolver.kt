@@ -3,14 +3,15 @@ package com.cjbooms.fabrikt.parser
 import java.net.URI
 
 internal object SourceSchemaReferenceResolver {
-    fun resolve(
+    fun index(
         baseUri: URI,
         version: OpenApiVersion?,
         schemaEntryPoints: Collection<SourceSchema>,
-    ): Map<String, SourceSchemaReferenceResolution> {
-        val index = ReferenceIndex(baseUri.withoutFragment().toAsciiUri(), version?.isAtLeast(3, 1) == true)
+        supportsSchemaResources: Boolean = version?.isAtLeast(3, 1) == true,
+    ): SourceSchemaReferenceIndex {
+        val index = ReferenceIndex(baseUri.withoutFragment().toAsciiUri(), supportsSchemaResources)
         schemaEntryPoints.forEach(index::index)
-        return index.resolveReferences()
+        return index.build()
     }
 
     private class ReferenceIndex(
@@ -26,13 +27,19 @@ internal object SourceSchemaReferenceResolver {
             index(schema, Scope(documentUri, documentUri, "#"))
         }
 
-        fun resolveReferences(): Map<String, SourceSchemaReferenceResolution> =
-            schemasByLocation.values
-                .asSequence()
-                .filterIsInstance<SourceObjectSchema>()
-                .mapNotNull { schema ->
-                    schema.reference?.let { value -> schema.location to resolve(schema, value) }
-                }.toMap(linkedMapOf())
+        fun build(): SourceSchemaReferenceIndex =
+            SourceSchemaReferenceIndex(
+                documentUri = documentUri,
+                schemasByUri = schemasByUri.toMap(),
+                resourceUris = resourceUris.toSet(),
+                resolutionsByLocation =
+                    schemasByLocation.values
+                        .asSequence()
+                        .filterIsInstance<SourceObjectSchema>()
+                        .mapNotNull { schema ->
+                            schema.reference?.let { value -> schema.location to resolve(schema, value) }
+                        }.toMap(linkedMapOf()),
+            )
 
         private fun index(
             schema: SourceSchema,
@@ -99,23 +106,9 @@ internal object SourceSchemaReferenceResolver {
         }
     }
 
-    private fun String.resolveAgainst(baseUri: URI): URI? {
-        if (isEmpty()) return baseUri
-        return runCatching { baseUri.resolve(URI(this)).normalize().toAsciiUri() }.getOrNull()
-    }
-
     private fun URI.hasEmptyFragment(): Boolean = rawFragment.isNullOrEmpty()
 
     private fun URI.withoutEmptyFragment(): URI = if (rawFragment == "") withoutFragment() else this
-
-    private fun URI.withoutFragment(): URI = rawFragment?.let { URI(toString().substringBeforeLast('#')) } ?: this
-
-    private fun URI.withFragment(fragment: String): URI {
-        val encodedFragment = URI(null, null, null, fragment).rawFragment
-        return URI("${withoutFragment()}#$encodedFragment").toAsciiUri()
-    }
-
-    private fun URI.toAsciiUri(): URI = URI(toASCIIString())
 
     private val ANCHOR_PATTERN = Regex("^[A-Za-z_][-A-Za-z0-9._]*$")
 }

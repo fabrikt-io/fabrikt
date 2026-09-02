@@ -9,6 +9,7 @@ import java.nio.file.Paths
 data class LoadedApi(
     val content: String,
     val baseUri: URI,
+    val documentUri: URI,
 )
 
 /**
@@ -40,11 +41,11 @@ object ApiFileLoader {
             )
         }
         val baseUri = (path.parent ?: path).toUri()
-        return LoadedApi(path.toFile().readText(), baseUri)
+        return LoadedApi(path.toFile().readText(), baseUri, path.toUri())
     }
 
     private fun loadRemote(
         uri: URI,
         resolvedAuth: List<Pair<String, String>>,
-    ): LoadedApi = LoadedApi(HttpFetch.fetch(uri, resolvedAuth), uri.resolve("."))
+    ): LoadedApi = LoadedApi(HttpFetch.fetch(uri, resolvedAuth), uri.resolve("."), uri)
 }
