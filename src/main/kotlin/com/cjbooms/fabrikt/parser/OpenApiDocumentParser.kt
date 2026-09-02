@@ -21,7 +21,7 @@ internal object OpenApiDocumentParser {
         jsonLoader: JsonLoader? = null,
     ): ParsedOpenApiDocument =
         try {
-            val source = SourceOpenApiDocumentParser.parse(input)
+            val source = SourceOpenApiDocumentParser.parse(input, baseUri)
             val kaizenInput = source.root.deepCopy<JsonNode>()
             OpenApi31Downgrader.downgradeIncompatibleElements(kaizenInput)
             OpenApiInputCleaner.cleanEmptyTypes(kaizenInput)

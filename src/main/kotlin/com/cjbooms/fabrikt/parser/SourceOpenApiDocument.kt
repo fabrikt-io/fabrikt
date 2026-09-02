@@ -2,31 +2,46 @@ package com.cjbooms.fabrikt.parser
 
 import com.cjbooms.fabrikt.util.YamlObjectMapper
 import com.fasterxml.jackson.databind.JsonNode
+import java.net.URI
+import java.nio.file.Paths
 
 internal data class SourceOpenApiDocument(
     val content: String,
     val root: JsonNode,
+    val baseUri: URI,
     val version: OpenApiVersion?,
     val componentSchemas: Map<String, SourceSchema>,
     val schemaEntryPoints: Map<String, SourceSchema>,
     val schemasByLocation: Map<String, SourceSchema>,
+    val schemaReferenceResolutions: Map<String, SourceSchemaReferenceResolution>,
 )
 
 internal object SourceOpenApiDocumentParser {
-    fun parse(input: String): SourceOpenApiDocument {
+    fun parse(
+        input: String,
+        baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
+    ): SourceOpenApiDocument {
         val root = YamlObjectMapper.instance.readTree(input)
         val version = OpenApiVersion.parse(root["openapi"]?.asText())
         val schemaEntryPoints =
             SourceSchemaEntryPointCollector
                 .collect(root, version)
                 .mapValues { (location, node) -> readSchema(node, location, version) }
+        val schemasByLocation = indexSchemas(schemaEntryPoints.values)
         return SourceOpenApiDocument(
             content = input,
             root = root,
+            baseUri = baseUri,
             version = version,
             componentSchemas = readComponentSchemas(root, schemaEntryPoints),
             schemaEntryPoints = schemaEntryPoints,
-            schemasByLocation = indexSchemas(schemaEntryPoints.values),
+            schemasByLocation = schemasByLocation,
+            schemaReferenceResolutions =
+                SourceSchemaReferenceResolver.resolve(
+                    baseUri = baseUri,
+                    version = version,
+                    schemaEntryPoints = schemaEntryPoints.values,
+                ),
         )
     }
 
@@ -68,6 +83,8 @@ internal object SourceOpenApiDocumentParser {
             SourceObjectSchema(
                 location = location,
                 node = node,
+                identifier = node["\$id"]?.takeIf(JsonNode::isTextual)?.textValue(),
+                anchor = node["\$anchor"]?.takeIf(JsonNode::isTextual)?.textValue(),
                 types = readTypes(node, version),
                 reference = node["\$ref"]?.takeIf(JsonNode::isTextual)?.textValue(),
                 definitions = readNamedSchemas(node["\$defs"], "$location/\$defs", version),
