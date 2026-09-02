@@ -221,7 +221,7 @@ Usage: <main class> [options]
 | ------------------------------ | ------------------------------ |
 |   `--api-file`                 | This must be a valid Open API v3 spec. All code generation will be based off this input. Accepts either a local file path or a resolvable http(s) URL. |
 |   `--api-fragment`             | A partial Open API v3 fragment, to be combined with the primary API for code generation purposes. Accepts either a local file path or a resolvable http(s) URL. |
-|   `--auth`                     | Authorization header(s) sent when fetching a remote --api-file, --api-fragment, or remote $ref. Repeatable, format 'Name: value'. Value may contain ${ENV_VAR} placeholders, name an env var, or contain !cmd (at start or after whitespace) to run a shell command and substitute its trimmed stdout (e.g. --auth "Authorization: Bearer !generate-fresh-auth-token"). |
+|   `--auth`                     | Authorization header(s) sent when fetching a remote --api-file, --api-fragment, or remote `$ref`. Repeatable, format 'Name: value'. Value may contain `${ENV_VAR}` placeholders, name an env var, or contain !cmd (at start or after whitespace) to run a shell command and substitute its trimmed stdout (e.g. --auth "Authorization: Bearer !generate-fresh-auth-token"). |
 | * `--base-package`             | The base package which all code will be generated under. |
 |   `--external-ref-resolution`  | Specify to which degree referenced schemas from external files are included in model generation. Default: TARGETED |
 |                                | CHOOSE ONE OF: |
