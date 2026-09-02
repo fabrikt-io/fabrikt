@@ -3,6 +3,10 @@ name: Publish package to the Maven Central Repository
 on:
   release:
     types: [created]
+
+permissions:
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -13,28 +17,48 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       - name: Publish to the Maven Central Repository
-        run: ./gradlew clean --info --stacktrace -PsigningKey='${{ secrets.GPG_SIGNING_KEY }}' -PsigningPassword='${{ secrets.GPG_SIGNING_PASSWORD }}' publish
+        run: ./gradlew clean --info --stacktrace publish
+        env:
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_SIGNING_PASSWORD }}
+          OSSRH_USER_TOKEN_USERNAME: ${{ secrets.OSSRH_USER_TOKEN_USERNAME }}
+          OSSRH_USER_TOKEN_PASSWORD: ${{ secrets.OSSRH_USER_TOKEN_PASSWORD }}
+      - name: Notify Central of Upload (Manual Staging Promotion)
         env:
           OSSRH_USER_TOKEN_USERNAME: ${{ secrets.OSSRH_USER_TOKEN_USERNAME }}
           OSSRH_USER_TOKEN_PASSWORD: ${{ secrets.OSSRH_USER_TOKEN_PASSWORD }}
-      - name: Wait before notification
         run: |
-          echo "Waiting 60 seconds for the repository to be indexed by Sonatype..."
-          sleep 60
-      - name: Notify Central of Upload (Manual Staging Promotion)
-        run: |
-          echo "Querying for open staging repository (io.fabrikt profile)..."
-          RESPONSE=$(curl -s -u "${{ secrets.OSSRH_USER_TOKEN_USERNAME }}:${{ secrets.OSSRH_USER_TOKEN_PASSWORD }}" \
-            "https://ossrh-staging-api.central.sonatype.com/manual/search/repositories?ip=any&profile_id=io.fabrikt")
-          
-          REPO_KEY=$(echo "$RESPONSE" | jq -r '.repositories[] | select(.state == "open") | .key')
+          # Sonatype indexes the upload asynchronously, so wait for it to show up
+          # instead of guessing how long indexing takes.
+          for attempt in $(seq 1 20); do
+            RESPONSE=$(curl --fail --silent --show-error \
+              -u "$OSSRH_USER_TOKEN_USERNAME:$OSSRH_USER_TOKEN_PASSWORD" \
+              "https://ossrh-staging-api.central.sonatype.com/manual/search/repositories?ip=any&profile_id=io.fabrikt")
+            OPEN_KEYS=$(jq -c '[.repositories[] | select(.state == "open") | .key]' <<< "$RESPONSE")
+            OPEN_COUNT=$(jq -r 'length' <<< "$OPEN_KEYS")
+            if [[ "$OPEN_COUNT" != "0" ]]; then break; fi
+            echo "Waiting for Sonatype to index the upload ($attempt/20)..."
+            sleep 15
+          done
 
-          if [[ "$REPO_KEY" == "null" ]]; then
-            echo "No open repository found for io.fabrikt profile"
+          if [[ "$OPEN_COUNT" == "0" ]]; then
+            echo "::error::No open io.fabrikt staging repository after 5 minutes - the upload did not register."
+            echo "Check the publish step above, then re-run this workflow from the release page." >&2
             exit 1
           fi
 
-          echo "Notifying Sonatype to register io.fabrikt repository in Central Publisher Portal..."
-          curl -X POST -H "Accept: application/json" \
-            -u "${{ secrets.OSSRH_USER_TOKEN_USERNAME }}:${{ secrets.OSSRH_USER_TOKEN_PASSWORD }}" \
+          if [[ "$OPEN_COUNT" != "1" ]]; then
+            echo "::error::Expected 1 open io.fabrikt staging repository, found $OPEN_COUNT: $OPEN_KEYS"
+            echo "Every fabrikt-io project shares this Sonatype profile, so promoting one at random is unsafe." >&2
+            echo "Drop the stale repository, then run the 'Manually Notify Sonatype' workflow:" >&2
+            echo "  DELETE https://ossrh-staging-api.central.sonatype.com/manual/drop/repository/<key>" >&2
+            echo "These are staging repositories. They are a separate service from the deployments listed" >&2
+            echo "at https://central.sonatype.com/publishing, and will not appear there until promoted." >&2
+            exit 1
+          fi
+          REPO_KEY=$(jq -r '.[0]' <<< "$OPEN_KEYS")
+
+          echo "Notifying Sonatype to register $REPO_KEY in Central Publisher Portal..."
+          curl --fail --silent --show-error -X POST -H "Accept: application/json" \
+            -u "$OSSRH_USER_TOKEN_USERNAME:$OSSRH_USER_TOKEN_PASSWORD" \
             "https://ossrh-staging-api.central.sonatype.com/manual/upload/repository/$REPO_KEY"

@@ -2,24 +2,44 @@ name: Manually Notify Sonatype
 # This job is only triggered manually in case the release doesn't show up
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
       - name: Notify Central of Upload (Manual Staging Promotion)
+        env:
+          OSSRH_USER_TOKEN_USERNAME: ${{ secrets.OSSRH_USER_TOKEN_USERNAME }}
+          OSSRH_USER_TOKEN_PASSWORD: ${{ secrets.OSSRH_USER_TOKEN_PASSWORD }}
         run: |
           echo "Querying for open staging repository..."
-          RESPONSE=$(curl -s -u "${{ secrets.OSSRH_USER_TOKEN_USERNAME }}:${{ secrets.OSSRH_USER_TOKEN_PASSWORD }}" \
+          RESPONSE=$(curl --fail --silent --show-error \
+            -u "$OSSRH_USER_TOKEN_USERNAME:$OSSRH_USER_TOKEN_PASSWORD" \
             "https://ossrh-staging-api.central.sonatype.com/manual/search/repositories?ip=any&profile_id=io.fabrikt")
-          
-          REPO_KEY=$(echo "$RESPONSE" | jq -r '.repositories[] | select(.state == "open") | .key')
 
-          if [[ "$REPO_KEY" == "null" ]]; then
-            echo "No open repository found"
+          OPEN_KEYS=$(jq -c '[.repositories[] | select(.state == "open") | .key]' <<< "$RESPONSE")
+          OPEN_COUNT=$(jq -r 'length' <<< "$OPEN_KEYS")
+          if [[ "$OPEN_COUNT" == "0" ]]; then
+            echo "::error::No open io.fabrikt staging repository - there is nothing to promote."
+            echo "If a release should be waiting, re-run its publish workflow from the release page." >&2
             exit 1
           fi
 
-          echo "Notifying Sonatype to register repository in Central Publisher Portal..."
-          curl -X POST -H "Accept: application/json" \
-            -u "${{ secrets.OSSRH_USER_TOKEN_USERNAME }}:${{ secrets.OSSRH_USER_TOKEN_PASSWORD }}" \
+          if [[ "$OPEN_COUNT" != "1" ]]; then
+            echo "::error::Expected 1 open io.fabrikt staging repository, found $OPEN_COUNT: $OPEN_KEYS"
+            echo "Nothing was changed at Sonatype. Every fabrikt-io project shares this Sonatype profile," >&2
+            echo "so promoting one at random is unsafe. Drop the stale repository, then run this again:" >&2
+            echo "  DELETE https://ossrh-staging-api.central.sonatype.com/manual/drop/repository/<key>" >&2
+            echo "These are staging repositories. They are a separate service from the deployments listed" >&2
+            echo "at https://central.sonatype.com/publishing, and will not appear there until promoted." >&2
+            exit 1
+          fi
+          REPO_KEY=$(jq -r '.[0]' <<< "$OPEN_KEYS")
+
+          echo "Notifying Sonatype to register $REPO_KEY in Central Publisher Portal..."
+          curl --fail --silent --show-error -X POST -H "Accept: application/json" \
+            -u "$OSSRH_USER_TOKEN_USERNAME:$OSSRH_USER_TOKEN_PASSWORD" \
             "https://ossrh-staging-api.central.sonatype.com/manual/upload/repository/$REPO_KEY"
