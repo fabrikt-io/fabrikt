@@ -8,30 +8,53 @@ internal data class SourceOpenApiDocument(
     val root: JsonNode,
     val version: OpenApiVersion?,
     val componentSchemas: Map<String, SourceSchema>,
+    val schemaEntryPoints: Map<String, SourceSchema>,
+    val schemasByLocation: Map<String, SourceSchema>,
 )
 
 internal object SourceOpenApiDocumentParser {
     fun parse(input: String): SourceOpenApiDocument {
         val root = YamlObjectMapper.instance.readTree(input)
         val version = OpenApiVersion.parse(root["openapi"]?.asText())
+        val schemaEntryPoints =
+            SourceSchemaEntryPointCollector
+                .collect(root, version)
+                .mapValues { (location, node) -> readSchema(node, location, version) }
         return SourceOpenApiDocument(
             content = input,
             root = root,
             version = version,
-            componentSchemas = readComponentSchemas(root, version),
+            componentSchemas = readComponentSchemas(root, schemaEntryPoints),
+            schemaEntryPoints = schemaEntryPoints,
+            schemasByLocation = indexSchemas(schemaEntryPoints.values),
         )
     }
 
     private fun readComponentSchemas(
         root: JsonNode,
-        version: OpenApiVersion?,
+        schemaEntryPoints: Map<String, SourceSchema>,
     ): Map<String, SourceSchema> {
         val schemas = root.path("components").path("schemas")
         if (!schemas.isObject) return emptyMap()
 
-        return schemas.properties().associate { (name, node) ->
-            name to readSchema(node, "#/components/schemas/${name.toJsonPointerToken()}", version)
+        return schemas.properties().associate { (name, _) ->
+            name to schemaEntryPoints.getValue("#/components/schemas/${name.toJsonPointerToken()}")
         }
+    }
+
+    private fun indexSchemas(entryPoints: Collection<SourceSchema>): Map<String, SourceSchema> =
+        buildMap {
+            entryPoints.forEach { entryPoint ->
+                entryPoint.visitRecursively { schema ->
+                    check(schema.location !in this) { "Duplicate source schema location: ${schema.location}" }
+                    put(schema.location, schema)
+                }
+            }
+        }
+
+    private fun SourceSchema.visitRecursively(visitor: (SourceSchema) -> Unit) {
+        visitor(this)
+        childSchemas().forEach { it.visitRecursively(visitor) }
     }
 
     private fun readSchema(
@@ -47,8 +70,27 @@ internal object SourceOpenApiDocumentParser {
                 node = node,
                 types = readTypes(node, version),
                 reference = node["\$ref"]?.takeIf(JsonNode::isTextual)?.textValue(),
+                definitions = readNamedSchemas(node["\$defs"], "$location/\$defs", version),
                 properties = readNamedSchemas(node["properties"], "$location/properties", version),
+                patternProperties =
+                    readNamedSchemas(
+                        node["patternProperties"],
+                        "$location/patternProperties",
+                        version,
+                    ),
+                dependentSchemas =
+                    readNamedSchemas(
+                        node["dependentSchemas"],
+                        "$location/dependentSchemas",
+                        version,
+                    ),
+                prefixItems = readSchemaList(node["prefixItems"], "$location/prefixItems", version),
                 items = readOptionalSchema(node["items"], "$location/items", version),
+                contains = readOptionalSchema(node["contains"], "$location/contains", version),
+                propertyNames = readOptionalSchema(node["propertyNames"], "$location/propertyNames", version),
+                ifSchema = readOptionalSchema(node["if"], "$location/if", version),
+                thenSchema = readOptionalSchema(node["then"], "$location/then", version),
+                elseSchema = readOptionalSchema(node["else"], "$location/else", version),
                 allOf = readSchemaList(node["allOf"], "$location/allOf", version),
                 anyOf = readSchemaList(node["anyOf"], "$location/anyOf", version),
                 oneOf = readSchemaList(node["oneOf"], "$location/oneOf", version),
@@ -59,6 +101,19 @@ internal object SourceOpenApiDocumentParser {
                         "$location/additionalProperties",
                         version,
                     ),
+                unevaluatedItems =
+                    readOptionalSchema(
+                        node["unevaluatedItems"],
+                        "$location/unevaluatedItems",
+                        version,
+                    ),
+                unevaluatedProperties =
+                    readOptionalSchema(
+                        node["unevaluatedProperties"],
+                        "$location/unevaluatedProperties",
+                        version,
+                    ),
+                contentSchema = readOptionalSchema(node["contentSchema"], "$location/contentSchema", version),
             )
         }
 
