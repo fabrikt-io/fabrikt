@@ -180,7 +180,11 @@ fabrikt {
 
 ### Maven
 
-The [exec-maven-plugin](https://www.mojohaus.org/exec-maven-plugin/examples/example-exec-using-plugin-dependencies.html) is capable of downloading the Fabrikt library from Maven Central and executing its main method with defined arguments.
+The [official Fabrikt Maven plugin](https://github.com/fabrikt-io/fabrikt-maven-plugin) integrates Fabrikt code generation into Maven builds.
+Plugin releases use the same version as the corresponding Fabrikt release and support shared configuration, multiple OpenAPI specifications through named executions, generated source registration, and both lifecycle-bound and explicit generation.
+Refer to the plugin's [usage documentation](https://github.com/fabrikt-io/fabrikt-maven-plugin#usage) for the current configuration syntax and examples.
+
+Alternatively, the [exec-maven-plugin](https://www.mojohaus.org/exec-maven-plugin/examples/example-exec-using-plugin-dependencies.html) can download the Fabrikt library from Maven Central and execute its main method with defined arguments.
 
 ### Docker
 
