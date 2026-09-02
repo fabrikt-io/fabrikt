@@ -78,7 +78,7 @@ class CodeGenArgs {
         names = ["--auth"],
         description =
             "Authorization header(s) sent when fetching a remote --api-file, --api-fragment, or " +
-                "remote \$ref. Repeatable, format 'Name: value'. Value may contain \${ENV_VAR} placeholders, " +
+                "remote `\$ref`. Repeatable, format 'Name: value'. Value may contain `\${ENV_VAR}` placeholders, " +
                 "name an env var, or contain !cmd (at start or after whitespace) to run a shell command and " +
                 "substitute its trimmed stdout (e.g. --auth \"Authorization: Bearer !generate-fresh-auth-token\").",
     )
