@@ -8,11 +8,11 @@ import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.MultipartParameter
-import com.cjbooms.fabrikt.model.OpenApiMediaType
-import com.cjbooms.fabrikt.model.OpenApiOperation
-import com.cjbooms.fabrikt.model.OpenApiParameter
-import com.cjbooms.fabrikt.model.OpenApiRequestBody
-import com.cjbooms.fabrikt.model.OpenApiResponse
+import com.cjbooms.fabrikt.model.OpenApiMediaType as MediaType
+import com.cjbooms.fabrikt.model.OpenApiOperation as Operation
+import com.cjbooms.fabrikt.model.OpenApiParameter as Parameter
+import com.cjbooms.fabrikt.model.OpenApiRequestBody as RequestBody
+import com.cjbooms.fabrikt.model.OpenApiResponse as Response
 import com.cjbooms.fabrikt.model.OpenApiSchema
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
@@ -40,7 +40,7 @@ object GeneratorUtils {
      * resolve to the schema reference of the first media type, otherwise it assumes no request body defined for
      * the given operation.
      */
-    fun OpenApiRequestBody.toBodyParameterSpec(basePackage: String): List<ParameterSpec> =
+    fun RequestBody.toBodyParameterSpec(basePackage: String): List<ParameterSpec> =
         this.toBodyRequestSchema().map {
             val modelType =
                 toModelType(
@@ -58,7 +58,7 @@ object GeneratorUtils {
     /**
      * It resolves the given either `query` of `form` parameter to its corresponding function param specification.
      */
-    fun OpenApiParameter.toParameterSpec(basePackage: String): ParameterSpec =
+    fun Parameter.toParameterSpec(basePackage: String): ParameterSpec =
         ParameterSpec
             .builder(
                 this.name.toKCodeName(),
@@ -93,14 +93,14 @@ object GeneratorUtils {
      * It resolves the schema for the given API operation. If multiple content medias are found, then it will
      * resolve to the schema reference of the first media type.
      */
-    fun OpenApiRequestBody.toBodyRequestSchema(): List<OpenApiSchema> = listOfNotNull(this.getPrimaryContentMediaType()?.value?.schema)
+    fun RequestBody.toBodyRequestSchema(): List<OpenApiSchema> = listOfNotNull(this.getPrimaryContentMediaType()?.value?.schema)
 
     fun mergeParameters(
-        path: List<OpenApiParameter>,
-        operation: List<OpenApiParameter>,
-    ): List<OpenApiParameter> = path.filter { pp -> !operation.any { op -> pp.name == op.name && pp.`in` == op.`in` } } + operation
+        path: List<Parameter>,
+        operation: List<Parameter>,
+    ): List<Parameter> = path.filter { pp -> !operation.any { op -> pp.name == op.name && pp.`in` == op.`in` } } + operation
 
-    fun OpenApiOperation.toKdoc(parameters: List<IncomingParameter>): CodeBlock {
+    fun Operation.toKdoc(parameters: List<IncomingParameter>): CodeBlock {
         val kdoc = CodeBlock.builder().add("${this.summary.orEmpty()}\n${this.description.orEmpty()}\n")
 
         parameters.forEach {
@@ -135,7 +135,7 @@ object GeneratorUtils {
     }
 
     fun functionName(
-        op: OpenApiOperation,
+        op: Operation,
         resource: String,
         verb: String,
     ) = op.operationId?.camelCase() ?: "$verb $resource".toKCodeName()
@@ -146,67 +146,67 @@ object GeneratorUtils {
 
     fun String.toClassName(basePackage: String) = ClassName(packageName = basePackage, this)
 
-    fun OpenApiRequestBody.getPrimaryContentMediaType(): Map.Entry<String, OpenApiMediaType>? = this.contentMediaTypes.entries.firstOrNull()
+    fun RequestBody.getPrimaryContentMediaType(): Map.Entry<String, MediaType>? = this.contentMediaTypes.entries.firstOrNull()
 
-    fun OpenApiResponse.getPrimaryContentMediaType(): Map.Entry<String, OpenApiMediaType>? = this.contentMediaTypes.entries.firstOrNull()
+    fun Response.getPrimaryContentMediaType(): Map.Entry<String, MediaType>? = this.contentMediaTypes.entries.firstOrNull()
 
-    fun OpenApiResponse.hasMultipleContentMediaTypes(): Boolean = this.contentMediaTypes.entries.size > 1
+    fun Response.hasMultipleContentMediaTypes(): Boolean = this.contentMediaTypes.entries.size > 1
 
-    fun OpenApiOperation.firstResponse(): OpenApiResponse? = this.getBodyResponses().firstOrNull()
+    fun Operation.firstResponse(): Response? = this.getBodyResponses().firstOrNull()
 
-    fun OpenApiOperation.getPrimaryContentMediaType(): Map.Entry<String, OpenApiMediaType>? {
+    fun Operation.getPrimaryContentMediaType(): Map.Entry<String, MediaType>? {
         val responses = getBodySuccessResponses().ifEmpty { getBodyResponses() }
         return responses.map { response -> response.getPrimaryContentMediaType() }.firstOrNull()
     }
 
-    fun OpenApiOperation.getPrimaryContentMediaTypeKey(): String? = this.firstResponse()?.getPrimaryContentMediaType()?.key
+    fun Operation.getPrimaryContentMediaTypeKey(): String? = this.firstResponse()?.getPrimaryContentMediaType()?.key
 
-    fun OpenApiOperation.hasMultipleContentMediaTypes(): Boolean? = this.firstResponse()?.hasMultipleContentMediaTypes()
+    fun Operation.hasMultipleContentMediaTypes(): Boolean? = this.firstResponse()?.hasMultipleContentMediaTypes()
 
-    fun OpenApiOperation.hasAnySuccessResponseSchemas(): Boolean = getBodySuccessResponses().isNotEmpty()
+    fun Operation.hasAnySuccessResponseSchemas(): Boolean = getBodySuccessResponses().isNotEmpty()
 
-    fun OpenApiOperation.hasMultipleSuccessResponseSchemas(): Boolean =
+    fun Operation.hasMultipleSuccessResponseSchemas(): Boolean =
         getBodySuccessResponses()
             .flatMap { it.contentMediaTypes.values }
             .map { it.schema.name }
             .distinct()
             .size > 1
 
-    fun OpenApiOperation.hasOnlyJsonSuccessResponses(): Boolean =
+    fun Operation.hasOnlyJsonSuccessResponses(): Boolean =
         getBodySuccessResponses()
             .flatMap { it.contentMediaTypes.keys }
             .all { it.contains("json", ignoreCase = true) }
 
-    fun OpenApiOperation.getPathParams(): List<OpenApiParameter> = this.filterParams("path")
+    fun Operation.getPathParams(): List<Parameter> = this.filterParams("path")
 
-    fun OpenApiOperation.getQueryParams(): List<OpenApiParameter> = this.filterParams("query")
+    fun Operation.getQueryParams(): List<Parameter> = this.filterParams("query")
 
-    fun OpenApiOperation.getHeaderParams(): List<OpenApiParameter> = this.filterParams("header")
+    fun Operation.getHeaderParams(): List<Parameter> = this.filterParams("header")
 
-    fun OpenApiOperation.getCookieParams(): List<OpenApiParameter> = this.filterParams("cookie")
+    fun Operation.getCookieParams(): List<Parameter> = this.filterParams("cookie")
 
-    private fun OpenApiOperation.getBodyResponses(): List<OpenApiResponse> =
+    private fun Operation.getBodyResponses(): List<Response> =
         this.responses
             .filter { it.key != "default" }
             .values
-            .filter(OpenApiResponse::hasContentMediaTypes)
+            .filter(Response::hasContentMediaTypes)
 
-    fun OpenApiOperation.getBodySuccessResponses(): List<OpenApiResponse> =
-        getSuccessResponses().values.filter(OpenApiResponse::hasContentMediaTypes)
+    fun Operation.getBodySuccessResponses(): List<Response> =
+        getSuccessResponses().values.filter(Response::hasContentMediaTypes)
 
-    private fun OpenApiOperation.getSuccessResponses(): Map<String, OpenApiResponse> =
+    private fun Operation.getSuccessResponses(): Map<String, Response> =
         this.responses.filter { it.key.toIntOrNull()?.let { status -> status in 200..399 } ?: false }
 
-    private fun OpenApiOperation.filterParams(paramType: String): List<OpenApiParameter> = this.parameters.filter { it.`in` == paramType }
+    private fun Operation.filterParams(paramType: String): List<Parameter> = this.parameters.filter { it.`in` == paramType }
 
     /**
      * Returns a list of IncomingParameters, ordering logic should be
      * encapsulated here to ensure the order of parameters align between
      * services and controllers
      */
-    fun OpenApiOperation.toIncomingParameters(
+    fun Operation.toIncomingParameters(
         basePackage: String,
-        pathParameters: List<OpenApiParameter>,
+        pathParameters: List<Parameter>,
         extraParameters: List<IncomingParameter>,
     ): List<IncomingParameter> {
         val bodies =
@@ -359,7 +359,7 @@ object GeneratorUtils {
         )
     }
 
-    private fun isNullable(parameter: OpenApiParameter): Boolean = !parameter.isRequired && parameter.schema.default == null
+    private fun isNullable(parameter: Parameter): Boolean = !parameter.isRequired && parameter.schema.default == null
 
     /**
      * Converts a TypeSpec to an object by copying over all properties, functions, etc.
@@ -393,23 +393,23 @@ object GeneratorUtils {
     }
 
     /**
-     * Checks if the given OpenApiRequestBody contains multipart/form-data content type
+     * Checks if the given RequestBody contains multipart/form-data content type
      */
-    fun OpenApiRequestBody.isMultipartFormData(): Boolean = this.contentMediaTypes.keys.any { it.startsWith("multipart/form-data") }
+    fun RequestBody.isMultipartFormData(): Boolean = this.contentMediaTypes.keys.any { it.startsWith("multipart/form-data") }
 
     /**
-     * Gets the multipart/form-data schema from the OpenApiRequestBody if it exists
+     * Gets the multipart/form-data schema from the RequestBody if it exists
      */
-    fun OpenApiRequestBody.getMultipartSchema(): OpenApiSchema? =
+    fun RequestBody.getMultipartSchema(): OpenApiSchema? =
         this.contentMediaTypes.entries
             .find { it.key.startsWith("multipart/form-data") }
             ?.value
             ?.schema
 
     /**
-     * Checks if the given OpenApiOperation has a multipart/form-data request body
+     * Checks if the given Operation has a multipart/form-data request body
      */
-    fun OpenApiOperation.hasMultipartRequestBody(): Boolean = this.requestBody.isMultipartFormData()
+    fun Operation.hasMultipartRequestBody(): Boolean = this.requestBody.isMultipartFormData()
 
     fun TypeName.isUnit(): Boolean = this == Unit::class.asTypeName()
 
