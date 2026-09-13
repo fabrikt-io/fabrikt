@@ -8,11 +8,6 @@ import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.MultipartParameter
-import com.cjbooms.fabrikt.model.OpenApiMediaType as MediaType
-import com.cjbooms.fabrikt.model.OpenApiOperation as Operation
-import com.cjbooms.fabrikt.model.OpenApiParameter as Parameter
-import com.cjbooms.fabrikt.model.OpenApiRequestBody as RequestBody
-import com.cjbooms.fabrikt.model.OpenApiResponse as Response
 import com.cjbooms.fabrikt.model.OpenApiSchema
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
@@ -33,6 +28,11 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 import java.util.function.Predicate
+import com.cjbooms.fabrikt.model.OpenApiMediaType as MediaType
+import com.cjbooms.fabrikt.model.OpenApiOperation as Operation
+import com.cjbooms.fabrikt.model.OpenApiParameter as Parameter
+import com.cjbooms.fabrikt.model.OpenApiRequestBody as RequestBody
+import com.cjbooms.fabrikt.model.OpenApiResponse as Response
 
 object GeneratorUtils {
     /**
@@ -192,7 +192,9 @@ object GeneratorUtils {
             .filter(Response::hasContentMediaTypes)
 
     fun Operation.getBodySuccessResponses(): List<Response> =
-        getSuccessResponses().values.filter(Response::hasContentMediaTypes)
+        getSuccessResponses()
+            .values
+            .filter(Response::hasContentMediaTypes)
 
     private fun Operation.getSuccessResponses(): Map<String, Response> =
         this.responses.filter { it.key.toIntOrNull()?.let { status -> status in 200..399 } ?: false }
