@@ -212,14 +212,14 @@ object GeneratorUtils {
         val bodies =
             if (hasMultipartRequestBody()) {
                 // For multipart requests, create individual parameters for each part
-                requestBody?.getMultipartSchema()?.let { multipartSchema ->
-                    multipartSchema.properties?.map { (partName, partSchema) ->
+                requestBody.getMultipartSchema()?.let { multipartSchema ->
+                    multipartSchema.properties.map { (partName, partSchema) ->
                         val isBinaryFile =
                             (partSchema.format == "binary" && partSchema.type == "string") ||
                                 (
                                     partSchema.type == "array" &&
-                                        partSchema.itemsSchema?.format == "binary" &&
-                                        partSchema.itemsSchema?.type == "string"
+                                        partSchema.itemsSchema.format == "binary" &&
+                                        partSchema.itemsSchema.type == "string"
                                 )
                         val type =
                             toModelType(
@@ -409,7 +409,7 @@ object GeneratorUtils {
     /**
      * Checks if the given OpenApiOperation has a multipart/form-data request body
      */
-    fun OpenApiOperation.hasMultipartRequestBody(): Boolean = this.requestBody?.isMultipartFormData() == true
+    fun OpenApiOperation.hasMultipartRequestBody(): Boolean = this.requestBody.isMultipartFormData()
 
     fun TypeName.isUnit(): Boolean = this == Unit::class.asTypeName()
 

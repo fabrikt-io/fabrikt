@@ -57,15 +57,15 @@ class SourceApi private constructor(
                     allParams
                         .filter { param ->
                             isInlineEnum(param.schema) ||
-                                (param.schema?.type == "array" && isInlineEnum(param.schema?.itemsSchema))
+                                (param.schema.type == "array" && isInlineEnum(param.schema.itemsSchema))
                         }.map { param ->
-                            val schema = if (param.schema?.type == "array") param.schema.itemsSchema else param.schema
+                            val schema = if (param.schema.type == "array") param.schema.itemsSchema else param.schema
                             param.name to schema
                         }
-                }.distinctBy { it.second?.jsonReference }
+                }.distinctBy { it.second.jsonReference }
 
         inlineEnumParams.forEach { (name, schema) ->
-            ModelNameRegistry.preRegisterByReference(schema!!, name)
+            ModelNameRegistry.preRegisterByReference(schema, name)
         }
 
         val inlineRequestBodySchemas =
@@ -73,14 +73,14 @@ class SourceApi private constructor(
                 requestBody.value.contentMediaTypes.entries
                     .filter { content ->
                         val schema = content.value.schema
-                        schema?.jsonPathFromRoot?.contains("requestBodies") == true &&
-                            schema.oneOfSchemas.isNullOrEmpty() &&
-                            schema.anyOfSchemas.isNullOrEmpty()
+                        schema.jsonPathFromRoot.contains("requestBodies") &&
+                            schema.oneOfSchemas.isEmpty() &&
+                            schema.anyOfSchemas.isEmpty()
                     }.map { content -> requestBody.key to content.value.schema }
             }
 
         inlineRequestBodySchemas.forEach { (name, schema) ->
-            ModelNameRegistry.preRegisterByReference(schema!!, name)
+            ModelNameRegistry.preRegisterByReference(schema, name)
         }
 
         val inlineResponseSchemas =
@@ -88,14 +88,14 @@ class SourceApi private constructor(
                 response.value.contentMediaTypes.entries
                     .filter { content ->
                         val schema = content.value.schema
-                        schema?.jsonPathFromRoot?.contains("responses") == true &&
-                            schema.oneOfSchemas.isNullOrEmpty() &&
-                            schema.anyOfSchemas.isNullOrEmpty()
+                        schema.jsonPathFromRoot.contains("responses") &&
+                            schema.oneOfSchemas.isEmpty() &&
+                            schema.anyOfSchemas.isEmpty()
                     }.map { content -> response.key to content.value.schema }
             }
 
         inlineResponseSchemas.forEach { (name, schema) ->
-            ModelNameRegistry.preRegisterByReference(schema!!, name)
+            ModelNameRegistry.preRegisterByReference(schema, name)
         }
 
         allSchemas =
@@ -105,7 +105,7 @@ class SourceApi private constructor(
                 .plus(inlineResponseSchemas)
                 .plus(inlineRequestBodySchemas)
                 .plus(inlineEnumParams)
-                .map { (key, schema) -> SchemaInfo(key, schema!!) }
+                .map { (key, schema) -> SchemaInfo(key, schema) }
     }
 
     private fun isInlineEnum(schema: OpenApiSchema?): Boolean =
@@ -118,11 +118,11 @@ class SourceApi private constructor(
                 val name = entry.key
                 val schema = entry.value
                 if (schema.type == OasType.Object.type &&
-                    schema.properties?.isNotEmpty() == true &&
+                    schema.properties.isNotEmpty() &&
                     (
-                        schema.oneOfSchemas?.isNotEmpty() == true ||
-                            schema.allOfSchemas?.isNotEmpty() == true ||
-                            schema.anyOfSchemas?.isNotEmpty() == true
+                        schema.oneOfSchemas.isNotEmpty() ||
+                            schema.allOfSchemas.isNotEmpty() ||
+                            schema.anyOfSchemas.isNotEmpty()
                     )
                 ) {
                     errors +

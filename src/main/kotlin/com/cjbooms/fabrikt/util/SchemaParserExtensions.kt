@@ -41,7 +41,7 @@ object SchemaParserExtensions {
     private const val EXTENSIBLE_ENUM_KEY = "x-extensible-enum"
 
     fun Schema.isPolymorphicSuperType(): Boolean =
-        discriminator?.propertyName != null ||
+        discriminator.propertyName != null ||
             getDiscriminatorForInlinedObjectUnderAllOf()?.propertyName != null
 
     fun Schema.schemaLocation(): String = jsonPathFromRoot
@@ -79,23 +79,23 @@ object SchemaParserExtensions {
 
     fun Schema.isSchemaLess() =
         isObjectType() &&
-            properties?.isEmpty() == true &&
+            properties.isEmpty() &&
             (
-                oneOfSchemas?.isNotEmpty() != true &&
-                    allOfSchemas?.isNotEmpty() != true &&
-                    anyOfSchemas?.isNotEmpty() != true
+                oneOfSchemas.isEmpty() &&
+                    allOfSchemas.isEmpty() &&
+                    anyOfSchemas.isEmpty()
             )
 
     fun Schema.isSet(): Boolean = isArrayType() && this.isUniqueItems
 
-    fun Schema.isSimpleMapDefinition() = hasAdditionalProperties() && properties?.isEmpty() == true
+    fun Schema.isSimpleMapDefinition() = hasAdditionalProperties() && properties.isEmpty()
 
     fun Schema.isSimpleOneOfAnyDefinition() =
-        oneOfSchemas?.isNotEmpty() == true &&
+        oneOfSchemas.isNotEmpty() &&
             !isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() &&
-            anyOfSchemas?.isEmpty() == true &&
-            allOfSchemas?.isEmpty() == true &&
-            properties?.isEmpty() == true
+            anyOfSchemas.isEmpty() &&
+            allOfSchemas.isEmpty() &&
+            properties.isEmpty()
 
     fun Schema.isEnumDefinition(): Boolean =
         this.type == OasType.Text.type &&
@@ -139,55 +139,54 @@ object SchemaParserExtensions {
      */
     fun Schema.isOpenEnumDefinition(): Boolean {
         if (!MutableSettings.modelOptions.contains(ModelCodeGenOptionType.FAULT_TOLERANT_OPEN_ENUMS)) return false
-        val branches = anyOfSchemas ?: return false
-        if (oneOfSchemas?.isNotEmpty() == true || allOfSchemas?.isNotEmpty() == true) return false
-        if (properties?.isNotEmpty() == true) return false
+        val branches = anyOfSchemas
+        if (oneOfSchemas.isNotEmpty() || allOfSchemas.isNotEmpty()) return false
+        if (properties.isNotEmpty()) return false
         if (!branches.all { it.type == OasType.Text.type }) return false
         return branches.any { it.hasEnums() } && branches.any { !it.hasEnums() }
     }
 
-    private fun Schema.getOpenEnumValues(): List<String> =
-        (anyOfSchemas ?: emptyList()).filter { it.hasEnums() }.flatMap { it.getEnumValues() }.distinct()
+    private fun Schema.getOpenEnumValues(): List<String> = anyOfSchemas.filter { it.hasEnums() }.flatMap { it.getEnumValues() }.distinct()
 
     fun Schema.hasAdditionalProperties(): Boolean = additionalPropertiesSchema.isPresent && additionalProperties != false
 
     fun Schema.isUnknownAdditionalProperties(oasKey: String) =
         type == null &&
             (getSchemaNameInParent() ?: oasKey) == "additionalProperties" &&
-            properties?.isEmpty() == true
+            properties.isEmpty()
 
     fun Schema.isUntypedAdditionalProperties(oasKey: String) =
         type == OasType.Object.type &&
             (getSchemaNameInParent() ?: oasKey) == "additionalProperties" &&
-            properties?.isEmpty() == true
+            properties.isEmpty()
 
     fun Schema.isTypedAdditionalProperties(oasKey: String) =
         type == OasType.Object.type &&
             (getSchemaNameInParent() == "additionalProperties" || oasKey == "additionalProperties") &&
-            properties?.isEmpty() != true
+            properties.isNotEmpty()
 
     fun Schema.isSimpleTypedAdditionalProperties(oasKey: String) =
         isSimpleType() &&
             (getSchemaNameInParent() == "additionalProperties" || oasKey == "additionalProperties") &&
-            properties?.isEmpty() == true
+            properties.isEmpty()
 
     fun Schema.isMapTypeAdditionalProperties(oasKey: String) =
         type == OasType.Object.type &&
             (oasKey == "additionalProperties") &&
-            properties?.isEmpty() == true &&
+            properties.isEmpty() &&
             hasAdditionalProperties()
 
     fun Schema.isComplexTypedAdditionalProperties(oasKey: String) =
         (getSchemaNameInParent() ?: oasKey) ==
             "additionalProperties" &&
-            properties?.isEmpty() != true &&
+            properties.isNotEmpty() &&
             !isSimpleType()
 
     fun Schema.isSimpleType(): Boolean =
         !isOneOfSuperInterface() &&
             ((simpleTypes.contains(type) && !isEnumDefinition()) || isSimpleMapDefinition() || isSimpleOneOfAnyDefinition())
 
-    private fun Schema.isObjectType() = OasType.Object.type == type || properties?.isNotEmpty() == true
+    private fun Schema.isObjectType() = OasType.Object.type == type || properties.isNotEmpty()
 
     private fun Schema.isArrayType() = OasType.Array.type == type
 
@@ -244,13 +243,13 @@ object SchemaParserExtensions {
         api: OpenApi3,
         prop: Map.Entry<String, Schema>,
     ): Boolean =
-        discriminator?.propertyName == prop.key ||
+        discriminator.propertyName == prop.key ||
             findOneOfSuperInterface(api.schemas.values.toList()).any { oneOf ->
-                oneOf.discriminator?.propertyName == prop.key &&
+                oneOf.discriminator.propertyName == prop.key &&
                     oneOf.discriminator
-                        ?.mappings
-                        ?.values
-                        ?.any { it.endsWith("/$name") } ?: false
+                        .mappings
+                        .values
+                        .any { it.endsWith("/$name") }
             }
 
     fun Schema.findOneOfSuperInterface(allSchemas: List<Schema>): Set<Schema> {
@@ -279,7 +278,7 @@ object SchemaParserExtensions {
                     val interfaces = mutableListOf<Schema>()
 
                     // Check oneOf in array items
-                    property.itemsSchema?.let { items ->
+                    property.itemsSchema.let { items ->
                         if (items.isInlinedOneOfSuperInterface() &&
                             items.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
                         ) {
@@ -305,7 +304,7 @@ object SchemaParserExtensions {
         val topLevelArrayInterfaces =
             allSchemas
                 .mapNotNull { arraySchema ->
-                    val items = arraySchema.itemsSchema ?: return@mapNotNull null
+                    val items = arraySchema.itemsSchema
                     if (items.isInlinedOneOfUnderTopLevelArrayDefinition() &&
                         items.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
                     ) {
@@ -354,8 +353,8 @@ object SchemaParserExtensions {
     }
 
     fun Discriminator.mappingKeys(enclosingSchema: Schema): Map<String, String> {
-        val discriminatorMappings = mappings?.map { it.key to it.value.split("/").last() }?.toMap()
-        return if (discriminatorMappings.isNullOrEmpty()) {
+        val discriminatorMappings = mappings.map { it.key to it.value.split("/").last() }.toMap()
+        return if (discriminatorMappings.isEmpty()) {
             mapOf(enclosingSchema.name!! to enclosingSchema.safeName().toModelClassName())
         } else {
             discriminatorMappings
@@ -363,7 +362,7 @@ object SchemaParserExtensions {
     }
 
     fun Discriminator.mappingKeyForSchemaName(schemaName: String): String? =
-        mappings?.filter { it.value.split("/").last() == schemaName }?.keys?.firstOrNull()
+        mappings.filter { it.value.split("/").last() == schemaName }.keys.firstOrNull()
 
     fun Schema.isInlinedObjectUnderAllOf(): Boolean =
         jsonPathFromRoot
@@ -373,7 +372,7 @@ object SchemaParserExtensions {
                 path[path.lastIndex].toIntOrNull() != null && (path[path.lastIndex - 1] == "allOf")
             }
 
-    fun Schema.hasNoDiscriminator(): Boolean = this.discriminator?.propertyName == null
+    fun Schema.hasNoDiscriminator(): Boolean = this.discriminator.propertyName == null
 
     fun Schema.hasDiscriminator(): Boolean = !hasNoDiscriminator()
 
@@ -406,7 +405,7 @@ object SchemaParserExtensions {
         if (type != null) return type
 
         // 2. Clear object-like cues
-        if (properties?.isNotEmpty() == true) return "object"
+        if (properties.isNotEmpty()) return "object"
         if (allOfSchemas.hasAnyDefinedProperties()) return "object"
         if (oneOfSchemas.hasAnyDefinedProperties()) return "object"
         if (anyOfSchemas.hasAnyDefinedProperties()) return "object"
@@ -435,7 +434,7 @@ object SchemaParserExtensions {
         return if (nonNullTypes.size == 1) nonNullTypes.first() else null
     }
 
-    private fun List<Schema>?.hasAnyDefinedProperties(): Boolean = this?.any { it.properties?.isNotEmpty() == true } == true
+    private fun List<Schema>?.hasAnyDefinedProperties(): Boolean = this?.any { it.properties.isNotEmpty() } == true
 
     fun Schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType(): Boolean {
         val maybeAllOfInFirstOneOf =
@@ -480,7 +479,7 @@ object SchemaParserExtensions {
     private fun Schema.isRedundantOneOfForExistingDiscriminatedHierarchy(): Boolean =
         isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && hasNoDiscriminator()
 
-    fun Schema.isOneOfSuperInterfaceWithDiscriminator() = discriminator?.propertyName != null && isOneOfSuperInterface()
+    fun Schema.isOneOfSuperInterfaceWithDiscriminator() = discriminator.propertyName != null && isOneOfSuperInterface()
 
     /** Per-schema opt-in for Jackson DEDUCTION-style polymorphism. Subtypes must have
      *  distinguishing required fields or deserialization fails at runtime. */
@@ -511,12 +510,12 @@ object SchemaParserExtensions {
     fun Schema.isInlinedOneOfUnderTopLevelArrayDefinition(): Boolean =
         isOneOfSuperInterface() && isInlinedItemsSchemaUnderTopLevelArrayDefinition()
 
-    fun Schema.hasInlinedItemsSchemaWithOneOf(): Boolean = itemsSchema?.isInlinedOneOfUnderTopLevelArrayDefinition() == true
+    fun Schema.hasInlinedItemsSchemaWithOneOf(): Boolean = itemsSchema.isInlinedOneOfUnderTopLevelArrayDefinition()
 
     fun Schema.isInlinedObjectDefinitionUnderTopLevelArrayDefinition(): Boolean =
         (isObjectType() || isAggregatedObject()) && !isSchemaLess() && isInlinedItemsSchemaUnderTopLevelArrayDefinition()
 
-    fun Schema.hasInlinedItemsSchemaOfTypeObject(): Boolean = itemsSchema?.isInlinedObjectDefinitionUnderTopLevelArrayDefinition() == true
+    fun Schema.hasInlinedItemsSchemaOfTypeObject(): Boolean = itemsSchema.isInlinedObjectDefinitionUnderTopLevelArrayDefinition()
 
     fun OpenApi3.basePath(): String =
         servers

@@ -3,8 +3,6 @@ package com.cjbooms.fabrikt.model
 import com.cjbooms.fabrikt.model.Destinations.clientPackage
 import com.cjbooms.fabrikt.model.Destinations.controllersPackage
 import com.cjbooms.fabrikt.model.Destinations.modelsPackage
-import com.cjbooms.fabrikt.model.OpenApiParameter
-import com.cjbooms.fabrikt.model.OpenApiSchema
 import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
 import com.cjbooms.fabrikt.util.NormalisedString.toKotlinParameterName
 import com.squareup.kotlinpoet.ClassName

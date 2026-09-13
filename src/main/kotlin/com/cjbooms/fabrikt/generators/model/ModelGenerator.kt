@@ -508,8 +508,7 @@ class ModelGenerator(
         (
             allOfSchemas + anyOfSchemas + oneOfSchemas + itemsSchema + additionalPropertiesSchema +
                 this + this.properties.map { it.value }
-        ).filterNotNull()
-            .filter { it.isPresent }
+        ).filter { it.isPresent }
 
     private fun buildEnumClass(
         schema: Schema,
@@ -823,7 +822,7 @@ class ModelGenerator(
         modelName: String,
     ): Map<String, SchemaInfo> {
         val mappings =
-            if (discriminator.mappings.isNullOrEmpty()) {
+            if (discriminator.mappings.isEmpty()) {
                 // No explicit mappings: default to schema name matching
                 members
                     .mapNotNull { member ->
