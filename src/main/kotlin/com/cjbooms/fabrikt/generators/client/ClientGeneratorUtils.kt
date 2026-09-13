@@ -21,12 +21,12 @@ import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.MultipartParameter
+import com.cjbooms.fabrikt.model.OpenApiOperation
+import com.cjbooms.fabrikt.model.OpenApiPath
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupByPathSegment
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.routeToPathsByFirstTag
-import com.reprezen.kaizen.oasparser.model3.Operation
-import com.reprezen.kaizen.oasparser.model3.Path
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.groupByPathSegment
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.routeToPathsByFirstTag
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
@@ -45,7 +45,7 @@ object ClientGeneratorUtils {
     const val ADDITIONAL_HEADERS_PARAMETER_NAME = "additionalHeaders"
     const val ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME = "additionalQueryParameters"
 
-    fun SourceApi.groupedClientPaths(options: Set<ClientCodeGenOptionType>): Map<String, Map<String, Path>> =
+    fun SourceApi.groupedClientPaths(options: Set<ClientCodeGenOptionType>): Map<String, Map<String, OpenApiPath>> =
         if (ClientCodeGenOptionType.GROUP_BY_TAG in options) {
             openApi3.routeToPathsByFirstTag()
         } else {
@@ -53,9 +53,9 @@ object ClientGeneratorUtils {
         }
 
     /**
-     * Gives the Kotlin return type for an API call based on the Content-Types specified in the Operation.
+     * Gives the Kotlin return type for an API call based on the Content-Types specified in the OpenApiOperation.
      */
-    fun Operation.getReturnType(packages: Packages): TypeName =
+    fun OpenApiOperation.getReturnType(packages: Packages): TypeName =
         when (val returnType = getReturnType()) {
             is KotlinTypeInfo -> toModelType(packages.base, returnType)
             is TypeName -> returnType
@@ -67,7 +67,7 @@ object ClientGeneratorUtils {
      * Determines return the return type, with special handling for multiple response schemas.
      * Returns JsonNode for JSON-only responses, Any for mixed content types.
      */
-    fun Operation.getReturnType(): Any =
+    fun OpenApiOperation.getReturnType(): Any =
         if (!hasAnySuccessResponseSchemas()) {
             Unit::class
         } else if (hasMultipleSuccessResponseSchemas()) {
@@ -78,7 +78,7 @@ object ClientGeneratorUtils {
             } ?: Unit::class
         }
 
-    fun Operation.toClientReturnType(packages: Packages): TypeName =
+    fun OpenApiOperation.toClientReturnType(packages: Packages): TypeName =
         "ApiResponse".toClassName(packages.client).parameterizedBy(getReturnType(packages))
 
     fun simpleClientName(resourceName: String) = "$resourceName${ClientType.SIMPLE_CLIENT_SUFFIX}"
@@ -86,13 +86,13 @@ object ClientGeneratorUtils {
     fun enhancedClientName(resourceName: String) = "$resourceName${ClientType.ENHANCED_CLIENT_SUFFIX}"
 
     fun deriveClientParameters(
-        path: Path,
-        operation: Operation,
+        path: OpenApiPath,
+        operation: OpenApiOperation,
         basePackage: String,
     ): List<IncomingParameter> {
         fun needsAcceptHeaderParameter(
-            path: Path,
-            operation: Operation,
+            path: OpenApiPath,
+            operation: OpenApiOperation,
         ): Boolean {
             val hasAcceptParameter =
                 GeneratorUtils

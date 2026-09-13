@@ -1,20 +1,19 @@
 package com.cjbooms.fabrikt.model
 
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isEnumDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isMapTypeAdditionalProperties
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOpenEnumDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSchemaLess
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSet
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSimpleMapDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSimpleOneOfAnyDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSimpleTypedAdditionalProperties
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isStringDefinitionWithFormat
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isTypedAdditionalProperties
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isUnknownAdditionalProperties
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isUntypedAdditionalProperties
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.printPathFromRoot
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeType
-import com.reprezen.kaizen.oasparser.model3.Schema
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isEnumDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isMapTypeAdditionalProperties
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOpenEnumDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaLess
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSet
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleMapDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleOneOfAnyDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleTypedAdditionalProperties
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isStringDefinitionWithFormat
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isTypedAdditionalProperties
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isUnknownAdditionalProperties
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isUntypedAdditionalProperties
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeType
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.schemaLocation
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 
@@ -86,7 +85,7 @@ sealed class OasType(
         private const val WILD_CARD_TYPE: String = "wildcard"
         const val ADDITIONAL_PROPERTIES_VALUE: String = "additionalPropertiesValue"
 
-        fun Schema.toOasType(oasKey: String): OasType =
+        fun OpenApiSchema.toOasType(oasKey: String): OasType =
             values(OasType::class)
                 .filter {
                     it.type == safeType() ||
@@ -106,7 +105,7 @@ sealed class OasType(
                 } ?: throw IllegalStateException(
                 "Unknown OAS type: ${safeType()} and format: $format and specialization: ${getSpecialization(
                     oasKey,
-                )} for path: ${this.printPathFromRoot()}",
+                )} for path: ${this.schemaLocation()}",
             )
 
         private fun values(clazz: KClass<OasType>) =
@@ -114,7 +113,7 @@ sealed class OasType(
                 .filter { it.isFinal && it.isSubclassOf(clazz) }
                 .map { it.objectInstance as OasType }
 
-        private fun Schema.getSpecialization(oasKey: String): Specialization =
+        private fun OpenApiSchema.getSpecialization(oasKey: String): Specialization =
             when {
                 isStringDefinitionWithFormat("uuid") -> Specialization.UUID
                 isStringDefinitionWithFormat("uri") -> Specialization.URI

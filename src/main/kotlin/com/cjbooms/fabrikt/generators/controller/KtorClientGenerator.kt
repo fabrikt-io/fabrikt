@@ -14,12 +14,12 @@ import com.cjbooms.fabrikt.model.Destinations
 import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.github.javaparser.utils.CodeGenerationUtils
-import com.reprezen.kaizen.oasparser.model3.Operation
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
@@ -395,11 +395,11 @@ class KtorClientGenerator(
     }
 
     private fun clientRequestFunctionName(
-        op: Operation,
+        op: OpenApiOperation,
         verb: String,
         params: List<RequestParameter>,
     ) = if (op.operationId != null) {
-        op.operationId.camelCase()
+        op.operationId!!.camelCase()
     } else {
         buildString {
             append(verb.lowercase())
@@ -410,7 +410,7 @@ class KtorClientGenerator(
     }
 
     private fun buildFunKdoc(
-        operation: Operation,
+        operation: OpenApiOperation,
         parameters: List<IncomingParameter>,
     ): CodeBlock {
         val (pathParams, queryParams, headerParams, cookieParams, bodyParams) = parameters.splitByType()

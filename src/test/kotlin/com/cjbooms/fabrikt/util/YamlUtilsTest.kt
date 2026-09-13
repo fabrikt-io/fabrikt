@@ -1,7 +1,7 @@
 package com.cjbooms.fabrikt.util
 
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.getEnumValues
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.getEnumValues
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.assertj.core.api.Assertions.assertThat

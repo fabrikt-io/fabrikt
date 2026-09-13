@@ -6,7 +6,7 @@ import com.reprezen.kaizen.oasparser.OpenApi3Parser
 import com.reprezen.kaizen.oasparser.model3.OpenApi3
 import java.net.URL
 
-internal object KaizenParserAdapter {
+internal object OpenApi3ParserAdapter {
     fun parse(
         input: JsonNode,
         baseUrl: URL,

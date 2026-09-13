@@ -24,12 +24,12 @@ import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.OpenApiOperation
+import com.cjbooms.fabrikt.model.OpenApiPath
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
-import com.reprezen.kaizen.oasparser.model3.Operation
-import com.reprezen.kaizen.oasparser.model3.Path
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -69,9 +69,9 @@ class SpringHttpInterfaceGenerator(
     }
 
     private fun buildFunction(
-        path: Path,
+        path: OpenApiPath,
         resource: String,
-        operation: Operation,
+        operation: OpenApiOperation,
         verb: String,
         options: Set<ClientCodeGenOptionType>,
     ): FunSpec {
@@ -145,7 +145,7 @@ class SpringHttpInterfaceGenerator(
     }
 
     private fun FunSpec.Builder.addHttpExchangeAnnotation(
-        operation: Operation,
+        operation: OpenApiOperation,
         resource: String,
         parameters: List<IncomingParameter>,
         verb: String,
@@ -156,7 +156,7 @@ class SpringHttpInterfaceGenerator(
         }
 
     private class HttpExchangeAnnotationBuilder(
-        private val operation: Operation,
+        private val operation: OpenApiOperation,
         private val resource: String,
         private val parameters: List<IncomingParameter>,
         private val verb: String,

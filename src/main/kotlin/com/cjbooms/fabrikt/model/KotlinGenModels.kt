@@ -3,10 +3,10 @@ package com.cjbooms.fabrikt.model
 import com.cjbooms.fabrikt.model.Destinations.clientPackage
 import com.cjbooms.fabrikt.model.Destinations.controllersPackage
 import com.cjbooms.fabrikt.model.Destinations.modelsPackage
+import com.cjbooms.fabrikt.model.OpenApiParameter
+import com.cjbooms.fabrikt.model.OpenApiSchema
 import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
 import com.cjbooms.fabrikt.util.NormalisedString.toKotlinParameterName
-import com.reprezen.kaizen.oasparser.model3.Parameter
-import com.reprezen.kaizen.oasparser.model3.Schema
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.ParameterSpec
@@ -129,7 +129,7 @@ open class BodyParameter(
     description: String?,
     type: TypeName,
     isRequired: Boolean = false,
-    open val schema: Schema,
+    open val schema: OpenApiSchema,
 ) : IncomingParameter(oasName, description, type, isRequired)
 
 class MultipartParameter(
@@ -137,7 +137,7 @@ class MultipartParameter(
     description: String?,
     type: TypeName,
     isRequired: Boolean = false,
-    val schema: Schema,
+    val schema: OpenApiSchema,
     val partName: String,
     val isBinaryFile: Boolean = false,
     val contentType: String? = null,
@@ -165,7 +165,7 @@ class RequestParameter(
         }
     }
 
-    constructor(oasName: String, description: String?, type: TypeName, parameter: Parameter) : this(
+    constructor(oasName: String, description: String?, type: TypeName, parameter: OpenApiParameter) : this(
         oasName = oasName,
         description = description,
         type = type,

@@ -28,13 +28,13 @@ import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.MultipartParameter
+import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
 import com.github.javaparser.utils.CodeGenerationUtils
-import com.reprezen.kaizen.oasparser.model3.Operation
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
@@ -139,7 +139,7 @@ data class SimpleClientOperationStatement(
     private val packages: Packages,
     private val resource: String,
     private val verb: String,
-    private val operation: Operation,
+    private val operation: OpenApiOperation,
     private val parameters: List<IncomingParameter>,
     private val options: Set<ClientCodeGenOptionType>,
 ) {

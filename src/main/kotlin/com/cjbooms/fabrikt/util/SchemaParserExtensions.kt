@@ -6,19 +6,18 @@ import com.cjbooms.fabrikt.generators.MutableSettings.isSealedInterfacesForOneOf
 import com.cjbooms.fabrikt.model.OasType
 import com.cjbooms.fabrikt.model.PropertyInfo
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
-import com.reprezen.jsonoverlay.Overlay
-import com.reprezen.kaizen.oasparser.model3.Discriminator
-import com.reprezen.kaizen.oasparser.model3.OpenApi3
-import com.reprezen.kaizen.oasparser.model3.Path
-import com.reprezen.kaizen.oasparser.model3.Schema
 import java.net.URI
+import com.cjbooms.fabrikt.model.OpenApi3Document as OpenApi3
+import com.cjbooms.fabrikt.model.OpenApiDiscriminator as Discriminator
+import com.cjbooms.fabrikt.model.OpenApiPath as Path
+import com.cjbooms.fabrikt.model.OpenApiSchema as Schema
 
 enum class GroupingStrategy {
     BY_FIRST_TAG,
     BY_FIRST_PATH_SEGMENT,
 }
 
-object KaizenParserExtensions {
+object SchemaParserExtensions {
     private val invalidNames =
         listOf(
             "anyOf",
@@ -45,25 +44,20 @@ object KaizenParserExtensions {
         discriminator?.propertyName != null ||
             getDiscriminatorForInlinedObjectUnderAllOf()?.propertyName != null
 
-    fun Schema.printPathFromRoot(): String = Overlay.of(this).pathFromRoot
+    fun Schema.schemaLocation(): String = jsonPathFromRoot
 
-    private fun Schema.documentUrl(): String? =
-        Overlay
-            .of(this)
-            .positionInfo
-            ?.orElse(null)
-            ?.documentUrl
+    private fun Schema.sourceDocumentUrl(): String? = documentUrl
 
-    private fun Schema.isRelativeSchemaDocument(): Boolean = Overlay.of(this).pathFromRoot.isEmpty()
+    private fun Schema.isSourceDocumentRoot(): Boolean = jsonPathFromRoot.isEmpty()
 
-    private fun Schema.relativeSchemaDocumentName(): String? =
-        documentUrl()
+    private fun Schema.sourceDocumentName(): String? =
+        sourceDocumentUrl()
             ?.substringAfterLast('/')
             ?.substringBeforeLast('.')
             ?.toModelClassName()
 
     fun Schema.isUnsupportedComplexInlinedDefinition() =
-        Overlay.of(this).pathFromRoot.contains("paths") &&
+        jsonPathFromRoot.contains("paths") &&
             name == null &&
             isObjectType()
 
@@ -71,15 +65,14 @@ object KaizenParserExtensions {
 
     private fun Schema.isAggregatedObject(): Boolean = combinedAnyOfAndAllOfSchemas().size > 1
 
-    fun Schema.isInlinedTypedAdditionalProperties() =
-        isObjectType() && !isSchemaLess() && Overlay.of(this).pathFromRoot.contains("additionalProperties")
+    fun Schema.isInlinedTypedAdditionalProperties() = isObjectType() && !isSchemaLess() && jsonPathFromRoot.contains("additionalProperties")
 
     fun Schema.isInlinedEnumDefinition() =
         isEnumDefinition() &&
             !isSchemaLess() &&
             (
-                Overlay.of(this).pathFromRoot.contains("properties") ||
-                    Overlay.of(this).pathFromRoot.contains("items")
+                jsonPathFromRoot.contains("properties") ||
+                    jsonPathFromRoot.contains("items")
             )
 
     fun Schema.isInlinedArrayDefinition() = isArrayType() && !isSchemaLess() && this.itemsSchema.isInlinedObjectDefinition()
@@ -156,7 +149,7 @@ object KaizenParserExtensions {
     private fun Schema.getOpenEnumValues(): List<String> =
         (anyOfSchemas ?: emptyList()).filter { it.hasEnums() }.flatMap { it.getEnumValues() }.distinct()
 
-    fun Schema.hasAdditionalProperties(): Boolean = Overlay.of(additionalPropertiesSchema).isPresent && additionalProperties != false
+    fun Schema.hasAdditionalProperties(): Boolean = additionalPropertiesSchema.isPresent && additionalProperties != false
 
     fun Schema.isUnknownAdditionalProperties(oasKey: String) =
         type == null &&
@@ -198,12 +191,12 @@ object KaizenParserExtensions {
 
     private fun Schema.isArrayType() = OasType.Array.type == type
 
-    fun Schema.isNotDefined() =
-        !Overlay.of(this).isPresent &&
+    fun Schema.isSchemaAbsent() =
+        !isPresent &&
             type == null &&
             !(hasAllOfSchemas() || hasOneOfSchemas() || hasAnyOfSchemas())
 
-    private fun Schema.getSchemaNameInParent(): String? = Overlay.of(this).pathInParent
+    private fun Schema.getSchemaNameInParent(): String? = jsonPathInParent
 
     fun Schema.isPolymorphicSubType(api: OpenApi3): Boolean =
         getEnclosingSchema(api)?.let { schema ->
@@ -218,7 +211,11 @@ object KaizenParserExtensions {
     fun Schema.getDiscriminatorForInlinedObjectUnderAllOf(): Discriminator? =
         this.allOfSchemas.firstOrNull { it.isInlinedObjectUnderAllOf() }?.discriminator
 
-    private fun Schema.getEnclosingSchema(api: OpenApi3): Schema? = api.schemas.values.firstOrNull { it.name == safeName() }
+    private fun Schema.getEnclosingSchema(api: OpenApi3): Schema? =
+        api.schemas.values.firstOrNull {
+            it.name ==
+                safeName()
+        }
 
     fun Schema.isRequired(
         api: OpenApi3,
@@ -238,10 +235,8 @@ object KaizenParserExtensions {
                 isDiscriminatorProperty(api, prop) // A discriminator property should be required
         }
 
-    fun Schema.getSchemaRefName() =
-        Overlay
-            .of(this)
-            .jsonReference
+    fun Schema.componentKey() =
+        jsonReference
             .split("/")
             .last()
 
@@ -330,7 +325,7 @@ object KaizenParserExtensions {
     ): Map<String, PropertyInfo.DiscriminatorKey>? =
         if (isDiscriminatorProperty(api, prop)) {
             val discriminator = findDiscriminator(api)
-            discriminator
+            discriminator!!
                 .mappingKeys(enclosingSchema)
                 .map {
                     if (prop.value.isEnumDefinition()) {
@@ -343,7 +338,7 @@ object KaizenParserExtensions {
             null
         }
 
-    private fun Schema.findDiscriminator(api: OpenApi3): Discriminator {
+    private fun Schema.findDiscriminator(api: OpenApi3): Discriminator? {
         val bestDiscriminator =
             if (this.hasDiscriminator()) {
                 this.discriminator
@@ -361,26 +356,24 @@ object KaizenParserExtensions {
     fun Discriminator.mappingKeys(enclosingSchema: Schema): Map<String, String> {
         val discriminatorMappings = mappings?.map { it.key to it.value.split("/").last() }?.toMap()
         return if (discriminatorMappings.isNullOrEmpty()) {
-            mapOf(enclosingSchema.name to enclosingSchema.safeName().toModelClassName())
+            mapOf(enclosingSchema.name!! to enclosingSchema.safeName().toModelClassName())
         } else {
             discriminatorMappings
         }
     }
 
     fun Discriminator.mappingKeyForSchemaName(schemaName: String): String? =
-        mappings.filter { it.value.split("/").last() == schemaName }.keys.firstOrNull()
+        mappings?.filter { it.value.split("/").last() == schemaName }?.keys?.firstOrNull()
 
     fun Schema.isInlinedObjectUnderAllOf(): Boolean =
-        Overlay
-            .of(this)
-            .pathFromRoot
+        jsonPathFromRoot
             .splitToSequence("/")
             .toList()
             .let { path ->
                 path[path.lastIndex].toIntOrNull() != null && (path[path.lastIndex - 1] == "allOf")
             }
 
-    fun Schema.hasNoDiscriminator(): Boolean = this.discriminator.propertyName == null
+    fun Schema.hasNoDiscriminator(): Boolean = this.discriminator?.propertyName == null
 
     fun Schema.hasDiscriminator(): Boolean = !hasNoDiscriminator()
 
@@ -393,14 +386,12 @@ object KaizenParserExtensions {
                     .first()
                     .safeName()
             isInlinedAggregationOfExactlyOne() -> combinedAnyOfAndAllOfSchemas().first().safeName()
-            name != null -> name
+            name != null -> name!!
             else -> {
-                if (isRelativeSchemaDocument()) {
-                    relativeSchemaDocumentName()?.let { return it }
+                if (isSourceDocumentRoot()) {
+                    sourceDocumentName()?.let { return it }
                 }
-                Overlay
-                    .of(this)
-                    .pathFromRoot
+                jsonPathFromRoot
                     .splitToSequence("/")
                     .filterNot { invalidNames.contains(it) }
                     .filter { it.toIntOrNull() == null } // Ignore numeric-identifiers path-parts in: allOf / oneOf / anyOf
@@ -421,7 +412,7 @@ object KaizenParserExtensions {
         if (anyOfSchemas.hasAnyDefinedProperties()) return "object"
         if (isOneOfWhereAllTypesInheritFromACommonAllOfSuperType()) return "object"
         if (isUnknownAdditionalProperties("")) return "object"
-        if (Overlay.of(additionalPropertiesSchema).isPresent) return "object"
+        if (additionalPropertiesSchema.isPresent) return "object"
 
         // 3. All types in anyOf/oneOf are the same? Use that
         val consistentOneOfType = oneOfSchemas.consistentSchemaType()
@@ -489,8 +480,7 @@ object KaizenParserExtensions {
     private fun Schema.isRedundantOneOfForExistingDiscriminatedHierarchy(): Boolean =
         isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && hasNoDiscriminator()
 
-    fun Schema.isOneOfSuperInterfaceWithDiscriminator() =
-        discriminator != null && discriminator.propertyName != null && isOneOfSuperInterface()
+    fun Schema.isOneOfSuperInterfaceWithDiscriminator() = discriminator?.propertyName != null && isOneOfSuperInterface()
 
     /** Per-schema opt-in for Jackson DEDUCTION-style polymorphism. Subtypes must have
      *  distinguishing required fields or deserialization fails at runtime. */
@@ -508,7 +498,7 @@ object KaizenParserExtensions {
      * - An array item schema under a property: /properties/<name>/items
      */
     private fun Schema.isInlinedPropertySchema(): Boolean {
-        val path = Overlay.of(this).pathFromRoot
+        val path = jsonPathFromRoot
 
         val isDirectProperty = Regex(".*/properties/[^/]+$").matches(path)
         val isArrayItem = Regex(".*/properties/[^/]+/items$").matches(path)
@@ -516,8 +506,7 @@ object KaizenParserExtensions {
         return isDirectProperty || isArrayItem
     }
 
-    fun Schema.isInlinedItemsSchemaUnderTopLevelArrayDefinition(): Boolean =
-        Regex(".*/schemas/[^/]+/items$").matches(Overlay.of(this).pathFromRoot)
+    fun Schema.isInlinedItemsSchemaUnderTopLevelArrayDefinition(): Boolean = Regex(".*/schemas/[^/]+/items$").matches(jsonPathFromRoot)
 
     fun Schema.isInlinedOneOfUnderTopLevelArrayDefinition(): Boolean =
         isOneOfSuperInterface() && isInlinedItemsSchemaUnderTopLevelArrayDefinition()

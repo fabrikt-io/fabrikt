@@ -25,13 +25,13 @@ import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.OpenApiOperation
+import com.cjbooms.fabrikt.model.OpenApiPath
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.toUpperCase
-import com.reprezen.kaizen.oasparser.model3.Operation
-import com.reprezen.kaizen.oasparser.model3.Path
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -85,9 +85,9 @@ class OpenFeignInterfaceGenerator(
     override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> = emptyList()
 
     private fun buildFunctions(
-        path: Path,
+        path: OpenApiPath,
         resource: String,
-        operation: Operation,
+        operation: OpenApiOperation,
         verb: String,
         options: Set<ClientCodeGenOptionType>,
     ): List<FunSpec> {
@@ -129,7 +129,7 @@ class OpenFeignInterfaceGenerator(
     }
 
     private fun buildRequestFunction(
-        operation: Operation,
+        operation: OpenApiOperation,
         resource: String,
         verb: String,
         options: Set<ClientCodeGenOptionType>,
@@ -190,7 +190,7 @@ class OpenFeignInterfaceGenerator(
             ).build()
 
     private fun buildCookieWrapperFunction(
-        operation: Operation,
+        operation: OpenApiOperation,
         options: Set<ClientCodeGenOptionType>,
         parameters: List<IncomingParameter>,
         name: String,
@@ -376,7 +376,7 @@ class OpenFeignInterfaceGenerator(
                         )
                     anyExplodeFalse ->
                         logger.warning(
-                            "Operation ${verb.toUpperCase()} $resource has array query parameters " +
+                            "OpenApiOperation ${verb.toUpperCase()} $resource has array query parameters " +
                                 "with mixed explode values. Cannot use a consistent collectionFormat. " +
                                 "Defaulting to exploded format.",
                         )
@@ -401,7 +401,7 @@ class OpenFeignInterfaceGenerator(
      *   as specified in the response.
      */
     private fun FunSpec.Builder.addHeadersAnnotation(
-        operation: Operation,
+        operation: OpenApiOperation,
         parameters: List<IncomingParameter>,
         hasCookieHeader: Boolean,
         cookieHeaderParameterName: String,
@@ -414,7 +414,7 @@ class OpenFeignInterfaceGenerator(
     }
 
     private class HeadersAnnotationBuilder(
-        private val operation: Operation,
+        private val operation: OpenApiOperation,
         private val parameters: List<IncomingParameter>,
         private val hasCookieHeader: Boolean,
         private val cookieHeaderParameterName: String,

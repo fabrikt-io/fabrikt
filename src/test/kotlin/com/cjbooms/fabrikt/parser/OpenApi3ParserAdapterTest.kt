@@ -6,7 +6,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
 
-class KaizenParserAdapterTest {
+class OpenApi3ParserAdapterTest {
     @Test
     fun `parses an external OpenAPI document from its URL`(
         @TempDir tempDir: Path,
@@ -25,7 +25,7 @@ class KaizenParserAdapterTest {
             """.trimIndent()
         val documentPath = Files.writeString(tempDir.resolve("external.yaml"), document)
 
-        val api = KaizenParserAdapter.parse(documentPath.toUri().toURL())
+        val api = OpenApi3ParserAdapter.parse(documentPath.toUri().toURL())
 
         assertThat(api.schemas).containsKey("ExternalModel")
     }

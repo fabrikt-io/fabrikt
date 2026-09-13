@@ -1,13 +1,15 @@
 package com.cjbooms.fabrikt.util
 
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.basePath
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeyForSchemaName
+import com.cjbooms.fabrikt.model.OpenApi3Document
+import com.cjbooms.fabrikt.model.OpenApiSchema
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.basePath
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeyForSchemaName
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Test
 
-class KaizenParserExtensionsTest {
-    private fun apiWithServerUrl(url: String?): com.reprezen.kaizen.oasparser.model3.OpenApi3 {
+class SchemaParserExtensionsTest {
+    private fun apiWithServerUrl(url: String?): OpenApi3Document {
         val serverBlock = if (url == null) "" else "servers:\n  - url: \"$url\"\n"
         val spec =
             serverBlock +
@@ -24,7 +26,7 @@ class KaizenParserExtensionsTest {
             |        '200':
             |          description: ok
                 """.trimMargin()
-        return YamlUtils.parseOpenApi(spec)
+        return OpenApi3Document(YamlUtils.parseOpenApi(spec))
     }
 
     @Test
@@ -68,7 +70,7 @@ class KaizenParserExtensionsTest {
             |      allOf:
             |        - ${'$'}ref: '#/components/schemas/ParentAction'
             """.trimMargin()
-        val discriminator = YamlUtils.parseOpenApi(spec).schemas["ParentAction"]!!.discriminator
+        val discriminator = OpenApiSchema(YamlUtils.parseOpenApi(spec).schemas["ParentAction"]!!).discriminator
 
         assertThat(discriminator.mappingKeyForSchemaName("XChildActionA")).isEqualTo("XCHILD")
         // '#/components/schemas/XChildActionA' ends with 'ChildActionA', so a plain endsWith

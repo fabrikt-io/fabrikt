@@ -2,11 +2,10 @@ package com.cjbooms.fabrikt.util
 
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.SchemaInfo
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeName
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
-import com.reprezen.jsonoverlay.Overlay
-import com.reprezen.kaizen.oasparser.model3.Schema
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
 import java.net.URL
+import com.cjbooms.fabrikt.model.OpenApiSchema as Schema
 
 /**
  * Model name registry to avoid name collisions
@@ -86,8 +85,7 @@ object ModelNameRegistry {
         schema: Schema,
         modelClassName: String,
     ): String {
-        val overlay = Overlay.of(schema)
-        val uri = URL(overlay.jsonReference)
+        val uri = URL(schema.jsonReference)
         return "file:${uri.file}#$modelClassName"
     }
 
@@ -117,7 +115,7 @@ object ModelNameRegistry {
         schema: Schema,
         name: String,
     ) {
-        val ref = Overlay.of(schema).jsonReference
+        val ref = schema.jsonReference
         if (!referenceToName.containsKey(ref)) {
             val modelClassName = name.toModelClassName() + MutableSettings.modelSuffix
             referenceToName[ref] = allocateUniqueName(modelClassName)
@@ -125,7 +123,7 @@ object ModelNameRegistry {
     }
 
     private fun getByReference(schema: Schema): String? {
-        val ref = Overlay.of(schema).jsonReference
+        val ref = schema.jsonReference
         return referenceToName[ref]
     }
 

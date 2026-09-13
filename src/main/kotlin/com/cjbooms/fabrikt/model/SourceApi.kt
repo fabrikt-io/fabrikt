@@ -2,21 +2,18 @@ package com.cjbooms.fabrikt.model
 
 import com.beust.jcommander.ParameterException
 import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isEnumDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isNotDefined
 import com.cjbooms.fabrikt.util.ModelNameRegistry
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isEnumDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaAbsent
 import com.cjbooms.fabrikt.util.YamlUtils
 import com.cjbooms.fabrikt.validation.ValidationError
 import com.reprezen.jsonoverlay.JsonLoader
-import com.reprezen.jsonoverlay.Overlay
-import com.reprezen.kaizen.oasparser.model3.OpenApi3
-import com.reprezen.kaizen.oasparser.model3.Schema
 import java.net.URI
 import java.nio.file.Paths
 
 data class SchemaInfo(
     val name: String,
-    val schema: Schema,
+    val schema: OpenApiSchema,
 ) {
     val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, name)
 }
@@ -45,7 +42,7 @@ class SourceApi private constructor(
     }
 
     internal val parsedDocument = OpenApiDocumentParser.parse(rawApiSpec, baseUri, jsonLoader)
-    val openApi3: OpenApi3 = parsedDocument.kaizenModel
+    val openApi3: OpenApi3Document = OpenApi3Document(parsedDocument.kaizenModel)
     val allSchemas: List<SchemaInfo>
 
     init {
@@ -65,10 +62,10 @@ class SourceApi private constructor(
                             val schema = if (param.schema?.type == "array") param.schema.itemsSchema else param.schema
                             param.name to schema
                         }
-                }.distinctBy { Overlay.of(it.second).jsonReference }
+                }.distinctBy { it.second?.jsonReference }
 
         inlineEnumParams.forEach { (name, schema) ->
-            ModelNameRegistry.preRegisterByReference(schema, name)
+            ModelNameRegistry.preRegisterByReference(schema!!, name)
         }
 
         val inlineRequestBodySchemas =
@@ -76,14 +73,14 @@ class SourceApi private constructor(
                 requestBody.value.contentMediaTypes.entries
                     .filter { content ->
                         val schema = content.value.schema
-                        Overlay.of(schema).pathFromRoot.contains("requestBodies") &&
+                        schema?.jsonPathFromRoot?.contains("requestBodies") == true &&
                             schema.oneOfSchemas.isNullOrEmpty() &&
                             schema.anyOfSchemas.isNullOrEmpty()
                     }.map { content -> requestBody.key to content.value.schema }
             }
 
         inlineRequestBodySchemas.forEach { (name, schema) ->
-            ModelNameRegistry.preRegisterByReference(schema, name)
+            ModelNameRegistry.preRegisterByReference(schema!!, name)
         }
 
         val inlineResponseSchemas =
@@ -91,14 +88,14 @@ class SourceApi private constructor(
                 response.value.contentMediaTypes.entries
                     .filter { content ->
                         val schema = content.value.schema
-                        Overlay.of(schema).pathFromRoot.contains("responses") &&
+                        schema?.jsonPathFromRoot?.contains("responses") == true &&
                             schema.oneOfSchemas.isNullOrEmpty() &&
                             schema.anyOfSchemas.isNullOrEmpty()
                     }.map { content -> response.key to content.value.schema }
             }
 
         inlineResponseSchemas.forEach { (name, schema) ->
-            ModelNameRegistry.preRegisterByReference(schema, name)
+            ModelNameRegistry.preRegisterByReference(schema!!, name)
         }
 
         allSchemas =
@@ -108,14 +105,14 @@ class SourceApi private constructor(
                 .plus(inlineResponseSchemas)
                 .plus(inlineRequestBodySchemas)
                 .plus(inlineEnumParams)
-                .map { (key, schema) -> SchemaInfo(key, schema) }
+                .map { (key, schema) -> SchemaInfo(key, schema!!) }
     }
 
-    private fun isInlineEnum(schema: Schema?): Boolean =
-        Overlay.of(schema).pathFromRoot.contains("paths") &&
+    private fun isInlineEnum(schema: OpenApiSchema?): Boolean =
+        schema?.jsonPathFromRoot?.contains("paths") == true &&
             schema?.isEnumDefinition() == true
 
-    private fun validateSchemaObjects(api: OpenApi3): List<ValidationError> {
+    private fun validateSchemaObjects(api: OpenApi3Document): List<ValidationError> {
         val schemaErrors =
             api.schemas.entries.fold(emptyList<ValidationError>()) { errors, entry ->
                 val name = entry.key
@@ -146,7 +143,7 @@ class SourceApi private constructor(
             .fold(schemaErrors) { lst, entry ->
                 val name = entry.key
                 val schema = entry.value
-                if (schema.isNotDefined()) {
+                if (schema.isSchemaAbsent()) {
                     lst + listOf(ValidationError("Property '$name' cannot be parsed to a Schema. Check your input"))
                 } else {
                     lst

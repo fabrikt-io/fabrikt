@@ -32,37 +32,33 @@ import com.cjbooms.fabrikt.model.PropertyInfo.Companion.topLevelProperties
 import com.cjbooms.fabrikt.model.SchemaInfo
 import com.cjbooms.fabrikt.model.SerializationAnnotations
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.parser.KaizenParserAdapter
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.findOneOfSuperInterface
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.getDiscriminatorForInlinedObjectUnderAllOf
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.getSchemaRefName
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.getSuperType
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaOfTypeObject
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaWithOneOf
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isComplexTypedAdditionalProperties
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedEnumDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinitionUnderTopLevelArrayDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedOneOfSuperInterface
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedOneOfUnderTopLevelArrayDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedTypedAdditionalProperties
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfResolvingToAnyType
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterface
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOpenEnumDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isPolymorphicSubType
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isPolymorphicSuperType
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSimpleType
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSubTypeDeductionEnabled
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeyForSchemaName
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.mappingKeys
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.safeName
+import com.cjbooms.fabrikt.parser.OpenApi3ParserAdapter
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
-import com.reprezen.jsonoverlay.Overlay
-import com.reprezen.kaizen.oasparser.model3.Discriminator
-import com.reprezen.kaizen.oasparser.model3.OpenApi3
-import com.reprezen.kaizen.oasparser.model3.Schema
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.componentKey
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.findOneOfSuperInterface
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.getDiscriminatorForInlinedObjectUnderAllOf
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.getSuperType
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasInlinedItemsSchemaOfTypeObject
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasInlinedItemsSchemaWithOneOf
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isComplexTypedAdditionalProperties
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedEnumDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinitionUnderTopLevelArrayDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfUnderTopLevelArrayDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedTypedAdditionalProperties
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfResolvingToAnyType
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOpenEnumDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isPolymorphicSubType
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isPolymorphicSuperType
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleType
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeyForSchemaName
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeys
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
@@ -76,6 +72,9 @@ import java.io.Serializable
 import java.net.MalformedURLException
 import java.net.URL
 import java.util.logging.Logger
+import com.cjbooms.fabrikt.model.OpenApi3Document as OpenApi3
+import com.cjbooms.fabrikt.model.OpenApiDiscriminator as Discriminator
+import com.cjbooms.fabrikt.model.OpenApiSchema as Schema
 
 class ModelGenerator(
     private val packages: Packages,
@@ -202,8 +201,8 @@ class ModelGenerator(
         val models: MutableSet<TypeSpec> = createModels(sourceApi.openApi3, sourceApi.allSchemas)
         externalApiSchemas.forEach { externalReferences ->
             val api =
-                KaizenParserAdapter.parse(URL(externalReferences.key)).let { input ->
-                    maybeConvertRelativeSchemaFile(externalReferences.key, input)
+                OpenApi3ParserAdapter.parse(URL(externalReferences.key)).let { input ->
+                    maybeConvertRelativeSchemaFile(externalReferences.key, OpenApi3(input))
                 }
             val schemas =
                 api.schemas.entries
@@ -258,7 +257,7 @@ class ModelGenerator(
         allSchemas: List<SchemaInfo>,
     ): TypeSpec {
         val modelName = ModelNameRegistry.getOrRegister(schemaInfo)
-        val schemaName = schemaInfo.schema.getSchemaRefName()
+        val schemaName = schemaInfo.schema.componentKey()
         return when {
             schemaInfo.schema.isOneOfSuperInterface() ->
                 oneOfSuperInterface(
@@ -276,7 +275,7 @@ class ModelGenerator(
                     schemaName,
                     properties,
                     checkNotNull(schemaInfo.schema.getDiscriminatorForInlinedObjectUnderAllOf()),
-                    schemaInfo.schema.getSuperType(api)!!.let { SchemaInfo(it.name, it) },
+                    schemaInfo.schema.getSuperType(api)!!.let { SchemaInfo(it.name!!, it) },
                     schemaInfo.schema.extensions,
                     schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
                     allSchemas,
@@ -298,7 +297,7 @@ class ModelGenerator(
                     modelName,
                     schemaName,
                     properties,
-                    schemaInfo.schema.getSuperType(api)!!.let { SchemaInfo(it.name, it) },
+                    schemaInfo.schema.getSuperType(api)!!.let { SchemaInfo(it.name!!, it) },
                     schemaInfo.schema.extensions,
                     schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
                 )
@@ -503,17 +502,14 @@ class ModelGenerator(
         return docUrl != apiDocUrl
     }
 
-    private fun Schema.getDocumentUrl(): String {
-        val positionInfo = Overlay.of(this).positionInfo?.orElse(null)
-        return positionInfo?.documentUrl ?: "Not Found"
-    }
+    private fun Schema.getDocumentUrl(): String = documentUrl ?: "Not Found"
 
     private fun Schema.nestedSchemas() =
         (
             allOfSchemas + anyOfSchemas + oneOfSchemas + itemsSchema + additionalPropertiesSchema +
                 this + this.properties.map { it.value }
         ).filterNotNull()
-            .filter { Overlay.of(it).isPresent }
+            .filter { it.isPresent }
 
     private fun buildEnumClass(
         schema: Schema,
@@ -751,7 +747,7 @@ class ModelGenerator(
         serializationAnnotations.addClassAnnotation(interfaceBuilder)
 
         if (discriminator != null && discriminator.propertyName != null) {
-            serializationAnnotations.addBasePolymorphicTypeAnnotation(interfaceBuilder, discriminator.propertyName)
+            serializationAnnotations.addBasePolymorphicTypeAnnotation(interfaceBuilder, discriminator.propertyName!!)
 
             val mappings = getFlattenedDiscriminatorMappings(discriminator, members, allSchemas, modelName)
 
@@ -799,7 +795,7 @@ class ModelGenerator(
                 .flatMap { (key, schemaInfo) ->
                     val schema = schemaInfo.schema
                     if (schema.isOneOfSuperInterface() &&
-                        schema.discriminator != null &&
+                        schema.discriminator.propertyName != null &&
                         schema.discriminator.propertyName == discriminator.propertyName
                     ) {
                         val nestedMappings =
@@ -807,7 +803,7 @@ class ModelGenerator(
                                 discriminator = schema.discriminator,
                                 members = schema.oneOfSchemas,
                                 allSchemas = allSchemas,
-                                modelName = schema.name,
+                                modelName = schema.name!!,
                             )
                         nestedMappings.entries.map { (nestedKey, nestedSchema) ->
                             nestedKey to nestedSchema
@@ -836,7 +832,7 @@ class ModelGenerator(
                             logger.warning("Could not find schema for member ${member.name} in oneOf super interface $modelName!")
                             null
                         } else {
-                            member.name to schema // Key by member name
+                            member.name!! to schema // Key by member name
                         }
                     }.toMap()
             } else {
@@ -887,7 +883,7 @@ class ModelGenerator(
         constructorBuilder: FunSpec.Builder = FunSpec.constructorBuilder(),
     ): TypeSpec.Builder {
         this.addModifiers(KModifier.SEALED)
-        serializationAnnotations.addBasePolymorphicTypeAnnotation(this, discriminator.propertyName)
+        serializationAnnotations.addBasePolymorphicTypeAnnotation(this, discriminator.propertyName!!)
         this.modifiers.remove(KModifier.DATA)
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {

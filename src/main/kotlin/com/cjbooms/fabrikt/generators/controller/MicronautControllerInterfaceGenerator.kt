@@ -20,16 +20,16 @@ import com.cjbooms.fabrikt.model.CookieParam
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.KotlinTypes
 import com.cjbooms.fabrikt.model.MultipartParameter
+import com.cjbooms.fabrikt.model.OpenApiOperation
+import com.cjbooms.fabrikt.model.OpenApiPath
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
 import com.cjbooms.fabrikt.util.GroupingStrategy
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupedPaths
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSingleResource
-import com.reprezen.kaizen.oasparser.model3.Operation
-import com.reprezen.kaizen.oasparser.model3.Path
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.groupedPaths
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSingleResource
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -78,8 +78,8 @@ class MicronautControllerInterfaceGenerator(
         )
 
     override fun buildFunction(
-        path: Path,
-        op: Operation,
+        path: OpenApiPath,
+        op: OpenApiOperation,
         verb: String,
     ): FunSpec {
         val methodName = methodName(op, verb, path.pathString.isSingleResource())
@@ -148,7 +148,7 @@ class MicronautControllerInterfaceGenerator(
     }
 
     private fun FunSpec.Builder.addMicronautFunAnnotation(
-        op: Operation,
+        op: OpenApiOperation,
         verb: String,
         path: String,
     ): FunSpec.Builder {

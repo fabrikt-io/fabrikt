@@ -6,24 +6,24 @@ import com.cjbooms.fabrikt.generators.model.JacksonMetadata.JSON_NODE_CLASS
 import com.cjbooms.fabrikt.generators.model.ModelGenerator.Companion.toModelType
 import com.cjbooms.fabrikt.model.ControllerType
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.OpenApiOperation
+import com.cjbooms.fabrikt.model.OpenApiResponse
+import com.cjbooms.fabrikt.model.OpenApiSecurityRequirement
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
-import com.reprezen.kaizen.oasparser.model3.Operation
-import com.reprezen.kaizen.oasparser.model3.Response
-import com.reprezen.kaizen.oasparser.model3.SecurityRequirement
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.asTypeName
 
 object ControllerGeneratorUtils {
-    fun Operation.toSuccessResponseType(basePackage: String): TypeName =
+    fun OpenApiOperation.toSuccessResponseType(basePackage: String): TypeName =
         when {
             hasMultipleSuccessResponseSchemas() -> multiSchemaResponseType()
             else -> singleSchemaResponseType(basePackage)
         }
 
-    private fun Operation.multiSchemaResponseType(): TypeName =
+    private fun OpenApiOperation.multiSchemaResponseType(): TypeName =
         if (hasOnlyJsonSuccessResponses()) JSON_NODE_CLASS else Any::class.asTypeName()
 
-    private fun Operation.singleSchemaResponseType(basePackage: String): TypeName =
+    private fun OpenApiOperation.singleSchemaResponseType(basePackage: String): TypeName =
         primarySuccessResponse()
             ?.contentMediaTypes
             ?.mapNotNull { it.value?.schema }
@@ -31,7 +31,7 @@ object ControllerGeneratorUtils {
             ?.let { toModelType(basePackage, KotlinTypeInfo.from(it), it.isNullable) }
             ?: Unit::class.asTypeName()
 
-    private fun Operation.primarySuccessResponse(): Response? =
+    private fun OpenApiOperation.primarySuccessResponse(): OpenApiResponse? =
         responses
             .filterNot { it.key == "default" }
             .mapNotNull { (code, response) -> code.replace('X', '0').toIntOrNull()?.let { it to response } }
@@ -39,7 +39,7 @@ object ControllerGeneratorUtils {
             .minByOrNull { it.key }
             ?.value
 
-    fun Operation.isSseResponse(): Boolean {
+    fun OpenApiOperation.isSseResponse(): Boolean {
         val responseDetails = primarySuccessResponse() ?: return false
         return responseDetails.contentMediaTypes["text/event-stream"]
             ?.let { it.schema.type == "array" && it.schema.format == "event-stream" }
@@ -49,7 +49,7 @@ object ControllerGeneratorUtils {
     fun controllerName(resourceName: String) = "$resourceName${ControllerType.SUFFIX}"
 
     fun methodName(
-        op: Operation,
+        op: OpenApiOperation,
         verb: String,
         isSingleResource: Boolean,
     ) = op.operationId?.camelCase() ?: httpVerbMethodName(verb, isSingleResource)
@@ -88,9 +88,9 @@ object ControllerGeneratorUtils {
     }
 
     /**
-     * Computes the [SecuritySupport] of a list of [SecurityRequirement]s.
+     * Computes the [SecuritySupport] of a list of [OpenApiSecurityRequirement]s.
      */
-    fun List<SecurityRequirement>.securitySupport(): SecuritySupport {
+    fun List<OpenApiSecurityRequirement>.securitySupport(): SecuritySupport {
         val containsEmptyObject = this.any { it.requirements.isEmpty() }
         val containsNonEmptyObject = this.any { it.requirements.isNotEmpty() }
 
@@ -106,7 +106,7 @@ object ControllerGeneratorUtils {
      * Computes the [SecuritySupport] of a given operation.
      * @param defaultSupport The "API-global" security support to use in case the operation itself does not define any.
      */
-    fun Operation.securitySupport(defaultSupport: SecuritySupport? = null): SecuritySupport {
+    fun OpenApiOperation.securitySupport(defaultSupport: SecuritySupport? = null): SecuritySupport {
         if (!this.hasSecurityRequirements() && defaultSupport != null) {
             return defaultSupport
         }

@@ -19,10 +19,10 @@ import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Destinations
 import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.IncomingParameter
+import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
 import com.github.javaparser.utils.CodeGenerationUtils
-import com.reprezen.kaizen.oasparser.model3.Operation
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
@@ -178,7 +178,7 @@ class OkHttpEnhancedClientGenerator(
 class Resilience4jClientOperationStatement(
     private val resource: String,
     private val verb: String,
-    private val operation: Operation,
+    private val operation: OpenApiOperation,
     private val parameters: List<IncomingParameter>,
 ) {
     fun toStatement(): CodeBlock =

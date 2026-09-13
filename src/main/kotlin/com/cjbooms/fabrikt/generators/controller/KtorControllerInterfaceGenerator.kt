@@ -15,16 +15,16 @@ import com.cjbooms.fabrikt.model.ControllerType
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.KotlinTypes
+import com.cjbooms.fabrikt.model.OpenApiOperation
+import com.cjbooms.fabrikt.model.OpenApiPath
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
 import com.cjbooms.fabrikt.util.GroupingStrategy
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.groupedPaths
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSingleResource
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.groupedPaths
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSingleResource
 import com.cjbooms.fabrikt.util.toUpperCase
-import com.reprezen.kaizen.oasparser.model3.Operation
-import com.reprezen.kaizen.oasparser.model3.Path
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -116,9 +116,9 @@ class KtorControllerInterfaceGenerator(
      * Builds the base controller function that takes in all parameters.
      */
     private fun buildControllerFun(
-        operation: Operation,
+        operation: OpenApiOperation,
         verb: String,
-        path: Map.Entry<String, Path>,
+        path: Map.Entry<String, OpenApiPath>,
     ): FunSpec {
         val methodName = getMethodName(operation, verb, path)
         val builder =
@@ -173,9 +173,9 @@ class KtorControllerInterfaceGenerator(
      * Builds the code that goes into the route function.
      */
     private fun buildRouteCode(
-        operation: Operation,
+        operation: OpenApiOperation,
         verb: String,
-        path: Map.Entry<String, Path>,
+        path: Map.Entry<String, OpenApiPath>,
     ): CodeBlock {
         val builder = CodeBlock.builder()
 
@@ -333,7 +333,7 @@ class KtorControllerInterfaceGenerator(
     }
 
     private fun buildControllerFunKdoc(
-        operation: Operation,
+        operation: OpenApiOperation,
         parameters: List<IncomingParameter>,
     ): CodeBlock {
         val kDoc = CodeBlock.builder()
@@ -579,9 +579,9 @@ class KtorControllerInterfaceGenerator(
             ).build()
 
     private fun getMethodName(
-        operation: Operation,
+        operation: OpenApiOperation,
         verb: String,
-        path: Map.Entry<String, Path>,
+        path: Map.Entry<String, OpenApiPath>,
     ) = ControllerGeneratorUtils.methodName(
         operation,
         verb,

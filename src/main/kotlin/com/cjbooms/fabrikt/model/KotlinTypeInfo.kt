@@ -6,20 +6,19 @@ import com.cjbooms.fabrikt.cli.InstantLibrary
 import com.cjbooms.fabrikt.cli.SerializationLibrary.KOTLINX_SERIALIZATION
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.OasType.Companion.toOasType
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.getEnumValues
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaOfTypeObject
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.hasInlinedItemsSchemaWithOneOf
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isEnumDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedDiscriminatedOneOfSuperInterface
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedObjectDefinition
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isInlinedTypedAdditionalProperties
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isNotDefined
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterface
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isOneOfSuperInterfaceWithDiscriminator
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isSubTypeDeductionEnabled
-import com.cjbooms.fabrikt.util.KaizenParserExtensions.isUnsupportedComplexInlinedDefinition
 import com.cjbooms.fabrikt.util.ModelNameRegistry
-import com.reprezen.kaizen.oasparser.model3.Schema
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.getEnumValues
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasInlinedItemsSchemaOfTypeObject
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasInlinedItemsSchemaWithOneOf
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isEnumDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedDiscriminatedOneOfSuperInterface
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedTypedAdditionalProperties
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterfaceWithDiscriminator
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaAbsent
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isUnsupportedComplexInlinedDefinition
 import java.math.BigDecimal
 import java.net.URI
 import java.time.LocalDate
@@ -130,9 +129,9 @@ sealed class KotlinTypeInfo(
         private val logger = Logger.getGlobal()
 
         fun from(
-            schema: Schema,
+            schema: OpenApiSchema,
             oasKey: String = "",
-            enclosingSchema: Schema? = null,
+            enclosingSchema: OpenApiSchema? = null,
         ): KotlinTypeInfo {
             if (schema.isUnsupportedComplexInlinedDefinition()) {
                 /*
@@ -260,8 +259,8 @@ sealed class KotlinTypeInfo(
         }
 
         private fun getParameterizedTypeForArray(
-            arraySchema: Schema,
-            enclosingSchema: Schema?,
+            arraySchema: OpenApiSchema,
+            enclosingSchema: OpenApiSchema?,
             oasKey: String,
         ): KotlinTypeInfo {
             val itemsSchema = arraySchema.itemsSchema
@@ -274,7 +273,7 @@ sealed class KotlinTypeInfo(
                     Object(ModelNameRegistry.getOrRegister(arraySchema, enclosingSchema))
                 arraySchema.hasInlinedItemsSchemaWithOneOf() || arraySchema.hasInlinedItemsSchemaOfTypeObject() ->
                     Object(ModelNameRegistry.getOrRegister(arraySchema))
-                arraySchema.itemsSchema.isNotDefined() -> getOverridableAnyType()
+                arraySchema.itemsSchema.isSchemaAbsent() -> getOverridableAnyType()
                 else -> from(arraySchema.itemsSchema, oasKey, enclosingSchema)
             }
         }

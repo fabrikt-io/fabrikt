@@ -25,11 +25,11 @@ internal object OpenApiDocumentParser {
             val kaizenInput = source.root.deepCopy<JsonNode>()
             OpenApi31Downgrader.downgradeIncompatibleElements(kaizenInput)
             OpenApiInputCleaner.cleanEmptyTypes(kaizenInput)
-            val kaizenModel = KaizenParserAdapter.parse(kaizenInput, baseUri.toURL(), jsonLoader)
+            val kaizenModel = OpenApi3ParserAdapter.parse(kaizenInput, baseUri.toURL(), jsonLoader)
             ParsedOpenApiDocument(source, kaizenModel)
         } catch (ex: NullPointerException) {
             throw IllegalArgumentException(
-                "The Kaizen openapi-parser library threw a NPE exception when parsing this API. " +
+                "The openapi-parser library threw a NPE exception when parsing this API. " +
                     "This is commonly due to an external schema reference that is unresolvable, " +
                     "possibly due to a lack of internet connection",
                 ex,

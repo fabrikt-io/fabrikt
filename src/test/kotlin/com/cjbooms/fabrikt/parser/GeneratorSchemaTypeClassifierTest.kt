@@ -39,7 +39,14 @@ class GeneratorSchemaTypeClassifierTest {
         val adapted = LegacyGeneratorSchemaAdapter().adapt(legacySchema)
 
         assertThat(GeneratorSchemaTypeClassifier.classify(adapted))
-            .isEqualTo(GeneratorSchemaTypeClassification.Resolved(legacySchema.toOasType(name), legacySchema.isNullable))
+            .isEqualTo(
+                GeneratorSchemaTypeClassification.Resolved(
+                    com.cjbooms.fabrikt.model
+                        .OpenApiSchema(legacySchema)
+                        .toOasType(name),
+                    legacySchema.isNullable,
+                ),
+            )
     }
 
     @ParameterizedTest
