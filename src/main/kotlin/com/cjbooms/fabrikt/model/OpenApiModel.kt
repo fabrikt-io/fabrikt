@@ -23,22 +23,23 @@ import com.reprezen.kaizen.oasparser.model3.Server
  */
 class OpenApiSchema(
     internal val kaizen: Schema,
+    private val isUninhabitableAt: (String) -> Boolean = { false },
 ) {
     val name: String? get() = kaizen.name
     val type: String? get() = kaizen.type
     val format: String? get() = kaizen.format
     val properties: Map<String, OpenApiSchema>
-        get() = kaizen.properties?.mapValues { OpenApiSchema(it.value) } ?: emptyMap()
+        get() = kaizen.properties?.mapValues { OpenApiSchema(it.value, isUninhabitableAt) } ?: emptyMap()
     val requiredFields: List<String> get() = kaizen.requiredFields ?: emptyList()
     val allOfSchemas: List<OpenApiSchema>
-        get() = kaizen.allOfSchemas?.map(::OpenApiSchema) ?: emptyList()
+        get() = kaizen.allOfSchemas?.map { OpenApiSchema(it, isUninhabitableAt) } ?: emptyList()
     val anyOfSchemas: List<OpenApiSchema>
-        get() = kaizen.anyOfSchemas?.map(::OpenApiSchema) ?: emptyList()
+        get() = kaizen.anyOfSchemas?.map { OpenApiSchema(it, isUninhabitableAt) } ?: emptyList()
     val oneOfSchemas: List<OpenApiSchema>
-        get() = kaizen.oneOfSchemas?.map(::OpenApiSchema) ?: emptyList()
-    val itemsSchema: OpenApiSchema get() = OpenApiSchema(kaizen.itemsSchema)
+        get() = kaizen.oneOfSchemas?.map { OpenApiSchema(it, isUninhabitableAt) } ?: emptyList()
+    val itemsSchema: OpenApiSchema get() = OpenApiSchema(kaizen.itemsSchema, isUninhabitableAt)
     val additionalProperties: Boolean? get() = kaizen.additionalProperties
-    val additionalPropertiesSchema: OpenApiSchema get() = OpenApiSchema(kaizen.additionalPropertiesSchema)
+    val additionalPropertiesSchema: OpenApiSchema get() = OpenApiSchema(kaizen.additionalPropertiesSchema, isUninhabitableAt)
     val discriminator: OpenApiDiscriminator get() = OpenApiDiscriminator(kaizen.discriminator)
     val default: Any? get() = kaizen.default
     val extensions: Map<String, Any> get() = kaizen.extensions ?: emptyMap()
@@ -74,6 +75,7 @@ class OpenApiSchema(
                 ?.orElse(null)
                 ?.documentUrl
     val parsedJson: JsonNode? get() = Overlay.of(kaizen).parsedJson
+    internal val isUninhabitable: Boolean get() = isUninhabitableAt(jsonPathFromRoot)
 
     fun hasEnums(): Boolean = kaizen.hasEnums()
 
@@ -92,17 +94,18 @@ class OpenApiSchema(
 
 class OpenApi3Document(
     internal val kaizen: OpenApi3,
+    private val isUninhabitableAt: (String) -> Boolean = { false },
 ) {
     val schemas: Map<String, OpenApiSchema>
-        get() = kaizen.schemas?.mapValues { OpenApiSchema(it.value) } ?: emptyMap()
+        get() = kaizen.schemas?.mapValues { OpenApiSchema(it.value, isUninhabitableAt) } ?: emptyMap()
     val paths: Map<String, OpenApiPath>
-        get() = kaizen.paths?.mapValues { OpenApiPath(it.value) } ?: emptyMap()
+        get() = kaizen.paths?.mapValues { OpenApiPath(it.value, isUninhabitableAt) } ?: emptyMap()
     val parameters: Map<String, OpenApiParameter>
-        get() = kaizen.parameters?.mapValues { OpenApiParameter(it.value) } ?: emptyMap()
+        get() = kaizen.parameters?.mapValues { OpenApiParameter(it.value, isUninhabitableAt) } ?: emptyMap()
     val requestBodies: Map<String, OpenApiRequestBody>
-        get() = kaizen.requestBodies?.mapValues { OpenApiRequestBody(it.value) } ?: emptyMap()
+        get() = kaizen.requestBodies?.mapValues { OpenApiRequestBody(it.value, isUninhabitableAt) } ?: emptyMap()
     val responses: Map<String, OpenApiResponse>
-        get() = kaizen.responses?.mapValues { OpenApiResponse(it.value) } ?: emptyMap()
+        get() = kaizen.responses?.mapValues { OpenApiResponse(it.value, isUninhabitableAt) } ?: emptyMap()
     val servers: List<OpenApiServer> get() = kaizen.servers?.map(::OpenApiServer) ?: emptyList()
     val securityRequirements: List<OpenApiSecurityRequirement>
         get() = kaizen.securityRequirements?.map(::OpenApiSecurityRequirement) ?: emptyList()
@@ -117,16 +120,17 @@ class OpenApi3Document(
 
 class OpenApiOperation(
     internal val kaizen: Operation,
+    private val isUninhabitableAt: (String) -> Boolean = { false },
 ) {
     val parameters: List<OpenApiParameter>
-        get() = kaizen.parameters?.map(::OpenApiParameter) ?: emptyList()
+        get() = kaizen.parameters?.map { OpenApiParameter(it, isUninhabitableAt) } ?: emptyList()
     val responses: Map<String, OpenApiResponse>
-        get() = kaizen.responses?.mapValues { OpenApiResponse(it.value) } ?: emptyMap()
+        get() = kaizen.responses?.mapValues { OpenApiResponse(it.value, isUninhabitableAt) } ?: emptyMap()
     val operationId: String? get() = kaizen.operationId
     val tags: List<String> get() = kaizen.tags ?: emptyList()
     val summary: String? get() = kaizen.summary
     val description: String? get() = kaizen.description
-    val requestBody: OpenApiRequestBody get() = OpenApiRequestBody(kaizen.requestBody)
+    val requestBody: OpenApiRequestBody get() = OpenApiRequestBody(kaizen.requestBody, isUninhabitableAt)
     val securityRequirements: List<OpenApiSecurityRequirement>
         get() = kaizen.securityRequirements?.map(::OpenApiSecurityRequirement) ?: emptyList()
     val extensions: Map<String, Any> get() = kaizen.extensions ?: emptyMap()
@@ -142,11 +146,12 @@ class OpenApiOperation(
 
 class OpenApiPath(
     internal val kaizen: Path,
+    private val isUninhabitableAt: (String) -> Boolean = { false },
 ) {
     val parameters: List<OpenApiParameter>
-        get() = kaizen.parameters?.map(::OpenApiParameter) ?: emptyList()
+        get() = kaizen.parameters?.map { OpenApiParameter(it, isUninhabitableAt) } ?: emptyList()
     val operations: Map<String, OpenApiOperation>
-        get() = kaizen.operations?.mapValues { OpenApiOperation(it.value) } ?: emptyMap()
+        get() = kaizen.operations?.mapValues { OpenApiOperation(it.value, isUninhabitableAt) } ?: emptyMap()
     val pathString: String get() = kaizen.pathString
 
     override fun equals(other: Any?): Boolean = other is OpenApiPath && kaizen == other.kaizen
@@ -158,10 +163,11 @@ class OpenApiPath(
 
 class OpenApiParameter(
     internal val kaizen: Parameter,
+    private val isUninhabitableAt: (String) -> Boolean = { false },
 ) {
     val name: String get() = kaizen.name
     val `in`: String get() = kaizen.`in`
-    val schema: OpenApiSchema get() = OpenApiSchema(kaizen.schema)
+    val schema: OpenApiSchema get() = OpenApiSchema(kaizen.schema, isUninhabitableAt)
     val isRequired: Boolean get() = kaizen.isRequired ?: false
     val description: String? get() = kaizen.description
     val explode: Boolean? get() = kaizen.explode
@@ -175,9 +181,10 @@ class OpenApiParameter(
 
 class OpenApiResponse(
     internal val kaizen: Response,
+    private val isUninhabitableAt: (String) -> Boolean = { false },
 ) {
     val contentMediaTypes: Map<String, OpenApiMediaType>
-        get() = kaizen.contentMediaTypes?.mapValues { OpenApiMediaType(it.value) } ?: emptyMap()
+        get() = kaizen.contentMediaTypes?.mapValues { OpenApiMediaType(it.value, isUninhabitableAt) } ?: emptyMap()
     val description: String? get() = kaizen.description
 
     fun hasContentMediaTypes(): Boolean = kaizen.hasContentMediaTypes()
@@ -191,9 +198,10 @@ class OpenApiResponse(
 
 class OpenApiRequestBody(
     internal val kaizen: RequestBody,
+    private val isUninhabitableAt: (String) -> Boolean = { false },
 ) {
     val contentMediaTypes: Map<String, OpenApiMediaType>
-        get() = kaizen.contentMediaTypes?.mapValues { OpenApiMediaType(it.value) } ?: emptyMap()
+        get() = kaizen.contentMediaTypes?.mapValues { OpenApiMediaType(it.value, isUninhabitableAt) } ?: emptyMap()
     val description: String? get() = kaizen.description
     val isRequired: Boolean get() = kaizen.isRequired ?: false
 
@@ -206,8 +214,9 @@ class OpenApiRequestBody(
 
 class OpenApiMediaType(
     internal val kaizen: MediaType,
+    private val isUninhabitableAt: (String) -> Boolean = { false },
 ) {
-    val schema: OpenApiSchema get() = OpenApiSchema(kaizen.schema)
+    val schema: OpenApiSchema get() = OpenApiSchema(kaizen.schema, isUninhabitableAt)
 
     override fun equals(other: Any?): Boolean = other is OpenApiMediaType && kaizen == other.kaizen
 

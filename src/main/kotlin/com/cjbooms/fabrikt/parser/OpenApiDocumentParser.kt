@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.parser
 
+import com.cjbooms.fabrikt.model.OpenApi3Document
 import com.cjbooms.fabrikt.util.OpenApi31Downgrader
 import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.jsonoverlay.JsonLoader
@@ -12,6 +13,11 @@ internal data class ParsedOpenApiDocument(
     val kaizenModel: OpenApi3,
 ) {
     val version: OpenApiVersion? = source.version
+
+    fun asOpenApi3Document(): OpenApi3Document {
+        val schemaDocument = toGeneratorSchemaDocument()
+        return OpenApi3Document(kaizenModel, schemaDocument::isUninhabitableAt)
+    }
 }
 
 internal object OpenApiDocumentParser {

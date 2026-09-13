@@ -68,7 +68,14 @@ object PropertyUtils {
             PropertySpec
                 .builder(name, wrappedType)
                 .apply {
-                    schema.toKDoc()?.let { addKdoc(it) }
+                    if (this@addToClass is PropertyInfo.UninhabitableField) {
+                        addKdoc(
+                            "The OpenAPI schema for this required property cannot accept any value; " +
+                                "generated as a nullable fallback.\n",
+                        )
+                    } else {
+                        schema.toKDoc()?.let { addKdoc(it) }
+                    }
                 }
 
         if (this is PropertyInfo.AdditionalProperties) {
@@ -283,7 +290,7 @@ object PropertyUtils {
         }
 
     fun PropertyInfo.isSchemaNullable(classSettings: ClassSettings): Boolean =
-        schema.isNullable || classSettings.nullableObjectRefs.contains(oasKey)
+        this is PropertyInfo.UninhabitableField || schema.isNullable || classSettings.nullableObjectRefs.contains(oasKey)
 
     fun PropertyInfo.isNullable(classSettings: ClassSettings) =
         when (this) {
@@ -292,6 +299,7 @@ object PropertyUtils {
             is PropertyInfo.ObjectRefField, is PropertyInfo.ObjectInlinedField,
             ->
                 !isRequired || isSchemaNullable(classSettings)
+            is PropertyInfo.UninhabitableField -> true
             else -> !isRequired
         }
 

@@ -224,7 +224,12 @@ class ModelGenerator(
         .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !isSealedInterfacesForOneOfEnabled() }
         .filterNot { it.schema.isOneOfResolvingToAnyType() }
         .flatMap { schemaInfo ->
-            val properties = schemaInfo.schema.topLevelProperties(HTTP_SETTINGS, api, schemaInfo.schema)
+            val properties =
+                schemaInfo.schema.topLevelProperties(
+                    HTTP_SETTINGS,
+                    api,
+                    schemaInfo.schema,
+                )
             when {
                 properties.isNotEmpty() ||
                     schemaInfo.typeInfo is KotlinTypeInfo.Enum ||
@@ -345,7 +350,12 @@ class ModelGenerator(
                             }
 
                             else -> {
-                                val props = it.schema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, enclosingSchema)
+                                val props =
+                                    it.schema.topLevelProperties(
+                                        HTTP_SETTINGS,
+                                        sourceApi.openApi3,
+                                        enclosingSchema,
+                                    )
                                 val currentModel =
                                     standardDataClass(
                                         ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
@@ -361,6 +371,7 @@ class ModelGenerator(
                     }
 
                     is PropertyInfo.ObjectRefField -> emptySet() // Not an inlined definition, so do nothing
+                    is PropertyInfo.UninhabitableField -> emptySet()
                     is PropertyInfo.MapField ->
                         buildMapModel(it)?.let { mapModel -> setOf(mapModel) } ?: emptySet()
 
@@ -441,20 +452,25 @@ class ModelGenerator(
         schema.itemsSchema.let { items ->
             when {
                 items.isInlinedObjectDefinition() || items.isInlinedObjectDefinitionUnderTopLevelArrayDefinition() ->
-                    items.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, enclosingSchema).let { props ->
-                        buildInLinedModels(
-                            topLevelProperties = props,
-                            enclosingSchema = enclosingSchema,
-                            apiDocUrl = apiDocUrl,
-                        ) +
-                            standardDataClass(
-                                modelName = ModelNameRegistry.getOrRegister(schema, enclosingSchema),
-                                schemaName = schemaName,
-                                properties = props,
-                                schema = schema,
-                                oneOfInterfaces = emptySet(),
-                            )
-                    }
+                    items
+                        .topLevelProperties(
+                            HTTP_SETTINGS,
+                            sourceApi.openApi3,
+                            enclosingSchema,
+                        ).let { props ->
+                            buildInLinedModels(
+                                topLevelProperties = props,
+                                enclosingSchema = enclosingSchema,
+                                apiDocUrl = apiDocUrl,
+                            ) +
+                                standardDataClass(
+                                    modelName = ModelNameRegistry.getOrRegister(schema, enclosingSchema),
+                                    schemaName = schemaName,
+                                    properties = props,
+                                    schema = schema,
+                                    oneOfInterfaces = emptySet(),
+                                )
+                        }
 
                 items.isInlinedEnumDefinition() ->
                     setOf(

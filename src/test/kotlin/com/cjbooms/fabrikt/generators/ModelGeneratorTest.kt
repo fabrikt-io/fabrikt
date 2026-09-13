@@ -502,6 +502,38 @@ class ModelGeneratorTest {
         assertThat(models.models.map { it.spec.name }).contains("RelativeSchema")
     }
 
+    @Test
+    fun `false schema properties use best effort generation`() {
+        val spec =
+            """
+            openapi: 3.1.0
+            info:
+              title: False schema properties
+              version: "1.0"
+            paths: {}
+            components:
+              schemas:
+                Subject:
+                  type: object
+                  required: [requiredImpossible, requiredReference]
+                  properties:
+                    optionalImpossible: false
+                    requiredImpossible: false
+                    requiredReference:
+                      ${'$'}ref: '#/components/schemas/Never'
+                Never: false
+            """.trimIndent()
+
+        val generated = ModelGenerator(Packages("examples.falseSchemas"), SourceApi(spec)).generate().toSingleFile()
+
+        assertThat(generated)
+            .contains("public val requiredImpossible: Any?")
+            .contains("public val requiredReference: Any?")
+            .contains("The OpenAPI schema for this required property cannot accept any value")
+            .doesNotContain("class Never")
+            .doesNotContain("optionalImpossible")
+    }
+
     private fun Models.toSingleFile(): String {
         val destPackage = if (models.isNotEmpty()) models.first().destinationPackage else ""
         val singleFileBuilder = FileSpec.builder(destPackage, "dummyFilename")

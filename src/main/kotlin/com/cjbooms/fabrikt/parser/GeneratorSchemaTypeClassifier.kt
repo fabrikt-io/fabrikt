@@ -3,6 +3,8 @@ package com.cjbooms.fabrikt.parser
 import com.cjbooms.fabrikt.model.OasType
 
 internal sealed interface GeneratorSchemaTypeClassification {
+    data object Uninhabitable : GeneratorSchemaTypeClassification
+
     data class Resolved(
         val type: OasType,
         val nullable: Boolean,
@@ -13,26 +15,49 @@ internal sealed interface GeneratorSchemaTypeClassification {
     ) : GeneratorSchemaTypeClassification
 
     enum class Reason {
-        NEVER_SCHEMA,
         MULTIPLE_NON_NULL_TYPES,
         INCONSISTENT_COMPOSITION_TYPES,
     }
 }
 
-internal object GeneratorSchemaTypeClassifier {
-    fun classify(schema: GeneratorSchema): GeneratorSchemaTypeClassification =
-        when (schema) {
-            is GeneratorBooleanSchema ->
-                if (schema.allowsAnyValue) {
-                    GeneratorSchemaTypeClassification.Resolved(OasType.Any, false)
-                } else {
-                    GeneratorSchemaTypeClassification.Unsupported(GeneratorSchemaTypeClassification.Reason.NEVER_SCHEMA)
-                }
-            is GeneratorObjectSchema -> classifyObjectSchema(schema)
-            else -> error("Unknown generator schema implementation: ${schema::class.qualifiedName}")
+internal class GeneratorSchemaTypeClassifier private constructor(
+    private val resolve: (GeneratorSchema) -> GeneratorSchema,
+) {
+    private val visiting = mutableSetOf<GeneratorSchemaIdentity>()
+
+    private fun classify(schema: GeneratorSchema): GeneratorSchemaTypeClassification {
+        if (!visiting.add(schema.identity)) return GeneratorSchemaTypeClassification.Resolved(OasType.Any, false)
+        return try {
+            when (schema) {
+                is GeneratorBooleanSchema ->
+                    if (schema.allowsAnyValue) {
+                        GeneratorSchemaTypeClassification.Resolved(OasType.Any, false)
+                    } else {
+                        GeneratorSchemaTypeClassification.Uninhabitable
+                    }
+                is GeneratorObjectSchema -> classifyObjectSchema(schema)
+                else -> error("Unknown generator schema implementation: ${schema::class.qualifiedName}")
+            }
+        } finally {
+            visiting.remove(schema.identity)
         }
+    }
 
     private fun classifyObjectSchema(schema: GeneratorObjectSchema): GeneratorSchemaTypeClassification {
+        if (schema.allOf.any { classify(resolve(it)) is GeneratorSchemaTypeClassification.Uninhabitable }) {
+            return GeneratorSchemaTypeClassification.Uninhabitable
+        }
+        if (schema.anyOf.isNotEmpty() &&
+            schema.anyOf.all { classify(resolve(it)) is GeneratorSchemaTypeClassification.Uninhabitable }
+        ) {
+            return GeneratorSchemaTypeClassification.Uninhabitable
+        }
+        if (schema.oneOf.isNotEmpty() &&
+            schema.oneOf.all { classify(resolve(it)) is GeneratorSchemaTypeClassification.Uninhabitable }
+        ) {
+            return GeneratorSchemaTypeClassification.Uninhabitable
+        }
+
         val nullable = SourceSchemaType.NULL in schema.types
         val nonNullTypes = schema.types - SourceSchemaType.NULL
         if (nonNullTypes.size > 1) {
@@ -57,7 +82,7 @@ internal object GeneratorSchemaTypeClassifier {
 
         return schema
             .compositionSchemas()
-            .mapNotNull { (classify(it) as? GeneratorSchemaTypeClassification.Resolved)?.type?.type }
+            .mapNotNull { (classify(resolve(it)) as? GeneratorSchemaTypeClassification.Resolved)?.type?.type }
             .distinct()
             .singleOrNull()
             ?.let(SourceSchemaType::from)
@@ -99,7 +124,7 @@ internal object GeneratorSchemaTypeClassifier {
 
     private fun GeneratorObjectSchema.classifyObject(): OasType =
         when {
-            properties.isEmpty() && additionalProperties is GeneratorObjectSchema -> OasType.Map
+            properties.isEmpty() && hasAdditionalProperties() -> OasType.Map
             properties.isEmpty() && additionalProperties == null && compositionSchemas().none() -> OasType.UntypedObject
             else -> OasType.Object
         }
@@ -114,7 +139,11 @@ internal object GeneratorSchemaTypeClassifier {
     private fun GeneratorObjectSchema.hasInconsistentCompositionTypes(): Boolean {
         val schemas = compositionSchemas().toList()
         if (schemas.isEmpty()) return false
-        val types = schemas.mapNotNull { (classify(it) as? GeneratorSchemaTypeClassification.Resolved)?.type?.type }.distinct()
+        val types =
+            schemas
+                .mapNotNull {
+                    (classify(resolve(it)) as? GeneratorSchemaTypeClassification.Resolved)?.type?.type
+                }.distinct()
         return types.size > 1
     }
 
@@ -124,4 +153,11 @@ internal object GeneratorSchemaTypeClassifier {
             yieldAll(anyOf)
             yieldAll(oneOf)
         }
+
+    companion object {
+        fun classify(
+            schema: GeneratorSchema,
+            resolve: (GeneratorSchema) -> GeneratorSchema = { it },
+        ): GeneratorSchemaTypeClassification = GeneratorSchemaTypeClassifier(resolve).classify(schema)
+    }
 }

@@ -41,8 +41,7 @@ class SourceApi private constructor(
         }
     }
 
-    internal val parsedDocument = OpenApiDocumentParser.parse(rawApiSpec, baseUri, jsonLoader)
-    val openApi3: OpenApi3Document = OpenApi3Document(parsedDocument.kaizenModel)
+    val openApi3: OpenApi3Document = OpenApiDocumentParser.parse(rawApiSpec, baseUri, jsonLoader).asOpenApi3Document()
     val allSchemas: List<SchemaInfo>
 
     init {
@@ -143,7 +142,7 @@ class SourceApi private constructor(
             .fold(schemaErrors) { lst, entry ->
                 val name = entry.key
                 val schema = entry.value
-                if (schema.isSchemaAbsent()) {
+                if (schema.isSchemaAbsent() && !schema.isUninhabitable) {
                     lst + listOf(ValidationError("Property '$name' cannot be parsed to a Schema. Check your input"))
                 } else {
                     lst

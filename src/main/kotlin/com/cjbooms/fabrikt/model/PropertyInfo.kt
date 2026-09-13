@@ -44,7 +44,7 @@ sealed class PropertyInfo {
 
         val HTTP_SETTINGS = Settings()
 
-        fun Schema.topLevelProperties(
+        internal fun Schema.topLevelProperties(
             settings: Settings,
             api: OpenApi3,
             enclosingSchema: Schema? = null,
@@ -130,6 +130,22 @@ sealed class PropertyInfo {
                     .map { property ->
                         val oasKey = property.key
                         val name = names[oasKey]!!
+
+                        if (property.value.isUninhabitable) {
+                            val required =
+                                isRequired(
+                                    api,
+                                    property,
+                                    settings.markReadWriteOnlyOptional,
+                                    settings.markAllOptional,
+                                    additionalRequiredFields = additionalRequiredFields,
+                                )
+                            return@map if (required) {
+                                UninhabitableField(required, name, oasKey, property.value, settings.markAsInherited)
+                            } else {
+                                null
+                            }
+                        }
 
                         when (property.value.safeType()) {
                             OasType.Set.type ->
@@ -301,6 +317,16 @@ sealed class PropertyInfo {
         val exclusiveMaximum: Boolean? = schema.safeField(Schema::isExclusiveMaximum)
 
         private fun <T> Schema.safeField(getField: Schema.() -> T?): T? = this.getField()
+    }
+
+    data class UninhabitableField(
+        override val isRequired: Boolean,
+        override val name: String,
+        override val oasKey: String,
+        override val schema: Schema,
+        override val isInherited: Boolean,
+    ) : PropertyInfo() {
+        override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.AnyType
     }
 
     interface CollectionValidation {

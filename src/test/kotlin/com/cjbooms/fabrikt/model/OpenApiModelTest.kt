@@ -1,11 +1,26 @@
 package com.cjbooms.fabrikt.model
 
+import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
 import com.cjbooms.fabrikt.util.YamlUtils
 import com.reprezen.jsonoverlay.Overlay
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class OpenApiModelTest {
+    @Test
+    fun `OpenApiSchema exposes document-aware native semantics through references`() {
+        val document = OpenApiDocumentParser.parse(booleanSchemaSpec).asOpenApi3Document()
+        val forbidden = document.schemas.getValue("Forbidden")
+        val forbiddenReference =
+            document.schemas
+                .getValue("Subject")
+                .properties
+                .getValue("forbidden")
+
+        assertThat(forbidden.isUninhabitable).isTrue()
+        assertThat(forbiddenReference.isUninhabitable).isTrue()
+    }
+
     @Test
     fun `OpenApiSchema positional accessors match underlying Kaizen Overlay values`() {
         val spec =
@@ -34,4 +49,21 @@ class OpenApiModelTest {
         assertThat(schema.documentUrl).isEqualTo(overlay.positionInfo?.orElse(null)?.documentUrl)
         assertThat(schema.parsedJson).isSameAs(overlay.parsedJson)
     }
+
+    private val booleanSchemaSpec =
+        """
+        openapi: 3.1.0
+        info:
+          title: Boolean schemas
+          version: 1.0.0
+        paths: {}
+        components:
+          schemas:
+            Forbidden: false
+            Subject:
+              type: object
+              properties:
+                forbidden:
+                  ${'$'}ref: '#/components/schemas/Forbidden'
+        """.trimIndent()
 }

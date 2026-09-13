@@ -92,13 +92,17 @@ class GeneratorSchemaTypeClassifierTest {
                 ),
             )
         assertThat(GeneratorSchemaTypeClassifier.classify(schemas.getValue("Never")))
-            .isEqualTo(
-                GeneratorSchemaTypeClassification.Unsupported(
-                    GeneratorSchemaTypeClassification.Reason.NEVER_SCHEMA,
-                ),
-            )
+            .isEqualTo(GeneratorSchemaTypeClassification.Uninhabitable)
         assertThat(GeneratorSchemaTypeClassifier.classify(schemas.getValue("Any")))
             .isEqualTo(GeneratorSchemaTypeClassification.Resolved(OasType.Any, false))
+        assertThat(GeneratorSchemaTypeClassifier.classify(schemas.getValue("AllOfNever")))
+            .isEqualTo(GeneratorSchemaTypeClassification.Uninhabitable)
+        assertThat(GeneratorSchemaTypeClassifier.classify(schemas.getValue("AnyOfNever")))
+            .isEqualTo(GeneratorSchemaTypeClassification.Uninhabitable)
+        assertThat(GeneratorSchemaTypeClassifier.classify(schemas.getValue("OneOfNever")))
+            .isEqualTo(GeneratorSchemaTypeClassification.Uninhabitable)
+        assertThat(GeneratorSchemaTypeClassifier.classify(schemas.getValue("OneOfPossible")))
+            .isEqualTo(GeneratorSchemaTypeClassification.Resolved(OasType.Text, false))
         assertThat(GeneratorSchemaTypeClassifier.classify(schemas.getValue("MixedComposition")))
             .isEqualTo(
                 GeneratorSchemaTypeClassification.Unsupported(
@@ -167,6 +171,14 @@ class GeneratorSchemaTypeClassifierTest {
         Union: { type: [string, integer, 'null'] }
         Never: false
         Any: true
+        AllOfNever:
+          allOf: [false]
+        AnyOfNever:
+          anyOf: [false, false]
+        OneOfNever:
+          oneOf: [false, false]
+        OneOfPossible:
+          oneOf: [false, { type: string }]
         MixedComposition:
           oneOf:
             - { type: string }
