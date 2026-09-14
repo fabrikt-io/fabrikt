@@ -50,7 +50,9 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
         oasKey: String,
         kotlinTypeInfo: KotlinTypeInfo,
     ): PropertySpec.Builder {
-        if (needsContextualAnnotation(kotlinTypeInfo)) {
+        if (kotlinTypeInfo is KotlinTypeInfo.Custom && kotlinTypeInfo.kotlinxSerializer != null) {
+            propertySpecBuilder.addAnnotation(serializerAnnotation(kotlinTypeInfo.kotlinxSerializer))
+        } else if (needsContextualAnnotation(kotlinTypeInfo)) {
             propertySpecBuilder.addAnnotation(AnnotationSpec.builder(Contextual::class).build())
         }
         return propertySpecBuilder.addAnnotation(
@@ -61,13 +63,28 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
     override fun annotateArrayElementType(
         elementType: TypeName,
         elementTypeInfo: KotlinTypeInfo,
+    ): TypeName = annotateType(elementType, elementTypeInfo)
+
+    override fun annotateMapValueType(
+        valueType: TypeName,
+        valueTypeInfo: KotlinTypeInfo,
+    ): TypeName = annotateType(valueType, valueTypeInfo)
+
+    private fun annotateType(
+        type: TypeName,
+        typeInfo: KotlinTypeInfo,
     ): TypeName =
-        if (needsContextualAnnotation(elementTypeInfo)) {
+        if (typeInfo is KotlinTypeInfo.Custom && typeInfo.kotlinxSerializer != null) {
+            type.copy(annotations = listOf(serializerAnnotation(typeInfo.kotlinxSerializer)))
+        } else if (needsContextualAnnotation(typeInfo)) {
             val contextualAnnotation = AnnotationSpec.builder(Contextual::class).build()
-            elementType.copy(annotations = listOf(contextualAnnotation))
+            type.copy(annotations = listOf(contextualAnnotation))
         } else {
-            elementType
+            type
         }
+
+    private fun serializerAnnotation(serializer: ClassName): AnnotationSpec =
+        AnnotationSpec.builder(Serializable::class).addMember("with = %T::class", serializer).build()
 
     private fun needsContextualAnnotation(typeInfo: KotlinTypeInfo): Boolean =
         when (typeInfo) {

@@ -26,6 +26,7 @@ object CodeGen {
             clientTarget = codeGenArgs.clientTarget,
             openfeignClientName = codeGenArgs.openfeignClientName,
             typeOverrides = codeGenArgs.typeOverrides,
+            customTypeMappings = codeGenArgs.customTypeMappings,
             validationLibrary = codeGenArgs.validationLibrary,
             externalRefResolutionMode = codeGenArgs.externalRefResolutionMode,
             serializationLibrary = codeGenArgs.serializationLibrary,

@@ -1,0 +1,27 @@
+openapi: 3.0.3
+info:
+  title: Custom type mapping example
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Content:
+      type: object
+      required:
+        - id
+        - ids
+        - durations
+      properties:
+        id:
+          type: string
+          format: duration
+        ids:
+          type: array
+          items:
+            type: string
+            format: duration
+        durations:
+          type: object
+          additionalProperties:
+            type: string
+            format: duration

@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt.generators
 
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
 import com.cjbooms.fabrikt.cli.CodeGenerationType
+import com.cjbooms.fabrikt.cli.CustomTypeMapping
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
@@ -37,6 +38,7 @@ class KotlinSerializationModelGeneratorTest {
             "primitiveTypes",
             "normalizedNameConflation",
             "openEnum",
+            "customTypeMapping",
         )
 
     @BeforeEach
@@ -60,6 +62,18 @@ class KotlinSerializationModelGeneratorTest {
         }
         if (testCaseName == "openEnum") {
             MutableSettings.addOption(ModelCodeGenOptionType.FAULT_TOLERANT_OPEN_ENUMS)
+        }
+        if (testCaseName == "customTypeMapping") {
+            MutableSettings.updateSettings(
+                genTypes = setOf(CodeGenerationType.HTTP_MODELS),
+                serializationLibrary = SerializationLibrary.KOTLINX_SERIALIZATION,
+                customTypeMappings =
+                    listOf(
+                        CustomTypeMapping.parse(
+                            "string:duration=java.time.Duration;kotlinx=examples.customTypeMapping.DurationAsIsoStringSerializer",
+                        ),
+                    ),
+            )
         }
         val basePackage = "examples.${testCaseName.replace("/", ".")}"
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!

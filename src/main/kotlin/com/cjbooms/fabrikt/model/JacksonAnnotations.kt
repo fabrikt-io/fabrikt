@@ -79,4 +79,9 @@ object JacksonAnnotations : SerializationAnnotations {
         elementType: TypeName,
         elementTypeInfo: KotlinTypeInfo,
     ): TypeName = elementType // Jackson doesn't need array element annotations
+
+    override fun annotateMapValueType(
+        valueType: TypeName,
+        valueTypeInfo: KotlinTypeInfo,
+    ): TypeName = valueType // Jackson doesn't need map value annotations
 }

@@ -139,10 +139,11 @@ class ModelGenerator(
 
                             else ->
                                 createMapOfStringToType(
-                                    toModelType(
-                                        basePackage,
-                                        paramType,
-                                    ),
+                                    MutableSettings.serializationLibrary.serializationAnnotations
+                                        .annotateMapValueType(
+                                            toModelType(basePackage, paramType),
+                                            paramType,
+                                        ),
                                 )
                         }
 
@@ -178,6 +179,8 @@ class ModelGenerator(
             when {
                 typeInfo.modelKClass == GeneratedType::class ->
                     generatedType(basePackage, typeInfo.generatedModelClassName!!)
+
+                typeInfo is KotlinTypeInfo.Custom -> typeInfo.className
 
                 typeInfo is KotlinTypeInfo.MapTypeAdditionalProperties ->
                     generatedType(basePackage, typeInfo.parameterizedType.generatedModelClassName!!)
