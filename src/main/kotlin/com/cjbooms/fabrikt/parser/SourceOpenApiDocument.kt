@@ -26,9 +26,11 @@ internal object SourceOpenApiDocumentParser {
     ): SourceOpenApiDocument {
         val root = YamlObjectMapper.instance.readTree(input)
         val version = OpenApiVersion.parse(root["openapi"]?.asText())
+        val collectionRoot = root.deepCopy<JsonNode>()
+        OpenApiInputCleaner.resolveIntraDocumentParameterRefs(collectionRoot)
         val schemaEntryPoints =
             SourceSchemaEntryPointCollector
-                .collect(root, version)
+                .collect(collectionRoot, version)
                 .mapValues { (location, node) -> SourceSchemaParser.parse(node, location, version) }
         val schemasByLocation = indexSchemas(schemaEntryPoints.values)
         return SourceOpenApiDocument(
