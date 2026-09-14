@@ -44,6 +44,7 @@ class OkHttpClientGeneratorTest {
             "parameterNameClash",
             "byteArrayStream",
             "multipartUpload",
+            "crossOperationParameterRef",
         )
 
     @Suppress("unused")

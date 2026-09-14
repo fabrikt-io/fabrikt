@@ -30,6 +30,7 @@ internal object OpenApiDocumentParser {
             val source = SourceOpenApiDocumentParser.parse(input, baseUri)
             val kaizenInput = source.root.deepCopy<JsonNode>()
             OpenApi31Downgrader.downgradeIncompatibleElements(kaizenInput)
+            OpenApiInputCleaner.resolveIntraDocumentParameterRefs(kaizenInput)
             OpenApiInputCleaner.cleanEmptyTypes(kaizenInput)
             val kaizenModel = OpenApi3ParserAdapter.parse(kaizenInput, baseUri.toURL(), jsonLoader)
             ParsedOpenApiDocument(source, kaizenModel)

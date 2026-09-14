@@ -1,0 +1,52 @@
+openapi: "3.0.0"
+info:
+  title: "Cross-Operation Parameter Ref"
+  version: "1.0"
+paths:
+  /items/{itemId}:
+    get:
+      operationId: getItem
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Item"
+    patch:
+      operationId: patchItem
+      parameters:
+        - $ref: "#/paths/~1items~1%7BitemId%7D/get/parameters/0"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemPatch"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Item"
+components:
+  schemas:
+    Item:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    ItemPatch:
+      type: object
+      properties:
+        name:
+          type: string
