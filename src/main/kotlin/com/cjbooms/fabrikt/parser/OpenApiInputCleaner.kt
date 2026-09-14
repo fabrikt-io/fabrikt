@@ -27,18 +27,12 @@ internal object OpenApiInputCleaner {
     }
 
     /**
-     * Resolves parameter `$ref` values that point at an inline parameter defined inside another
-     * path/operation (e.g. `#/paths/~1items~1%7BitemId%7D/get/parameters/0`) by replacing the
-     * `$ref` node with a deep copy of the referenced parameter object.
-     *
-     * Parser-agnostic pre-processing step: both consumers of the parsed document — the KaiZen
-     * model and the Fabrikt-owned `SourceOpenApiDocument` schema graph — only fully materialise
-     * parameters that are either defined inline or that reference `#/components/parameters/…`.
-     * A `$ref` into `#/paths/…` resolves the JSON node but leaves it unindexed/unpopulated in
-     * both: KaiZen leaves typed fields such as `in` unset, causing a NullPointerException in the
-     * client generator, while `SourceSchemaEntryPointCollector` never indexes the schema behind
-     * such a ref at all, silently skipping uninhabitable-schema classification for it. Inlining
-     * the target before either parser walks the document avoids both failure modes.
+     * Inlines a parameter `$ref` that points outside `#/components/parameters/…` — e.g. into
+     * another operation's `#/paths/…/parameters/N` — with a deep copy of the target object.
+     * Both Kaizen and `SourceSchemaEntryPointCollector` only materialise inline or
+     * components-scoped parameters: left unresolved, Kaizen leaves `Parameter.in` unset (NPE
+     * in the client generator), and the collector never visits the schema behind the ref
+     * (silently skipping its uninhabitable-schema classification).
      */
     fun resolveIntraDocumentParameterRefs(root: JsonNode) {
         walkParameterLists(root, root)

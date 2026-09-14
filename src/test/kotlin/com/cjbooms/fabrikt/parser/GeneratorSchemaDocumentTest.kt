@@ -23,6 +23,13 @@ class GeneratorSchemaDocumentTest {
         assertThat(document.isUninhabitableAt(forbidden.location)).isTrue()
     }
 
+    @Test
+    fun `classifies a false schema reached only through a cross-operation parameter ref as uninhabitable`() {
+        val document = OpenApiDocumentParser.parse(crossOperationParameterRefApi).toGeneratorSchemaDocument()
+
+        assertThat(document.isUninhabitableAt("#/paths/~1widgets~1{widgetId}/patch/parameters/0/schema")).isTrue()
+    }
+
     private val openApi =
         """
         openapi: 3.1.2
@@ -36,5 +43,30 @@ class GeneratorSchemaDocumentTest {
               type: object
               properties:
                 forbidden: false
+        """.trimIndent()
+
+    private val crossOperationParameterRefApi =
+        """
+        openapi: 3.1.2
+        info:
+          title: Test
+          version: "1.0"
+        paths:
+          /widgets/{widgetId}:
+            get:
+              parameters:
+                - name: widgetId
+                  in: path
+                  required: true
+                  schema: false
+              responses:
+                '200':
+                  description: OK
+            patch:
+              parameters:
+                - ${'$'}ref: '#/paths/~1widgets~1%7BwidgetId%7D/get/parameters/0'
+              responses:
+                '200':
+                  description: OK
         """.trimIndent()
 }
