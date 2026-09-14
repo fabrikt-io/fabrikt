@@ -138,7 +138,12 @@ object GeneratorUtils {
         op: Operation,
         resource: String,
         verb: String,
-    ) = op.operationId?.camelCase() ?: "$verb $resource".toKCodeName()
+    ) = functionNameFromId(op) ?: "$verb $resource".toKCodeName()
+
+    fun functionNameFromId(operation: Operation): String? =
+        operation.operationId
+            ?.let { operationId -> MutableSettings.clientOperationIdSeparator?.let(operationId::substringAfterLast) ?: operationId }
+            ?.camelCase()
 
     fun OpenApiSchema.toVarName() = this.name?.toKCodeName() ?: this.toClassName().simpleName.toKCodeName()
 

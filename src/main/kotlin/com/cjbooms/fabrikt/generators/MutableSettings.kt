@@ -31,6 +31,8 @@ object MutableSettings {
         private set
     var clientTarget: ClientCodeGenTargetType = ClientCodeGenTargetType.default
         private set
+    var clientOperationIdSeparator: String? = null
+        private set
     var openfeignClientName: String = ClientCodeGenOptionType.DEFAULT_OPEN_FEIGN_CLIENT_NAME
         private set
     var typeOverrides: Set<CodeGenTypeOverride> = mutableSetOf()
@@ -76,6 +78,7 @@ object MutableSettings {
         modelSuffix: String = "",
         clientOptions: Set<ClientCodeGenOptionType> = emptySet(),
         clientTarget: ClientCodeGenTargetType = ClientCodeGenTargetType.default,
+        clientOperationIdSeparator: String? = null,
         openfeignClientName: String = ClientCodeGenOptionType.DEFAULT_OPEN_FEIGN_CLIENT_NAME,
         typeOverrides: Set<CodeGenTypeOverride> = emptySet(),
         validationLibrary: ValidationLibrary = ValidationLibrary.default,
@@ -92,6 +95,7 @@ object MutableSettings {
         this.modelSuffix = modelSuffix
         this.clientOptions = clientOptions
         this.clientTarget = clientTarget
+        this.clientOperationIdSeparator = clientOperationIdSeparator
         this.openfeignClientName = openfeignClientName
         this.typeOverrides = typeOverrides
         this.validationLibrary = validationLibrary

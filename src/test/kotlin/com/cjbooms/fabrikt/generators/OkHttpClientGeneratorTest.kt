@@ -65,6 +65,38 @@ class OkHttpClientGeneratorTest {
         )
     }
 
+    @Test
+    fun `operation ID prefix is removed using configured client separator`() {
+        MutableSettings.updateSettings(
+            genTypes = setOf(CodeGenerationType.CLIENT),
+            clientTarget = ClientCodeGenTargetType.OK_HTTP,
+            clientOperationIdSeparator = "_",
+        )
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /events:
+                get:
+                  operationId: Events_V2_GetEvents
+                  responses:
+                    '200':
+                      description: Success
+            """.trimIndent()
+
+        val clientCode =
+            OkHttpClientGenerator(Packages("com.test"), SourceApi(spec), Paths.get("src/main/kotlin"))
+                .generate(emptySet())
+                .clients
+                .toSingleFile()
+
+        assertThat(clientCode).contains("fun getEvents(")
+        assertThat(clientCode).doesNotContain("eventsV2GetEvents")
+    }
+
     @ParameterizedTest
     @MethodSource("groupedClientTestCases")
     fun `correct api simple client is generated from a full API definition`(testCaseName: String) {
