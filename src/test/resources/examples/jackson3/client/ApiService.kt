@@ -45,4 +45,23 @@ public class WidgetsService(
         withCircuitBreaker(circuitBreakerRegistry, circuitBreakerName) {
             apiClient.createWidget(widget, additionalHeaders)
         }
+
+    @Throws(ApiException::class)
+    public fun getWidget(
+        widgetId: String,
+        additionalHeaders: Map<String, String> = emptyMap(),
+    ): ApiResponse<Widget> =
+        withCircuitBreaker(circuitBreakerRegistry, circuitBreakerName) {
+            apiClient.getWidget(widgetId, additionalHeaders)
+        }
+
+    @Throws(ApiException::class)
+    public fun patchWidget(
+        widget: Widget,
+        widgetId: String,
+        additionalHeaders: Map<String, String> = emptyMap(),
+    ): ApiResponse<Widget> =
+        withCircuitBreaker(circuitBreakerRegistry, circuitBreakerName) {
+            apiClient.patchWidget(widget, widgetId, additionalHeaders)
+        }
 }

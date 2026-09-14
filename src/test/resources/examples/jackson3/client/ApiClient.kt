@@ -85,4 +85,74 @@ public class WidgetsClient(
 
         return request.execute(okHttpClient, objectMapper, jacksonTypeRef())
     }
+
+    /**
+     *
+     *
+     * @param widgetId
+     */
+    @Throws(ApiException::class)
+    public fun getWidget(
+        widgetId: String,
+        additionalHeaders: Map<String, String> = emptyMap(),
+        additionalQueryParameters: Map<String, String> = emptyMap(),
+    ): ApiResponse<Widget> {
+        val httpUrl: HttpUrl =
+            "$baseUrl/widgets/{widgetId}"
+                .pathParam("{widgetId}" to widgetId)
+                .toHttpUrl()
+                .newBuilder()
+                .also { builder -> additionalQueryParameters.forEach { builder.queryParam(it.key, it.value) } }
+                .build()
+
+        val headerBuilder = Headers.Builder()
+        additionalHeaders.forEach { headerBuilder.header(it.key, it.value) }
+        val httpHeaders: Headers = headerBuilder.build()
+
+        val request: Request =
+            Request
+                .Builder()
+                .url(httpUrl)
+                .headers(httpHeaders)
+                .get()
+                .build()
+
+        return request.execute(okHttpClient, objectMapper, jacksonTypeRef())
+    }
+
+    /**
+     *
+     *
+     * @param widget
+     * @param widgetId
+     */
+    @Throws(ApiException::class)
+    public fun patchWidget(
+        widget: Widget,
+        widgetId: String,
+        additionalHeaders: Map<String, String> = emptyMap(),
+        additionalQueryParameters: Map<String, String> = emptyMap(),
+    ): ApiResponse<Widget> {
+        val httpUrl: HttpUrl =
+            "$baseUrl/widgets/{widgetId}"
+                .pathParam("{widgetId}" to widgetId)
+                .toHttpUrl()
+                .newBuilder()
+                .also { builder -> additionalQueryParameters.forEach { builder.queryParam(it.key, it.value) } }
+                .build()
+
+        val headerBuilder = Headers.Builder()
+        additionalHeaders.forEach { headerBuilder.header(it.key, it.value) }
+        val httpHeaders: Headers = headerBuilder.build()
+
+        val request: Request =
+            Request
+                .Builder()
+                .url(httpUrl)
+                .headers(httpHeaders)
+                .patch(objectMapper.writeValueAsString(widget).toRequestBody("application/json".toMediaType()))
+                .build()
+
+        return request.execute(okHttpClient, objectMapper, jacksonTypeRef())
+    }
 }

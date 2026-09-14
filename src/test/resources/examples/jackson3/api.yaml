@@ -30,6 +30,39 @@ paths:
       responses:
         204:
           description: Widget created
+  /widgets/{widgetId}:
+    get:
+      operationId: getWidget
+      parameters:
+        - name: widgetId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Widget available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Widget'
+    patch:
+      operationId: patchWidget
+      parameters:
+        - $ref: "#/paths/~1widgets~1%7BwidgetId%7D/get/parameters/0"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Widget'
+      responses:
+        200:
+          description: Widget updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Widget'
 components:
   schemas:
     Widget:
