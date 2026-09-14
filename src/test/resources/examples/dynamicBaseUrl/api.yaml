@@ -1,0 +1,7 @@
+openapi: "3.0.2"
+info:
+  title: Dynamic base URL API
+  version: "1.0"
+servers:
+  - url: https://api.example.com/v1
+paths: {}

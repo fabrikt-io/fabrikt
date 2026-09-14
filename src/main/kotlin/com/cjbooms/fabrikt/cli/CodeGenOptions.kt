@@ -43,6 +43,9 @@ enum class ClientCodeGenOptionType(
     OKHTTP_NON_NULL_RESPONSE_PAYLOADS(
         "This option makes ApiResponse.data non-null. Responses declared with a body must return one: a missing body, or one that deserializes to null, throws ApiException. An operation that declares both a body response and an empty success response (e.g. 200 and 204) throws on the empty success. Binary responses return an empty ByteArray for an empty body (only for OkHttp clients)",
     ),
+    DYNAMIC_BASE_URL(
+        "This option makes ApiConfiguration.basePath empty, allowing you to set the base URL at runtime (only for Ktor clients)",
+    ),
     ;
 
     override fun toString() = "`${super.toString()}` - $description"

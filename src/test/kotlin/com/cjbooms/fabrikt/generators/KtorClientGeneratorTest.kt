@@ -84,6 +84,24 @@ class KtorClientGeneratorTest {
         assertThatGenerated(generatedLibrary.contentOf("KtorApiConfiguration.kt")).isEqualTo(expectedApiConfiguration)
     }
 
+    @Test
+    fun `dynamic base URL leaves the Ktor client base path empty`() {
+        val testCaseName = "dynamicBaseUrl"
+        val packages = Packages("examples.$testCaseName")
+        val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
+
+        val generatedLibrary =
+            KtorClientGenerator(
+                packages,
+                sourceApi,
+            ).generateLibrary(setOf(ClientCodeGenOptionType.DYNAMIC_BASE_URL))
+                .filterIsInstance<SimpleFile>()
+
+        assertThatGenerated(generatedLibrary.contentOf("KtorApiConfiguration.kt"))
+            .isEqualTo("/examples/$testCaseName/client/ktor/KtorApiConfiguration.kt")
+    }
+
     private fun Collection<SimpleFile>.contentOf(fileName: String): String = first { it.path.fileName.toString() == fileName }.content
 
     private fun optionsFor(testCaseName: String): Set<ClientCodeGenOptionType> =

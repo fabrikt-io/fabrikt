@@ -380,7 +380,8 @@ class KtorClientGenerator(
         val basePath =
             api.openApi3.servers
                 .firstOrNull()
-                ?.url ?: ""
+                ?.url
+                ?.takeUnless { ClientCodeGenOptionType.DYNAMIC_BASE_URL in options } ?: ""
 
         return setOf(
             SimpleFile(
