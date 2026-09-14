@@ -15,11 +15,24 @@ import com.reprezen.kaizen.oasparser.model3.SecurityRequirement
 import com.reprezen.kaizen.oasparser.model3.Server
 
 /**
- * Fabrikt-owned facade over the Kaizen parser model.
+ * Fabrikt-owned facade insulating code generation from the OpenAPI parser it happens to run on.
  *
- * Each delegate wraps a Kaizen type in an [internal] [kaizen] reference and exposes the
- * same member names generation uses. The [kaizen] back-reference is the seam `Overlay.of(...)`
- * uses; the delegate classes are the seam a future parser swap re-points.
+ * Every class in this file wraps a single parser type and exposes the same member names
+ * generation already depends on. Generation code (`generators/`, and the rest of `model/`)
+ * talks only to these classes — never to a parser type directly — so the parser backing a
+ * given facade class can change (or, mid-migration, differ per instance) without generation
+ * code changing at all. See `AGENTS.md`'s "Parser/generator boundary" section: this file is
+ * the one place a parser-representation type may be held, and only as an unexposed backing
+ * field, never through a public member.
+ *
+ * Today every facade class delegates to Kaizen (`internal val kaizen: Schema`, etc.). [equals]
+ * and [hashCode] deliberately delegate to that backing value rather than defaulting to identity:
+ * every accessor below (`.properties`, `.itemsSchema`, ...) allocates a fresh wrapper instance
+ * around the same underlying parser node, and callers such as `ModelNameRegistry`'s
+ * `inlineSchemaTracking` map and `ModelGenerator`'s `oneOfSuperInterfaces` sets rely on two such
+ * wrappers around the same node comparing equal. Any future backing change must preserve that:
+ * two facade instances wrapping the same underlying schema, however it's represented, must
+ * remain equal.
  */
 class OpenApiSchema(
     internal val kaizen: Schema,
