@@ -20,6 +20,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaAbsent
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isUnsupportedComplexInlinedDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleAggregatedAliasSchema
+import com.squareup.kotlinpoet.ClassName
 import java.math.BigDecimal
 import java.net.URI
 import java.time.LocalDate
@@ -76,6 +77,11 @@ sealed class KotlinTypeInfo(
     object JsonElement : KotlinTypeInfo(kotlinx.serialization.json.JsonElement::class)
 
     object JsonObject : KotlinTypeInfo(kotlinx.serialization.json.JsonObject::class)
+
+    data class Custom(
+        val className: ClassName,
+        val kotlinxSerializer: ClassName?,
+    ) : KotlinTypeInfo(Any::class)
 
     data class Object(
         val simpleClassName: String,
@@ -134,6 +140,11 @@ sealed class KotlinTypeInfo(
             oasKey: String = "",
             enclosingSchema: OpenApiSchema? = null,
         ): KotlinTypeInfo {
+            MutableSettings.customTypeMappings
+                .find {
+                    it.openApiType.equals(schema.type, ignoreCase = true) &&
+                        it.format.equals(schema.format, ignoreCase = true)
+                }?.let { return Custom(it.kotlinType, it.kotlinxSerializer) }
             if (schema.isUnsupportedComplexInlinedDefinition()) {
                 /*
                  * Defaults to Any for complex schemas inlined under the paths section.

@@ -169,6 +169,15 @@ class CodeGenArgs {
     var typeOverrides: Set<CodeGenTypeOverride> = emptySet()
 
     @Parameter(
+        names = ["--custom-type-mapping"],
+        description =
+            "Map an OpenAPI type and format to a Kotlin type. Use type:format=KotlinFqcn and optionally add " +
+                ";kotlinx=SerializerFqcn for kotlinx.serialization.",
+        converter = CustomTypeMappingConverter::class,
+    )
+    var customTypeMappings: List<CustomTypeMapping> = emptyList()
+
+    @Parameter(
         names = ["--validation-library"],
         description = "Specify which validation library to use for annotations in generated model classes. Default: JAKARTA_VALIDATION",
         converter = ValidationLibraryOptionConverter::class,

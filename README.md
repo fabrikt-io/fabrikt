@@ -223,6 +223,7 @@ Usage: <main class> [options]
 |   `--api-fragment`             | A partial Open API v3 fragment, to be combined with the primary API for code generation purposes. Accepts either a local file path or a resolvable http(s) URL. |
 |   `--auth`                     | Authorization header(s) sent when fetching a remote --api-file, --api-fragment, or remote `$ref`. Repeatable, format 'Name: value'. Value may contain `${ENV_VAR}` placeholders, name an env var, or contain !cmd (at start or after whitespace) to run a shell command and substitute its trimmed stdout (e.g. --auth "Authorization: Bearer !generate-fresh-auth-token"). |
 | * `--base-package`             | The base package which all code will be generated under. |
+|   `--custom-type-mapping`      | Map an OpenAPI type and format to a Kotlin type. Use type:format=KotlinFqcn and optionally add ;kotlinx=SerializerFqcn for kotlinx.serialization. Repeat or separate mappings with commas. |
 |   `--external-ref-resolution`  | Specify to which degree referenced schemas from external files are included in model generation. Default: TARGETED |
 |                                | CHOOSE ONE OF: |
 |                                |   `TARGETED` - Generate models only for directly referenced schemas in external API files. |
