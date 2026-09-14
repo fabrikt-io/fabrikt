@@ -7,7 +7,10 @@ components:
   schemas:
     ExternalSubject:
       type: object
-      required: [requiredImpossible]
+      required: [requiredImpossible, requiredReference]
       properties:
         optionalImpossible: false
         requiredImpossible: false
+        requiredReference:
+          $ref: '#/components/schemas/Never'
+    Never: false

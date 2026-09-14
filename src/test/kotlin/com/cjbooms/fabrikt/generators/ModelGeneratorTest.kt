@@ -544,7 +544,9 @@ class ModelGeneratorTest {
 
         assertThat(generated)
             .contains("public val requiredImpossible: Any?")
+            .contains("public val requiredReference: Any?")
             .contains("The OpenAPI schema for this required property cannot accept any value")
+            .doesNotContain("class Never")
             .doesNotContain("optionalImpossible")
     }
 
