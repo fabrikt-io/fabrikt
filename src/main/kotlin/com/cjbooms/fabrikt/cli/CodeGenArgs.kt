@@ -142,6 +142,13 @@ class CodeGenArgs {
     var clientTarget: ClientCodeGenTargetType = ClientCodeGenTargetType.OK_HTTP
 
     @Parameter(
+        names = ["--http-client-operation-id-separator"],
+        description = "Remove the operation ID prefix through the last occurrence of this separator when naming client methods.",
+        validateValueWith = [NonEmptyStringValidator::class],
+    )
+    var clientOperationIdSeparator: String? = null
+
+    @Parameter(
         names = ["--openfeign-client-name"],
         description = "Specify openfeign client name for spring-cloud-starter-openfeign. Defaults to 'fabrikt-client'.",
     )
@@ -263,6 +270,17 @@ class PackageNameValidator : IValueValidator<String> {
     ) {
         if (!value.isValidJavaPackage()) {
             throw ParameterException("Requested package [$value] was not a valid java package.")
+        }
+    }
+}
+
+class NonEmptyStringValidator : IValueValidator<String> {
+    override fun validate(
+        name: String,
+        value: String,
+    ) {
+        if (value.isEmpty()) {
+            throw ParameterException("$name must not be empty.")
         }
     }
 }

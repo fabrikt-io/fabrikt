@@ -132,4 +132,36 @@ class KtorClientGeneratorTest {
         assertThat(clientCode).contains("fun appGetApplicationApiUsage(")
         assertThat(clientCode).doesNotContain("app.GetApplicationApiUsage")
     }
+
+    @Test
+    fun `operation ID prefix is removed using configured client separator`() {
+        MutableSettings.updateSettings(
+            genTypes = setOf(CodeGenerationType.CLIENT),
+            clientTarget = ClientCodeGenTargetType.KTOR,
+            clientOperationIdSeparator = "_",
+        )
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /events:
+                get:
+                  operationId: Events_V2_GetEvents
+                  responses:
+                    '200':
+                      description: Success
+            """.trimIndent()
+
+        val clientCode =
+            KtorClientGenerator(Packages("com.test"), SourceApi(spec))
+                .generate(emptySet())
+                .clients
+                .toSingleFile()
+
+        assertThat(clientCode).contains("fun getEvents(")
+        assertThat(clientCode).doesNotContain("eventsV2GetEvents")
+    }
 }

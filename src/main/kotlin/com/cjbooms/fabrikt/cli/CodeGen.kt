@@ -24,6 +24,7 @@ object CodeGen {
             modelSuffix = codeGenArgs.modelSuffix,
             clientOptions = codeGenArgs.clientOptions,
             clientTarget = codeGenArgs.clientTarget,
+            clientOperationIdSeparator = codeGenArgs.clientOperationIdSeparator,
             openfeignClientName = codeGenArgs.openfeignClientName,
             typeOverrides = codeGenArgs.typeOverrides,
             validationLibrary = codeGenArgs.validationLibrary,
