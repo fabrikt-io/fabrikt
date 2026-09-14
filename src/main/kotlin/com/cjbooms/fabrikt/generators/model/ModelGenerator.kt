@@ -32,7 +32,7 @@ import com.cjbooms.fabrikt.model.PropertyInfo.Companion.topLevelProperties
 import com.cjbooms.fabrikt.model.SchemaInfo
 import com.cjbooms.fabrikt.model.SerializationAnnotations
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.parser.OpenApi3ParserAdapter
+import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.componentKey
@@ -200,10 +200,12 @@ class ModelGenerator(
     fun generate(): Models {
         val models: MutableSet<TypeSpec> = createModels(sourceApi.openApi3, sourceApi.allSchemas)
         externalApiSchemas.forEach { externalReferences ->
+            val externalUrl = URL(externalReferences.key)
             val api =
-                OpenApi3ParserAdapter.parse(URL(externalReferences.key)).let { input ->
-                    maybeConvertRelativeSchemaFile(externalReferences.key, OpenApi3(input))
-                }
+                OpenApiDocumentParser
+                    .parse(externalUrl.readText(), externalUrl.toURI())
+                    .asOpenApi3Document()
+                    .let { document -> maybeConvertRelativeSchemaFile(externalReferences.key, document) }
             val schemas =
                 api.schemas.entries
                     .map { (key, schema) -> SchemaInfo(key, schema) }

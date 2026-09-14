@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.generators.model
 
 import com.cjbooms.fabrikt.model.OpenApi3Document
+import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
 import com.cjbooms.fabrikt.util.YamlUtils
 import com.fasterxml.jackson.databind.JsonNode
@@ -43,6 +44,6 @@ object RelativeSchemaHandler {
                     },
                 )
             }
-        return OpenApi3Document(YamlUtils.parseOpenApi(YamlUtils.objectMapper.writeValueAsString(wrapped), url.toURI()))
+        return OpenApiDocumentParser.parse(YamlUtils.objectMapper.writeValueAsString(wrapped), url.toURI()).asOpenApi3Document()
     }
 }

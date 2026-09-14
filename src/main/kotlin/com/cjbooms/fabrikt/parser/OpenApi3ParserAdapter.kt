@@ -12,6 +12,4 @@ internal object OpenApi3ParserAdapter {
         baseUrl: URL,
         jsonLoader: JsonLoader?,
     ): OpenApi3 = OpenApi3Parser().parse(input, baseUrl, false, jsonLoader) as OpenApi3
-
-    fun parse(url: URL): OpenApi3 = OpenApi3Parser().parse(url)
 }
