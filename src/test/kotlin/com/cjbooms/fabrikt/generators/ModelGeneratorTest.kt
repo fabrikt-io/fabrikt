@@ -534,6 +534,20 @@ class ModelGeneratorTest {
             .doesNotContain("optionalImpossible")
     }
 
+    @Test
+    fun `false schema properties in an externally referenced document use best effort generation`() {
+        val basePackage = "examples.externalReferences.uninhabitableSchema"
+        val apiLocation = javaClass.getResource("/examples/externalReferences/uninhabitableSchema/api.yaml")!!
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
+
+        val generated = ModelGenerator(Packages(basePackage), sourceApi).generate().toSingleFile()
+
+        assertThat(generated)
+            .contains("public val requiredImpossible: Any?")
+            .contains("The OpenAPI schema for this required property cannot accept any value")
+            .doesNotContain("optionalImpossible")
+    }
+
     private fun Models.toSingleFile(): String {
         val destPackage = if (models.isNotEmpty()) models.first().destinationPackage else ""
         val singleFileBuilder = FileSpec.builder(destPackage, "dummyFilename")

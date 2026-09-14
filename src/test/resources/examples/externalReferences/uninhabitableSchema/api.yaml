@@ -1,0 +1,12 @@
+openapi: 3.1.0
+paths: {}
+info:
+  title: ""
+  version: ""
+components:
+  schemas:
+    ContainingExternalReference:
+      type: object
+      properties:
+        some-external-reference:
+          $ref: './external-models.yaml#/components/schemas/ExternalSubject'
