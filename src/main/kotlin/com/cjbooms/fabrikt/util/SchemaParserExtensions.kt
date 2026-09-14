@@ -492,6 +492,23 @@ object SchemaParserExtensions {
     private fun Schema.combinedAnyOfAndAllOfSchemas(): List<Schema> = (allOfSchemas ?: emptyList()) + (anyOfSchemas ?: emptyList())
 
     /**
+     * Returns the single named component schema this wrapper aliases, or null if it is not a
+     * pure single-element `allOf`/`anyOf` alias (e.g. it owns its own object definition). OAS 3.0
+     * ignores keywords beside a bare `$ref`, so `allOf: [$ref: X]` plus siblings like `nullable`
+     * is idiomatic for annotating a reference; [safeName] already resolves through it for naming.
+     */
+    fun Schema.singleAggregatedAliasSchema(): Schema? =
+        if (!isInlinedAggregationOfExactlyOne() || isInlinedObjectDefinition()) {
+            null
+        } else {
+            combinedAnyOfAndAllOfSchemas().first().takeIf { it.name != null }
+        }
+
+    fun Schema.isSingleAggregatedInlinedObject(): Boolean =
+        isInlinedAggregationOfExactlyOne() &&
+            combinedAnyOfAndAllOfSchemas().first().let { it.name == null && it.isObjectType() }
+
+    /**
      * Recognises two inlining patterns:
      * - A direct property schema:              /properties/<name>
      * - An array item schema under a property: /properties/<name>/items

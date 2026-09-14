@@ -16,6 +16,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isRequired
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaLess
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleMapDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSingleAggregatedInlinedObject
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeType
@@ -204,6 +205,7 @@ sealed class PropertyInfo {
                                         parentSchema = this,
                                     )
                                 } else if (property.value.isInlinedObjectDefinition() ||
+                                    property.value.isSingleAggregatedInlinedObject() ||
                                     (property.value.isOneOfSuperInterface() && property.value.isSubTypeDeductionEnabled())
                                 ) {
                                     ObjectInlinedField(

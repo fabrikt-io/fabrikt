@@ -19,6 +19,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterfaceWith
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaAbsent
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isUnsupportedComplexInlinedDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleAggregatedAliasSchema
 import java.math.BigDecimal
 import java.net.URI
 import java.time.LocalDate
@@ -222,7 +223,15 @@ sealed class KotlinTypeInfo(
                     Array(parameterizedType, schema.itemsSchema.isNullable, schema.itemsSchema.isUniqueItems)
                 }
 
-                OasType.Object -> Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema))
+                OasType.Object -> {
+                    val aliasedSchema = schema.singleAggregatedAliasSchema()
+                    if (aliasedSchema != null) {
+                        from(aliasedSchema, oasKey, enclosingSchema)
+                    } else {
+                        Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema))
+                    }
+                }
+
                 OasType.Map ->
                     Map(from(schema.additionalPropertiesSchema, OasType.ADDITIONAL_PROPERTIES_VALUE, enclosingSchema))
 

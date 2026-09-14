@@ -44,6 +44,25 @@ components:
             oneOf:
               - $ref: "#/components/schemas/BModel"
               - $ref: "#/components/schemas/CModel"
+        aliasedFreeFormMap:
+          allOf:
+            - $ref: "#/components/schemas/FreeFormData"
+          nullable: true
+          description: "Arbitrary fields attached to the container."
+        aliasedTypedMap:
+          allOf:
+            - $ref: "#/components/schemas/StringMap"
+        aliasedInlineObject:
+          allOf:
+            - type: object
+              properties:
+                metaTitle:
+                  type: string
+        arrayOfAliasedFreeFormMap:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/FreeFormData"
 
     BModel:
       type: object
@@ -108,3 +127,14 @@ components:
       properties:
         entries:
           $ref: '#/components/schemas/NamedAggregatedArray'
+
+    FreeFormData:
+      type: object
+      minProperties: 1
+      additionalProperties: true
+      description: "custom data of an entity"
+
+    StringMap:
+      type: object
+      additionalProperties:
+        type: string
