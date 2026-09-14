@@ -83,4 +83,9 @@ sealed interface SerializationAnnotations {
         elementType: TypeName,
         elementTypeInfo: KotlinTypeInfo,
     ): TypeName
+
+    fun annotateMapValueType(
+        valueType: TypeName,
+        valueTypeInfo: KotlinTypeInfo,
+    ): TypeName
 }
