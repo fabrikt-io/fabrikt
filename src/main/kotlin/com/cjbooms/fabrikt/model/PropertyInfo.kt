@@ -240,6 +240,7 @@ sealed class PropertyInfo {
                                         schema = property.value,
                                         isInherited = settings.markAsInherited,
                                         parentSchema = this,
+                                        enclosingSchema = enclosingSchema,
                                     )
                                 } else {
                                     ObjectRefField(
@@ -419,8 +420,14 @@ sealed class PropertyInfo {
         override val schema: Schema,
         override val isInherited: Boolean,
         val parentSchema: Schema,
+        val enclosingSchema: Schema?,
     ) : PropertyInfo() {
-        override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, oasKey)
+        override val typeInfo: KotlinTypeInfo =
+            if (isInherited) {
+                KotlinTypeInfo.from(schema, oasKey, parentSchema)
+            } else {
+                KotlinTypeInfo.from(schema, oasKey, enclosingSchema)
+            }
     }
 
     data class ObjectInlinedField(
