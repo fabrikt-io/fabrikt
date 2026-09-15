@@ -1,0 +1,12 @@
+package examples.discriminatedOneOf.models
+
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
+
+@JsonClassDiscriminator("actionType")
+@ExperimentalSerializationApi
+@Serializable
+public sealed class InheritedOneOfParent() {
+  public abstract val effect: InheritedOneOfParentEffect?
+}

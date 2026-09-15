@@ -403,6 +403,89 @@ components:
           oneOf:
             - $ref: '#/components/schemas/PromotionEffectBuyXGetY'
             - $ref: '#/components/schemas/PromotionEffectAutomaticDiscount'
+
+    # Same shape as PromotionEffect.additionalData above, but the oneOf itself carries a
+    # discriminator. Regression test for a related naming bug found while fixing #692: the
+    # property's own type resolution didn't thread `enclosingSchema` into `KotlinTypeInfo.from`,
+    # so it disagreed with the name `ModelGenerator` used for the emitted interface and instead
+    # produced an unqualified, non-existent type name (`AdditionalData` instead of
+    # `PromotionEffectDiscriminatedAdditionalData`).
+    PromotionEffectDiscriminatedBuyXGetY:
+      type: object
+      properties:
+        buyQuantity:
+          type: integer
+    PromotionEffectDiscriminatedAutomaticDiscount:
+      type: object
+      properties:
+        value:
+          type: number
+    PromotionEffectDiscriminated:
+      type: object
+      required:
+        - additionalData
+      properties:
+        additionalData:
+          discriminator:
+            propertyName: kind
+            mapping:
+              buyXGetY: '#/components/schemas/PromotionEffectDiscriminatedBuyXGetY'
+              automaticDiscount: '#/components/schemas/PromotionEffectDiscriminatedAutomaticDiscount'
+          oneOf:
+            - $ref: '#/components/schemas/PromotionEffectDiscriminatedBuyXGetY'
+            - $ref: '#/components/schemas/PromotionEffectDiscriminatedAutomaticDiscount'
+
+    # Same discriminated-inline-oneOf-property shape as PromotionEffectDiscriminated above, but
+    # declared on an allOf parent that is itself part of a discriminated hierarchy, so the
+    # property classifies with `isInherited = true`. Regression test for a second instance of the
+    # same naming bug: the inherited branch must resolve the property's type using the schema
+    # that declares the property (InheritedOneOfParent), not the enclosing child schema, to match
+    # the interface name ModelGenerator emits (InheritedOneOfParentEffect).
+    InheritedOneOfBranchA:
+      type: object
+      properties:
+        aQty:
+          type: integer
+    InheritedOneOfBranchB:
+      type: object
+      properties:
+        bQty:
+          type: integer
+    InheritedOneOfParent:
+      type: object
+      discriminator:
+        propertyName: actionType
+        mapping:
+          CHILD_ONE: '#/components/schemas/InheritedOneOfChildOne'
+          CHILD_TWO: '#/components/schemas/InheritedOneOfChildTwo'
+      required:
+        - actionType
+      properties:
+        actionType:
+          type: string
+        effect:
+          discriminator:
+            propertyName: kind
+            mapping:
+              a: '#/components/schemas/InheritedOneOfBranchA'
+              b: '#/components/schemas/InheritedOneOfBranchB'
+          oneOf:
+            - $ref: '#/components/schemas/InheritedOneOfBranchA'
+            - $ref: '#/components/schemas/InheritedOneOfBranchB'
+    InheritedOneOfChildOne:
+      allOf:
+        - $ref: '#/components/schemas/InheritedOneOfParent'
+        - type: object
+          properties:
+            extraOne:
+              type: string
+    InheritedOneOfChildTwo:
+      allOf:
+        - $ref: '#/components/schemas/InheritedOneOfParent'
+        - type: object
+          properties:
+            extraTwo:
+              type: string
   responses:
     NarrowedDiscriminatorResponse:
       content:
