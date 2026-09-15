@@ -377,6 +377,31 @@ components:
       allOf:
         - $ref: '#/components/schemas/DiscriminatedBase'
         - type: object
+
+    # Issue #692: an inline oneOf property whose branches declare their properties directly.
+    # safeType() sees those branch properties and returns "object", so the property is classified
+    # ObjectRefField rather than Field (contrast ErrorWrapper.error, whose allOf branches declare
+    # no own properties). ObjectRefField was the one arm of buildInLinedModels that emitted
+    # nothing, so the supertype was applied to both branches but never declared.
+    PromotionEffectBuyXGetY:
+      type: object
+      properties:
+        buyQuantity:
+          type: integer
+    PromotionEffectAutomaticDiscount:
+      type: object
+      properties:
+        value:
+          type: number
+    PromotionEffect:
+      type: object
+      required:
+        - additionalData
+      properties:
+        additionalData:
+          oneOf:
+            - $ref: '#/components/schemas/PromotionEffectBuyXGetY'
+            - $ref: '#/components/schemas/PromotionEffectAutomaticDiscount'
   responses:
     NarrowedDiscriminatorResponse:
       content:
