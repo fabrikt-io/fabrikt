@@ -64,7 +64,7 @@ Read ARCHITECTURE.md first — it maps symptoms (wrong type, missing model, miss
 
 ## Markdown style
 
-README.md and other Markdown docs predate a line-wrapping convention and are mostly hard-wrapped mid-sentence. Soft-wrap prose: never break a line mid-sentence; a sentence (or several) stays on one line until it ends. Do not rewrap existing paragraphs as a side effect of other edits — rewrapping is a dedicated chore.
+README.md and other Markdown docs predate a line-wrapping convention and are mostly hard-wrapped mid-sentence. Soft-wrap prose: never break a line mid-sentence; a sentence (or several) stays on one line until it ends. Do not rewrap existing paragraphs as a side effect of other edits — rewrapping is a dedicated chore. Same rule for PR descriptions, commit messages, and GitHub issue bodies.
 
 ## Test style
 
