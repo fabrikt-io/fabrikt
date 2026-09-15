@@ -12,6 +12,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedItemsSchemaUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectUnderAllOf
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isRequired
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaLess
@@ -224,6 +225,22 @@ sealed class PropertyInfo {
                                         parentSchema = this,
                                         enclosingSchema = enclosingSchema,
                                     )
+                                } else if (property.value.isInlinedOneOfSuperInterface()) {
+                                    OneOfInlinedField(
+                                        isRequired =
+                                            isRequired(
+                                                api,
+                                                property,
+                                                settings.markReadWriteOnlyOptional,
+                                                settings.markAllOptional,
+                                                additionalRequiredFields = additionalRequiredFields,
+                                            ),
+                                        name = name,
+                                        oasKey = oasKey,
+                                        schema = property.value,
+                                        isInherited = settings.markAsInherited,
+                                        parentSchema = this,
+                                    )
                                 } else {
                                     ObjectRefField(
                                         isRequired =
@@ -379,6 +396,23 @@ sealed class PropertyInfo {
     }
 
     data class ObjectRefField(
+        override val isRequired: Boolean,
+        override val name: String,
+        override val oasKey: String,
+        override val schema: Schema,
+        override val isInherited: Boolean,
+        val parentSchema: Schema,
+    ) : PropertyInfo() {
+        override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, oasKey)
+    }
+
+    /**
+     * An inline `oneOf` declared directly on a property. Not a `$ref` to a named object: the
+     * schema is inlined at `/properties/<name>` and its members are the things being referenced.
+     * Resolves to the same Kotlin type as [ObjectRefField]; it is a separate type so the sealed
+     * interface for its members is emitted from an explicit arm rather than a re-check.
+     */
+    data class OneOfInlinedField(
         override val isRequired: Boolean,
         override val name: String,
         override val oasKey: String,

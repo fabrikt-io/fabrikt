@@ -297,6 +297,7 @@ object PropertyUtils {
             is PropertyInfo.Field -> !isRequired && schema.default == null || isSchemaNullable(classSettings)
             is PropertyInfo.ListField, is PropertyInfo.MapField,
             is PropertyInfo.ObjectRefField, is PropertyInfo.ObjectInlinedField,
+            is PropertyInfo.OneOfInlinedField,
             ->
                 !isRequired || isSchemaNullable(classSettings)
             is PropertyInfo.UninhabitableField -> true

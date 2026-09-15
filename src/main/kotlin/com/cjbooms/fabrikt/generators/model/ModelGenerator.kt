@@ -372,8 +372,12 @@ class ModelGenerator(
                         }
                     }
 
-                    is PropertyInfo.ObjectRefField ->
-                        if (!it.isInherited && it.schema.isInlinedOneOfSuperInterface()) {
+                    is PropertyInfo.ObjectRefField -> emptySet() // Not an inlined definition, so do nothing
+
+                    is PropertyInfo.OneOfInlinedField ->
+                        if (it.isInherited) {
+                            emptySet() // Rely on the parent definition
+                        } else {
                             setOf(
                                 oneOfSuperInterface(
                                     modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
@@ -385,9 +389,8 @@ class ModelGenerator(
                                     isSubTypeDeductionEnabled = it.schema.isSubTypeDeductionEnabled(),
                                 ),
                             )
-                        } else {
-                            emptySet()
                         }
+
                     is PropertyInfo.UninhabitableField -> emptySet()
                     is PropertyInfo.MapField ->
                         buildMapModel(it)?.let { mapModel -> setOf(mapModel) } ?: emptySet()
