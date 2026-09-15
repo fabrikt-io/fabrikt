@@ -101,7 +101,7 @@ object GeneratorUtils {
     ): List<Parameter> = path.filter { pp -> !operation.any { op -> pp.name == op.name && pp.`in` == op.`in` } } + operation
 
     fun Operation.toKdoc(parameters: List<IncomingParameter>): CodeBlock {
-        val kdoc = CodeBlock.builder().add("${this.summary.orEmpty()}\n${this.description.orEmpty()}\n")
+        val kdoc = CodeBlock.builder().add("%L", "${this.summary.orEmpty()}\n${this.description.orEmpty()}\n")
 
         parameters.forEach {
             kdoc.add("@param %L %L\n", it.name.toKCodeName(), it.description.orEmpty())

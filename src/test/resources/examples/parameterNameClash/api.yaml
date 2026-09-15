@@ -5,10 +5,15 @@ info:
 paths:
   /example/{b}:
     get:
+      summary: Returns 100% of the matching records
+      description: |
+        The merchant key must be prefixed by `key%3D`.
+        A literal %S is prose here, not a format specifier.
       parameters:
         - in: path
           name: b
           required: true
+          description: Identifier, percent-encoded (%3D is '=')
           schema:
             type: string
         - in: query

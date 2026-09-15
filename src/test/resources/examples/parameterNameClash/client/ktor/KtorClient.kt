@@ -22,8 +22,13 @@ public class ExampleClient(
     private val httpClient: HttpClient,
 ) {
     /**
+     * Returns 100% of the matching records
+     * The merchant key must be prefixed by `key%3D`.
+     * A literal %S is prose here, not a format specifier.
+     *
+     *
      * Parameters:
-     * 	 @param pathB
+     * 	 @param pathB Identifier, percent-encoded (%3D is '=')
      * 	 @param queryB
      *
      * Returns:

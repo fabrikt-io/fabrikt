@@ -83,7 +83,10 @@ class KtorControllerInterfaceGenerator(
                             val routeCode = buildRouteCode(operation, verb, path)
                             routeFunBuilder.addCode(routeCode)
                             routeFunBuilder.addKdoc(
-                                "- ${verb.toUpperCase()} ${path.key} ${(operation.summary ?: operation.description).orEmpty()}\n",
+                                "- %L %L %L\n",
+                                verb.toUpperCase(),
+                                path.key,
+                                (operation.summary ?: operation.description).orEmpty(),
                             )
 
                             // generate controller interface function

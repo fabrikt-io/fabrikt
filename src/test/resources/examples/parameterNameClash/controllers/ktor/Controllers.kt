@@ -23,10 +23,15 @@ import kotlin.Suppress
 
 public interface ExampleController {
     /**
+     * Returns 100% of the matching records
+     * The merchant key must be prefixed by `key%3D`.
+     * A literal %S is prose here, not a format specifier.
+     *
+     *
      * Route is expected to respond with status 204.
      * Use [respond] to send the response.
      *
-     * @param pathB
+     * @param pathB Identifier, percent-encoded (%3D is '=')
      * @param queryB
      * @param call The Ktor application call
      */
@@ -54,7 +59,7 @@ public interface ExampleController {
         /**
          * Mounts all routes for the Example resource
          *
-         * - GET /example/{b}
+         * - GET /example/{b} Returns 100% of the matching records
          * - POST /example
          */
         public fun Route.exampleRoutes(controller: ExampleController) {
