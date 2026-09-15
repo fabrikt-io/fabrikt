@@ -5,10 +5,13 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.validation.`annotation`.Validated
+import org.springframework.web.bind.`annotation`.RequestBody
 import org.springframework.web.bind.`annotation`.RequestMapping
 import org.springframework.web.bind.`annotation`.RequestMethod
 import org.springframework.web.bind.`annotation`.RequestParam
+import javax.validation.Valid
 import kotlin.Any
+import kotlin.Unit
 import kotlin.collections.List
 
 @Controller
@@ -30,4 +33,24 @@ public interface ExampleController {
         @RequestParam(value = "inline_enum.", required = false) inlineEnum: InlineEnum?,
         @RequestParam(value = "inline_obj.", required = false) inlineObj: Any?,
     ): ResponseEntity<List<Any>>
+
+    /**
+     *
+     *
+     * @param requestBody
+     * @param inlineEnum
+     */
+    @RequestMapping(
+        value = ["/example"],
+        produces = [],
+        method = [RequestMethod.POST],
+        consumes = ["application/json"],
+    )
+    public fun post(
+        @RequestBody @Valid requestBody: Any,
+        @RequestParam(
+            value = "inline_enum.",
+            required = false,
+        ) inlineEnum: InlineEnum?,
+    ): ResponseEntity<Unit>
 }

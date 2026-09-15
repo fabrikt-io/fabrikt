@@ -48,3 +48,22 @@ paths:
                         - active
                         - inactive
                         - archived
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  required: [name]
+                  properties:
+                    name:
+                      type: string
+                - type: object
+                  properties:
+                    priority:
+                      type: integer
+      responses:
+        201:
+          description: An unsupported inlined aggregated request body.

@@ -59,7 +59,7 @@ object SchemaParserExtensions {
     fun Schema.isUnsupportedComplexInlinedDefinition() =
         jsonPathFromRoot.contains("paths") &&
             name == null &&
-            isObjectType()
+            (isObjectType() || isAggregatedObject())
 
     fun Schema.isInlinedObjectDefinition() = (isObjectType() || isAggregatedObject()) && !isSchemaLess() && isInlinedPropertySchema()
 
