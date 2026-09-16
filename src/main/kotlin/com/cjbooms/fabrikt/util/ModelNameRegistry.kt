@@ -111,6 +111,25 @@ object ModelNameRegistry {
             .getOrElse { register(schemaInfo.schema, schemaInfoName = schemaInfo.name) }
     }
 
+    // Names a parameter's $ref'd component property the same way getOrRegister would for that
+    // property, so client and model agree regardless of which generator runs first.
+    fun getOrRegisterPropertyRef(
+        schema: Schema,
+        enclosingComponentName: String,
+    ): String {
+        getByReference(schema)?.let { return it }
+        val modelClassName =
+            enclosingComponentName.toModelClassName() +
+                schema.safeName().toModelClassName() +
+                MutableSettings.modelSuffix
+        val tag = resolveTag(schema, modelClassName)
+        return this[tag].getOrElse {
+            val suggestion = allocateUniqueName(modelClassName)
+            tagToName[tag] = suggestion
+            suggestion
+        }
+    }
+
     fun preRegisterByReference(
         schema: Schema,
         name: String,

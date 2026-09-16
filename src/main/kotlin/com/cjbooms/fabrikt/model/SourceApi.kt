@@ -39,6 +39,8 @@ class SourceApi private constructor(
                 apiFragments.fold(YamlUtils.expandYamlAliases(baseApi)) { acc: String, fragment -> YamlUtils.mergeYamlTrees(acc, fragment) }
             return SourceApi(combinedApi, baseUri, jsonLoader)
         }
+
+        private const val MAX_NESTED_ARRAY_DEPTH = 10
     }
 
     val openApi3: OpenApi3Document = OpenApiDocumentParser.parse(rawApiSpec, baseUri, jsonLoader).asOpenApi3Document()
@@ -53,14 +55,9 @@ class SourceApi private constructor(
             openApi3.paths.values
                 .flatMap { path ->
                     val allParams = path.parameters + path.operations.values.flatMap { it.parameters }
-                    allParams
-                        .filter { param ->
-                            isInlineEnum(param.schema) ||
-                                (param.schema.type == "array" && isInlineEnum(param.schema.itemsSchema))
-                        }.map { param ->
-                            val schema = if (param.schema.type == "array") param.schema.itemsSchema else param.schema
-                            param.name to schema
-                        }
+                    allParams.mapNotNull { param ->
+                        innermostInlineEnum(param.schema)?.let { param.name to it }
+                    }
                 }.distinctBy { it.second.jsonReference }
 
         inlineEnumParams.forEach { (name, schema) ->
@@ -110,6 +107,18 @@ class SourceApi private constructor(
     private fun isInlineEnum(schema: OpenApiSchema?): Boolean =
         schema?.jsonPathFromRoot?.contains("paths") == true &&
             schema?.isEnumDefinition() == true
+
+    private fun innermostInlineEnum(schema: OpenApiSchema?): OpenApiSchema? {
+        var current = schema ?: return null
+        var depth = 0
+        while (current.type == OasType.Array.type && depth < MAX_NESTED_ARRAY_DEPTH) {
+            val items = current.itemsSchema
+            if (items.isSchemaAbsent()) return null
+            current = items
+            depth++
+        }
+        return current.takeIf { isInlineEnum(it) }
+    }
 
     private fun validateSchemaObjects(api: OpenApi3Document): List<ValidationError> {
         val schemaErrors =
