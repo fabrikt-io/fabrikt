@@ -134,11 +134,25 @@ object GeneratorUtils {
         }
     }
 
+    /**
+     * Resolves the function name for [op]'s operationId, applying the global
+     * `--operation-id-transform` regex replacement when configured.
+     * Returns null when the operation has no operationId.
+     */
+    fun functionNameFromOperation(op: Operation): String? {
+        val operationId = op.operationId ?: return null
+        val transformed =
+            MutableSettings.operationIdTransform?.let { (regex, replacement) ->
+                operationId.replace(regex, replacement)
+            } ?: operationId
+        return transformed.camelCase()
+    }
+
     fun functionName(
         op: Operation,
         resource: String,
         verb: String,
-    ) = op.operationId?.camelCase() ?: "$verb $resource".toKCodeName()
+    ) = functionNameFromOperation(op) ?: "$verb $resource".toKCodeName()
 
     fun OpenApiSchema.toVarName() = this.name?.toKCodeName() ?: this.toClassName().simpleName.toKCodeName()
 

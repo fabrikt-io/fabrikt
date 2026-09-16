@@ -291,4 +291,56 @@ class OkHttpClientGeneratorTest {
 
         assertThat(content).isEqualTo(expectedClient)
     }
+
+    @Test
+    fun `operationId transform strips prefix from generated client function name`() {
+        MutableSettings.updateSettings(
+            genTypes = setOf(CodeGenerationType.CLIENT),
+            clientTarget = ClientCodeGenTargetType.OK_HTTP,
+        )
+
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /events:
+                get:
+                  operationId: Events_V2_GetEvents
+                  responses:
+                    '200':
+                      description: Success
+            """.trimIndent()
+
+        val packages = Packages("com.test")
+        val sourceApi = SourceApi(spec)
+
+        val before = OkHttpSimpleClientGenerator(packages, sourceApi).generateDynamicClientCode()
+        val contentBefore =
+            Clients(before)
+                .files
+                .first()
+                .toString()
+                .let { Linter.lintString(it) }
+
+        MutableSettings.updateSettings(
+            genTypes = setOf(CodeGenerationType.CLIENT),
+            clientTarget = ClientCodeGenTargetType.OK_HTTP,
+            operationIdTransform = Regex(".*_") to "",
+        )
+        val after = OkHttpSimpleClientGenerator(packages, sourceApi).generateDynamicClientCode()
+        val contentAfter =
+            Clients(after)
+                .files
+                .first()
+                .toString()
+                .let { Linter.lintString(it) }
+
+        assertThat(contentBefore).contains("fun eventsV2GetEvents(")
+        assertThat(contentBefore).doesNotContain("fun getEvents(")
+        assertThat(contentAfter).contains("fun getEvents(")
+        assertThat(contentAfter).doesNotContain("eventsV2GetEvents")
+    }
 }

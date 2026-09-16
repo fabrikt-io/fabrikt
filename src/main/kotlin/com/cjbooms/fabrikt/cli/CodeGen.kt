@@ -32,6 +32,7 @@ object CodeGen {
             instantLibrary = codeGenArgs.instantLibrary,
             jacksonNullabilityMode = codeGenArgs.jacksonNullabilityMode,
             outputOptions = codeGenArgs.outputOptions,
+            operationIdTransform = codeGenArgs.operationIdTransform,
         )
 
         val resolvedAuth = AuthHeaderResolver.resolveHeaders(codeGenArgs.auth, System::getenv)

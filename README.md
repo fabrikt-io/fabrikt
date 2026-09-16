@@ -280,6 +280,7 @@ Usage: <main class> [options]
 |                                |   `ENFORCE_REQUIRED_NULLABLE` - Include null values for required nullable fields |
 |                                |   `STRICT` - Combines `ENFORCE_OPTIONAL_NON_NULL` and `ENFORCE_REQUIRED_NULLABLE` for strictest contract enforcement |
 |   `--openfeign-client-name`    | Specify openfeign client name for spring-cloud-starter-openfeign. Defaults to 'fabrikt-client'. |
+|   `--operation-id-transform`   | Regex replacement applied to every operationId before it becomes a generated function name, format '<regex>:<replacement>'. Applies to clients and controllers. E.g. '.*_:' strips a prefix through the last underscore; '^V2_(.*):v2$1' rewrites a prefix. |
 |   `--output-directory`         | Allows the generation dir to be overridden. Defaults to current dir |
 |   `--output-opts`              | Select options for the output. |
 |                                | CHOOSE ANY OF: |
@@ -314,6 +315,19 @@ Usage: <main class> [options]
 |                                |   `JAVAX_VALIDATION` - Use `javax.validation` annotations in generated model classes |
 |                                |   `JAKARTA_VALIDATION` - Use `jakarta.validation` annotations in generated model classes (default) |
 |                                |   `NO_VALIDATION` - Use no validation annotations in generated model classes |
+
+
+
+## Renaming generated operation methods
+
+Some OpenAPI specs use globally-unique `operationId` values that carry redundant prefixes or suffixes, such as `Events_V2_GetEvents`.
+By default Fabrikt camel-cases the full `operationId` into a method name like `eventsV2GetEvents`.
+The `--operation-id-transform '<regex>:<replacement>'` option applies a Kotlin regex replacement to every `operationId` before it is turned into a generated function name, and it applies to both client and controller generators.
+For example, `--operation-id-transform '.*_:' strips everything up to and including the last underscore, producing `getEvents` from `Events_V2_GetEvents`.
+Group references such as `$1` are supported in the replacement.
+
+Stripping prefixes can cause two operations in the same generated class or interface to collide (for example `Events_GetEvents` and `V2Events_GetEvents` both become `getEvents` if they end up in the same file).
+This is a spec/configuration error and will surface as a Kotlin compile error in the generated code, the same way duplicate `operationId` values do today.
 
 ## Original Motivation
 

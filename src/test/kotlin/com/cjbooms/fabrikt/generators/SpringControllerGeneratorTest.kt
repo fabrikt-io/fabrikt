@@ -431,4 +431,36 @@ class SpringControllerGeneratorTest {
         // The templated url has no usable path, so the request mapping falls back to an empty base path.
         assertThat(generated.toString()).doesNotContain("{username}")
     }
+
+    @Test
+    fun `operationId transform strips prefix from generated controller function name`() {
+        MutableSettings.updateSettings(
+            genTypes = setOf(CodeGenerationType.CONTROLLERS),
+            operationIdTransform = Regex(".*_") to "",
+        )
+
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /events:
+                get:
+                  operationId: Events_V2_GetEvents
+                  responses:
+                    '200':
+                      description: Success
+            """.trimIndent()
+
+        val api = SourceApi(spec)
+        val controllers =
+            SpringControllerInterfaceGenerator(Packages(basePackage), api, JavaxValidationAnnotations)
+                .generate()
+                .toSingleFile()
+
+        assertThat(controllers).contains("fun getEvents(")
+        assertThat(controllers).doesNotContain("eventsV2GetEvents")
+    }
 }

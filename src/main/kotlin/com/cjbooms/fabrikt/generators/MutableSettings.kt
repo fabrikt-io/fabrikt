@@ -47,6 +47,8 @@ object MutableSettings {
         private set
     var outputOptions: Set<OutputOptionType> = mutableSetOf()
         private set
+    var operationIdTransform: Pair<Regex, String>? = null
+        private set
 
     /**
      * Returns the effective serialization annotations to use.
@@ -84,6 +86,7 @@ object MutableSettings {
         instantLibrary: InstantLibrary = InstantLibrary.default,
         jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.default,
         outputOptions: Set<OutputOptionType> = emptySet(),
+        operationIdTransform: Pair<Regex, String>? = null,
     ) {
         this.generationTypes = genTypes
         this.controllerOptions = controllerOptions
@@ -100,6 +103,7 @@ object MutableSettings {
         this.instantLibrary = instantLibrary
         this.jacksonNullabilityMode = jacksonNullabilityMode
         this.outputOptions = outputOptions
+        this.operationIdTransform = operationIdTransform
     }
 
     fun addOption(option: ModelCodeGenOptionType) {

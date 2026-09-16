@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.generators.controller
 
+import com.cjbooms.fabrikt.generators.GeneratorUtils.functionNameFromOperation
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipleSuccessResponseSchemas
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasOnlyJsonSuccessResponses
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.JSON_NODE_CLASS
@@ -9,7 +10,6 @@ import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.OpenApiResponse
 import com.cjbooms.fabrikt.model.OpenApiSecurityRequirement
-import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.asTypeName
 
@@ -52,7 +52,7 @@ object ControllerGeneratorUtils {
         op: OpenApiOperation,
         verb: String,
         isSingleResource: Boolean,
-    ) = op.operationId?.camelCase() ?: httpVerbMethodName(verb, isSingleResource)
+    ) = functionNameFromOperation(op) ?: httpVerbMethodName(verb, isSingleResource)
 
     private fun httpVerbMethodName(
         verb: String,

@@ -148,6 +148,16 @@ class CodeGenArgs {
     var openfeignClientName: String = ClientCodeGenOptionType.DEFAULT_OPEN_FEIGN_CLIENT_NAME
 
     @Parameter(
+        names = ["--operation-id-transform"],
+        description =
+            "Regex replacement applied to every operationId before it becomes a generated function name, " +
+                "format '<regex>:<replacement>'. Applies to clients and controllers. E.g. '.*_:' strips a prefix " +
+                "through the last underscore; '^V2_(.*):v2$1' rewrites a prefix.",
+        converter = OperationIdTransformConverter::class,
+    )
+    var operationIdTransform: Pair<Regex, String>? = null
+
+    @Parameter(
         names = ["--src-path"],
         description = "Allows the path for generated source files to be overridden. Defaults to `src/main/kotlin`",
         converter = PathConverter::class,
@@ -274,6 +284,23 @@ class PathConverter : IStringConverter<Path> {
         } catch (e: InvalidPathException) {
             throw ParameterException("$value is not a valid file directory", e)
         }
+}
+
+class OperationIdTransformConverter : IStringConverter<Pair<Regex, String>> {
+    override fun convert(value: String): Pair<Regex, String> {
+        val separatorIndex = value.indexOf(':')
+        require(separatorIndex > 0) {
+            "--operation-id-transform must be of the form '<regex>:<replacement>' (got '$value'). " +
+                "The first ':' separates pattern from replacement; replacement may be empty."
+        }
+        val pattern = value.substring(0, separatorIndex)
+        val replacement = value.substring(separatorIndex + 1)
+        return try {
+            Regex(pattern) to replacement
+        } catch (e: Exception) {
+            throw ParameterException("Invalid regex in --operation-id-transform: '$pattern' (${e.message})")
+        }
+    }
 }
 
 inline fun <reified T : Enum<T>> convertToEnumValue(value: String): T =

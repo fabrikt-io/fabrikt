@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt.generators.controller
 
 import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.configurations.Packages
+import com.cjbooms.fabrikt.generators.GeneratorUtils.functionNameFromOperation
 import com.cjbooms.fabrikt.generators.GeneratorUtils.splitByType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKCodeName
@@ -18,7 +19,6 @@ import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -399,15 +399,11 @@ class KtorClientGenerator(
         op: OpenApiOperation,
         verb: String,
         params: List<RequestParameter>,
-    ) = if (op.operationId != null) {
-        op.operationId!!.camelCase()
-    } else {
-        buildString {
-            append(verb.lowercase())
-            append(
-                if (params.isNotEmpty()) "By" + params.joinToString("And") { it -> it.name.replaceFirstChar { it.uppercase() } } else "",
-            )
-        }
+    ) = functionNameFromOperation(op) ?: buildString {
+        append(verb.lowercase())
+        append(
+            if (params.isNotEmpty()) "By" + params.joinToString("And") { it -> it.name.replaceFirstChar { it.uppercase() } } else "",
+        )
     }
 
     private fun buildFunKdoc(
