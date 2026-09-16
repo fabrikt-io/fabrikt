@@ -316,19 +316,6 @@ Usage: <main class> [options]
 |                                |   `JAKARTA_VALIDATION` - Use `jakarta.validation` annotations in generated model classes (default) |
 |                                |   `NO_VALIDATION` - Use no validation annotations in generated model classes |
 
-
-
-## Renaming generated operation methods
-
-Some OpenAPI specs use globally-unique `operationId` values that carry redundant prefixes or suffixes, such as `Events_V2_GetEvents`.
-By default Fabrikt camel-cases the full `operationId` into a method name like `eventsV2GetEvents`.
-The `--operation-id-transform '<regex>:<replacement>'` option applies a Kotlin regex replacement to every `operationId` before it is turned into a generated function name, and it applies to both client and controller generators.
-For example, `--operation-id-transform '.*_:' strips everything up to and including the last underscore, producing `getEvents` from `Events_V2_GetEvents`.
-Group references such as `$1` are supported in the replacement.
-
-Stripping prefixes can cause two operations in the same generated class or interface to collide (for example `Events_GetEvents` and `V2Events_GetEvents` both become `getEvents` if they end up in the same file).
-This is a spec/configuration error and will surface as a Kotlin compile error in the generated code, the same way duplicate `operationId` values do today.
-
 ## Original Motivation
 
 The team that built the first version of this tool initially contributed to the Kotlin code generation ability in [OpenApiTools](https://github.com/OpenAPITools/openapi-generator), but reached the limits of what could be achieved with template-based generation. This library leverages the rich OpenAPI 3 model provided by [KaiZen-OpenApi-Parser](https://github.com/RepreZen/KaiZen-OpenApi-Parser) and uses [Kotlin Poet](https://square.github.io/kotlinpoet/) to programmatically construct Kotlin classes for maximum flexibility.
