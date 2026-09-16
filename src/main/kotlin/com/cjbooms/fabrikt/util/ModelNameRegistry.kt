@@ -32,7 +32,7 @@ object ModelNameRegistry {
         val suggestion = if (allocate) allocateUniqueName(modelClassName) else modelClassName
 
         if (allocate) {
-            val tag = resolveTag(schema, modelClassName)
+            val tag = resolveTag(schema, modelClassName, disambiguateByPosition = enclosingSchema.contributesToName())
             val replaced = tagToName.put(tag, suggestion)
             if (replaced != null) {
                 // Only allow unique tags to be registered
@@ -74,19 +74,38 @@ object ModelNameRegistry {
             append(modelClassNameSuffix)
         }
 
+    // Mirrors toModelClassName's own guard: an array enclosingSchema contributes nothing to the
+    // computed name (line 65 above), so two calls for the same schema — one with no enclosing
+    // schema, one with an enclosing array — compute the identical string and must share a tag.
+    private fun Schema?.contributesToName(): Boolean = this != null && type != "array"
+
     private fun resolveTag(
         schema: Schema,
         enclosingSchema: Schema? = null,
         valueSuffix: Boolean = false,
         schemaInfoName: String? = null,
-    ): String = resolveTag(schema, schema.toModelClassName(schemaInfoName, enclosingSchema, valueSuffix))
+    ): String =
+        resolveTag(
+            schema,
+            schema.toModelClassName(schemaInfoName, enclosingSchema, valueSuffix),
+            disambiguateByPosition = enclosingSchema.contributesToName(),
+        )
 
+    // The tag normally keys only on the computed name string, since several code paths
+    // deliberately alias an inline schema's name onto an unrelated named schema (e.g. a oneOf
+    // whose members share a common discriminated allOf supertype takes that supertype's name).
+    // Those aliases always compute their name with no enclosingSchema. A property whose name is
+    // built by concatenating an enclosingSchema's name with its own (e.g. Product + state ->
+    // "ProductState") can coincidentally collide with an unrelated schema that happens to share
+    // that exact string — that case must not share a tag, so it's disambiguated by jsonPathFromRoot.
     private fun resolveTag(
         schema: Schema,
         modelClassName: String,
+        disambiguateByPosition: Boolean = false,
     ): String {
         val uri = URL(schema.jsonReference)
-        return "file:${uri.file}#$modelClassName"
+        val position = if (disambiguateByPosition) schema.jsonPathFromRoot else ""
+        return "file:${uri.file}#$position#$modelClassName"
     }
 
     /** Retrieve a model class name created with [ModelNameRegistry.register]. */
