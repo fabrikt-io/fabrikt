@@ -32,7 +32,7 @@ object ModelNameRegistry {
         val suggestion = if (allocate) allocateUniqueName(modelClassName) else modelClassName
 
         if (allocate) {
-            val tag = resolveTag(schema, modelClassName, enclosingSchema)
+            val tag = resolveTag(schema, modelClassName, enclosingSchema.qualifiesModelClassName())
             val replaced = tagToName.put(tag, suggestion)
             if (replaced != null) {
                 // Only allow unique tags to be registered
@@ -83,19 +83,25 @@ object ModelNameRegistry {
         enclosingSchema: Schema? = null,
         valueSuffix: Boolean = false,
         schemaInfoName: String? = null,
-    ): String = resolveTag(schema, schema.toModelClassName(schemaInfoName, enclosingSchema, valueSuffix), enclosingSchema)
+    ): String =
+        resolveTag(
+            schema,
+            schema.toModelClassName(schemaInfoName, enclosingSchema, valueSuffix),
+            qualifiedByEnclosingSchema = enclosingSchema.qualifiesModelClassName(),
+        )
 
+    // Two schemas can coincidentally compute the same modelClassName (e.g. a property named
+    // through its qualifying enclosingSchema colliding with an unrelated top-level schema of
+    // that same computed name). Fold in the schema's own position so they get distinct tags,
+    // unless the name isn't enclosing-schema-qualified in the first place — in which case two
+    // calls for the same schema (e.g. with and without an array enclosingSchema) must share one.
     private fun resolveTag(
         schema: Schema,
         modelClassName: String,
-        enclosingSchema: Schema? = null,
+        qualifiedByEnclosingSchema: Boolean,
     ): String {
         val uri = URL(schema.jsonReference)
-        // Two schemas can coincidentally compute the same modelClassName (e.g. a property named
-        // through its qualifying enclosingSchema). Fold in the schema's own position so they get
-        // distinct tags unless the enclosingSchema doesn't qualify the name in the first place —
-        // in which case they're the same registration and must share one.
-        val position = if (enclosingSchema.qualifiesModelClassName()) schema.jsonPathFromRoot else ""
+        val position = if (qualifiedByEnclosingSchema) schema.jsonPathFromRoot else ""
         return "file:${uri.file}#$position#$modelClassName"
     }
 
@@ -132,7 +138,7 @@ object ModelNameRegistry {
             enclosingComponentName.toModelClassName() +
                 schema.safeName().toModelClassName() +
                 MutableSettings.modelSuffix
-        val tag = resolveTag(schema, modelClassName)
+        val tag = resolveTag(schema, modelClassName, qualifiedByEnclosingSchema = true)
         return this[tag].getOrElse {
             val suggestion = allocateUniqueName(modelClassName)
             tagToName[tag] = suggestion
