@@ -14,6 +14,8 @@ components:
           $ref: '#/components/schemas/StringMap'
         typed_object_map:
           $ref: '#/components/schemas/TypedObjectMap'
+        typed_object_map_with_enum_value:
+          $ref: '#/components/schemas/TypedObjectMapWithEnumValue'
         object_map:
           $ref: '#/components/schemas/ObjectMap'
         inlined_string_map:
@@ -187,6 +189,22 @@ components:
           type: string
       additionalProperties:
         type: boolean
+
+    # Regression test: an additionalProperties value schema whose own property is an inline
+    # enum. The enum must get a generated backing class the same way ListField/ObjectInlinedField
+    # siblings do for their own inline enums.
+    TypedObjectMapWithEnumValue:
+      type: object
+      additionalProperties:
+        type: object
+        required:
+          - kind
+        properties:
+          kind:
+            type: string
+            enum:
+              - alpha
+              - beta
 
     ContainsReferenceToPolymorphicMap:
       type: object

@@ -395,12 +395,12 @@ class ModelGenerator(
                         }
 
                     is PropertyInfo.UninhabitableField -> emptySet()
-                    is PropertyInfo.MapField ->
-                        buildMapModel(it)?.let { mapModel -> setOf(mapModel) } ?: emptySet()
+                    is PropertyInfo.MapField -> buildMapModel(it, enclosingSchema, apiDocUrl)
 
                     is PropertyInfo.AdditionalProperties ->
                         if (it.schema.isComplexTypedAdditionalProperties("additionalProperties")) {
-                            setOf(
+                            val props = it.schema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, enclosingSchema)
+                            val currentModel =
                                 standardDataClass(
                                     modelName =
                                         ModelNameRegistry.getOrRegister(
@@ -408,16 +408,11 @@ class ModelGenerator(
                                             valueSuffix = it.schema.isInlinedTypedAdditionalProperties(),
                                         ),
                                     schemaName = it.name,
-                                    properties =
-                                        it.schema.topLevelProperties(
-                                            HTTP_SETTINGS,
-                                            sourceApi.openApi3,
-                                            enclosingSchema,
-                                        ),
+                                    properties = props,
                                     schema = it.schema,
                                     oneOfInterfaces = emptySet(),
-                                ),
-                            )
+                                )
+                            buildInLinedModels(props, enclosingSchema, apiDocUrl) + currentModel
                         } else {
                             emptySet()
                         }
@@ -653,27 +648,25 @@ class ModelGenerator(
         return classBuilder.addType(companion).build()
     }
 
-    private fun buildMapModel(mapField: PropertyInfo.MapField): TypeSpec? =
-        if (mapField.schema.additionalPropertiesSchema.isComplexTypedAdditionalProperties("additionalProperties")) {
-            val schema = mapField.schema.additionalPropertiesSchema
+    private fun buildMapModel(
+        mapField: PropertyInfo.MapField,
+        enclosingSchema: Schema,
+        apiDocUrl: String,
+    ): List<TypeSpec> {
+        val schema = mapField.schema.additionalPropertiesSchema
+        if (!schema.isComplexTypedAdditionalProperties("additionalProperties")) return emptyList()
+
+        val props = schema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, enclosingSchema)
+        val currentModel =
             standardDataClass(
-                modelName =
-                    ModelNameRegistry.getOrRegister(
-                        schema,
-                        valueSuffix = schema.isInlinedTypedAdditionalProperties(),
-                    ),
+                modelName = ModelNameRegistry.getOrRegister(schema, valueSuffix = schema.isInlinedTypedAdditionalProperties()),
                 schemaName = schema.safeName(),
-                properties =
-                    mapField.schema.additionalPropertiesSchema.topLevelProperties(
-                        HTTP_SETTINGS,
-                        sourceApi.openApi3,
-                    ),
+                properties = props,
                 schema = schema,
                 oneOfInterfaces = emptySet(),
             )
-        } else {
-            null
-        }
+        return buildInLinedModels(props, enclosingSchema, apiDocUrl) + currentModel
+    }
 
     private fun standardDataClass(
         modelName: String,

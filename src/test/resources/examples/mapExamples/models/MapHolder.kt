@@ -21,6 +21,10 @@ public data class MapHolder(
   @get:JsonProperty("typed_object_map")
   @get:Valid
   public val typedObjectMap: Map<String, TypedObjectMapValue?>? = null,
+  @param:JsonProperty("typed_object_map_with_enum_value")
+  @get:JsonProperty("typed_object_map_with_enum_value")
+  @get:Valid
+  public val typedObjectMapWithEnumValue: Map<String, TypedObjectMapWithEnumValueValue?>? = null,
   @param:JsonProperty("object_map")
   @get:JsonProperty("object_map")
   public val objectMap: Map<String, Map<String, Any?>?>? = null,
