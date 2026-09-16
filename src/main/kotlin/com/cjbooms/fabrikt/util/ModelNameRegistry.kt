@@ -16,11 +16,6 @@ object ModelNameRegistry {
     private val referenceToName: MutableMap<String, String> = mutableMapOf()
     private const val SUFFIX = "Extra"
 
-    /**
-     * Registers a new model class name using `schema` and if it is inlined type also based on enclosed schema.
-     * The returned value can be queried multiple times by passing `tag` to
-     * [ModelNameRegistry.get].
-     */
     private fun register(
         schema: Schema,
         enclosingSchema: Schema? = null,
@@ -32,7 +27,7 @@ object ModelNameRegistry {
         val suggestion = if (allocate) allocateUniqueName(modelClassName) else modelClassName
 
         if (allocate) {
-            val tag = resolveTag(schema, modelClassName, disambiguateByPosition = enclosingSchema.contributesToName())
+            val tag = resolveTag(schema, modelClassName, enclosingSchema)
             val replaced = tagToName.put(tag, suggestion)
             if (replaced != null) {
                 // Only allow unique tags to be registered
@@ -61,9 +56,8 @@ object ModelNameRegistry {
         valueSuffix: Boolean = false,
     ): String =
         buildString {
-            val enclosingClassName = enclosingSchema?.toModelClassName()
-            if (enclosingClassName != null && enclosingSchema.type != "array") {
-                append(enclosingClassName)
+            if (enclosingSchema.qualifiesModelClassName()) {
+                append(enclosingSchema!!.toModelClassName())
             }
             val modelClassName = schemaInfoName?.toModelClassName() ?: safeName().toModelClassName()
             append(modelClassName)
@@ -74,37 +68,29 @@ object ModelNameRegistry {
             append(modelClassNameSuffix)
         }
 
-    // Mirrors toModelClassName's own guard: an array enclosingSchema contributes nothing to the
-    // computed name (line 65 above), so two calls for the same schema — one with no enclosing
-    // schema, one with an enclosing array — compute the identical string and must share a tag.
-    private fun Schema?.contributesToName(): Boolean = this != null && type != "array"
+    // An array enclosingSchema contributes nothing to toModelClassName's output above, so a
+    // schema named through a null enclosingSchema and the same schema named through an array
+    // enclosingSchema compute identical strings and must be treated as the same registration.
+    private fun Schema?.qualifiesModelClassName(): Boolean = this != null && type != "array"
 
     private fun resolveTag(
         schema: Schema,
         enclosingSchema: Schema? = null,
         valueSuffix: Boolean = false,
         schemaInfoName: String? = null,
-    ): String =
-        resolveTag(
-            schema,
-            schema.toModelClassName(schemaInfoName, enclosingSchema, valueSuffix),
-            disambiguateByPosition = enclosingSchema.contributesToName(),
-        )
+    ): String = resolveTag(schema, schema.toModelClassName(schemaInfoName, enclosingSchema, valueSuffix), enclosingSchema)
 
-    // The tag normally keys only on the computed name string, since several code paths
-    // deliberately alias an inline schema's name onto an unrelated named schema (e.g. a oneOf
-    // whose members share a common discriminated allOf supertype takes that supertype's name).
-    // Those aliases always compute their name with no enclosingSchema. A property whose name is
-    // built by concatenating an enclosingSchema's name with its own (e.g. Product + state ->
-    // "ProductState") can coincidentally collide with an unrelated schema that happens to share
-    // that exact string — that case must not share a tag, so it's disambiguated by jsonPathFromRoot.
     private fun resolveTag(
         schema: Schema,
         modelClassName: String,
-        disambiguateByPosition: Boolean = false,
+        enclosingSchema: Schema? = null,
     ): String {
         val uri = URL(schema.jsonReference)
-        val position = if (disambiguateByPosition) schema.jsonPathFromRoot else ""
+        // Two schemas can coincidentally compute the same modelClassName (e.g. a property named
+        // through its qualifying enclosingSchema). Fold in the schema's own position so they get
+        // distinct tags unless the enclosingSchema doesn't qualify the name in the first place —
+        // in which case they're the same registration and must share one.
+        val position = if (enclosingSchema.qualifiesModelClassName()) schema.jsonPathFromRoot else ""
         return "file:${uri.file}#$position#$modelClassName"
     }
 

@@ -1,5 +1,6 @@
 package examples.boundedModelNameCollisions.controllers
 
+import examples.boundedModelNameCollisions.models.Product
 import examples.boundedModelNameCollisions.models.Select
 import examples.boundedModelNameCollisions.models.SelectExtra
 import examples.boundedModelNameCollisions.models.SelectExtra2
@@ -72,4 +73,19 @@ public interface CController {
         @Valid @RequestParam(value = "${'$'}select", required = false)
         select: List<SelectExtra2>?,
     ): ResponseEntity<Unit>
+}
+
+@Controller
+@Validated
+@RequestMapping("")
+public interface DController {
+    /**
+     *
+     */
+    @RequestMapping(
+        value = ["/d"],
+        produces = ["application/json"],
+        method = [RequestMethod.GET],
+    )
+    public fun getD(): ResponseEntity<Product>
 }

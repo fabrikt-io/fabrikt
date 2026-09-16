@@ -51,3 +51,34 @@ paths:
       responses:
         200:
           description: "ok"
+  /d:
+    get:
+      operationId: getD
+      responses:
+        200:
+          description: "ok"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+components:
+  schemas:
+    # Regression test for #702: Product.state's inline enum computes the class name
+    # "ProductState" (its enclosing schema's name plus its own name), which coincidentally
+    # collides with the unrelated top-level ProductState component below. The two must
+    # resolve to distinct classes rather than one silently taking the other's name.
+    Product:
+      type: object
+      required:
+        - state
+      properties:
+        state:
+          type: string
+          enum:
+            - live
+            - draft
+    ProductState:
+      type: object
+      properties:
+        state:
+          $ref: "#/components/schemas/Product/properties/state"
