@@ -299,7 +299,7 @@ object GeneratorUtils {
                     RequestParameter(
                         it.name,
                         it.description,
-                        toModelType(basePackage, KotlinTypeInfo.from(it.schema), isNullable(it)),
+                        toModelType(basePackage, KotlinTypeInfo.fromParameterSchema(it.schema, ""), isNullable(it)),
                         it,
                     )
                 }.sortedBy { it.type.isNullable }

@@ -3,6 +3,7 @@ package examples.inlinedEnumParameter.controllers
 import examples.inlinedEnumParameter.models.Categories
 import examples.inlinedEnumParameter.models.DetailLevel
 import examples.inlinedEnumParameter.models.Item
+import examples.inlinedEnumParameter.models.NestedFilters
 import examples.inlinedEnumParameter.models.SortOrder
 import examples.inlinedEnumParameter.models.Status
 import examples.inlinedEnumParameter.models.Tags
@@ -68,6 +69,7 @@ public interface ItemsSearchController {
      *
      * @param categories
      * @param tags
+     * @param nestedFilters
      */
     @RequestMapping(
         value = ["/items/search"],
@@ -75,9 +77,9 @@ public interface ItemsSearchController {
         method = [RequestMethod.GET],
     )
     public fun searchItems(
-        @Valid @RequestParam(value = "categories", required = true)
-        categories: List<Categories>,
-        @Valid @RequestParam(value = "tags", required = false)
-        tags: List<Tags>?,
+        @Valid @RequestParam(value = "categories", required = true) categories: List<Categories>,
+        @Valid @RequestParam(value = "tags", required = false) tags: List<Tags>?,
+        @Valid @RequestParam(value = "nested_filters", required = false)
+        nestedFilters: List<List<NestedFilters>>?,
     ): ResponseEntity<List<Item>>
 }

@@ -1,0 +1,74 @@
+openapi: "3.0.0"
+info:
+  title: "Property Path Ref Parameter API"
+  version: "1.0"
+paths:
+  /products:
+    get:
+      operationId: getProducts
+      parameters:
+        - name: "filters[state]"
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Product/properties/state"
+        - name: "filters[meta]"
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Product/properties/meta"
+        - name: "filters[tags]"
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Product/properties/tags"
+        - name: "filters[dict]"
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Product/properties/dict"
+        - name: "filters[title]"
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Product/properties/title"
+      responses:
+        200:
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        title:
+          type: string
+        state:
+          type: string
+          enum:
+            - live
+            - draft
+        meta:
+          type: object
+          properties:
+            note:
+              type: string
+        tags:
+          type: array
+          items:
+            type: string
+            enum:
+              - new
+              - sale
+        dict:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              v:
+                type: string

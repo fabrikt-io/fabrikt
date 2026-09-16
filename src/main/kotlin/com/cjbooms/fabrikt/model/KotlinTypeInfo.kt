@@ -12,6 +12,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasInlinedItemsSchemaOfTy
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasInlinedItemsSchemaWithOneOf
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedDiscriminatedOneOfSuperInterface
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedTypedAdditionalProperties
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
@@ -276,6 +277,40 @@ sealed class KotlinTypeInfo(
                         getOverridableAnyType()
                     }
             }
+        }
+
+        // Matches a $ref directly into a component's property (e.g. Product/properties/state).
+        // Depth-1 only: a nested property $ref (.../meta/properties/state) falls through unresolved.
+        private val COMPONENT_PROPERTY_PATH = Regex("^/components/schemas/([^/]+)/properties/([^/]+)$")
+
+        // Resolves a parameter's schema, honoring a $ref into a component's property so the client
+        // agrees with the model generator's name for that property instead of minting a fresh one.
+        fun fromParameterSchema(
+            schema: OpenApiSchema,
+            oasKey: String,
+        ): KotlinTypeInfo {
+            val component =
+                COMPONENT_PROPERTY_PATH.find(schema.jsonPathFromRoot)?.groupValues?.get(1)
+                    ?: return from(schema, oasKey)
+            if (schema.isInlinedEnumDefinition()) {
+                return Enum(schema.getEnumValues(), ModelNameRegistry.getOrRegisterPropertyRef(schema, component))
+            }
+            if (schema.isInlinedObjectDefinition()) {
+                return Object(ModelNameRegistry.getOrRegisterPropertyRef(schema, component))
+            }
+            val items = schema.itemsSchema
+            if (schema.type == OasType.Array.type && !items.isSchemaAbsent()) {
+                val itemType =
+                    when {
+                        items.isInlinedEnumDefinition() ->
+                            Enum(items.getEnumValues(), ModelNameRegistry.getOrRegisterPropertyRef(items, component))
+                        items.isInlinedObjectDefinition() ->
+                            Object(ModelNameRegistry.getOrRegisterPropertyRef(items, component))
+                        else -> return from(schema, oasKey)
+                    }
+                return Array(itemType, items.isNullable, schema.isUniqueItems)
+            }
+            return from(schema, oasKey)
         }
 
         private fun getParameterizedTypeForArray(

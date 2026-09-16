@@ -72,6 +72,19 @@ paths:
                 - featured
                 - sale
                 - new_arrival
+        - name: nested_filters
+          in: query
+          required: false
+          explode: false
+          schema:
+            type: array
+            items:
+              type: array
+              items:
+                type: string
+                enum:
+                  - non_unique_addresses
+                  - parent
       responses:
         200:
           description: "successful operation"
