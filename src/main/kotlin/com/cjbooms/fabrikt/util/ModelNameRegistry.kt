@@ -16,6 +16,11 @@ object ModelNameRegistry {
     private val referenceToName: MutableMap<String, String> = mutableMapOf()
     private const val SUFFIX = "Extra"
 
+    /**
+     * Registers a new model class name using `schema` and if it is inlined type also based on enclosed schema.
+     * The returned value can be queried multiple times by passing `tag` to
+     * [ModelNameRegistry.get].
+     */
     private fun register(
         schema: Schema,
         enclosingSchema: Schema? = null,
