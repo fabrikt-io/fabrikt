@@ -139,11 +139,8 @@ internal object JsonSchemaToOpenApiConverter {
             .takeIf { it.isTextual && it.asText().isNotBlank() }
             ?.let { return it.asText() }
         logger.warning(
-            "Could not determine a name for the converted root schema: no --json-schema-root-name " +
-                "given, no 'title' at the schema pointer, and no '/metadata/name' in the supplied " +
-                "resource. Falling back to '$DEFAULT_ROOT_SCHEMA_NAME'; pass --json-schema-root-name " +
-                "to name it explicitly, or to avoid a collision when converting multiple untitled " +
-                "schemas into the same --base-package.",
+            "No root schema name found (no 'title', no '/metadata/name', no --json-schema-root-name); " +
+                "defaulting to '$DEFAULT_ROOT_SCHEMA_NAME'.",
         )
         return DEFAULT_ROOT_SCHEMA_NAME
     }
@@ -275,8 +272,6 @@ internal object JsonSchemaToOpenApiConverter {
         if (!exclusive.isBoolean) return
         remove(exclusiveKey)
         if (!exclusive.booleanValue()) return
-        // Malformed draft-04 input (RFC disallows exclusiveMinimum/Maximum: true with no paired
-        // bound). Best-effort: drop the unenforceable constraint rather than fail generation.
         val bound = remove(inclusiveKey) ?: return
         set<JsonNode>(exclusiveKey, bound)
     }
