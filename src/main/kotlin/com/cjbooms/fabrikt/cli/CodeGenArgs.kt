@@ -35,11 +35,6 @@ class CodeGenArgs {
                         "'manifest.yaml#/spec/schemaObject').",
                 )
             }
-            if (codeGenArgs.apiFile.contains('#') && codeGenArgs.apiFragments.isNotEmpty()) {
-                throw ParameterException(
-                    "--api-fragment cannot be combined with a JSON Pointer fragment on --api-file.",
-                )
-            }
 
             if (codeGenArgs.printUsage) {
                 parser.usage()
@@ -95,7 +90,7 @@ class CodeGenArgs {
         description =
             "Name for the schema generated from a JSON Schema's own top-level properties, used with " +
                 "a JSON Pointer fragment on --api-file. Defaults to the schema's 'title', then the " +
-                "resource's '/metadata/name'; required if neither is present.",
+                "resource's '/metadata/name', then 'Schema' with a warning if neither is present.",
     )
     var jsonSchemaRootName: String? = null
 

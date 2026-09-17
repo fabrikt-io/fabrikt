@@ -19,6 +19,7 @@ internal object JsonSchemaToOpenApiConverter {
     private const val OPENAPI_VERSION = "3.1.0"
     private const val INFO_VERSION = "0.0.0"
     private const val COMPONENT_REF_PREFIX = "#/components/schemas/"
+    private const val DEFAULT_ROOT_SCHEMA_NAME = "Schema"
 
     private val DEFINITION_KEYS = listOf("definitions", "\$defs")
     private val DEFINITION_REF_PREFIXES = listOf("#/definitions/", "#/\$defs/")
@@ -137,11 +138,14 @@ internal object JsonSchemaToOpenApiConverter {
             .at("/metadata/name")
             .takeIf { it.isTextual && it.asText().isNotBlank() }
             ?.let { return it.asText() }
-        throw ParameterException(
+        logger.warning(
             "Could not determine a name for the converted root schema: no --json-schema-root-name " +
                 "given, no 'title' at the schema pointer, and no '/metadata/name' in the supplied " +
-                "resource. Specify --json-schema-root-name explicitly.",
+                "resource. Falling back to '$DEFAULT_ROOT_SCHEMA_NAME'; pass --json-schema-root-name " +
+                "to name it explicitly, or to avoid a collision when converting multiple untitled " +
+                "schemas into the same --base-package.",
         )
+        return DEFAULT_ROOT_SCHEMA_NAME
     }
 
     private fun collectDefinitions(schemaNode: ObjectNode): ObjectNode {
@@ -271,11 +275,9 @@ internal object JsonSchemaToOpenApiConverter {
         if (!exclusive.isBoolean) return
         remove(exclusiveKey)
         if (!exclusive.booleanValue()) return
-        val bound =
-            remove(inclusiveKey)
-                ?: throw ParameterException(
-                    "'$exclusiveKey: true' has no paired '$inclusiveKey' in schema $this.",
-                )
+        // Malformed draft-04 input (RFC disallows exclusiveMinimum/Maximum: true with no paired
+        // bound). Best-effort: drop the unenforceable constraint rather than fail generation.
+        val bound = remove(inclusiveKey) ?: return
         set<JsonNode>(exclusiveKey, bound)
     }
 

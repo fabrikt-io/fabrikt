@@ -44,6 +44,12 @@ Tests compare generated code against `src/test/resources/examples/`; never edit 
 
 `OverWriteProtectionTest` fails the build if the flag is left `true`. The flag is a deliberate-regeneration tool, not a way to silence unexpected failures — investigate unexpected diffs before regenerating.
 
+## Best-effort generation
+
+The goal is always generating code that compiles, not rejecting imperfect input. When any input — a schema, a spec, or a preprocessing step applied to either — is malformed or under-specified in a way with no unambiguous correct answer, degrade safely and log a warning; never fail generation for that alone.
+Reserve throwing (`ParameterException`) for genuine same-invocation conflicts with no safe resolution — e.g. two schemas that would collide on the same generated name — not for "the input didn't give me enough information."
+A logged warning must say what was assumed and how to override it, so best-effort never becomes silent.
+
 ## Working in the codegen pipeline
 
 Read ARCHITECTURE.md first — it maps symptoms (wrong type, missing model, missing annotations, wrong sealed interface) to the owning file. Key rules:

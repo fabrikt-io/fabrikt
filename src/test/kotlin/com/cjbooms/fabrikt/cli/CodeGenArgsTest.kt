@@ -59,20 +59,20 @@ class CodeGenArgsTest {
     }
 
     @Test
-    fun `rejects an api-file fragment combined with api-fragment`() {
-        val ex =
-            assertThrows<ParameterException> {
-                CodeGenArgs.parse(
-                    arrayOf(
-                        "--base-package",
-                        "com.example",
-                        "--api-file",
-                        "manifest.yaml#/spec/schemaObject",
-                        "--api-fragment",
-                        "fragment.yaml",
-                    ),
-                )
-            }
-        assertThat(ex.message).contains("cannot be combined")
+    fun `accepts an api-file JSON Pointer fragment combined with api-fragment`() {
+        val args =
+            CodeGenArgs.parse(
+                arrayOf(
+                    "--base-package",
+                    "com.example",
+                    "--api-file",
+                    "manifest.yaml#/spec/schemaObject",
+                    "--api-fragment",
+                    "common.yaml",
+                ),
+            )
+
+        assertThat(args.apiFile).isEqualTo("manifest.yaml#/spec/schemaObject")
+        assertThat(args.apiFragments).containsExactly("common.yaml")
     }
 }

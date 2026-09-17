@@ -62,15 +62,16 @@ class JsonSchemaToOpenApiConverterTest {
     }
 
     @Test
-    fun `throws when no override, title, or metadata name is present`() {
-        assertThrows<ParameterException> {
+    fun `falls back to a default root schema name when no override, title, or metadata name is present`() {
+        val doc =
             convert(
                 """
                 properties:
                   a: { type: string }
                 """.trimIndent(),
             )
-        }
+        assertThat(doc.at("/info/title").asText()).isEqualTo("Schema")
+        assertThat(doc.at("/components/schemas/Schema").isMissingNode).isFalse()
     }
 
     @Test
@@ -344,8 +345,8 @@ class JsonSchemaToOpenApiConverterTest {
     }
 
     @Test
-    fun `throws when a true boolean exclusiveMinimum has no paired minimum`() {
-        assertThrows<ParameterException> {
+    fun `drops an unenforceable true boolean exclusiveMinimum with no paired minimum`() {
+        val doc =
             convert(
                 """
                 properties:
@@ -355,7 +356,10 @@ class JsonSchemaToOpenApiConverterTest {
                 """.trimIndent(),
                 rootName = "Root",
             )
-        }
+        val score = doc.at("/components/schemas/Root/properties/score")
+        assertThat(score.has("exclusiveMinimum")).isFalse()
+        assertThat(score.has("minimum")).isFalse()
+        assertThat(score.at("/type").asText()).isEqualTo("integer")
     }
 
     @Test

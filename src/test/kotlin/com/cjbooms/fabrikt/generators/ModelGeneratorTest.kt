@@ -251,6 +251,43 @@ class ModelGeneratorTest {
     }
 
     @Test
+    fun `an api-fragment's components schemas are reachable from a converted JSON Schema document`() {
+        val basePackage = "examples.jsonSchemaConversionWithFragment"
+        val baseApi =
+            """
+            spec:
+              schemaObject:
+                properties:
+                  total:
+                    ${"\$"}ref: '#/components/schemas/Money'
+                required: [total]
+            """.trimIndent()
+        val fragment =
+            """
+            components:
+              schemas:
+                Money:
+                  type: object
+                  properties:
+                    amount:
+                      type: number
+                  required: [amount]
+            """.trimIndent()
+        val sourceApi =
+            SourceApi.create(
+                baseApi,
+                listOf(fragment),
+                schemaConversion = SchemaConversionOptions("/spec/schemaObject", "Root"),
+            )
+
+        val models = ModelGenerator(Packages(basePackage), sourceApi).generate()
+
+        assertThat(models.files.map { it.name }).contains("Root", "Money")
+        val money = models.files.first { it.name == "Money" }
+        assertThat(money.toString()).contains("public val amount: BigDecimal")
+    }
+
+    @Test
     fun `generate models with suffix`() {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.HTTP_MODELS),

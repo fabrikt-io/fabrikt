@@ -108,7 +108,7 @@ Only fetch specs from URLs you trust — pointing Fabrikt at an untrusted or att
 ### Generating from a JSON Schema document
 
 A trailing `#/json/pointer` fragment on `--api-file` (RFC 6901) treats the file as a JSON Schema document (draft-04 through 2020-12), optionally nested inside a larger resource such as a Nakadi `EventType` manifest, and converts the schema at that pointer to an OpenAPI 3.1 document before generation runs.
-`--json-schema-root-name` names the generated root schema; it defaults to the schema's `title`, then the resource's `/metadata/name`, and is required if neither is present.
+`--json-schema-root-name` names the generated root schema; it defaults to the schema's `title`, then the resource's `/metadata/name`, then `Schema` with a warning if neither is present.
 
 ```
 java -jar fabrikt.jar \
@@ -299,7 +299,7 @@ Usage: <main class> [options]
 |                                |   `ENFORCE_OPTIONAL_NON_NULL` - Omit null values for optional non-null fields |
 |                                |   `ENFORCE_REQUIRED_NULLABLE` - Include null values for required nullable fields |
 |                                |   `STRICT` - Combines `ENFORCE_OPTIONAL_NON_NULL` and `ENFORCE_REQUIRED_NULLABLE` for strictest contract enforcement |
-|   `--json-schema-root-name`    | Name for the schema generated from a JSON Schema's own top-level properties, used with a JSON Pointer fragment on --api-file. Defaults to the schema's 'title', then the resource's '/metadata/name'; required if neither is present. |
+|   `--json-schema-root-name`    | Name for the schema generated from a JSON Schema's own top-level properties, used with a JSON Pointer fragment on --api-file. Defaults to the schema's 'title', then the resource's '/metadata/name', then 'Schema' with a warning if neither is present. |
 |   `--openfeign-client-name`    | Specify openfeign client name for spring-cloud-starter-openfeign. Defaults to 'fabrikt-client'. |
 |   `--operation-id-transform`   | Regex replacement applied to every operationId before it becomes a generated function name, format '<regex>:<replacement>'. Applies to clients and controllers. E.g. '.*_:' strips a prefix through the last underscore; '^V2_(.*):v2$1' rewrites a prefix. |
 |   `--output-directory`         | Allows the generation dir to be overridden. Defaults to current dir |
