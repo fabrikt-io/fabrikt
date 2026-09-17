@@ -105,7 +105,17 @@ Use `--auth` to send headers on those fetches and on any remote `$ref` the parse
 The `!cmd` form requires a POSIX `sh` on the PATH and is not available on plain Windows.
 Only fetch specs from URLs you trust — pointing Fabrikt at an untrusted or attacker-influenced URL carries the same risk as fetching any other untrusted network resource.
 
-`--schema-conversion-pointer` converts a plain JSON Schema document (draft-04 through 2020-12), optionally nested inside a larger resource such as a Nakadi `EventType` manifest, into an OpenAPI 3.1 document before generation runs — e.g. `--schema-conversion-pointer '/spec/schemaObject' --schema-conversion-root-name 'OffersConfig'` addresses the schema nested under `spec.schemaObject` and names the generated root schema `OffersConfig`.
+### Generating from a JSON Schema document
+
+`--schema-conversion-pointer` treats `--api-file` as a JSON Schema document (draft-04 through 2020-12), optionally nested inside a larger resource such as a Nakadi `EventType` manifest, and converts it to an OpenAPI 3.1 document before generation runs.
+The value is a JSON Pointer to the schema within the resource, e.g. `--schema-conversion-pointer '/spec/schemaObject'` for a Nakadi manifest, or an empty string when the file is itself a bare JSON Schema.
+`--schema-conversion-root-name` names the generated root schema; it defaults to the schema's `title`, then the resource's `/metadata/name`, and is required if neither is present.
+`--schema-conversion-emit` writes the converted OpenAPI document to a path and exits without generating any code — useful for inspecting the conversion or debugging it.
+
+The converter hoists `definitions`/`$defs` (and any `#/components/schemas/*` siblings already referenced in an OpenAPI-shaped source document, such as AsyncAPI) into `components/schemas`, rewriting and validating every `$ref`.
+It upgrades draft-04 boolean exclusive bounds to the numeric 2020-12 form, and promotes a top-level `{type: string, examples: [...]}` definition to `x-extensible-enum`.
+Keywords with no OpenAPI equivalent — `if`/`then`/`else`, `not`, `patternProperties`, `dependencies`, `unevaluated*`, `prefixItems` — and constraint-only `oneOf`/`anyOf`/`allOf` branches are dropped rather than approximated.
+Kubernetes CRD conversion is not a supported target.
 
 __Tip__: You can also run the latest version without a manual download via [JBang](https://www.jbang.dev/):
 
