@@ -7,70 +7,67 @@ import org.junit.jupiter.api.assertThrows
 
 class CodeGenArgsTest {
     @Test
-    fun `parses json-schema-pointer alone leaving the other two schema flags null`() {
+    fun `parses api-file without a fragment leaving json-schema-root-name null`() {
         val args =
             CodeGenArgs.parse(
                 arrayOf(
                     "--base-package",
                     "com.example",
-                    "--json-schema-pointer",
-                    "/spec/schemaObject",
+                    "--api-file",
+                    "manifest.yaml",
                 ),
             )
 
-        assertThat(args.schemaPointer).isEqualTo("/spec/schemaObject")
-        assertThat(args.schemaRootName).isNull()
-        assertThat(args.emitConvertedSchema).isNull()
+        assertThat(args.apiFile).isEqualTo("manifest.yaml")
+        assertThat(args.jsonSchemaRootName).isNull()
     }
 
     @Test
-    fun `parses all three schema flags together`() {
+    fun `parses an api-file JSON Pointer fragment together with json-schema-root-name`() {
         val args =
             CodeGenArgs.parse(
                 arrayOf(
                     "--base-package",
                     "com.example",
-                    "--json-schema-pointer",
-                    "/spec/schemaObject",
+                    "--api-file",
+                    "manifest.yaml#/spec/schemaObject",
                     "--json-schema-root-name",
                     "OffersConfig",
-                    "--json-schema-emit",
-                    "/tmp/converted.yaml",
                 ),
             )
 
-        assertThat(args.schemaPointer).isEqualTo("/spec/schemaObject")
-        assertThat(args.schemaRootName).isEqualTo("OffersConfig")
-        assertThat(args.emitConvertedSchema).isNotNull()
-        assertThat(args.emitConvertedSchema.toString()).isEqualTo("/tmp/converted.yaml")
+        assertThat(args.apiFile).isEqualTo("manifest.yaml#/spec/schemaObject")
+        assertThat(args.jsonSchemaRootName).isEqualTo("OffersConfig")
     }
 
     @Test
-    fun `rejects json-schema-emit without json-schema-pointer`() {
+    fun `rejects json-schema-root-name without an api-file fragment`() {
         val ex =
             assertThrows<ParameterException> {
                 CodeGenArgs.parse(
                     arrayOf(
                         "--base-package",
                         "com.example",
-                        "--json-schema-emit",
-                        "/tmp/converted.yaml",
+                        "--api-file",
+                        "manifest.yaml",
+                        "--json-schema-root-name",
+                        "OffersConfig",
                     ),
                 )
             }
-        assertThat(ex.message).contains("requires --json-schema-pointer")
+        assertThat(ex.message).contains("requires a JSON Pointer fragment on --api-file")
     }
 
     @Test
-    fun `rejects json-schema-pointer combined with api-fragment`() {
+    fun `rejects an api-file fragment combined with api-fragment`() {
         val ex =
             assertThrows<ParameterException> {
                 CodeGenArgs.parse(
                     arrayOf(
                         "--base-package",
                         "com.example",
-                        "--json-schema-pointer",
-                        "/spec/schemaObject",
+                        "--api-file",
+                        "manifest.yaml#/spec/schemaObject",
                         "--api-fragment",
                         "fragment.yaml",
                     ),

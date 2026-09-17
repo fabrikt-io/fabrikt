@@ -120,7 +120,7 @@ internal object JsonSchemaToOpenApiConverter {
         if (resolved.isMissingNode || !resolved.isObject) {
             throw ParameterException(
                 "No JSON Schema object found at pointer '$schemaPointer' in the supplied resource. " +
-                    "Check --json-schema-pointer.",
+                    "Check the '#/json/pointer' fragment on --api-file.",
             )
         }
         return resolved as ObjectNode

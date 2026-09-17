@@ -46,9 +46,7 @@ class SourceApi private constructor(
         private const val MAX_NESTED_ARRAY_DEPTH = 10
     }
 
-    private val parsedDocument = OpenApiDocumentParser.parse(rawApiSpec, baseUri, jsonLoader, schemaConversion)
-    val openApi3: OpenApi3Document = parsedDocument.asOpenApi3Document()
-    val convertedApiSpec: String? = parsedDocument.convertedInput
+    val openApi3: OpenApi3Document = OpenApiDocumentParser.parse(rawApiSpec, baseUri, jsonLoader, schemaConversion).asOpenApi3Document()
     val allSchemas: List<SchemaInfo>
 
     init {

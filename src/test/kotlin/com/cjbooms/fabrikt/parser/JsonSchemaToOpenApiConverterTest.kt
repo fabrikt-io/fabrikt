@@ -85,7 +85,7 @@ class JsonSchemaToOpenApiConverterTest {
                     pointer = "/does/not/exist",
                 )
             }
-        assertThat(ex.message).contains("--json-schema-pointer")
+        assertThat(ex.message).contains("--api-file")
     }
 
     @Test
@@ -100,7 +100,7 @@ class JsonSchemaToOpenApiConverterTest {
                     pointer = "/spec/schemaObject",
                 )
             }
-        assertThat(ex.message).contains("--json-schema-pointer")
+        assertThat(ex.message).contains("--api-file")
     }
 
     @Test

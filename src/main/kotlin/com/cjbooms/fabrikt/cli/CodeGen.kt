@@ -5,9 +5,9 @@ import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.SchemaConversionOptions
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.ApiFileLoader
+import com.cjbooms.fabrikt.util.ApiFileReference
 import com.cjbooms.fabrikt.util.AuthHeaderResolver
 import com.cjbooms.fabrikt.util.AuthJsonLoader
-import java.nio.file.Files
 import java.nio.file.Path
 import java.util.logging.Logger
 
@@ -40,9 +40,6 @@ object CodeGen {
 
         val resolvedAuth = AuthHeaderResolver.resolveHeaders(codeGenArgs.auth, System::getenv)
 
-        val schemaConversion =
-            codeGenArgs.schemaPointer?.let { SchemaConversionOptions(it, codeGenArgs.schemaRootName) }
-
         generate(
             basePackage = codeGenArgs.basePackage,
             apiFile = codeGenArgs.apiFile,
@@ -51,8 +48,7 @@ object CodeGen {
             srcPath = codeGenArgs.srcPath,
             resourcesPath = codeGenArgs.resourcesPath,
             resolvedAuth = resolvedAuth,
-            schemaConversion = schemaConversion,
-            emitConvertedSchemaPath = codeGenArgs.emitConvertedSchema,
+            jsonSchemaRootName = codeGenArgs.jsonSchemaRootName,
         )
     }
 
@@ -64,24 +60,19 @@ object CodeGen {
         srcPath: Path,
         resourcesPath: Path,
         resolvedAuth: List<Pair<String, String>> = emptyList(),
-        schemaConversion: SchemaConversionOptions? = null,
-        emitConvertedSchemaPath: Path? = null,
+        jsonSchemaRootName: String? = null,
     ) {
-        val suppliedApi = ApiFileLoader.load(apiFile, "--api-file", resolvedAuth)
+        val apiFileReference = ApiFileReference.parse(apiFile)
+        val suppliedApi = ApiFileLoader.load(apiFileReference.location, "--api-file", resolvedAuth)
         val fragments = apiFragments.map { ApiFileLoader.load(it, "--api-fragment", resolvedAuth).content }
 
         logger.info("Generating code and dumping to $outputDir/")
 
         val jsonLoader = if (resolvedAuth.isNotEmpty()) AuthJsonLoader(resolvedAuth) else null
         val packages = Packages(basePackage)
+        val schemaConversion =
+            apiFileReference.jsonSchemaPointer?.let { SchemaConversionOptions(it, jsonSchemaRootName) }
         val sourceApi = SourceApi.create(suppliedApi.content, fragments, suppliedApi.baseUri, jsonLoader, schemaConversion)
-
-        if (emitConvertedSchemaPath != null) {
-            emitConvertedSchemaPath.toAbsolutePath().parent?.let { Files.createDirectories(it) }
-            emitConvertedSchemaPath.toFile().writeText(sourceApi.convertedApiSpec ?: suppliedApi.content)
-            logger.info("Wrote converted OpenAPI document to $emitConvertedSchemaPath")
-            return
-        }
 
         val generator = CodeGenerator(packages, sourceApi, srcPath, resourcesPath)
         generator.generate().forEach { it.writeFileTo(outputDir.toFile()) }

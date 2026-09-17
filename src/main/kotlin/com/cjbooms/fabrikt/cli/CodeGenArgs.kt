@@ -29,11 +29,16 @@ class CodeGenArgs {
             parser.usageFormatter = MarkdownUsageFormatter(parser)
             parser.parse(*args)
 
-            if (codeGenArgs.emitConvertedSchema != null && codeGenArgs.schemaPointer == null) {
-                throw ParameterException("--json-schema-emit requires --json-schema-pointer.")
+            if (codeGenArgs.jsonSchemaRootName != null && !codeGenArgs.apiFile.contains('#')) {
+                throw ParameterException(
+                    "--json-schema-root-name requires a JSON Pointer fragment on --api-file (e.g. " +
+                        "'manifest.yaml#/spec/schemaObject').",
+                )
             }
-            if (codeGenArgs.schemaPointer != null && codeGenArgs.apiFragments.isNotEmpty()) {
-                throw ParameterException("--api-fragment cannot be combined with --json-schema-pointer.")
+            if (codeGenArgs.apiFile.contains('#') && codeGenArgs.apiFragments.isNotEmpty()) {
+                throw ParameterException(
+                    "--api-fragment cannot be combined with a JSON Pointer fragment on --api-file.",
+                )
             }
 
             if (codeGenArgs.printUsage) {
@@ -69,7 +74,11 @@ class CodeGenArgs {
         names = ["--api-file"],
         description =
             "This must be a valid Open API v3 spec. All code generation will be based off this input. " +
-                "Accepts either a local file path or a resolvable http(s) URL.",
+                "Accepts either a local file path or a resolvable http(s) URL. A trailing " +
+                "'#/json/pointer' fragment (RFC 6901) treats the file as a JSON Schema document " +
+                "(draft-04 through 2020-12), optionally nested inside a larger resource such as a " +
+                "Nakadi EventType manifest, and converts the schema at that pointer to an OpenAPI " +
+                "3.1 document before generation — e.g. 'manifest.yaml#/spec/schemaObject'.",
     )
     var apiFile: String = DEFAULT_API_FILE
 
@@ -82,32 +91,13 @@ class CodeGenArgs {
     var apiFragments: List<String> = emptyList()
 
     @Parameter(
-        names = ["--json-schema-pointer"],
-        description =
-            "Treat --api-file as a JSON Schema (draft-04 through 2020-12) and convert it to an OpenAPI " +
-                "3.1 document before generation. The value is a JSON Pointer to the schema within a " +
-                "larger resource — e.g. '/spec/schemaObject' for a Nakadi EventType manifest — or an " +
-                "empty string when the file is itself a bare JSON Schema.",
-    )
-    var schemaPointer: String? = null
-
-    @Parameter(
         names = ["--json-schema-root-name"],
         description =
-            "Name for the schema generated from the JSON Schema's own top-level properties, used with " +
-                "--json-schema-pointer. Defaults to the schema's 'title', then the resource's " +
-                "'/metadata/name'; required if neither is present.",
+            "Name for the schema generated from a JSON Schema's own top-level properties, used with " +
+                "a JSON Pointer fragment on --api-file. Defaults to the schema's 'title', then the " +
+                "resource's '/metadata/name'; required if neither is present.",
     )
-    var schemaRootName: String? = null
-
-    @Parameter(
-        names = ["--json-schema-emit"],
-        description =
-            "Used with --json-schema-pointer. Write the converted OpenAPI 3.1 document to this " +
-                "path and exit without generating any code.",
-        converter = com.cjbooms.fabrikt.cli.PathConverter::class,
-    )
-    var emitConvertedSchema: Path? = null
+    var jsonSchemaRootName: String? = null
 
     @Parameter(
         names = ["--auth"],
