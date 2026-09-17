@@ -30,10 +30,10 @@ class CodeGenArgs {
             parser.parse(*args)
 
             if (codeGenArgs.emitConvertedSchema != null && codeGenArgs.schemaPointer == null) {
-                throw ParameterException("--schema-conversion-emit requires --schema-conversion-pointer.")
+                throw ParameterException("--json-schema-emit requires --json-schema-pointer.")
             }
             if (codeGenArgs.schemaPointer != null && codeGenArgs.apiFragments.isNotEmpty()) {
-                throw ParameterException("--api-fragment cannot be combined with --schema-conversion-pointer.")
+                throw ParameterException("--api-fragment cannot be combined with --json-schema-pointer.")
             }
 
             if (codeGenArgs.printUsage) {
@@ -82,7 +82,7 @@ class CodeGenArgs {
     var apiFragments: List<String> = emptyList()
 
     @Parameter(
-        names = ["--schema-conversion-pointer"],
+        names = ["--json-schema-pointer"],
         description =
             "Treat --api-file as a JSON Schema (draft-04 through 2020-12) and convert it to an OpenAPI " +
                 "3.1 document before generation. The value is a JSON Pointer to the schema within a " +
@@ -92,18 +92,18 @@ class CodeGenArgs {
     var schemaPointer: String? = null
 
     @Parameter(
-        names = ["--schema-conversion-root-name"],
+        names = ["--json-schema-root-name"],
         description =
             "Name for the schema generated from the JSON Schema's own top-level properties, used with " +
-                "--schema-conversion-pointer. Defaults to the schema's 'title', then the resource's " +
+                "--json-schema-pointer. Defaults to the schema's 'title', then the resource's " +
                 "'/metadata/name'; required if neither is present.",
     )
     var schemaRootName: String? = null
 
     @Parameter(
-        names = ["--schema-conversion-emit"],
+        names = ["--json-schema-emit"],
         description =
-            "Used with --schema-conversion-pointer. Write the converted OpenAPI 3.1 document to this " +
+            "Used with --json-schema-pointer. Write the converted OpenAPI 3.1 document to this " +
                 "path and exit without generating any code.",
         converter = com.cjbooms.fabrikt.cli.PathConverter::class,
     )

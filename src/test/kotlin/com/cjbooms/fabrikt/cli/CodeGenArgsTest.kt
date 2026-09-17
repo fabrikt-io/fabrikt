@@ -7,13 +7,13 @@ import org.junit.jupiter.api.assertThrows
 
 class CodeGenArgsTest {
     @Test
-    fun `parses schema-conversion-pointer alone leaving the other two schema flags null`() {
+    fun `parses json-schema-pointer alone leaving the other two schema flags null`() {
         val args =
             CodeGenArgs.parse(
                 arrayOf(
                     "--base-package",
                     "com.example",
-                    "--schema-conversion-pointer",
+                    "--json-schema-pointer",
                     "/spec/schemaObject",
                 ),
             )
@@ -30,11 +30,11 @@ class CodeGenArgsTest {
                 arrayOf(
                     "--base-package",
                     "com.example",
-                    "--schema-conversion-pointer",
+                    "--json-schema-pointer",
                     "/spec/schemaObject",
-                    "--schema-conversion-root-name",
+                    "--json-schema-root-name",
                     "OffersConfig",
-                    "--schema-conversion-emit",
+                    "--json-schema-emit",
                     "/tmp/converted.yaml",
                 ),
             )
@@ -46,30 +46,30 @@ class CodeGenArgsTest {
     }
 
     @Test
-    fun `rejects schema-conversion-emit without schema-conversion-pointer`() {
+    fun `rejects json-schema-emit without json-schema-pointer`() {
         val ex =
             assertThrows<ParameterException> {
                 CodeGenArgs.parse(
                     arrayOf(
                         "--base-package",
                         "com.example",
-                        "--schema-conversion-emit",
+                        "--json-schema-emit",
                         "/tmp/converted.yaml",
                     ),
                 )
             }
-        assertThat(ex.message).contains("requires --schema-conversion-pointer")
+        assertThat(ex.message).contains("requires --json-schema-pointer")
     }
 
     @Test
-    fun `rejects schema-conversion-pointer combined with api-fragment`() {
+    fun `rejects json-schema-pointer combined with api-fragment`() {
         val ex =
             assertThrows<ParameterException> {
                 CodeGenArgs.parse(
                     arrayOf(
                         "--base-package",
                         "com.example",
-                        "--schema-conversion-pointer",
+                        "--json-schema-pointer",
                         "/spec/schemaObject",
                         "--api-fragment",
                         "fragment.yaml",

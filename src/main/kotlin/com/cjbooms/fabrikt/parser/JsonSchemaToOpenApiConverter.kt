@@ -82,7 +82,7 @@ internal object JsonSchemaToOpenApiConverter {
             if (schemas.has(rootSchemaName)) {
                 throw ParameterException(
                     "Cannot name the converted root schema '$rootSchemaName': a definition with that " +
-                        "name already exists. Choose a different --schema-conversion-root-name.",
+                        "name already exists. Choose a different --json-schema-root-name.",
                 )
             }
             val root = mapper.createObjectNode()
@@ -120,7 +120,7 @@ internal object JsonSchemaToOpenApiConverter {
         if (resolved.isMissingNode || !resolved.isObject) {
             throw ParameterException(
                 "No JSON Schema object found at pointer '$schemaPointer' in the supplied resource. " +
-                    "Check --schema-conversion-pointer.",
+                    "Check --json-schema-pointer.",
             )
         }
         return resolved as ObjectNode
@@ -138,9 +138,9 @@ internal object JsonSchemaToOpenApiConverter {
             .takeIf { it.isTextual && it.asText().isNotBlank() }
             ?.let { return it.asText() }
         throw ParameterException(
-            "Could not determine a name for the converted root schema: no --schema-conversion-root-name " +
+            "Could not determine a name for the converted root schema: no --json-schema-root-name " +
                 "given, no 'title' at the schema pointer, and no '/metadata/name' in the supplied " +
-                "resource. Specify --schema-conversion-root-name explicitly.",
+                "resource. Specify --json-schema-root-name explicitly.",
         )
     }
 
