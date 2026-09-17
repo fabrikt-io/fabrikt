@@ -27,6 +27,8 @@ class CliArgsReachableFromPlaygroundTest {
         "--auth" to "the playground never fetches remote specs",
         "--src-path" to "the playground renders in the browser instead of writing files",
         "--resources-path" to "the playground renders in the browser instead of writing files",
+        "--json-schema-root-name" to "JSON Schema conversion is addressed via a JSON Pointer fragment on --api-file, " +
+            "which only exists for file/URL input, not the playground's pasted-spec editor",
     )
 
     /** CLI field names that are deliberately named differently in the playground. */
