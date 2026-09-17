@@ -76,6 +76,7 @@ JUnit 5 + AssertJ. Generator tests parameterize over example directory names (`S
 - Creating issues: use the templates in `.github/ISSUE_TEMPLATE/`; bug reports require a minimal spec fragment and fabrikt version.
 - Reproduce generation bugs with the smallest spec fragment, added as a new example directory (see Golden-file tests).
 - PRs: `./gradlew build` must pass; commit updated golden files alongside code changes.
+- PR descriptions: describe behavior — what changed, why, and any non-obvious consequence (a version gate, a scope boundary, a fallback order) — concisely and factually. Never narrate the session: no "originally I tried X, then Y", no per-turn changelog, no verification-theater prose. Never restate what the diff/GitHub UI already shows: no per-file change list, no "Files changed" summary, no test/file counts. One short "Verification" line naming the command run is enough; do not describe every test.
 
 ## Boundaries
 

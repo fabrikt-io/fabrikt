@@ -115,7 +115,7 @@ internal object JsonSchemaToOpenApiConverter {
         resourceRoot: JsonNode,
         schemaPointer: String,
     ): ObjectNode {
-        // JSON Pointer per RFC 6901; do not URL-decode — corrupts literal '%' or '+' in property names.
+        // JSON Pointer (RFC 6901); do not URL-decode.
         val resolved = resourceRoot.at(schemaPointer.removePrefix("#"))
         if (resolved.isMissingNode || !resolved.isObject) {
             throw ParameterException(
