@@ -1,7 +1,9 @@
 package com.cjbooms.fabrikt.parser
 
 import com.cjbooms.fabrikt.model.OpenApi3Document
+import com.cjbooms.fabrikt.model.SchemaConversionOptions
 import com.cjbooms.fabrikt.util.OpenApi31Downgrader
+import com.cjbooms.fabrikt.util.YamlObjectMapper
 import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.jsonoverlay.JsonLoader
 import com.reprezen.kaizen.oasparser.model3.OpenApi3
@@ -11,6 +13,7 @@ import java.nio.file.Paths
 internal data class ParsedOpenApiDocument(
     val source: SourceOpenApiDocument,
     val kaizenModel: OpenApi3,
+    val convertedInput: String? = null,
 ) {
     val version: OpenApiVersion? = source.version
 
@@ -25,15 +28,23 @@ internal object OpenApiDocumentParser {
         input: String,
         baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
         jsonLoader: JsonLoader? = null,
-    ): ParsedOpenApiDocument =
-        try {
-            val source = SourceOpenApiDocumentParser.parse(input, baseUri)
+        schemaConversion: SchemaConversionOptions? = null,
+    ): ParsedOpenApiDocument {
+        val convertedInput =
+            schemaConversion?.let {
+                YamlObjectMapper.instance.writeValueAsString(
+                    JsonSchemaToOpenApiConverter.convert(YamlObjectMapper.instance.readTree(input), it),
+                )
+            }
+        val effectiveInput = convertedInput ?: input
+        return try {
+            val source = SourceOpenApiDocumentParser.parse(effectiveInput, baseUri)
             val kaizenInput = source.root.deepCopy<JsonNode>()
             OpenApi31Downgrader.downgradeIncompatibleElements(kaizenInput)
             OpenApiInputCleaner.resolveIntraDocumentParameterRefs(kaizenInput)
             OpenApiInputCleaner.cleanEmptyTypes(kaizenInput)
             val kaizenModel = OpenApi3ParserAdapter.parse(kaizenInput, baseUri.toURL(), jsonLoader)
-            ParsedOpenApiDocument(source, kaizenModel)
+            ParsedOpenApiDocument(source, kaizenModel, convertedInput)
         } catch (ex: NullPointerException) {
             throw IllegalArgumentException(
                 "The openapi-parser library threw a NPE exception when parsing this API. " +
@@ -42,4 +53,5 @@ internal object OpenApiDocumentParser {
                 ex,
             )
         }
+    }
 }

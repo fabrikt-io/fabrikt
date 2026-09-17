@@ -29,6 +29,13 @@ class CodeGenArgs {
             parser.usageFormatter = MarkdownUsageFormatter(parser)
             parser.parse(*args)
 
+            if (codeGenArgs.emitConvertedSchema != null && codeGenArgs.schemaPointer == null) {
+                throw ParameterException("--schema-conversion-emit requires --schema-conversion-pointer.")
+            }
+            if (codeGenArgs.schemaPointer != null && codeGenArgs.apiFragments.isNotEmpty()) {
+                throw ParameterException("--api-fragment cannot be combined with --schema-conversion-pointer.")
+            }
+
             if (codeGenArgs.printUsage) {
                 parser.usage()
                 exitProcess(0)
@@ -73,6 +80,34 @@ class CodeGenArgs {
                 "Accepts either a local file path or a resolvable http(s) URL.",
     )
     var apiFragments: List<String> = emptyList()
+
+    @Parameter(
+        names = ["--schema-conversion-pointer"],
+        description =
+            "Treat --api-file as a JSON Schema (draft-04 through 2020-12) and convert it to an OpenAPI " +
+                "3.1 document before generation. The value is a JSON Pointer to the schema within a " +
+                "larger resource — e.g. '/spec/schemaObject' for a Nakadi EventType manifest — or an " +
+                "empty string when the file is itself a bare JSON Schema.",
+    )
+    var schemaPointer: String? = null
+
+    @Parameter(
+        names = ["--schema-conversion-root-name"],
+        description =
+            "Name for the schema generated from the JSON Schema's own top-level properties, used with " +
+                "--schema-conversion-pointer. Defaults to the schema's 'title', then the resource's " +
+                "'/metadata/name'; required if neither is present.",
+    )
+    var schemaRootName: String? = null
+
+    @Parameter(
+        names = ["--schema-conversion-emit"],
+        description =
+            "Used with --schema-conversion-pointer. Write the converted OpenAPI 3.1 document to this " +
+                "path and exit without generating any code.",
+        converter = com.cjbooms.fabrikt.cli.PathConverter::class,
+    )
+    var emitConvertedSchema: Path? = null
 
     @Parameter(
         names = ["--auth"],

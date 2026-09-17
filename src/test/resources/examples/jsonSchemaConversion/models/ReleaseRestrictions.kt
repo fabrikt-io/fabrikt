@@ -1,0 +1,3 @@
+package examples.jsonSchemaConversion.models
+
+public sealed interface ReleaseRestrictions

@@ -65,7 +65,7 @@ Read ARCHITECTURE.md first — it maps symptoms (wrong type, missing model, miss
 
 ## Markdown style
 
-README.md and other Markdown docs predate a line-wrapping convention and are mostly hard-wrapped mid-sentence. Soft-wrap prose: never break a line mid-sentence; a sentence (or several) stays on one line until it ends. Do not rewrap existing paragraphs as a side effect of other edits — rewrapping is a dedicated chore. Same rule for PR descriptions, commit messages, and GitHub issue bodies.
+README.md and other Markdown docs predate a line-wrapping convention and are mostly hard-wrapped mid-sentence. Soft-wrap prose: never break a line mid-sentence; a sentence (or several) stays on one line until it ends. Do not rewrap existing paragraphs as a side effect of other edits — rewrapping is a dedicated chore. Same rule for PR descriptions, commit messages, GitHub issue bodies, and GitHub comments.
 
 ## Test style
 
@@ -80,6 +80,6 @@ JUnit 5 + AssertJ. Generator tests parameterize over example directory names (`S
 ## Boundaries
 
 - Always: run `./gradlew build` before declaring done; review the full golden-file diff before committing regenerated examples.
-- Comments: do not add comments that restate what the code or a good function name already says. Reserve comments for non-obvious external behavior a name cannot convey (e.g. a third-party library's caching contract). This applies to KDoc, inline comments, and test comments alike.
+- Comments: prefer a readable function/variable name over a comment; write one only when no name can carry the intent (e.g. a non-obvious external contract, a constraint that would otherwise silently regress). When a comment is necessary, keep it terse and describe current functionality — never narrate history, prior attempts, or why an old approach was rejected. This applies to KDoc, inline comments, and test comments alike.
 - Ask first: changes that alter output for existing specs, add dependencies, change `.github/workflows/`, or touch `end2end-tests/` / `playground/` build config.
 - Never: commit with `SHOULD_OVERWRITE_EXAMPLES = true`; hand-edit files under `src/test/resources/examples/`; flip the overwrite flag to silence an unexpected failure; commit secrets or signing keys.
