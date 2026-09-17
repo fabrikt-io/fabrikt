@@ -271,7 +271,11 @@ internal object JsonSchemaToOpenApiConverter {
         if (!exclusive.isBoolean) return
         remove(exclusiveKey)
         if (!exclusive.booleanValue()) return
-        val bound = remove(inclusiveKey) ?: return
+        val bound =
+            remove(inclusiveKey)
+                ?: throw ParameterException(
+                    "'$exclusiveKey: true' has no paired '$inclusiveKey' in schema $this.",
+                )
         set<JsonNode>(exclusiveKey, bound)
     }
 

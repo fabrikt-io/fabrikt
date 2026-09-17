@@ -344,6 +344,21 @@ class JsonSchemaToOpenApiConverterTest {
     }
 
     @Test
+    fun `throws when a true boolean exclusiveMinimum has no paired minimum`() {
+        assertThrows<ParameterException> {
+            convert(
+                """
+                properties:
+                  score:
+                    type: integer
+                    exclusiveMinimum: true
+                """.trimIndent(),
+                rootName = "Root",
+            )
+        }
+    }
+
+    @Test
     fun `collapses a false boolean exclusiveMinimum to plain minimum`() {
         val doc =
             convert(
