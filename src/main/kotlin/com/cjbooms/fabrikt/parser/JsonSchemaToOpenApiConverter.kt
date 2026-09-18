@@ -140,7 +140,7 @@ internal object JsonSchemaToOpenApiConverter {
             ?.let { return it.asText() }
         logger.warning(
             "No root schema name found (no 'title', no '/metadata/name', no --json-schema-root-name); " +
-                "defaulting to '$DEFAULT_ROOT_SCHEMA_NAME'.",
+                "defaulting to '$DEFAULT_ROOT_SCHEMA_NAME'. Pass --json-schema-root-name to override.",
         )
         return DEFAULT_ROOT_SCHEMA_NAME
     }

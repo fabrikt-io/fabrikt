@@ -204,15 +204,15 @@ class ModelGeneratorTest {
     @Test
     fun `generates models from a JSON Schema fragment embedded in a Nakadi EventType manifest`() {
         MutableSettings.addOption(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS)
-        val basePackage = "examples.jsonSchemaConversion"
-        val apiLocation = javaClass.getResource("/examples/jsonSchemaConversion/event-type.yaml")!!
+        val basePackage = "examples.jsonSchemaConversion.eventType"
+        val apiLocation = javaClass.getResource("/examples/jsonSchemaConversion/eventType/event-type.yaml")!!
         val sourceApi =
             SourceApi(
                 apiLocation.readText(),
                 baseUri = apiLocation.toURI(),
                 schemaConversion = SchemaConversionOptions("/spec/schemaObject", "OffersConfig"),
             )
-        val expectedModelsPath = "/examples/jsonSchemaConversion/models/"
+        val expectedModelsPath = "/examples/jsonSchemaConversion/eventType/models/"
         val expectedModels = getFileNamesInFolder(Path.of("src/test/resources$expectedModelsPath"))
 
         val models =

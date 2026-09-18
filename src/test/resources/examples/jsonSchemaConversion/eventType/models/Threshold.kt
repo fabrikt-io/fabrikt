@@ -1,4 +1,4 @@
-package examples.jsonSchemaConversion.models
+package examples.jsonSchemaConversion.eventType.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
 import jakarta.validation.constraints.DecimalMin

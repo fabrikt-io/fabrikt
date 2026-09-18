@@ -23,8 +23,20 @@ import java.net.URI
 import java.util.stream.Stream
 
 /**
- * Smoke tests over unmodified third-party schemas vendored under
- * `src/test/resources/examples/jsonSchemaDialects/` (see PROVENANCE.md).
+ * Tests over unmodified third-party schemas vendored under
+ * `src/test/resources/examples/jsonSchemaConversion/dialects/`. Each is downloaded verbatim and unedited;
+ * refresh by re-downloading from its source URL. GeoJSON and AsyncAPI go all the way through to
+ * generated Kotlin models; the GitHub Actions workflow schema and the Kubernetes CRD only assert
+ * conversion behaviour (a rejected nested `$ref`, and a documented non-goal, respectively).
+ *
+ * - `geojson-featurecollection.json` — <https://geojson.org/schema/FeatureCollection.json>
+ *   (geojson/schema, MIT License)
+ * - `asyncapi-streetlights-kafka.yml` — <https://raw.githubusercontent.com/asyncapi/spec/master/examples/streetlights-kafka-asyncapi.yml>
+ *   (asyncapi/spec, Apache License 2.0)
+ * - `schemastore-github-workflow.json` — <https://json.schemastore.org/github-workflow.json>
+ *   (SchemaStore/schemastore, Apache License 2.0)
+ * - `prometheus-operator-podmonitors.yaml` — <https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml>
+ *   (prometheus-operator/prometheus-operator, Apache License 2.0)
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class JsonSchemaDialectsTest {
@@ -37,7 +49,7 @@ class JsonSchemaDialectsTest {
     }
 
     private fun resource(name: String): JsonNode =
-        YamlObjectMapper.instance.readTree(readTextResource("/examples/jsonSchemaDialects/$name"))
+        YamlObjectMapper.instance.readTree(readTextResource("/examples/jsonSchemaConversion/dialects/$name"))
 
     @Test
     fun `converts and generates from an unmodified draft-07 GeoJSON FeatureCollection schema`() {
