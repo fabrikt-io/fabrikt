@@ -105,6 +105,25 @@ Use `--auth` to send headers on those fetches and on any remote `$ref` the parse
 The `!cmd` form requires a POSIX `sh` on the PATH and is not available on plain Windows.
 Only fetch specs from URLs you trust — pointing Fabrikt at an untrusted or attacker-influenced URL carries the same risk as fetching any other untrusted network resource.
 
+### Generating from a JSON Schema document
+
+A trailing `#/json/pointer` fragment on `--api-file` (RFC 6901) treats the file as a JSON Schema document (draft-04 through 2020-12), optionally nested inside a larger resource such as a Nakadi `EventType` manifest, and converts the schema at that pointer to an OpenAPI 3.1 document before generation runs.
+`--json-schema-root-name` names the generated root schema; it defaults to the schema's `title`, then the resource's `/metadata/name`, then `Schema` with a warning if neither is present.
+
+```
+java -jar fabrikt.jar \
+    --api-file 'manifest.yaml#/spec/schemaObject' \
+    --json-schema-root-name 'OffersConfig' \
+    --base-package 'com.example' \
+    --targets 'http_models'
+```
+
+An empty fragment (`manifest.yaml#`) treats the whole file as a bare JSON Schema document.
+The converter hoists `definitions`/`$defs` (and any `#/components/schemas/*` siblings already referenced in an OpenAPI-shaped source document, such as AsyncAPI) into `components/schemas`, rewriting and validating every `$ref`.
+It upgrades draft-04 boolean exclusive bounds to the numeric 2020-12 form, and promotes a top-level `{type: string, examples: [...]}` definition to `x-extensible-enum`.
+Keywords with no OpenAPI equivalent — `if`/`then`/`else`, `not`, `patternProperties`, `dependencies`, `unevaluated*`, `prefixItems` — and constraint-only `oneOf`/`anyOf`/`allOf` branches are dropped rather than approximated.
+Kubernetes CRD conversion is not a supported target.
+
 __Tip__: You can also run the latest version without a manual download via [JBang](https://www.jbang.dev/):
 
 ```
@@ -219,11 +238,11 @@ This section documents the available CLI parameters for controlling what gets ge
 Usage: <main class> [options]
 | Parameter                      | Description |
 | ------------------------------ | ------------------------------ |
-|   `--api-file`                 | This must be a valid Open API v3 spec. All code generation will be based off this input. Accepts either a local file path or a resolvable http(s) URL. |
+|   `--api-file`                 | This must be a valid Open API v3 spec. All code generation will be based off this input. Accepts either a local file path or a resolvable http(s) URL. A trailing '#/json/pointer' fragment (RFC 6901) treats the file as a JSON Schema document (draft-04 through 2020-12), optionally nested inside a larger resource such as a Nakadi EventType manifest, and converts the schema at that pointer to an OpenAPI 3.1 document before generation — e.g. 'manifest.yaml#/spec/schemaObject'. |
 |   `--api-fragment`             | A partial Open API v3 fragment, to be combined with the primary API for code generation purposes. Accepts either a local file path or a resolvable http(s) URL. |
 |   `--auth`                     | Authorization header(s) sent when fetching a remote --api-file, --api-fragment, or remote `$ref`. Repeatable, format 'Name: value'. Value may contain `${ENV_VAR}` placeholders, name an env var, or contain !cmd (at start or after whitespace) to run a shell command and substitute its trimmed stdout (e.g. --auth "Authorization: Bearer !generate-fresh-auth-token"). |
 | * `--base-package`             | The base package which all code will be generated under. |
-|   `--custom-type-mapping`      | Map an OpenAPI type and format to a Kotlin type. Use type:format=KotlinFqcn and optionally add ;kotlinx=SerializerFqcn for kotlinx.serialization. Repeat or separate mappings with commas. |
+|   `--custom-type-mapping`      | Map an OpenAPI type and format to a Kotlin type. Use type:format=KotlinFqcn and optionally add ;kotlinx=SerializerFqcn for kotlinx.serialization. |
 |   `--external-ref-resolution`  | Specify to which degree referenced schemas from external files are included in model generation. Default: TARGETED |
 |                                | CHOOSE ONE OF: |
 |                                |   `TARGETED` - Generate models only for directly referenced schemas in external API files. |
@@ -280,6 +299,7 @@ Usage: <main class> [options]
 |                                |   `ENFORCE_OPTIONAL_NON_NULL` - Omit null values for optional non-null fields |
 |                                |   `ENFORCE_REQUIRED_NULLABLE` - Include null values for required nullable fields |
 |                                |   `STRICT` - Combines `ENFORCE_OPTIONAL_NON_NULL` and `ENFORCE_REQUIRED_NULLABLE` for strictest contract enforcement |
+|   `--json-schema-root-name`    | Name for the schema generated from a JSON Schema's own top-level properties, used with a JSON Pointer fragment on --api-file. Defaults to the schema's 'title', then the resource's '/metadata/name', then 'Schema' with a warning if neither is present. |
 |   `--openfeign-client-name`    | Specify openfeign client name for spring-cloud-starter-openfeign. Defaults to 'fabrikt-client'. |
 |   `--operation-id-transform`   | Regex replacement applied to every operationId before it becomes a generated function name, format '<regex>:<replacement>'. Applies to clients and controllers. E.g. '.*_:' strips a prefix through the last underscore; '^V2_(.*):v2$1' rewrites a prefix. |
 |   `--output-directory`         | Allows the generation dir to be overridden. Defaults to current dir |

@@ -162,4 +162,32 @@ class ApiFileLoaderTest {
         assertThat(recordedHeaders).hasSize(1)
         assertThat(recordedHeaders.single()["Authorization"]).containsExactly("Bearer ref-token")
     }
+
+    @Test
+    fun `ApiFileReference parse leaves a plain location with no pointer when there is no fragment`() {
+        val reference = ApiFileReference.parse("manifest.yaml")
+        assertThat(reference.location).isEqualTo("manifest.yaml")
+        assertThat(reference.jsonSchemaPointer).isNull()
+    }
+
+    @Test
+    fun `ApiFileReference parse splits the location from a trailing JSON Pointer fragment`() {
+        val reference = ApiFileReference.parse("manifest.yaml#/spec/schemaObject")
+        assertThat(reference.location).isEqualTo("manifest.yaml")
+        assertThat(reference.jsonSchemaPointer).isEqualTo("/spec/schemaObject")
+    }
+
+    @Test
+    fun `ApiFileReference parse treats a bare trailing hash as an empty pointer`() {
+        val reference = ApiFileReference.parse("schema.json#")
+        assertThat(reference.location).isEqualTo("schema.json")
+        assertThat(reference.jsonSchemaPointer).isEqualTo("")
+    }
+
+    @Test
+    fun `ApiFileReference parse splits only on the first hash`() {
+        val reference = ApiFileReference.parse("https://example.test/m.yaml#/a#/b")
+        assertThat(reference.location).isEqualTo("https://example.test/m.yaml")
+        assertThat(reference.jsonSchemaPointer).isEqualTo("/a#/b")
+    }
 }

@@ -1,0 +1,96 @@
+apiVersion: nakadi.zalan.do/v1
+kind: EventType
+metadata:
+  name: pop.offers-config-test
+spec:
+  owningApplication: pop-offers
+  category: data
+  schemaObject:
+    $schema: 'http://json-schema.org/draft-04/schema#'
+    definitions:
+      Money:
+        type: object
+        properties:
+          amount:
+            type: number
+          currency:
+            type: string
+        required:
+          - amount
+          - currency
+      ReferenceAmount:
+        type: object
+        properties:
+          amount:
+            type: number
+          unit:
+            type: string
+            examples:
+              - ml
+      State:
+        type: string
+        examples:
+          - AVAILABLE
+          - UNAVAILABLE
+      Campaign:
+        properties:
+          id:
+            type: string
+        required:
+          - id
+      Campaigns:
+        type: array
+        items:
+          $ref: '#/definitions/Campaign'
+      ReleaseRestrictions:
+        type: object
+        oneOf:
+          - $ref: '#/definitions/TimedRelease'
+          - $ref: '#/definitions/PlusExclusive'
+      TimedRelease:
+        type: object
+        properties:
+          restricted_release_option:
+            enum:
+              - TIMED_RELEASE
+          available_from:
+            type: string
+            format: date-time
+        required:
+          - restricted_release_option
+          - available_from
+      PlusExclusive:
+        type: object
+        properties:
+          restricted_release_option:
+            enum:
+              - PLUS_EXCLUSIVE
+          plus_exclusive_until:
+            type: string
+            format: date-time
+        required:
+          - restricted_release_option
+          - plus_exclusive_until
+      Threshold:
+        type: object
+        properties:
+          score:
+            type: integer
+            minimum: 0
+            exclusiveMinimum: true
+    properties:
+      total:
+        $ref: '#/definitions/Money'
+      reference_amount:
+        $ref: '#/definitions/ReferenceAmount'
+      state:
+        $ref: '#/definitions/State'
+      campaigns:
+        $ref: '#/definitions/Campaigns'
+      release_restrictions:
+        $ref: '#/definitions/ReleaseRestrictions'
+      threshold:
+        $ref: '#/definitions/Threshold'
+    required:
+      - total
+      - state

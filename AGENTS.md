@@ -44,6 +44,12 @@ Tests compare generated code against `src/test/resources/examples/`; never edit 
 
 `OverWriteProtectionTest` fails the build if the flag is left `true`. The flag is a deliberate-regeneration tool, not a way to silence unexpected failures — investigate unexpected diffs before regenerating.
 
+## Best-effort generation
+
+The goal is always generating code that compiles, not rejecting imperfect input. When any input — a schema, a spec, or a preprocessing step applied to either — is malformed or under-specified in a way with no unambiguous correct answer, degrade safely and log a warning; never fail generation for that alone.
+Reserve throwing (`ParameterException`) for genuine same-invocation conflicts with no safe resolution — e.g. two schemas that would collide on the same generated name — not for "the input didn't give me enough information."
+A logged warning must say what was assumed and how to override it, so best-effort never becomes silent.
+
 ## Working in the codegen pipeline
 
 Read ARCHITECTURE.md first — it maps symptoms (wrong type, missing model, missing annotations, wrong sealed interface) to the owning file. Key rules:
@@ -65,7 +71,7 @@ Read ARCHITECTURE.md first — it maps symptoms (wrong type, missing model, miss
 
 ## Markdown style
 
-README.md and other Markdown docs predate a line-wrapping convention and are mostly hard-wrapped mid-sentence. Soft-wrap prose: never break a line mid-sentence; a sentence (or several) stays on one line until it ends. Do not rewrap existing paragraphs as a side effect of other edits — rewrapping is a dedicated chore. Same rule for PR descriptions, commit messages, and GitHub issue bodies.
+README.md and other Markdown docs predate a line-wrapping convention and are mostly hard-wrapped mid-sentence. Soft-wrap prose: never break a line mid-sentence; a sentence (or several) stays on one line until it ends. Do not rewrap existing paragraphs as a side effect of other edits — rewrapping is a dedicated chore. Same rule for PR descriptions, commit messages, GitHub issue bodies, and GitHub comments.
 
 ## Test style
 
@@ -76,10 +82,11 @@ JUnit 5 + AssertJ. Generator tests parameterize over example directory names (`S
 - Creating issues: use the templates in `.github/ISSUE_TEMPLATE/`; bug reports require a minimal spec fragment and fabrikt version.
 - Reproduce generation bugs with the smallest spec fragment, added as a new example directory (see Golden-file tests).
 - PRs: `./gradlew build` must pass; commit updated golden files alongside code changes.
+- PR descriptions: state what behaviour changes and any non-obvious constraint or trade-off. Do not list changed files, added tests, or CI results, or narrate the session that produced them — those are already visible in the diff and status checks.
 
 ## Boundaries
 
 - Always: run `./gradlew build` before declaring done; review the full golden-file diff before committing regenerated examples.
-- Comments: do not add comments that restate what the code or a good function name already says. Reserve comments for non-obvious external behavior a name cannot convey (e.g. a third-party library's caching contract). This applies to KDoc, inline comments, and test comments alike.
+- Comments: prefer a readable function/variable name over a comment; write one only when no name can carry the intent (e.g. a non-obvious external contract, a constraint that would otherwise silently regress). When a comment is necessary, keep it terse and describe current functionality — never narrate history, prior attempts, or why an old approach was rejected. This applies to KDoc, inline comments, and test comments alike.
 - Ask first: changes that alter output for existing specs, add dependencies, change `.github/workflows/`, or touch `end2end-tests/` / `playground/` build config.
 - Never: commit with `SHOULD_OVERWRITE_EXAMPLES = true`; hand-edit files under `src/test/resources/examples/`; flip the overwrite flag to silence an unexpected failure; commit secrets or signing keys.

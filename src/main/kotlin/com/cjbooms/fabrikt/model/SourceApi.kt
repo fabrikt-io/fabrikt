@@ -22,11 +22,13 @@ class SourceApi private constructor(
     private val rawApiSpec: String,
     val baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
     private val jsonLoader: JsonLoader?,
+    private val schemaConversion: SchemaConversionOptions? = null,
 ) {
     constructor(
         rawApiSpec: String,
         baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
-    ) : this(rawApiSpec, baseUri, null)
+        schemaConversion: SchemaConversionOptions? = null,
+    ) : this(rawApiSpec, baseUri, null, schemaConversion)
 
     companion object {
         fun create(
@@ -34,16 +36,17 @@ class SourceApi private constructor(
             apiFragments: Collection<String>,
             baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
             jsonLoader: JsonLoader? = null,
+            schemaConversion: SchemaConversionOptions? = null,
         ): SourceApi {
             val combinedApi =
                 apiFragments.fold(YamlUtils.expandYamlAliases(baseApi)) { acc: String, fragment -> YamlUtils.mergeYamlTrees(acc, fragment) }
-            return SourceApi(combinedApi, baseUri, jsonLoader)
+            return SourceApi(combinedApi, baseUri, jsonLoader, schemaConversion)
         }
 
         private const val MAX_NESTED_ARRAY_DEPTH = 10
     }
 
-    val openApi3: OpenApi3Document = OpenApiDocumentParser.parse(rawApiSpec, baseUri, jsonLoader).asOpenApi3Document()
+    val openApi3: OpenApi3Document = OpenApiDocumentParser.parse(rawApiSpec, baseUri, jsonLoader, schemaConversion).asOpenApi3Document()
     val allSchemas: List<SchemaInfo>
 
     init {

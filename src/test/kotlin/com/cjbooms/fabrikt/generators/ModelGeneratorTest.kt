@@ -11,6 +11,7 @@ import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
 import com.cjbooms.fabrikt.model.KotlinSourceSet
 import com.cjbooms.fabrikt.model.Models
+import com.cjbooms.fabrikt.model.SchemaConversionOptions
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatExpectedFiles
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
@@ -198,6 +199,92 @@ class ModelGeneratorTest {
         assertThat(generated["CloseEnum.kt"]).contains("UNRECOGNIZED")
 
         tempDirectory.toFile().deleteRecursively()
+    }
+
+    @Test
+    fun `generates models from a JSON Schema fragment embedded in a Nakadi EventType manifest`() {
+        MutableSettings.addOption(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS)
+        val basePackage = "examples.jsonSchemaConversion.eventType"
+        val apiLocation = javaClass.getResource("/examples/jsonSchemaConversion/eventType/event-type.yaml")!!
+        val sourceApi =
+            SourceApi(
+                apiLocation.readText(),
+                baseUri = apiLocation.toURI(),
+                schemaConversion = SchemaConversionOptions("/spec/schemaObject", "OffersConfig"),
+            )
+        val expectedModelsPath = "/examples/jsonSchemaConversion/eventType/models/"
+        val expectedModels = getFileNamesInFolder(Path.of("src/test/resources$expectedModelsPath"))
+
+        val models =
+            ModelGenerator(
+                Packages(basePackage),
+                sourceApi,
+            ).generate()
+
+        val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
+        val tempDirectory = Files.createTempDirectory("model_generator_test_jsonSchemaConversion")
+        sourceSet.forEach {
+            it.writeFileTo(tempDirectory.toFile())
+        }
+        val tempFolderContents =
+            tempDirectory
+                .resolve(basePackage.replace(".", File.separator))
+                .resolve("models")
+                .takeIf { Files.exists(it) && Files.isDirectory(it) }
+                ?.let(::readFolder)
+                ?: emptyMap()
+        tempFolderContents.forEach {
+            if (expectedModels.contains(it.key)) {
+                assertThatGenerated(it.value)
+                    .isEqualTo("$expectedModelsPath${it.key}")
+            } else {
+                failGenerated(it.value).asFileNotFound(
+                    "$expectedModelsPath${it.key}",
+                    "File not found in expected models",
+                )
+            }
+        }
+        assertThatExpectedFiles(Path.of("src/test/resources$expectedModelsPath"))
+            .areContainedInGenerated(tempFolderContents)
+
+        tempDirectory.toFile().deleteRecursively()
+    }
+
+    @Test
+    fun `an api-fragment's components schemas are reachable from a converted JSON Schema document`() {
+        val basePackage = "examples.jsonSchemaConversionWithFragment"
+        val baseApi =
+            """
+            spec:
+              schemaObject:
+                properties:
+                  total:
+                    ${"\$"}ref: '#/components/schemas/Money'
+                required: [total]
+            """.trimIndent()
+        val fragment =
+            """
+            components:
+              schemas:
+                Money:
+                  type: object
+                  properties:
+                    amount:
+                      type: number
+                  required: [amount]
+            """.trimIndent()
+        val sourceApi =
+            SourceApi.create(
+                baseApi,
+                listOf(fragment),
+                schemaConversion = SchemaConversionOptions("/spec/schemaObject", "Root"),
+            )
+
+        val models = ModelGenerator(Packages(basePackage), sourceApi).generate()
+
+        assertThat(models.files.map { it.name }).contains("Root", "Money")
+        val money = models.files.first { it.name == "Money" }
+        assertThat(money.toString()).contains("public val amount: BigDecimal")
     }
 
     @Test

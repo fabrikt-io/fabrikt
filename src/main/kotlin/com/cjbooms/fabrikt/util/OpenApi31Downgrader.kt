@@ -20,6 +20,7 @@ object OpenApi31Downgrader {
         if (shouldDowngradeSpecForCompatibility(root)) {
             downgradeNullableSyntax(root)
             fillMissingArrayItems(root)
+            downgradeExclusiveBounds(root)
         }
     }
 
@@ -55,6 +56,35 @@ object OpenApi31Downgrader {
 
             node.isArray -> node.forEach { fillMissingArrayItems(it) }
         }
+    }
+
+    /**
+     * Converts numeric `exclusiveMinimum`/`exclusiveMaximum` (2020-12) to the boolean form
+     * `PropertyUtils` reads via `Schema::isExclusiveMinimum`/`isExclusiveMaximum`. Boolean values
+     * pass through unchanged. A numeric exclusive bound replaces any paired inclusive bound.
+     */
+    private fun downgradeExclusiveBounds(node: JsonNode) {
+        when {
+            node.isObject -> {
+                val objectNode = node as ObjectNode
+                downgradeExclusiveBound(objectNode, "minimum", "exclusiveMinimum")
+                downgradeExclusiveBound(objectNode, "maximum", "exclusiveMaximum")
+                objectNode.fields().forEach { (_, value) -> downgradeExclusiveBounds(value) }
+            }
+
+            node.isArray -> node.forEach { downgradeExclusiveBounds(it) }
+        }
+    }
+
+    private fun downgradeExclusiveBound(
+        objectNode: ObjectNode,
+        inclusiveKey: String,
+        exclusiveKey: String,
+    ) {
+        val exclusiveValue = objectNode.get(exclusiveKey) ?: return
+        if (exclusiveValue.isBoolean) return
+        objectNode.replace(inclusiveKey, exclusiveValue)
+        objectNode.replace(exclusiveKey, YamlObjectMapper.instance.valueToTree<JsonNode>(true))
     }
 
     /**

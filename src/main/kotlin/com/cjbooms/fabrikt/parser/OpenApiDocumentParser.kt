@@ -1,7 +1,9 @@
 package com.cjbooms.fabrikt.parser
 
 import com.cjbooms.fabrikt.model.OpenApi3Document
+import com.cjbooms.fabrikt.model.SchemaConversionOptions
 import com.cjbooms.fabrikt.util.OpenApi31Downgrader
+import com.cjbooms.fabrikt.util.YamlObjectMapper
 import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.jsonoverlay.JsonLoader
 import com.reprezen.kaizen.oasparser.model3.OpenApi3
@@ -25,9 +27,16 @@ internal object OpenApiDocumentParser {
         input: String,
         baseUri: URI = Paths.get("").toAbsolutePath().toUri(),
         jsonLoader: JsonLoader? = null,
-    ): ParsedOpenApiDocument =
-        try {
-            val source = SourceOpenApiDocumentParser.parse(input, baseUri)
+        schemaConversion: SchemaConversionOptions? = null,
+    ): ParsedOpenApiDocument {
+        val effectiveInput =
+            schemaConversion?.let {
+                YamlObjectMapper.instance.writeValueAsString(
+                    JsonSchemaToOpenApiConverter.convert(YamlObjectMapper.instance.readTree(input), it),
+                )
+            } ?: input
+        return try {
+            val source = SourceOpenApiDocumentParser.parse(effectiveInput, baseUri)
             val kaizenInput = source.root.deepCopy<JsonNode>()
             OpenApi31Downgrader.downgradeIncompatibleElements(kaizenInput)
             OpenApiInputCleaner.resolveIntraDocumentParameterRefs(kaizenInput)
@@ -42,4 +51,5 @@ internal object OpenApiDocumentParser {
                 ex,
             )
         }
+    }
 }

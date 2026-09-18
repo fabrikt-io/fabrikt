@@ -13,6 +13,31 @@ data class LoadedApi(
 )
 
 /**
+ * An `--api-file` value split on its first `#`: the file/URL location, and an optional trailing
+ * JSON Pointer fragment (RFC 6901) selecting a JSON Schema nested within that location's content.
+ */
+data class ApiFileReference(
+    val location: String,
+    val jsonSchemaPointer: String?,
+) {
+    companion object {
+        /**
+         * Splits `value` on its first unescaped `#`. `#` inside a local filesystem path is rare
+         * enough, and JSON Pointer fragment addressing common enough in this ecosystem's own
+         * `$ref` syntax, that a bare `#` always starts a fragment rather than being literal.
+         */
+        fun parse(value: String): ApiFileReference {
+            val separatorIndex = value.indexOf('#')
+            return if (separatorIndex < 0) {
+                ApiFileReference(value, null)
+            } else {
+                ApiFileReference(value.substring(0, separatorIndex), value.substring(separatorIndex + 1))
+            }
+        }
+    }
+}
+
+/**
  * Loads an Open API spec or fragment from either a local file path or an `http(s)` URL.
  */
 object ApiFileLoader {

@@ -1,0 +1,3 @@
+package examples.jsonSchemaConversion.eventType.models
+
+public sealed interface ReleaseRestrictions

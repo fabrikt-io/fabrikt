@@ -2,8 +2,10 @@ package com.cjbooms.fabrikt.cli
 
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.MutableSettings
+import com.cjbooms.fabrikt.model.SchemaConversionOptions
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.ApiFileLoader
+import com.cjbooms.fabrikt.util.ApiFileReference
 import com.cjbooms.fabrikt.util.AuthHeaderResolver
 import com.cjbooms.fabrikt.util.AuthJsonLoader
 import java.nio.file.Path
@@ -46,6 +48,7 @@ object CodeGen {
             srcPath = codeGenArgs.srcPath,
             resourcesPath = codeGenArgs.resourcesPath,
             resolvedAuth = resolvedAuth,
+            jsonSchemaRootName = codeGenArgs.jsonSchemaRootName,
         )
     }
 
@@ -57,15 +60,20 @@ object CodeGen {
         srcPath: Path,
         resourcesPath: Path,
         resolvedAuth: List<Pair<String, String>> = emptyList(),
+        jsonSchemaRootName: String? = null,
     ) {
-        val suppliedApi = ApiFileLoader.load(apiFile, "--api-file", resolvedAuth)
+        val apiFileReference = ApiFileReference.parse(apiFile)
+        val suppliedApi = ApiFileLoader.load(apiFileReference.location, "--api-file", resolvedAuth)
         val fragments = apiFragments.map { ApiFileLoader.load(it, "--api-fragment", resolvedAuth).content }
 
         logger.info("Generating code and dumping to $outputDir/")
 
         val jsonLoader = if (resolvedAuth.isNotEmpty()) AuthJsonLoader(resolvedAuth) else null
         val packages = Packages(basePackage)
-        val sourceApi = SourceApi.create(suppliedApi.content, fragments, suppliedApi.baseUri, jsonLoader)
+        val schemaConversion =
+            apiFileReference.jsonSchemaPointer?.let { SchemaConversionOptions(it, jsonSchemaRootName) }
+        val sourceApi = SourceApi.create(suppliedApi.content, fragments, suppliedApi.baseUri, jsonLoader, schemaConversion)
+
         val generator = CodeGenerator(packages, sourceApi, srcPath, resourcesPath)
         generator.generate().forEach { it.writeFileTo(outputDir.toFile()) }
     }
