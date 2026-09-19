@@ -1,0 +1,60 @@
+openapi: 3.0.3
+info:
+  title: DELETE Request Body API
+  version: '1.0.0'
+paths:
+  /resources/{resourceId}:
+    delete:
+      operationId: deleteResource
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Resource deleted
+  /resources/search:
+    delete:
+      operationId: deleteResources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteResourcesRequest'
+      responses:
+        '204':
+          description: Resources deleted
+  /resources/attachments:
+    delete:
+      operationId: deleteResourceAttachments
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - attachment
+              properties:
+                attachment:
+                  type: string
+                  format: binary
+                reason:
+                  type: string
+      responses:
+        '204':
+          description: Resource attachments deleted
+components:
+  schemas:
+    DeleteResourcesRequest:
+      type: object
+      required:
+        - resourceIds
+      properties:
+        resourceIds:
+          type: array
+          items:
+            type: string

@@ -260,6 +260,7 @@ data class SimpleClientOperationStatement(
                 "PUT" -> this.add("\n.put(multipartBody)")
                 "POST" -> this.add("\n.post(multipartBody)")
                 "PATCH" -> this.add("\n.patch(multipartBody)")
+                "DELETE" -> this.add("\n.delete(multipartBody)")
                 else -> throw NotImplementedError("API operation $op is not supported for multipart")
             }
         } else {
@@ -276,7 +277,12 @@ data class SimpleClientOperationStatement(
                 "PATCH" -> this.addRequestSerializerStatement("patch")
                 "HEAD" -> this.add("\n.head()")
                 "GET" -> this.add("\n.get()")
-                "DELETE" -> this.add("\n.delete()")
+                "DELETE" ->
+                    if (parameters.any { it is BodyParameter }) {
+                        this.addRequestSerializerStatement("delete")
+                    } else {
+                        this.add("\n.delete()")
+                    }
                 else -> throw NotImplementedError("API operation $op is not supported")
             }
         }
