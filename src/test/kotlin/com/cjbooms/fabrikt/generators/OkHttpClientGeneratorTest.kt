@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import org.junit.jupiter.params.provider.ValueSource
 import java.nio.file.Paths
 import java.util.stream.Stream
 
@@ -233,6 +234,43 @@ class OkHttpClientGeneratorTest {
         assertThatGenerated(simpleClientLibrary.contentOf("ApiModels.kt")).isEqualTo(expectedApiModels)
         assertThatGenerated(simpleClientLibrary.contentOf("OAuth.kt")).isEqualTo(expectedOAuth)
         assertThatGenerated(enhancedLibUtil).isEqualTo(expectedLibUtil)
+    }
+
+    @Test
+    fun `DELETE request bodies are propagated to the OkHttp request`() {
+        val testCaseName = "deleteRequestBody"
+        val packages = Packages("examples.$testCaseName")
+        val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
+
+        val models = ModelGenerator(packages, sourceApi).generate().toSingleFile()
+        val clients = OkHttpSimpleClientGenerator(packages, sourceApi).generateDynamicClientCode().toSingleFile()
+
+        assertThatGenerated(models).isEqualTo("/examples/$testCaseName/models/ClientModels.kt")
+        assertThatGenerated(clients).isEqualTo("/examples/$testCaseName/client/ApiClient.kt")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["3.0.3", "3.1.2", "3.2.0"])
+    fun `DELETE request body propagation is consistent across OpenAPI versions`(openApiVersion: String) {
+        val packages = Packages("examples.deleteRequestBody")
+        val api =
+            readTextResource("/examples/deleteRequestBody/api.yaml")
+                .replaceFirst("openapi: 3.0.3", "openapi: $openApiVersion")
+        val sourceApi = SourceApi(api)
+
+        val client =
+            OkHttpSimpleClientGenerator(packages, sourceApi)
+                .generateDynamicClientCode()
+                .toSingleFile()
+
+        assertThat(client)
+            .contains(
+                ".delete()",
+                ".delete(objectMapper.writeValueAsString(deleteResourcesRequest)" +
+                    ".toRequestBody(\"application/json\".toMediaType()))",
+                ".delete(multipartBody)",
+            )
     }
 
     @Test
