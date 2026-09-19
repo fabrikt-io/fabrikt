@@ -181,7 +181,7 @@ class SpringHttpInterfaceGenerator(
 
         private fun AnnotationSpec.Builder.addContentType(headerParams: List<RequestParameter>): AnnotationSpec.Builder =
             apply {
-                val contentType =
+                val headerContentType =
                     headerParams
                         .filter { header ->
                             header.typeInfo is KotlinTypeInfo.Enum && header.typeInfo.entries.size == 1
@@ -189,9 +189,14 @@ class SpringHttpInterfaceGenerator(
                             header.name == ClientGeneratorUtils.CONTENT_TYPE_HEADER_NAME
                         }
 
+                val contentType =
+                    headerContentType?.let {
+                        it.typeInfo as KotlinTypeInfo.Enum
+                        it.typeInfo.entries.first()
+                    } ?: operation.requestBody.getPrimaryContentMediaType()?.key
+
                 if (contentType != null) {
-                    contentType.typeInfo as KotlinTypeInfo.Enum
-                    addMember("contentType=%S", contentType.typeInfo.entries.first())
+                    addMember("contentType=%S", contentType)
                 }
             }
 

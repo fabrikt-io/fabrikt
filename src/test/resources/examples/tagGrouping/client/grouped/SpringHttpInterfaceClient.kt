@@ -42,6 +42,7 @@ public interface PetClient {
     @HttpExchange(
         url = "/pets",
         method = "POST",
+        contentType = "application/json",
     )
     public fun createPet(
         @RequestBody pet: Pet,
@@ -104,6 +105,7 @@ public interface OwnerClient {
     @HttpExchange(
         url = "/owners",
         method = "POST",
+        contentType = "application/json",
     )
     public fun createOwner(
         @RequestBody owner: Owner,
@@ -151,6 +153,7 @@ public interface VehicleClient {
     @HttpExchange(
         url = "/vehicles",
         method = "POST",
+        contentType = "application/json",
     )
     public fun createVehicle(
         @RequestBody vehicle: Vehicle,

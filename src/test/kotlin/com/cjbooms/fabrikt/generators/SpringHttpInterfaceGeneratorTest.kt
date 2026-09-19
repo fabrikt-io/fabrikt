@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import org.junit.jupiter.params.provider.ValueSource
 import java.nio.file.Path
 import java.util.stream.Stream
 
@@ -74,6 +75,42 @@ class SpringHttpInterfaceGeneratorTest {
                     ClientCodeGenOptionType.SPRING_RESPONSE_ENTITY_WRAPPER,
                 ),
         )
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["3.0.3", "3.1.2", "3.2.0"])
+    fun `request body media type is used as content type`(openApiVersion: String) {
+        val sourceApi =
+            SourceApi(
+                """
+                openapi: $openApiVersion
+                info:
+                  title: Content type test
+                  version: "1.0"
+                paths:
+                  /messages:
+                    post:
+                      requestBody:
+                        content:
+                          application/vnd.example+json:
+                            schema:
+                              type: string
+                          application/json:
+                            schema:
+                              type: string
+                      responses:
+                        "204":
+                          description: Accepted
+                """.trimIndent(),
+            )
+
+        val clientCode =
+            SpringHttpInterfaceGenerator(Packages("examples.contentType"), sourceApi)
+                .generate(emptySet())
+                .clients
+                .toSingleFile()
+
+        assertThat(clientCode).contains("contentType = \"application/vnd.example+json\"")
     }
 
     private fun runTestCase(
