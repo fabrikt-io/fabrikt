@@ -51,6 +51,7 @@ public interface ExamplePath1Client {
     @HttpExchange(
         url = "/example-path-1",
         method = "POST",
+        contentType = "application/json",
     )
     public fun postExamplePath1(
         @RequestBody content: Content,
@@ -113,6 +114,7 @@ public interface ExamplePath2Client {
     @HttpExchange(
         url = "/example-path-2/{path_param}",
         method = "PUT",
+        contentType = "application/json",
     )
     public fun putExamplePath2PathParam(
         @RequestBody firstModel: FirstModel?,
@@ -136,6 +138,7 @@ public interface ExamplePath3SubresourceClient {
     @HttpExchange(
         url = "/example-path-3/{path_param}/subresource",
         method = "PUT",
+        contentType = "application/json",
     )
     public fun putExamplePath3PathParamSubresource(
         @RequestBody firstModel: FirstModel?,

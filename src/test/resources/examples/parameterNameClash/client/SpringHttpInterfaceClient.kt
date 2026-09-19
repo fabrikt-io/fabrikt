@@ -41,6 +41,7 @@ public interface ExampleClient {
     @HttpExchange(
         url = "/example",
         method = "POST",
+        contentType = "application/json",
     )
     public fun postExample(
         @RequestBody bodySomeObject: SomeObject?,
