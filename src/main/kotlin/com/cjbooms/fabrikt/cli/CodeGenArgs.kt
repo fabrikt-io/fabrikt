@@ -29,10 +29,15 @@ class CodeGenArgs {
             parser.usageFormatter = MarkdownUsageFormatter(parser)
             parser.parse(*args)
 
-            if (codeGenArgs.jsonSchemaRootName != null && !codeGenArgs.apiFile.contains('#')) {
+            if (codeGenArgs.jsonSchemaRootName != null && codeGenArgs.jsonSchemaFile == null) {
                 throw ParameterException(
-                    "--json-schema-root-name requires a JSON Pointer fragment on --api-file (e.g. " +
-                        "'manifest.yaml#/spec/schemaObject').",
+                    "--json-schema-root-name requires --json-schema-file.",
+                )
+            }
+            if (codeGenArgs.jsonSchemaFile != null && codeGenArgs.apiFile != DEFAULT_API_FILE) {
+                throw ParameterException(
+                    "--api-file and --json-schema-file cannot be combined; --json-schema-file already " +
+                        "supplies the primary input.",
                 )
             }
 
@@ -69,11 +74,7 @@ class CodeGenArgs {
         names = ["--api-file"],
         description =
             "This must be a valid Open API v3 spec. All code generation will be based off this input. " +
-                "Accepts either a local file path or a resolvable http(s) URL. A trailing " +
-                "'#/json/pointer' fragment (RFC 6901) treats the file as a JSON Schema document " +
-                "(draft-04 through 2020-12), optionally nested inside a larger resource such as a " +
-                "Nakadi EventType manifest, and converts the schema at that pointer to an OpenAPI " +
-                "3.1 document before generation — e.g. 'manifest.yaml#/spec/schemaObject'.",
+                "Accepts either a local file path or a resolvable http(s) URL.",
     )
     var apiFile: String = DEFAULT_API_FILE
 
@@ -86,11 +87,24 @@ class CodeGenArgs {
     var apiFragments: List<String> = emptyList()
 
     @Parameter(
+        names = ["--json-schema-file"],
+        description =
+            "Use a JSON Schema document (draft-04 through 2020-12) as the primary input instead of " +
+                "--api-file, converting it to an OpenAPI 3.1 document before generation. Accepts either a " +
+                "local file path or a resolvable http(s) URL, optionally with a trailing '#/json/pointer' " +
+                "fragment (RFC 6901) selecting the schema nested inside a larger resource such as a Nakadi " +
+                "EventType manifest — e.g. 'manifest.yaml#/spec/schemaObject'. An empty fragment " +
+                "('manifest.yaml#') or no fragment treats the whole file as a bare JSON Schema document. " +
+                "Cannot be combined with --api-file.",
+    )
+    var jsonSchemaFile: String? = null
+
+    @Parameter(
         names = ["--json-schema-root-name"],
         description =
             "Name for the schema generated from a JSON Schema's own top-level properties, used with " +
-                "a JSON Pointer fragment on --api-file. Defaults to the schema's 'title', then the " +
-                "resource's '/metadata/name', then 'Schema' with a warning if neither is present.",
+                "--json-schema-file. Defaults to the schema's 'title', then the resource's " +
+                "'/metadata/name', then 'Schema' with a warning if neither is present.",
     )
     var jsonSchemaRootName: String? = null
 

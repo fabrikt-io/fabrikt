@@ -7,7 +7,7 @@ import org.junit.jupiter.api.assertThrows
 
 class CodeGenArgsTest {
     @Test
-    fun `parses api-file without a fragment leaving json-schema-root-name null`() {
+    fun `parses api-file with no json-schema-file leaving it null`() {
         val args =
             CodeGenArgs.parse(
                 arrayOf(
@@ -19,29 +19,30 @@ class CodeGenArgsTest {
             )
 
         assertThat(args.apiFile).isEqualTo("manifest.yaml")
+        assertThat(args.jsonSchemaFile).isNull()
         assertThat(args.jsonSchemaRootName).isNull()
     }
 
     @Test
-    fun `parses an api-file JSON Pointer fragment together with json-schema-root-name`() {
+    fun `parses json-schema-file with a pointer fragment together with json-schema-root-name`() {
         val args =
             CodeGenArgs.parse(
                 arrayOf(
                     "--base-package",
                     "com.example",
-                    "--api-file",
+                    "--json-schema-file",
                     "manifest.yaml#/spec/schemaObject",
                     "--json-schema-root-name",
                     "OffersConfig",
                 ),
             )
 
-        assertThat(args.apiFile).isEqualTo("manifest.yaml#/spec/schemaObject")
+        assertThat(args.jsonSchemaFile).isEqualTo("manifest.yaml#/spec/schemaObject")
         assertThat(args.jsonSchemaRootName).isEqualTo("OffersConfig")
     }
 
     @Test
-    fun `rejects json-schema-root-name without an api-file fragment`() {
+    fun `rejects json-schema-root-name without json-schema-file`() {
         val ex =
             assertThrows<ParameterException> {
                 CodeGenArgs.parse(
@@ -55,24 +56,42 @@ class CodeGenArgsTest {
                     ),
                 )
             }
-        assertThat(ex.message).contains("requires a JSON Pointer fragment on --api-file")
+        assertThat(ex.message).contains("requires --json-schema-file")
     }
 
     @Test
-    fun `accepts an api-file JSON Pointer fragment combined with api-fragment`() {
+    fun `rejects json-schema-file combined with a non-default api-file`() {
+        val ex =
+            assertThrows<ParameterException> {
+                CodeGenArgs.parse(
+                    arrayOf(
+                        "--base-package",
+                        "com.example",
+                        "--api-file",
+                        "openapi.yaml",
+                        "--json-schema-file",
+                        "manifest.yaml#/spec/schemaObject",
+                    ),
+                )
+            }
+        assertThat(ex.message).contains("--api-file and --json-schema-file cannot be combined")
+    }
+
+    @Test
+    fun `accepts json-schema-file combined with api-fragment`() {
         val args =
             CodeGenArgs.parse(
                 arrayOf(
                     "--base-package",
                     "com.example",
-                    "--api-file",
+                    "--json-schema-file",
                     "manifest.yaml#/spec/schemaObject",
                     "--api-fragment",
                     "common.yaml",
                 ),
             )
 
-        assertThat(args.apiFile).isEqualTo("manifest.yaml#/spec/schemaObject")
+        assertThat(args.jsonSchemaFile).isEqualTo("manifest.yaml#/spec/schemaObject")
         assertThat(args.apiFragments).containsExactly("common.yaml")
     }
 }

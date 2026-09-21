@@ -43,6 +43,7 @@ object CodeGen {
         generate(
             basePackage = codeGenArgs.basePackage,
             apiFile = codeGenArgs.apiFile,
+            jsonSchemaFile = codeGenArgs.jsonSchemaFile,
             outputDir = codeGenArgs.outputDirectory,
             apiFragments = codeGenArgs.apiFragments,
             srcPath = codeGenArgs.srcPath,
@@ -52,9 +53,10 @@ object CodeGen {
         )
     }
 
-    private fun generate(
+    internal fun generate(
         basePackage: String,
         apiFile: String,
+        jsonSchemaFile: String?,
         outputDir: Path,
         apiFragments: List<String> = emptyList(),
         srcPath: Path,
@@ -62,8 +64,9 @@ object CodeGen {
         resolvedAuth: List<Pair<String, String>> = emptyList(),
         jsonSchemaRootName: String? = null,
     ) {
-        val apiFileReference = ApiFileReference.parse(apiFile)
-        val suppliedApi = ApiFileLoader.load(apiFileReference.location, "--api-file", resolvedAuth)
+        val apiFileReference = jsonSchemaFile?.let { ApiFileReference.parse(it) }
+        val primaryInputParam = if (jsonSchemaFile != null) "--json-schema-file" else "--api-file"
+        val suppliedApi = ApiFileLoader.load(apiFileReference?.location ?: apiFile, primaryInputParam, resolvedAuth)
         val fragments = apiFragments.map { ApiFileLoader.load(it, "--api-fragment", resolvedAuth).content }
 
         logger.info("Generating code and dumping to $outputDir/")
@@ -71,7 +74,7 @@ object CodeGen {
         val jsonLoader = if (resolvedAuth.isNotEmpty()) AuthJsonLoader(resolvedAuth) else null
         val packages = Packages(basePackage)
         val schemaConversion =
-            apiFileReference.jsonSchemaPointer?.let { SchemaConversionOptions(it, jsonSchemaRootName) }
+            apiFileReference?.let { SchemaConversionOptions(it.jsonSchemaPointer ?: "", jsonSchemaRootName) }
         val sourceApi = SourceApi.create(suppliedApi.content, fragments, suppliedApi.baseUri, jsonLoader, schemaConversion)
 
         val generator = CodeGenerator(packages, sourceApi, srcPath, resourcesPath)

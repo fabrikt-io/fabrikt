@@ -13,8 +13,9 @@ data class LoadedApi(
 )
 
 /**
- * An `--api-file` value split on its first `#`: the file/URL location, and an optional trailing
- * JSON Pointer fragment (RFC 6901) selecting a JSON Schema nested within that location's content.
+ * A `--json-schema-file` value split on its first `#`: the file/URL location, and an optional
+ * trailing JSON Pointer fragment (RFC 6901) selecting a JSON Schema nested within that
+ * location's content.
  */
 data class ApiFileReference(
     val location: String,
