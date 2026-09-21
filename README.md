@@ -9,6 +9,7 @@
 * [Examples](#examples)
 * [Usage Instructions](#usage-instructions)
   * [Command Line](#command-line)
+  * [Generating from a JSON Schema document](#generating-from-a-json-schema-document)
   * [Gradle w/ custom task](#gradle-w-custom-task)
   * [Gradle w/ plugin](#gradle-w-plugin)
   * [Maven](#maven)
@@ -35,6 +36,8 @@ This library was built to take advantage of the complex modeling features availa
  - Jackson's polymorphic subtype deduction (add `x-jackson-subtype-deduction: true` to the `oneOf` schema) to gain Sealed Interface polymorphism, without needing to declare a discriminator property. Requires subtypes to have distinguishing required fields.
  
 as well as HTTP clients and controllers for a number of popular frameworks (see [Features](#features)).
+
+Fabrikt also generates models directly from a plain JSON Schema document — draft-04 through 2020-12, optionally nested inside a larger resource such as a Nakadi `EventType` manifest — with no OpenAPI spec required. See [Generating from a JSON Schema document](#generating-from-a-json-schema-document).
 
 More than just bootstrapping, this library can be permanently integrated into your build tool and will ensure contract and code always match, even as APIs evolve in complexity.
 
