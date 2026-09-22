@@ -21,4 +21,11 @@ public data class Subject(
   @get:JsonProperty("mixedObject")
   @get:NotNull
   public val mixedObject: Any,
+  @param:JsonProperty("referencedValue")
+  @get:JsonProperty("referencedValue")
+  @get:NotNull
+  public val referencedValue: Any,
+  @param:JsonProperty("nullableMixed")
+  @get:JsonProperty("nullableMixed")
+  public val nullableMixed: Any?,
 )

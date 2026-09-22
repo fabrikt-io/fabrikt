@@ -19,4 +19,9 @@ public data class Subject(
   @SerialName("mixedObject")
   @get:NotNull
   public val mixedObject: JsonElement,
+  @SerialName("referencedValue")
+  @get:NotNull
+  public val referencedValue: JsonElement,
+  @SerialName("nullableMixed")
+  public val nullableMixed: JsonElement?,
 )

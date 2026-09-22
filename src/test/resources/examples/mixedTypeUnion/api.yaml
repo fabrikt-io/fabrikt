@@ -5,6 +5,8 @@ info:
 paths: {}
 components:
   schemas:
+    UnionValue:
+      type: [string, integer]
     Subject:
       type: object
       required:
@@ -12,6 +14,8 @@ components:
         - nullableText
         - requiredText
         - mixedObject
+        - referencedValue
+        - nullableMixed
       properties:
         value:
           type: [string, integer]
@@ -24,3 +28,7 @@ components:
           properties:
             code:
               type: string
+        referencedValue:
+          $ref: '#/components/schemas/UnionValue'
+        nullableMixed:
+          type: [string, integer, 'null']

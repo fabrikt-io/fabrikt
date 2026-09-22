@@ -18,7 +18,27 @@ class OpenApiModelTest {
             info:
               title: Type declarations
               version: 1.0.0
-            paths: {}
+            paths:
+              /subject:
+                post:
+                  operationId: updateSubject
+                  parameters:
+                    - name: filter
+                      in: query
+                      schema:
+                        type: [string, integer]
+                  requestBody:
+                    content:
+                      application/json:
+                        schema:
+                          type: [string, integer]
+                  responses:
+                    '200':
+                      description: Updated
+                      content:
+                        application/json:
+                          schema:
+                            type: [string, integer]
             components:
               schemas:
                 Subject:
@@ -33,19 +53,43 @@ class OpenApiModelTest {
                       properties:
                         code:
                           type: string
+                    referencedValue:
+                      ${'$'}ref: '#/components/schemas/UnionValue'
+                    nullableMixed:
+                      type: [string, integer, 'null']
+                UnionValue:
+                  type: [string, integer]
             """.trimIndent()
-        val subject =
-            OpenApiDocumentParser
-                .parse(spec)
-                .asOpenApi3Document()
-                .schemas
-                .getValue("Subject")
+        val document = OpenApiDocumentParser.parse(spec).asOpenApi3Document()
+        val subject = document.schemas.getValue("Subject")
 
         assertThat(subject.properties.getValue("nullableText").type).isEqualTo("string")
         assertThat(subject.properties.getValue("nullableText").isNullable).isTrue()
         assertThat(subject.properties.getValue("mixedValue").type).isNull()
         assertThat(subject.properties.getValue("mixedValue").hasMultipleNonNullTypes).isTrue()
         assertThat(subject.properties.getValue("mixedObject").type).isNull()
+        assertThat(subject.properties.getValue("referencedValue").hasMultipleNonNullTypes).isTrue()
+        assertThat(subject.properties.getValue("nullableMixed").isNullable).isTrue()
+        val operation =
+            document.paths
+                .getValue("/subject")
+                .operations
+                .getValue("post")
+        val parameter = operation.parameters.single()
+        val requestSchema =
+            operation.requestBody
+                .contentMediaTypes
+                .getValue("application/json")
+                .schema
+        val responseSchema =
+            operation.responses
+                .getValue("200")
+                .contentMediaTypes
+                .getValue("application/json")
+                .schema
+        assertThat(parameter.schema.hasMultipleNonNullTypes).isTrue()
+        assertThat(requestSchema.hasMultipleNonNullTypes).isTrue()
+        assertThat(responseSchema.hasMultipleNonNullTypes).isTrue()
     }
 
     @ParameterizedTest
