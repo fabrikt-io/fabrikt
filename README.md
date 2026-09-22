@@ -239,6 +239,11 @@ The `discriminator` property is used by Fabrikt to determine the subtypes to be 
 
 OpenAPI 3.0 ignores extra fields beside a direct `$ref`. Wrap a referenced enum in a single-element `allOf` to give a property its own `default` or `description`; Fabrikt retains the referenced enum type and generates an enum constant for a matching default value.
 
+### 4. OpenAPI 3.1 type arrays
+A required property with `type: [string, 'null']` generates `String?`.
+When a schema declares multiple non-null types, Fabrikt logs a warning and generates `Any` with Jackson or `JsonElement` with kotlinx.serialization instead of a dedicated union model.
+Use a supported `oneOf` schema when a concrete polymorphic Kotlin model is needed.
+
 ## Configuration Options
 
 This section documents the available CLI parameters for controlling what gets generated. This documentation is generated using: `./gradlew printCodeGenUsage`
