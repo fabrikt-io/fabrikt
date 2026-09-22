@@ -20,7 +20,7 @@ class GeneratorSchemaDocumentTest {
         val forbidden = subject.properties.getValue("forbidden")
 
         assertThat(forbidden).isNotInstanceOf(SourceSchema::class.java)
-        assertThat(document.isUninhabitableAt(forbidden.location)).isTrue()
+        assertThat(document.schemaSemanticsAt(forbidden.location).isUninhabitable).isTrue()
     }
 
     @Test
@@ -31,7 +31,7 @@ class GeneratorSchemaDocumentTest {
         val resolvedSchema = parsed.source.schemasByLocation.getValue(location) as SourceBooleanSchema
         assertThat(resolvedSchema.allowsAnyValue).isFalse()
 
-        assertThat(parsed.toGeneratorSchemaDocument().isUninhabitableAt(location)).isTrue()
+        assertThat(parsed.toGeneratorSchemaDocument().schemaSemanticsAt(location).isUninhabitable).isTrue()
     }
 
     private val openApi =
