@@ -162,6 +162,7 @@ enum class OutputOptionType(
     val description: String,
 ) {
     ADD_FILE_DISCLAIMER("This option adds a disclaimer to the generated files."),
+    ADD_GENERATED_ANNOTATION("Annotate generated types and top-level functions with javax.annotation.processing.Generated."),
     ;
 
     override fun toString() = "`${super.toString()}` - $description"

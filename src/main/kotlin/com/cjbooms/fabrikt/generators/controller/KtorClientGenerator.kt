@@ -19,6 +19,7 @@ import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.GeneratedAnnotations.addGeneratedAnnotations
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -386,11 +387,11 @@ class KtorClientGenerator(
         return setOf(
             SimpleFile(
                 clientDir.resolve("KtorApiModels.kt"),
-                KtorClientLibraryFiles.ktorApiModels(packages.client).toString(),
+                KtorClientLibraryFiles.ktorApiModels(packages.client).addGeneratedAnnotations().toString(),
             ),
             SimpleFile(
                 clientDir.resolve("KtorApiConfiguration.kt"),
-                KtorClientLibraryFiles.ktorApiConfiguration(packages.client, basePath).toString(),
+                KtorClientLibraryFiles.ktorApiConfiguration(packages.client, basePath).addGeneratedAnnotations().toString(),
             ),
         )
     }

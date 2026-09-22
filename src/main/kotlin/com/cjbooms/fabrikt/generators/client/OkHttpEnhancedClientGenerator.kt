@@ -22,6 +22,7 @@ import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.GeneratedAnnotations.addGeneratedAnnotations
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.CodeBlock
@@ -153,7 +154,7 @@ class OkHttpEnhancedClientGenerator(
             if (ClientCodeGenOptionType.RESILIENCE4J in options) {
                 SimpleFile(
                     clientDir.resolve("HttpResilience4jUtil.kt"),
-                    OkHttpClientLibraryFiles.httpResilience4jUtil(packages).toString(),
+                    OkHttpClientLibraryFiles.httpResilience4jUtil(packages).addGeneratedAnnotations().toString(),
                 )
             } else {
                 null

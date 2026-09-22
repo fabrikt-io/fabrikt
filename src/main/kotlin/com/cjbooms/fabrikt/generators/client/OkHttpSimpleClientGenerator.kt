@@ -34,6 +34,7 @@ import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.GeneratedAnnotations.addGeneratedAnnotations
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.CodeBlock
@@ -124,13 +125,13 @@ class OkHttpSimpleClientGenerator(
         return setOf(
             SimpleFile(
                 clientDir.resolve("ApiModels.kt"),
-                OkHttpClientLibraryFiles.apiModels(packages, nonNullDataPayloads).toString(),
+                OkHttpClientLibraryFiles.apiModels(packages, nonNullDataPayloads).addGeneratedAnnotations().toString(),
             ),
             SimpleFile(
                 clientDir.resolve("HttpUtil.kt"),
-                OkHttpClientLibraryFiles.httpUtil(packages, nonNullDataPayloads).toString(),
+                OkHttpClientLibraryFiles.httpUtil(packages, nonNullDataPayloads).addGeneratedAnnotations().toString(),
             ),
-            SimpleFile(clientDir.resolve("OAuth.kt"), OkHttpClientLibraryFiles.oAuth(packages).toString()),
+            SimpleFile(clientDir.resolve("OAuth.kt"), OkHttpClientLibraryFiles.oAuth(packages).addGeneratedAnnotations().toString()),
         )
     }
 }

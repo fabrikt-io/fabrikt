@@ -14,10 +14,13 @@ import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.cli.ValidationLibrary
+import com.cjbooms.fabrikt.model.GenerationMetadata
 import com.cjbooms.fabrikt.model.MicronautSerdeAnnotations
 import com.cjbooms.fabrikt.model.SerializationAnnotations
 
 object MutableSettings {
+    var generationMetadata: GenerationMetadata = GenerationMetadata()
+        private set
     var generationTypes: Set<CodeGenerationType> = mutableSetOf()
         private set
     var controllerOptions: Set<ControllerCodeGenOptionType> = mutableSetOf()
@@ -91,7 +94,9 @@ object MutableSettings {
         jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.default,
         outputOptions: Set<OutputOptionType> = emptySet(),
         operationIdTransform: Pair<Regex, String>? = null,
+        generationMetadata: GenerationMetadata = GenerationMetadata(),
     ) {
+        this.generationMetadata = generationMetadata
         this.generationTypes = genTypes
         this.controllerOptions = controllerOptions
         this.controllerTarget = controllerTarget

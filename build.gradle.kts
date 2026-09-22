@@ -79,6 +79,20 @@ dependencies {
     testImplementation(libs.ktlint.ruleset.standard)
 }
 
+val generatedVersionResources = layout.buildDirectory.dir("generated/fabrikt-version")
+val generateVersionResource by tasks.registering {
+    inputs.property("fabriktVersion", project.version.toString())
+    outputs.dir(generatedVersionResources)
+    doLast {
+        val file = generatedVersionResources.get().file("META-INF/fabrikt-version.txt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(inputs.properties.getValue("fabriktVersion").toString())
+    }
+}
+sourceSets.main {
+    resources.srcDir(generateVersionResource)
+}
+
 tasks {
     named<Jar>("jar") {
         enabled = false
