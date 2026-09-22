@@ -1,0 +1,26 @@
+openapi: 3.1.2
+info:
+  title: Mixed type union
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    Subject:
+      type: object
+      required:
+        - value
+        - nullableText
+        - requiredText
+        - mixedObject
+      properties:
+        value:
+          type: [string, integer]
+        nullableText:
+          type: [string, 'null']
+        requiredText:
+          type: string
+        mixedObject:
+          type: [object, string]
+          properties:
+            code:
+              type: string

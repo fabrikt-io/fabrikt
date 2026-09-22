@@ -10,6 +10,45 @@ import org.junit.jupiter.params.provider.ValueSource
 
 class OpenApiModelTest {
     @ParameterizedTest
+    @ValueSource(strings = ["3.1.2", "3.2.0"])
+    fun `facade uses source declarations for schema type and nullability`(version: String) {
+        val spec =
+            """
+            openapi: $version
+            info:
+              title: Type declarations
+              version: 1.0.0
+            paths: {}
+            components:
+              schemas:
+                Subject:
+                  type: object
+                  properties:
+                    nullableText:
+                      type: [string, 'null']
+                    mixedValue:
+                      type: [string, integer]
+                    mixedObject:
+                      type: [object, string]
+                      properties:
+                        code:
+                          type: string
+            """.trimIndent()
+        val subject =
+            OpenApiDocumentParser
+                .parse(spec)
+                .asOpenApi3Document()
+                .schemas
+                .getValue("Subject")
+
+        assertThat(subject.properties.getValue("nullableText").type).isEqualTo("string")
+        assertThat(subject.properties.getValue("nullableText").isNullable).isTrue()
+        assertThat(subject.properties.getValue("mixedValue").type).isNull()
+        assertThat(subject.properties.getValue("mixedValue").hasMultipleNonNullTypes).isTrue()
+        assertThat(subject.properties.getValue("mixedObject").type).isNull()
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = ["3.0.4", "3.1.2", "3.2.0"])
     fun `facades expose deprecated schemas properties and operations across OpenAPI versions`(version: String) {
         val document = OpenApiDocumentParser.parse(deprecatedSpec.replace("VERSION", version)).asOpenApi3Document()
