@@ -1,6 +1,7 @@
 [versions]
 # Core / Kotlin
 kotlinpoet = "1.14.2"
+kotlinx-coroutines = "1.9.0"
 kotlinx-datetime = "0.7.1"
 kotlinx-datetime-legacy = "0.6.2"
 kotlinx-serialization = "1.9.0"
@@ -24,9 +25,14 @@ ktor = "3.0.1"
 # Spring
 spring-boot = "3.4.3"
 spring-framework = "6.1.0"
+spring-cloud-openfeign = "5.0.3"
 
 # Micronaut
 micronaut = "3.8.7"
+micronaut-serde = "1.5.2"
+
+# Quarkus
+quarkus = "3.39.4"
 
 # HTTP clients
 okhttp = "4.10.0"
@@ -53,16 +59,16 @@ ktlint = "1.7.1"
 
 [libraries]
 jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
-jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
-jackson-core = { module = "com.fasterxml.jackson.core:jackson-core" }
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations" }
 jackson-dataformat-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml" }
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310" }
 jackson-databind-nullable = { module = "org.openapitools:jackson-databind-nullable", version.ref = "jackson-databind-nullable" }
 jackson3-bom = { module = "tools.jackson:jackson-bom", version.ref = "jackson3" }
-jackson3-module-kotlin = { module = "tools.jackson.module:jackson-module-kotlin" }
-jackson3-databind = { module = "tools.jackson.core:jackson-databind" }
+jackson3-module-kotlin = { module = "tools.jackson.module:jackson-module-kotlin", version.ref = "jackson3" }
+jackson3-databind = { module = "tools.jackson.core:jackson-databind", version.ref = "jackson3" }
 
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom" }
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
@@ -74,6 +80,7 @@ jsonoverlay = { module = "com.reprezen.jsonoverlay:jsonoverlay", version.ref = "
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 flogger = { module = "com.google.flogger:flogger", version.ref = "flogger" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-datetime-legacy = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime-legacy" }
 
@@ -86,12 +93,17 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 validation-api = { module = "javax.validation:validation-api", version.ref = "validation-api" }
 jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
+spring-web = { module = "org.springframework:spring-web", version.ref = "spring-framework" }
 spring-webmvc = { module = "org.springframework:spring-webmvc", version.ref = "spring-framework" }
 spring-test = { module = "org.springframework:spring-test", version.ref = "spring-framework" }
 spring-security-web = { module = "org.springframework.security:spring-security-web", version.ref = "spring-framework" }
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-cloud-starter-openfeign = { module = "org.springframework.cloud:spring-cloud-starter-openfeign", version.ref = "spring-cloud-openfeign" }
 micronaut-core = { module = "io.micronaut:micronaut-core", version.ref = "micronaut" }
 micronaut-http = { module = "io.micronaut:micronaut-http", version.ref = "micronaut" }
+micronaut-security = { module = "io.micronaut.security:micronaut-security", version.ref = "micronaut" }
+micronaut-serde-jackson = { module = "io.micronaut.serde:micronaut-serde-jackson", version.ref = "micronaut-serde" }
+quarkus-core = { module = "io.quarkus:quarkus-core", version.ref = "quarkus" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }

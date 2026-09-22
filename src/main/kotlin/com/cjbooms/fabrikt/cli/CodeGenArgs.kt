@@ -255,6 +255,13 @@ class CodeGenArgs {
         converter = JacksonNullabilityModeOptionConverter::class,
     )
     var jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.NONE
+
+    @Parameter(
+        names = ["--dependencies-generation-mode"],
+        description = "Configure generation of file containing dependencies of the generated source code. Default: NONE",
+        converter = DependenciesGenerationModeConverter::class,
+    )
+    var dependenciesGenerationMode: DependenciesGenerationMode = DependenciesGenerationMode.NONE
 }
 
 class CodeGenerationTypesConverter : IStringConverter<CodeGenerationType> {
@@ -307,6 +314,10 @@ class SerializationLibraryOptionConverter : IStringConverter<SerializationLibrar
 
 class JacksonNullabilityModeOptionConverter : IStringConverter<JacksonNullabilityMode> {
     override fun convert(value: String): JacksonNullabilityMode = convertToEnumValue(value)
+}
+
+class DependenciesGenerationModeConverter : IStringConverter<DependenciesGenerationMode> {
+    override fun convert(value: String): DependenciesGenerationMode = convertToEnumValue(value)
 }
 
 class PackageNameValidator : IValueValidator<String> {
