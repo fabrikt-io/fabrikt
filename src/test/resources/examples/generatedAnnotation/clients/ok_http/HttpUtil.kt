@@ -23,7 +23,6 @@ import kotlin.jvm.Throws
 @Suppress("unused")
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public fun <T : Any> HttpUrl.Builder.queryParam(
@@ -37,7 +36,6 @@ public fun <T : Any> HttpUrl.Builder.queryParam(
 @Suppress("unused")
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public fun <T : Any> FormBody.Builder.formParam(
@@ -51,7 +49,6 @@ public fun <T : Any> FormBody.Builder.formParam(
 @Suppress("unused")
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public fun HttpUrl.Builder.queryParam(
@@ -72,7 +69,6 @@ public fun HttpUrl.Builder.queryParam(
 @Suppress("unused")
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public fun Headers.Builder.`header`(
@@ -86,7 +82,6 @@ public fun Headers.Builder.`header`(
 @Throws(ApiException::class)
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public fun <T> Request.execute(
@@ -101,7 +96,6 @@ public fun <T> Request.execute(
 @Throws(ApiException::class)
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public fun Request.execute(client: OkHttpClient): ApiResponse<ByteArray> =
@@ -111,7 +105,6 @@ public fun Request.execute(client: OkHttpClient): ApiResponse<ByteArray> =
 
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 private fun <T> Request.doRequest(
@@ -135,7 +128,6 @@ private fun <T> Request.doRequest(
 @Suppress("unused")
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public fun String.pathParam(vararg params: Pair<String, Any>): String =
@@ -145,7 +137,6 @@ public fun String.pathParam(vararg params: Pair<String, Any>): String =
 
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public fun <T> ResponseBody.deserialize(
@@ -155,49 +146,42 @@ public fun <T> ResponseBody.deserialize(
 
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public fun ResponseBody.deserialize(): ByteArray? = this.byteStream().readAllBytes()
 
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public fun String?.isNotBlankOrNull(): String? = if (this.isNullOrBlank()) null else this
 
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 private fun Response.errorMessage(): String = this.body?.string() ?: this.message
 
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 private fun Response.isBadRequest(): Boolean = this.code in 400..499
 
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 private fun Response.isServerError(): Boolean = this.code in 500..599
 
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 private fun Response.isRedirection(): Boolean = this.code in 300..399
 
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public data class RequestBodyWithFilename(

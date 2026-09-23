@@ -27,7 +27,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.ValueSource
 import java.nio.file.Path
-import java.time.Instant
 
 class GeneratedAnnotationTest {
     @BeforeEach
@@ -42,7 +41,7 @@ class GeneratedAnnotationTest {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.HTTP_MODELS),
             outputOptions = setOf(OutputOptionType.ADD_GENERATED_ANNOTATION),
-            generationMetadata = GenerationMetadata(Instant.parse("2001-07-04T19:08:56.235Z"), "27.0.1"),
+            generationMetadata = GenerationMetadata(version = "27.0.1"),
         )
         val files = generate(example)
         assertThat(files.keys).containsExactlyInAnyOrder("Pet", "PetType")
@@ -59,7 +58,7 @@ class GeneratedAnnotationTest {
             clientTarget = target,
             clientOptions = setOf(ClientCodeGenOptionType.RESILIENCE4J),
             outputOptions = setOf(OutputOptionType.ADD_GENERATED_ANNOTATION),
-            generationMetadata = GenerationMetadata(Instant.parse("2001-07-04T19:08:56.235Z"), "27.0.1"),
+            generationMetadata = GenerationMetadata(version = "27.0.1"),
         )
         assertGoldenFiles(generate(), "clients/${target.name.lowercase()}")
     }
@@ -71,7 +70,7 @@ class GeneratedAnnotationTest {
             genTypes = setOf(CodeGenerationType.CONTROLLERS),
             controllerTarget = target,
             outputOptions = setOf(OutputOptionType.ADD_GENERATED_ANNOTATION),
-            generationMetadata = GenerationMetadata(Instant.parse("2001-07-04T19:08:56.235Z"), "27.0.1"),
+            generationMetadata = GenerationMetadata(version = "27.0.1"),
         )
         assertGoldenFiles(generate(), "controllers/${target.name.lowercase()}")
     }
@@ -81,7 +80,7 @@ class GeneratedAnnotationTest {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.HTTP_MODELS),
             outputOptions = setOf(OutputOptionType.ADD_GENERATED_ANNOTATION),
-            generationMetadata = GenerationMetadata(Instant.parse("2001-07-04T19:08:56.235Z"), "27.0.1"),
+            generationMetadata = GenerationMetadata(version = "27.0.1"),
         )
         val files = generate("discriminatedOneOf")
         assertThat(files.values.joinToString()).contains("sealed interface", "sealed class")

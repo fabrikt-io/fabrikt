@@ -14,7 +14,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.Instant
 
 class GeneratedAnnotationsTest {
     @AfterEach
@@ -46,22 +45,20 @@ class GeneratedAnnotationsTest {
     fun `annotations include the public generator name and generation metadata`() {
         MutableSettings.updateSettings(
             outputOptions = setOf(OutputOptionType.ADD_GENERATED_ANNOTATION),
-            generationMetadata = GenerationMetadata(Instant.parse("2001-07-04T19:08:56.235Z"), "27.0.1"),
+            generationMetadata = GenerationMetadata(version = "27.0.1"),
         )
         val code = OkHttpClientLibraryFiles.httpResilience4jUtil(Packages("example")).addGeneratedAnnotations().toString()
+        assertThat(code).doesNotContain("date =")
         assertThat(code).contains(
             "value = [\"io.fabrikt.cli.CodeGen\"]",
-            "date = \"2001-07-04T19:08:56.235Z\"",
             "comments = \"Generated with Fabrikt v27.0.1\"",
         )
     }
 
     @Test
-    fun `generation metadata defaults to the current time and bundled version`() {
-        val before = Instant.now()
+    fun `generation metadata defaults to the bundled version`() {
         val metadata = GenerationMetadata()
         val version = javaClass.getResource("/META-INF/fabrikt-version.txt")!!.readText().trim()
-        assertThat(metadata.date).isBetween(before, Instant.now())
         assertThat(metadata.version).isEqualTo(version).isNotBlank()
     }
 

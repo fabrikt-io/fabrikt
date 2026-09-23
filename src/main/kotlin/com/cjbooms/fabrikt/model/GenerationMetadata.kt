@@ -1,9 +1,6 @@
 package com.cjbooms.fabrikt.model
 
-import java.time.Instant
-
 data class GenerationMetadata(
-    val date: Instant = Instant.now(),
     val version: String = fabriktVersion,
 ) {
     companion object {

@@ -13,7 +13,6 @@ import kotlin.Throwable
  */
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public sealed interface NetworkError {
@@ -25,7 +24,6 @@ public sealed interface NetworkError {
      */
     @Generated(
         value = ["io.fabrikt.cli.CodeGen"],
-        date = "2001-07-04T19:08:56.235Z",
         comments = "Generated with Fabrikt v27.0.1",
     )
     public data class Http(
@@ -40,7 +38,6 @@ public sealed interface NetworkError {
      */
     @Generated(
         value = ["io.fabrikt.cli.CodeGen"],
-        date = "2001-07-04T19:08:56.235Z",
         comments = "Generated with Fabrikt v27.0.1",
     )
     public data class Network(
@@ -53,7 +50,6 @@ public sealed interface NetworkError {
      */
     @Generated(
         value = ["io.fabrikt.cli.CodeGen"],
-        date = "2001-07-04T19:08:56.235Z",
         comments = "Generated with Fabrikt v27.0.1",
     )
     public data class Serialization(
@@ -66,7 +62,6 @@ public sealed interface NetworkError {
      */
     @Generated(
         value = ["io.fabrikt.cli.CodeGen"],
-        date = "2001-07-04T19:08:56.235Z",
         comments = "Generated with Fabrikt v27.0.1",
     )
     public data class Unknown(
@@ -80,7 +75,6 @@ public sealed interface NetworkError {
  */
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public sealed interface NetworkResult<out T> {
@@ -90,7 +84,6 @@ public sealed interface NetworkResult<out T> {
      */
     @Generated(
         value = ["io.fabrikt.cli.CodeGen"],
-        date = "2001-07-04T19:08:56.235Z",
         comments = "Generated with Fabrikt v27.0.1",
     )
     public data class Success<out T>(
@@ -103,7 +96,6 @@ public sealed interface NetworkResult<out T> {
      */
     @Generated(
         value = ["io.fabrikt.cli.CodeGen"],
-        date = "2001-07-04T19:08:56.235Z",
         comments = "Generated with Fabrikt v27.0.1",
     )
     public data class Failure(

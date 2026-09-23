@@ -16,7 +16,6 @@ import kotlin.Suppress
  */
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public class TypedApplicationCall<R : Any>(

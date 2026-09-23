@@ -13,7 +13,6 @@ import kotlin.String
  */
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public data class ApiResponse<T>(
@@ -27,7 +26,6 @@ public data class ApiResponse<T>(
  */
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public open class ApiException(
@@ -39,7 +37,6 @@ public open class ApiException(
  */
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public open class ApiRedirectException(
@@ -53,7 +50,6 @@ public open class ApiRedirectException(
  */
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public data class ApiClientException(
@@ -67,7 +63,6 @@ public data class ApiClientException(
  */
 @Generated(
     value = ["io.fabrikt.cli.CodeGen"],
-    date = "2001-07-04T19:08:56.235Z",
     comments = "Generated with Fabrikt v27.0.1",
 )
 public data class ApiServerException(

@@ -17,7 +17,6 @@ object GeneratedAnnotations {
         AnnotationSpec
             .builder(generated)
             .addMember("value = [%S]", CodeGen::class.java.name)
-            .addMember("date = %S", MutableSettings.generationMetadata.date.toString())
             .addMember("comments = %S", "Generated with Fabrikt v${MutableSettings.generationMetadata.version.removePrefix("v")}")
             .build()
 
