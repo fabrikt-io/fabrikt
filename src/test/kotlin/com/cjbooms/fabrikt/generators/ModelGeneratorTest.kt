@@ -42,6 +42,7 @@ class ModelGeneratorTest {
     @Suppress("unused")
     private fun testCases(): Stream<String> =
         Stream.of(
+            "additionalModelAnnotations",
             "additionalProperties",
             "arrays",
             "anyOfOneOfAllOf",
@@ -121,6 +122,11 @@ class ModelGeneratorTest {
         }
         if (testCaseName == "openEnum") {
             MutableSettings.addOption(ModelCodeGenOptionType.FAULT_TOLERANT_OPEN_ENUMS)
+        }
+        if (testCaseName == "additionalModelAnnotations") {
+            MutableSettings.updateSettings(
+                modelAdditionalAnnotations = listOf("example.annotations.First", "example.annotations.Second"),
+            )
         }
         if (testCaseName == "defaultValues") {
             MutableSettings.addOption(JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL)
