@@ -1,5 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.dokka.gradle.DokkaTask
+import kotlin.text.replace
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "2.2.10"
@@ -18,6 +19,7 @@ java {
 }
 
 val executableName = "fabrikt"
+val sourcePackageName = "com.cjbooms.fabrikt"
 
 group = "io.fabrikt"
 val gitVersion: groovy.lang.Closure<*> by extra
@@ -209,3 +211,63 @@ signing {
 
     sign(publishing.publications["fabrikt"])
 }
+
+// region Generating Kotlin source for Version catalog
+
+val generatedDir = layout.buildDirectory.dir("generated/dependencies")
+
+val generateVersionCatalogSourceCode by tasks.registering {
+    group = "build"
+    val outputDir = generatedDir.get().asFile
+    inputs.file(layout.projectDirectory.file("gradle${File.separator}libs.versions.toml"))
+    outputs.dir(generatedDir)
+    doLast {
+        val generatedDependenciesKotlinObjectName = "VersionCatalogLibraries"
+        val file = outputDir.resolve("VersionCatalogLibraries.kt")
+        file.parentFile.mkdirs()
+        file.writeText(
+            generateVersionCatalogSourceCode(
+                catalog = versionCatalogs.find("libs").get(),
+                packageName = sourcePackageName,
+                generatedKotlinObjectName = generatedDependenciesKotlinObjectName,
+            ),
+        )
+    }
+}
+
+sourceSets {
+    main {
+        java.srcDir(generatedDir)
+    }
+}
+
+tasks.named("compileKotlin") {
+    dependsOn(generateVersionCatalogSourceCode)
+}
+
+tasks.matching { it.name.startsWith("runKtlint") }.configureEach {
+    dependsOn(generateVersionCatalogSourceCode)
+}
+
+/**
+ * Takes [catalog] and build Kotlin object (named: [generatedKotlinObjectName]) so that libraries defined in [catalog]
+ * are accessible to the project's source code
+ */
+fun generateVersionCatalogSourceCode(
+    catalog: VersionCatalog,
+    packageName: String,
+    generatedKotlinObjectName: String,
+): String =
+    catalog
+        .libraryAliases
+        .associateWith { alias -> catalog.findLibrary(alias).get().get() }
+        .map { (alias, dependency) ->
+            "val ${alias.replace(".", "_")} = \"$dependency\""
+        }.let {
+            "package $packageName\n\n"
+                .plus("object $generatedKotlinObjectName {\n")
+                .plus("    " + it.joinToString("\n    "))
+                .plus("\n}\n")
+        }
+
+// endregion

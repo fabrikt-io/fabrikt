@@ -6,6 +6,7 @@ import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
 import com.cjbooms.fabrikt.cli.CodeGenerationType
 import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ControllerCodeGenTargetType
+import com.cjbooms.fabrikt.cli.DependenciesGenerationMode
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
 import com.cjbooms.fabrikt.cli.InstantLibrary
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
@@ -35,6 +36,7 @@ data class GenerationSettings(
     val customTypeMappings: List<String> = emptyList(),
     val validationLibrary: ValidationLibrary = ValidationLibrary.default,
     val externalRefResolutionMode: ExternalReferencesResolutionMode = ExternalReferencesResolutionMode.default,
+    val dependenciesGenerationMode: DependenciesGenerationMode = DependenciesGenerationMode.NONE,
     val outputOptions: Set<OutputOptionType> = emptySet(),
     val inputSpec: String,
 ) {
