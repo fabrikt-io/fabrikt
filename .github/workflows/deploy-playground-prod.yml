@@ -6,6 +6,9 @@ on:
   push:
     branches:
       - master
+  release:
+    types:
+      - published
   workflow_dispatch: {}
 
 jobs:
@@ -15,6 +18,8 @@ jobs:
     concurrency: deploy-group # ensure only one action runs at a time
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Build jar
         run: ./gradlew :playground:shadowJar
