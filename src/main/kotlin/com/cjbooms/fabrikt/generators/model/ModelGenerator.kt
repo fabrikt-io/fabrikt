@@ -86,6 +86,22 @@ class ModelGenerator(
     private val serializationAnnotations: SerializationAnnotations = MutableSettings.effectiveSerializationAnnotations
     private val externalRefResolutionMode: ExternalReferencesResolutionMode = MutableSettings.externalRefResolutionMode
     private val jacksonNullabilityMode: JacksonNullabilityMode = MutableSettings.effectiveJacksonNullabilityMode
+    private val additionalModelAnnotations: List<AnnotationSpec> =
+        MutableSettings.modelAdditionalAnnotations.distinct().mapNotNull { name ->
+            val type =
+                try {
+                    ClassName.bestGuess(name.trim()).takeIf { it.packageName.isNotEmpty() }
+                } catch (_: IllegalArgumentException) {
+                    null
+                }
+            if (type == null) {
+                logger.warning(
+                    "Ignoring model annotation '$name': expected a fully qualified class name without arguments. " +
+                        "Use --http-model-additional-annotations package.AnnotationName.",
+                )
+            }
+            type?.let { AnnotationSpec.builder(it).build() }
+        }
 
     companion object {
         private val logger = Logger.getGlobal()
@@ -219,7 +235,15 @@ class ModelGenerator(
                 if (models.none { it.name == additionalModel.name }) models.add(additionalModel)
             }
         }
-        return Models(models.map { ModelType(it, packages.base) })
+        return Models(
+            models.map { model ->
+                val existingAnnotationTypes = model.annotations.map { it.typeName }.toSet()
+                val annotationsToAdd = additionalModelAnnotations.filterNot { it.typeName in existingAnnotationTypes }
+                val annotatedModel =
+                    if (annotationsToAdd.isEmpty()) model else model.toBuilder().addAnnotations(annotationsToAdd).build()
+                ModelType(annotatedModel, packages.base)
+            },
+        )
     }
 
     private fun createModels(
