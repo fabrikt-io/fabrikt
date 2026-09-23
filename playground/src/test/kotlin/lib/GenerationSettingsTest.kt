@@ -32,6 +32,17 @@ class GenerationSettingsTest {
     }
 
     @Test
+    fun modelAdditionalAnnotationsFromForm() {
+        val settings = Parameters.build {
+            append("modelAdditionalAnnotations", "com.example.First\ncom.example.Second")
+        }.receiveGenerationSettings()
+
+        assertEquals(listOf("com.example.First", "com.example.Second"), settings.modelAdditionalAnnotations)
+        assertTrue(settings.toQueryParams().contains("modelAdditionalAnnotations=com.example.First"))
+        assertTrue(settings.toQueryParams().contains("modelAdditionalAnnotations=com.example.Second"))
+    }
+
+    @Test
     fun toQueryParams() {
         val settings = GenerationSettings(
             genTypes = setOf(CodeGenerationType.HTTP_MODELS),
@@ -39,6 +50,7 @@ class GenerationSettingsTest {
             instantLibrary = InstantLibrary.KOTLIN_TIME_INSTANT,
             jacksonNullabilityMode = JacksonNullabilityMode.STRICT,
             modelOptions = setOf(ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF),
+            modelAdditionalAnnotations = listOf("com.example.First", "com.example.Second"),
             controllerTarget = ControllerCodeGenTargetType.KTOR,
             controllerOptions = setOf(ControllerCodeGenOptionType.AUTHENTICATION),
             modelSuffix = "Model",
@@ -62,6 +74,8 @@ class GenerationSettingsTest {
             &instantLibrary=KOTLIN_TIME_INSTANT
             &jacksonNullabilityMode=STRICT
             &modelOptions=SEALED_INTERFACES_FOR_ONE_OF
+            &modelAdditionalAnnotations=com.example.First
+            &modelAdditionalAnnotations=com.example.Second
             &controllerTarget=KTOR
             &controllerOptions=AUTHENTICATION
             &modelSuffix=Model

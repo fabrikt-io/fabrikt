@@ -22,6 +22,7 @@ data class GenerationSettings(
     val instantLibrary: InstantLibrary = InstantLibrary.default,
     val jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.default,
     val modelOptions: Set<ModelCodeGenOptionType>,
+    val modelAdditionalAnnotations: List<String> = emptyList(),
     val controllerTarget: ControllerCodeGenTargetType = ControllerCodeGenTargetType.default,
     val controllerOptions: Set<ControllerCodeGenOptionType> = emptySet(),
     val modelSuffix: String = "",
@@ -56,6 +57,9 @@ data class GenerationSettings(
                 ?: JacksonNullabilityMode.default,
 
             modelOptions = this.getAll("modelOptions")?.map { ModelCodeGenOptionType.valueOf(it) }?.toSet() ?: emptySet(),
+
+            modelAdditionalAnnotations = this.getAll("modelAdditionalAnnotations")
+                ?.flatMap { it.lines() }?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList(),
 
             controllerTarget = this["controllerTarget"]?.let { ControllerCodeGenTargetType.valueOf(it) }
                 ?: ControllerCodeGenTargetType.default,
@@ -108,6 +112,7 @@ data class GenerationSettings(
             .plus(instantLibrary.let { "instantLibrary=${it.name}" })
             .plus(jacksonNullabilityMode.let { "jacksonNullabilityMode=${it.name}" })
             .plus(modelOptions.map { "modelOptions=${it.name}" })
+            .plus(modelAdditionalAnnotations.map { "modelAdditionalAnnotations=${it.encodeURLParameter()}" })
             .plus(controllerTarget.let { "controllerTarget=${it.name}" })
             .plus(controllerOptions.map { "controllerOptions=${it.name}" })
             .plus(modelSuffix.let { "modelSuffix=${it.encodeURLParameter()}" })
