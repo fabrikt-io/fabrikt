@@ -239,109 +239,112 @@ The `discriminator` property is used by Fabrikt to determine the subtypes to be 
 
 This section documents the available CLI parameters for controlling what gets generated. This documentation is generated using: `./gradlew printCodeGenUsage`
 
+To add an annotation to every generated HTTP model type, repeat `--http-model-additional-annotations` with a fully qualified class name, for example `--http-model-additional-annotations com.example.DiffBuilder`. The annotation must need no arguments and be available to the project compiling the generated code. Without this option, generated models are unchanged.
+
 Usage: <main class> [options]
-| Parameter                      | Description |
-| ------------------------------ | ------------------------------ |
-|   `--api-file`                 | This must be a valid Open API v3 spec. All code generation will be based off this input. Accepts either a local file path or a resolvable http(s) URL. |
-|   `--api-fragment`             | A partial Open API v3 fragment, to be combined with the primary API for code generation purposes. Accepts either a local file path or a resolvable http(s) URL. |
-|   `--auth`                     | Authorization header(s) sent when fetching a remote --api-file, --api-fragment, or remote `$ref`. Repeatable, format 'Name: value'. Value may contain `${ENV_VAR}` placeholders, name an env var, or contain !cmd (at start or after whitespace) to run a shell command and substitute its trimmed stdout (e.g. --auth "Authorization: Bearer !generate-fresh-auth-token"). |
-| * `--base-package`             | The base package which all code will be generated under. |
-|   `--custom-type-mapping`      | Map an OpenAPI type and format to a Kotlin type. Use type:format=KotlinFqcn and optionally add ;kotlinx=SerializerFqcn for kotlinx.serialization. |
-|   `--external-ref-resolution`  | Specify to which degree referenced schemas from external files are included in model generation. Default: TARGETED |
-|                                | CHOOSE ONE OF: |
-|                                |   `TARGETED` - Generate models only for directly referenced schemas in external API files. |
-|                                |   `AGGRESSIVE` - Referencing any schema in an external API file triggers generation of every external schema in that file. |
-|   `--http-client-opts`         | Select the options for the http client code that you want to be generated. |
-|                                | CHOOSE ANY OF: |
-|                                |   `RESILIENCE4J` - Generates a fault tolerance service for the client using the following library "io.github.resilience4j:resilience4j-all:+" (only for OkHttp clients) |
-|                                |   `SUSPEND_MODIFIER` - This option adds the suspend modifier to the generated client functions (only for OpenFeign clients) |
-|                                |   `SPRING_RESPONSE_ENTITY_WRAPPER` - This option adds the Spring-ResponseEntity generic around the response to be able to get response headers and status (only for OpenFeign clients). |
-|                                |   `SPRING_CLOUD_OPENFEIGN_STARTER_ANNOTATION` - This option adds the @FeignClient annotation to generated client interface |
-|                                |   `GROUP_BY_TAG` - This option groups clients based on the first tag rather than paths |
-|                                |   `OKHTTP_NON_NULL_RESPONSE_PAYLOADS` - This option makes ApiResponse.data non-null. Responses declared with a body must return one: a missing body, or one that deserializes to null, throws ApiException. An operation that declares both a body response and an empty success response (e.g. 200 and 204) throws on the empty success. Binary responses return an empty ByteArray for an empty body (only for OkHttp clients) |
-|                                |   `DYNAMIC_BASE_URL` - This option makes ApiConfiguration.basePath empty, allowing you to set the base URL at runtime (only for Ktor clients) |
-|   `--http-client-target`       | Optionally select the target client that you want to be generated. Defaults to OK_HTTP |
-|                                | CHOOSE ONE OF: |
-|                                |   `OK_HTTP` - Generate OkHttp client. |
-|                                |   `OPEN_FEIGN` - Generate OpenFeign client. |
-|                                |   `SPRING_HTTP_INTERFACE` - Generate Spring HTTP Interface. |
-|                                |   `KTOR` - Generate Ktor client. |
-|   `--http-controller-opts`     | Select the options for the controllers that you want to be generated. |
-|                                | CHOOSE ANY OF: |
-|                                |   `SUSPEND_MODIFIER` - This option adds the suspend modifier to the generated controller functions |
-|                                |   `AUTHENTICATION` - This option adds the authentication parameter to the generated controller functions |
-|                                |   `GROUP_BY_TAG` - This option groups controllers based on the first tag rather than paths |
-|                                |   `COMPLETION_STAGE` - This option makes generated controller functions have Type CompletionStage<T> (works only with Spring Controller generator). Can be overridden per operation using the OpenAPI extension `x-async-support: true|false` |
-|                                |   `SSE_EMITTER` - This option makes generated controller functions have Type SseEmitter (works only with Spring Controller generator) |
-|   `--http-controller-target`   | Optionally select the target framework for the controllers that you want to be generated. Defaults to Spring Controllers |
-|                                | CHOOSE ONE OF: |
-|                                |   `SPRING` - Generate for Spring framework. |
-|                                |   `MICRONAUT` - Generate for Micronaut framework. |
-|                                |   `KTOR` - Generate for Ktor server. |
-|   `--http-model-opts`          | Select the options for the http models that you want to be generated. |
-|                                | CHOOSE ANY OF: |
-|                                |   `X_EXTENSIBLE_ENUMS` - This option treats x-extensible-enums as enums |
-|                                |   `JAVA_SERIALIZATION` - This option adds Java Serializable interface to the generated models |
-|                                |   `QUARKUS_REFLECTION` - This option adds @RegisterForReflection to the generated models. Requires dependency "'io.quarkus:quarkus-core:+" |
-|                                |   `MICRONAUT_INTROSPECTION` - This option adds @Introspected to the generated models. Requires dependency "'io.micronaut:micronaut-core:+" |
-|                                |   `MICRONAUT_REFLECTION` - This option adds @ReflectiveAccess to the generated models. Requires dependency "'io.micronaut:micronaut-core:+" |
-|                                |   `MICRONAUT_SERDEABLE` - This option adds @Serdeable to the generated models. Requires dependency "'io.micronaut.serde:micronaut-serde-jackson:+" |
-|                                |   `INCLUDE_COMPANION_OBJECT` - This option adds a companion object to the generated models. |
-|                                |   `SEALED_INTERFACES_FOR_ONE_OF` - This option is deprecated. Sealed interfaces are enabled by default in v26+. Use DISABLE_SEALED_INTERFACES_FOR_ONE_OF to disable. |
-|                                |   `DISABLE_SEALED_INTERFACES_FOR_ONE_OF` - This option disables the default sealed interfaces for oneOf behavior in v26+ |
-|                                |   `NON_NULL_MAP_VALUES` - This option makes map values non-null. The default (since v15) and most spec compliant is make map values nullable |
-|                                |   `FAULT_TOLERANT_ENUMS` - This option adds an UNRECOGNIZED enum entry as a fallback for unmapped values, preventing deserialization exceptions. If jackson is used, the deserialization option **READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE** will need to be enabled as well |
-|                                |   `FAULT_TOLERANT_OPEN_ENUMS` - This option converts the "open enum" pattern (an `anyOf` combining a string enum with an open `type: string`) into a fault-tolerant enum, i.e. an enum carrying the declared values plus an UNRECOGNIZED fallback, instead of collapsing the type to a plain `String`. Behaves like FAULT_TOLERANT_ENUMS for the affected enums |
-|   `--http-model-suffix`        | Specify custom suffix for all generated model classes. Defaults to no suffix. |
-|   `--instant-library`          | Specify which Instant library to use in generated model classes for kotlinx.serialization. Default: KOTLINX_INSTANT |
-|                                | CHOOSE ONE OF: |
-|                                |   `KOTLINX_INSTANT` - Use `kotlinx.datetime` Instant in generated classes (default) |
-|                                |   `KOTLIN_TIME_INSTANT` - Use `kotlin.time` Instant in generated classes |
-|   `--jackson-nullability-mode` | Configure advanced handling when serializing null values with Jackson. Default: NONE |
-|                                | CHOOSE ONE OF: |
-|                                |   `NONE` - Default Jackson behaviour |
-|                                |   `ENFORCE_OPTIONAL_NON_NULL` - Omit null values for optional non-null fields |
-|                                |   `ENFORCE_REQUIRED_NULLABLE` - Include null values for required nullable fields |
-|                                |   `STRICT` - Combines `ENFORCE_OPTIONAL_NON_NULL` and `ENFORCE_REQUIRED_NULLABLE` for strictest contract enforcement |
-|   `--json-schema-file`         | Use a JSON Schema document (draft-04 through 2020-12) as the primary input instead of --api-file, converting it to an OpenAPI 3.1 document before generation. Accepts either a local file path or a resolvable http(s) URL, optionally with a trailing '#/json/pointer' fragment (RFC 6901) selecting the schema nested inside a larger resource such as a Nakadi EventType manifest — e.g. 'manifest.yaml#/spec/schemaObject'. An empty fragment ('manifest.yaml#') or no fragment treats the whole file as a bare JSON Schema document. Cannot be combined with --api-file. |
-|   `--json-schema-root-name`    | Name for the schema generated from a JSON Schema's own top-level properties, used with --json-schema-file. Defaults to the schema's 'title', then the resource's '/metadata/name', then 'Schema' with a warning if neither is present. |
-|   `--openfeign-client-name`    | Specify openfeign client name for spring-cloud-starter-openfeign. Defaults to 'fabrikt-client'. |
-|   `--operation-id-transform`   | Regex replacement applied to every operationId before it becomes a generated function name, format '<regex>:<replacement>'. Applies to clients and controllers. E.g. '.*_:' strips a prefix through the last underscore; '^V2_(.*):v2$1' rewrites a prefix. |
-|   `--output-directory`         | Allows the generation dir to be overridden. Defaults to current dir |
-|   `--output-opts`              | Select options for the output. |
-|                                | CHOOSE ANY OF: |
-|                                |   `ADD_FILE_DISCLAIMER` - This option adds a disclaimer to the generated files. |
-|                                |   `ADD_GENERATED_ANNOTATION` - Annotate generated types and top-level functions with javax.annotation.processing.Generated. |
-|   `--resources-path`           | Allows the path for generated resources to be overridden. Defaults to `src/main/resources` |
-|   `--serialization-library`    | Specify which serialization library to use for annotations in generated model classes. Default: JACKSON |
-|                                | CHOOSE ONE OF: |
-|                                |   `JACKSON` - Use Jackson 2 for serialization and deserialization |
-|                                |   `JACKSON_3` - Use Jackson 3 for serialization and deserialization |
-|                                |   `KOTLINX_SERIALIZATION` - Use kotlinx.serialization for serialization and deserialization |
-|   `--src-path`                 | Allows the path for generated source files to be overridden. Defaults to `src/main/kotlin` |
-|   `--targets`                  | Targets are the parts of the application that you want to be generated. |
-|                                | CHOOSE ANY OF: |
-|                                |   `HTTP_MODELS` - Jackson annotated data classes to represent the schema objects defined in the input. |
-|                                |   `CONTROLLERS` - Spring / Micronaut / Ktor HTTP controllers for each of the endpoints defined in the input. |
-|                                |   `CLIENT` - Simple http rest client. |
-|                                |   `QUARKUS_REFLECTION_CONFIG` - This options generates the reflection-config.json file for quarkus integration projects |
-|   `--type-overrides`           | Specify non-default kotlin types for certain OAS types. For example, generate `Instant` instead of `OffsetDateTime` |
-|                                | CHOOSE ANY OF: |
-|                                |   `DATETIME_AS_INSTANT` - Use `Instant` as the datetime type. Defaults to `OffsetDateTime` |
-|                                |   `DATETIME_AS_LOCALDATETIME` - Use `LocalDateTime` as the datetime type. Defaults to `OffsetDateTime` |
-|                                |   `BYTE_AS_STRING` - Ignore string format `byte` and use `String` as the type |
-|                                |   `BINARY_AS_STRING` - Ignore string format `binary` and use `String` as the type |
-|                                |   `URI_AS_STRING` - Ignore string format `uri` and use `String` as the type |
-|                                |   `UUID_AS_STRING` - Ignore string format `uuid` and use `String` as the type |
-|                                |   `DATE_AS_STRING` - Ignore string format `date` and use `String` as the type |
-|                                |   `DATETIME_AS_STRING` - Ignore string format `date-time` and use `String` as the type |
-|                                |   `BYTEARRAY_AS_INPUTSTREAM` - Use `InputStream` as ByteArray type. Defaults to `ByteArray` |
-|                                |   `ANY_AS_JSONELEMENT` - Use `kotlinx.serialization.json.JsonElement` for untyped (any) schemas and `JsonObject` for untyped objects. Requires the KOTLINX_SERIALIZATION serialization library. Defaults to `Any` |
-|   `--validation-library`       | Specify which validation library to use for annotations in generated model classes. Default: JAKARTA_VALIDATION |
-|                                | CHOOSE ONE OF: |
-|                                |   `JAVAX_VALIDATION` - Use `javax.validation` annotations in generated model classes |
-|                                |   `JAKARTA_VALIDATION` - Use `jakarta.validation` annotations in generated model classes (default) |
-|                                |   `NO_VALIDATION` - Use no validation annotations in generated model classes |
+| Parameter                               | Description |
+| --------------------------------------- | --------------------------------------- |
+|   `--api-file`                          | This must be a valid Open API v3 spec. All code generation will be based off this input. Accepts either a local file path or a resolvable http(s) URL. |
+|   `--api-fragment`                      | A partial Open API v3 fragment, to be combined with the primary API for code generation purposes. Accepts either a local file path or a resolvable http(s) URL. |
+|   `--auth`                              | Authorization header(s) sent when fetching a remote --api-file, --api-fragment, or remote `$ref`. Repeatable, format 'Name: value'. Value may contain `${ENV_VAR}` placeholders, name an env var, or contain !cmd (at start or after whitespace) to run a shell command and substitute its trimmed stdout (e.g. --auth "Authorization: Bearer !generate-fresh-auth-token"). |
+| * `--base-package`                      | The base package which all code will be generated under. |
+|   `--custom-type-mapping`               | Map an OpenAPI type and format to a Kotlin type. Use type:format=KotlinFqcn and optionally add ;kotlinx=SerializerFqcn for kotlinx.serialization. |
+|   `--external-ref-resolution`           | Specify to which degree referenced schemas from external files are included in model generation. Default: TARGETED |
+|                                         | CHOOSE ONE OF: |
+|                                         |   `TARGETED` - Generate models only for directly referenced schemas in external API files. |
+|                                         |   `AGGRESSIVE` - Referencing any schema in an external API file triggers generation of every external schema in that file. |
+|   `--http-client-opts`                  | Select the options for the http client code that you want to be generated. |
+|                                         | CHOOSE ANY OF: |
+|                                         |   `RESILIENCE4J` - Generates a fault tolerance service for the client using the following library "io.github.resilience4j:resilience4j-all:+" (only for OkHttp clients) |
+|                                         |   `SUSPEND_MODIFIER` - This option adds the suspend modifier to the generated client functions (only for OpenFeign clients) |
+|                                         |   `SPRING_RESPONSE_ENTITY_WRAPPER` - This option adds the Spring-ResponseEntity generic around the response to be able to get response headers and status (only for OpenFeign clients). |
+|                                         |   `SPRING_CLOUD_OPENFEIGN_STARTER_ANNOTATION` - This option adds the @FeignClient annotation to generated client interface |
+|                                         |   `GROUP_BY_TAG` - This option groups clients based on the first tag rather than paths |
+|                                         |   `OKHTTP_NON_NULL_RESPONSE_PAYLOADS` - This option makes ApiResponse.data non-null. Responses declared with a body must return one: a missing body, or one that deserializes to null, throws ApiException. An operation that declares both a body response and an empty success response (e.g. 200 and 204) throws on the empty success. Binary responses return an empty ByteArray for an empty body (only for OkHttp clients) |
+|                                         |   `DYNAMIC_BASE_URL` - This option makes ApiConfiguration.basePath empty, allowing you to set the base URL at runtime (only for Ktor clients) |
+|   `--http-client-target`                | Optionally select the target client that you want to be generated. Defaults to OK_HTTP |
+|                                         | CHOOSE ONE OF: |
+|                                         |   `OK_HTTP` - Generate OkHttp client. |
+|                                         |   `OPEN_FEIGN` - Generate OpenFeign client. |
+|                                         |   `SPRING_HTTP_INTERFACE` - Generate Spring HTTP Interface. |
+|                                         |   `KTOR` - Generate Ktor client. |
+|   `--http-controller-opts`              | Select the options for the controllers that you want to be generated. |
+|                                         | CHOOSE ANY OF: |
+|                                         |   `SUSPEND_MODIFIER` - This option adds the suspend modifier to the generated controller functions |
+|                                         |   `AUTHENTICATION` - This option adds the authentication parameter to the generated controller functions |
+|                                         |   `GROUP_BY_TAG` - This option groups controllers based on the first tag rather than paths |
+|                                         |   `COMPLETION_STAGE` - This option makes generated controller functions have Type CompletionStage<T> (works only with Spring Controller generator). Can be overridden per operation using the OpenAPI extension `x-async-support: true|false` |
+|                                         |   `SSE_EMITTER` - This option makes generated controller functions have Type SseEmitter (works only with Spring Controller generator) |
+|   `--http-controller-target`            | Optionally select the target framework for the controllers that you want to be generated. Defaults to Spring Controllers |
+|                                         | CHOOSE ONE OF: |
+|                                         |   `SPRING` - Generate for Spring framework. |
+|                                         |   `MICRONAUT` - Generate for Micronaut framework. |
+|                                         |   `KTOR` - Generate for Ktor server. |
+|   `--http-model-additional-annotations` | Repeatable fully qualified annotation class name to add to generated HTTP model types. Only annotations without arguments are supported. |
+|   `--http-model-opts`                   | Select the options for the http models that you want to be generated. |
+|                                         | CHOOSE ANY OF: |
+|                                         |   `X_EXTENSIBLE_ENUMS` - This option treats x-extensible-enums as enums |
+|                                         |   `JAVA_SERIALIZATION` - This option adds Java Serializable interface to the generated models |
+|                                         |   `QUARKUS_REFLECTION` - This option adds @RegisterForReflection to the generated models. Requires dependency "'io.quarkus:quarkus-core:+" |
+|                                         |   `MICRONAUT_INTROSPECTION` - This option adds @Introspected to the generated models. Requires dependency "'io.micronaut:micronaut-core:+" |
+|                                         |   `MICRONAUT_REFLECTION` - This option adds @ReflectiveAccess to the generated models. Requires dependency "'io.micronaut:micronaut-core:+" |
+|                                         |   `MICRONAUT_SERDEABLE` - This option adds @Serdeable to the generated models. Requires dependency "'io.micronaut.serde:micronaut-serde-jackson:+" |
+|                                         |   `INCLUDE_COMPANION_OBJECT` - This option adds a companion object to the generated models. |
+|                                         |   `SEALED_INTERFACES_FOR_ONE_OF` - This option is deprecated. Sealed interfaces are enabled by default in v26+. Use DISABLE_SEALED_INTERFACES_FOR_ONE_OF to disable. |
+|                                         |   `DISABLE_SEALED_INTERFACES_FOR_ONE_OF` - This option disables the default sealed interfaces for oneOf behavior in v26+ |
+|                                         |   `NON_NULL_MAP_VALUES` - This option makes map values non-null. The default (since v15) and most spec compliant is make map values nullable |
+|                                         |   `FAULT_TOLERANT_ENUMS` - This option adds an UNRECOGNIZED enum entry as a fallback for unmapped values, preventing deserialization exceptions. If jackson is used, the deserialization option **READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE** will need to be enabled as well |
+|                                         |   `FAULT_TOLERANT_OPEN_ENUMS` - This option converts the "open enum" pattern (an `anyOf` combining a string enum with an open `type: string`) into a fault-tolerant enum, i.e. an enum carrying the declared values plus an UNRECOGNIZED fallback, instead of collapsing the type to a plain `String`. Behaves like FAULT_TOLERANT_ENUMS for the affected enums |
+|   `--http-model-suffix`                 | Specify custom suffix for all generated model classes. Defaults to no suffix. |
+|   `--instant-library`                   | Specify which Instant library to use in generated model classes for kotlinx.serialization. Default: KOTLINX_INSTANT |
+|                                         | CHOOSE ONE OF: |
+|                                         |   `KOTLINX_INSTANT` - Use `kotlinx.datetime` Instant in generated classes (default) |
+|                                         |   `KOTLIN_TIME_INSTANT` - Use `kotlin.time` Instant in generated classes |
+|   `--jackson-nullability-mode`          | Configure advanced handling when serializing null values with Jackson. Default: NONE |
+|                                         | CHOOSE ONE OF: |
+|                                         |   `NONE` - Default Jackson behaviour |
+|                                         |   `ENFORCE_OPTIONAL_NON_NULL` - Omit null values for optional non-null fields |
+|                                         |   `ENFORCE_REQUIRED_NULLABLE` - Include null values for required nullable fields |
+|                                         |   `STRICT` - Combines `ENFORCE_OPTIONAL_NON_NULL` and `ENFORCE_REQUIRED_NULLABLE` for strictest contract enforcement |
+|   `--json-schema-file`                  | Use a JSON Schema document (draft-04 through 2020-12) as the primary input instead of --api-file, converting it to an OpenAPI 3.1 document before generation. Accepts either a local file path or a resolvable http(s) URL, optionally with a trailing '#/json/pointer' fragment (RFC 6901) selecting the schema nested inside a larger resource such as a Nakadi EventType manifest — e.g. 'manifest.yaml#/spec/schemaObject'. An empty fragment ('manifest.yaml#') or no fragment treats the whole file as a bare JSON Schema document. Cannot be combined with --api-file. |
+|   `--json-schema-root-name`             | Name for the schema generated from a JSON Schema's own top-level properties, used with --json-schema-file. Defaults to the schema's 'title', then the resource's '/metadata/name', then 'Schema' with a warning if neither is present. |
+|   `--openfeign-client-name`             | Specify openfeign client name for spring-cloud-starter-openfeign. Defaults to 'fabrikt-client'. |
+|   `--operation-id-transform`            | Regex replacement applied to every operationId before it becomes a generated function name, format '<regex>:<replacement>'. Applies to clients and controllers. E.g. '.*_:' strips a prefix through the last underscore; '^V2_(.*):v2$1' rewrites a prefix. |
+|   `--output-directory`                  | Allows the generation dir to be overridden. Defaults to current dir |
+|   `--output-opts`                       | Select options for the output. |
+|                                         | CHOOSE ANY OF: |
+|                                         |   `ADD_FILE_DISCLAIMER` - This option adds a disclaimer to the generated files. |
+|                                         |   `ADD_GENERATED_ANNOTATION` - Annotate generated types and top-level functions with javax.annotation.processing.Generated. |
+|   `--resources-path`                    | Allows the path for generated resources to be overridden. Defaults to `src/main/resources` |
+|   `--serialization-library`             | Specify which serialization library to use for annotations in generated model classes. Default: JACKSON |
+|                                         | CHOOSE ONE OF: |
+|                                         |   `JACKSON` - Use Jackson 2 for serialization and deserialization |
+|                                         |   `JACKSON_3` - Use Jackson 3 for serialization and deserialization |
+|                                         |   `KOTLINX_SERIALIZATION` - Use kotlinx.serialization for serialization and deserialization |
+|   `--src-path`                          | Allows the path for generated source files to be overridden. Defaults to `src/main/kotlin` |
+|   `--targets`                           | Targets are the parts of the application that you want to be generated. |
+|                                         | CHOOSE ANY OF: |
+|                                         |   `HTTP_MODELS` - Jackson annotated data classes to represent the schema objects defined in the input. |
+|                                         |   `CONTROLLERS` - Spring / Micronaut / Ktor HTTP controllers for each of the endpoints defined in the input. |
+|                                         |   `CLIENT` - Simple http rest client. |
+|                                         |   `QUARKUS_REFLECTION_CONFIG` - This options generates the reflection-config.json file for quarkus integration projects |
+|   `--type-overrides`                    | Specify non-default kotlin types for certain OAS types. For example, generate `Instant` instead of `OffsetDateTime` |
+|                                         | CHOOSE ANY OF: |
+|                                         |   `DATETIME_AS_INSTANT` - Use `Instant` as the datetime type. Defaults to `OffsetDateTime` |
+|                                         |   `DATETIME_AS_LOCALDATETIME` - Use `LocalDateTime` as the datetime type. Defaults to `OffsetDateTime` |
+|                                         |   `BYTE_AS_STRING` - Ignore string format `byte` and use `String` as the type |
+|                                         |   `BINARY_AS_STRING` - Ignore string format `binary` and use `String` as the type |
+|                                         |   `URI_AS_STRING` - Ignore string format `uri` and use `String` as the type |
+|                                         |   `UUID_AS_STRING` - Ignore string format `uuid` and use `String` as the type |
+|                                         |   `DATE_AS_STRING` - Ignore string format `date` and use `String` as the type |
+|                                         |   `DATETIME_AS_STRING` - Ignore string format `date-time` and use `String` as the type |
+|                                         |   `BYTEARRAY_AS_INPUTSTREAM` - Use `InputStream` as ByteArray type. Defaults to `ByteArray` |
+|                                         |   `ANY_AS_JSONELEMENT` - Use `kotlinx.serialization.json.JsonElement` for untyped (any) schemas and `JsonObject` for untyped objects. Requires the KOTLINX_SERIALIZATION serialization library. Defaults to `Any` |
+|   `--validation-library`                | Specify which validation library to use for annotations in generated model classes. Default: JAKARTA_VALIDATION |
+|                                         | CHOOSE ONE OF: |
+|                                         |   `JAVAX_VALIDATION` - Use `javax.validation` annotations in generated model classes |
+|                                         |   `JAKARTA_VALIDATION` - Use `jakarta.validation` annotations in generated model classes (default) |
+|                                         |   `NO_VALIDATION` - Use no validation annotations in generated model classes |
 
 ## Original Motivation
 

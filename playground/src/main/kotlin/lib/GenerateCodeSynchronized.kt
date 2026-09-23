@@ -16,6 +16,7 @@ fun generateCodeSynchronized(
         controllerOptions = generationSettings.controllerOptions,
         controllerTarget = generationSettings.controllerTarget,
         modelOptions = generationSettings.modelOptions,
+        modelAdditionalAnnotations = generationSettings.modelAdditionalAnnotations,
         modelSuffix = generationSettings.modelSuffix,
         clientOptions = generationSettings.clientOptions,
         clientTarget = generationSettings.clientTarget,
