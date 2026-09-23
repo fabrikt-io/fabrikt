@@ -39,6 +39,7 @@ class KotlinSerializationModelGeneratorTest {
             "normalizedNameConflation",
             "openEnum",
             "customTypeMapping",
+            "mixedTypeUnion",
         )
 
     @BeforeEach

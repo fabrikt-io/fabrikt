@@ -228,12 +228,17 @@ The command mounts your current directory to `/workspace` in the container, wher
 ## Getting the Most from Fabrikt
 
 ### 1. Prefer components to inline schemas
-While inline schemas are perfectly valid they are not supported by Fabrikt in all circumstances.
-This is especially true for request bodies and non-trivial parameters. Instead, define your schemas in the components section of the OpenAPI spec (`components.parameters` & `components.requestBodies`). [#20](https://github.com/fabrikt-io/fabrikt/issues/20), [#187](https://github.com/fabrikt-io/fabrikt/issues/187)
+Fabrikt generates models for inline objects in operation parameters, non-multipart request bodies, and responses, including supported `allOf` object shapes.
+Other inline schema shapes can still fall back to generic types. For complex reusable schemas, define them under `components` in the OpenAPI spec. See [PR #713](https://github.com/fabrikt-io/fabrikt/pull/713) for the supported inline object cases.
 
 ### 2. Use `oneOf` with discriminator for polymorphism
 `oneOf` along with the flag `SEALED_INTERFACES_FOR_ONE_OF` will generate polymorphic models with sealed interfaces.
 The `discriminator` property is used by Fabrikt to determine the subtypes to be generated.
+
+### 3. OpenAPI 3.1 type arrays
+A required property with `type: [string, 'null']` generates `String?`.
+When a schema declares multiple non-null types, Fabrikt logs a warning and generates `Any` with Jackson or `JsonElement` with kotlinx.serialization instead of a dedicated union model.
+Use a supported `oneOf` schema when a concrete polymorphic Kotlin model is needed.
 
 ## Configuration Options
 

@@ -146,6 +146,20 @@ sealed class KotlinTypeInfo(
                     it.openApiType.equals(schema.type, ignoreCase = true) &&
                         it.format.equals(schema.format, ignoreCase = true)
                 }?.let { return Custom(it.kotlinType, it.kotlinxSerializer) }
+            if (schema.hasMultipleNonNullTypes) {
+                val fallbackType =
+                    if (MutableSettings.serializationLibrary == KOTLINX_SERIALIZATION) {
+                        JsonElement
+                    } else {
+                        getOverridableAnyType()
+                    }
+                logger.warning(
+                    "Schema at ${schema.jsonPathFromRoot} declares multiple non-null types; " +
+                        "generating ${fallbackType.modelKClass.simpleName}. " +
+                        "Use a single type or a supported oneOf schema to generate a specific Kotlin type.",
+                )
+                return fallbackType
+            }
             if (schema.isUnsupportedComplexInlinedDefinition() && !ModelNameRegistry.hasPreRegisteredReference(schema)) {
                 /*
                  * Defaults to Any for complex schemas under paths unless SourceApi discovered and named the schema.

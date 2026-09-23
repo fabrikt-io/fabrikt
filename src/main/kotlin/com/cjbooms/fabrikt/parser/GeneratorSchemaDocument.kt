@@ -1,5 +1,7 @@
 package com.cjbooms.fabrikt.parser
 
+import com.cjbooms.fabrikt.model.SchemaSemantics
+
 internal class GeneratorSchemaDocument(
     val version: OpenApiVersion?,
     val componentSchemas: Map<String, GeneratorSchema>,
@@ -11,10 +13,22 @@ internal class GeneratorSchemaDocument(
         return sourceSchema?.let { referencedSchemas[it.identity] } ?: schema
     }
 
-    private fun isUninhabitable(schema: GeneratorSchema): Boolean =
-        GeneratorSchemaTypeClassifier.classify(resolve(schema), ::resolve) is GeneratorSchemaTypeClassification.Uninhabitable
-
-    fun isUninhabitableAt(location: String): Boolean = sourceSchemaAt(location)?.let(::isUninhabitable) == true
+    fun schemaSemanticsAt(location: String): SchemaSemantics {
+        val schema = sourceSchemaAt(location) ?: return SchemaSemantics()
+        val classification = GeneratorSchemaTypeClassifier.classify(resolve(schema), ::resolve)
+        val declaredTypes =
+            if (version?.isAtLeast(3, 1) == true && schema is SourceObjectSchema) schema.types else emptySet()
+        val nonNullTypes = declaredTypes - SourceSchemaType.NULL
+        return SchemaSemantics(
+            isUninhabitable = classification is GeneratorSchemaTypeClassification.Uninhabitable,
+            hasMultipleNonNullTypes =
+                classification is GeneratorSchemaTypeClassification.Unsupported &&
+                    classification.reason == GeneratorSchemaTypeClassification.Reason.MULTIPLE_NON_NULL_TYPES,
+            declaredType =
+                nonNullTypes.singleOrNull()?.takeIf { it is SourceSchemaType.Recognised }?.value,
+            isNullable = declaredTypes.takeIf { it.isNotEmpty() }?.contains(SourceSchemaType.NULL),
+        )
+    }
 
     private fun sourceSchemaAt(location: String): SourceSchema? =
         sourceSchemasByLocation[location]

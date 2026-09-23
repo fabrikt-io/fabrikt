@@ -60,6 +60,7 @@ class ModelGeneratorTest {
             "mapExamples",
             "mapExamplesNonNullValues",
             "mixingCamelSnakeLispCase",
+            "mixedTypeUnion",
             "oneOfPolymorphicModels",
             "optionalVsRequired",
             "polymorphicModels",
