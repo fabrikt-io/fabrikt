@@ -13,10 +13,23 @@ import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.cli.ValidationLibrary
+import io.ktor.http.Parameters
+import lib.GenerationSettings.Companion.receiveGenerationSettings
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GenerationSettingsTest {
+
+    @Test
+    fun generatedAnnotationOutputOption() {
+        val settings = Parameters.build {
+            append("outputOptions", "ADD_GENERATED_ANNOTATION")
+        }.receiveGenerationSettings()
+
+        assertEquals(setOf(OutputOptionType.ADD_GENERATED_ANNOTATION), settings.outputOptions)
+        assertTrue(settings.toQueryParams().contains("outputOptions=ADD_GENERATED_ANNOTATION"))
+    }
 
     @Test
     fun toQueryParams() {
