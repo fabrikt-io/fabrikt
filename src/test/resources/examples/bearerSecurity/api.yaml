@@ -1,0 +1,56 @@
+openapi: 3.0.4
+info:
+  title: Bearer security
+  version: '1.0'
+security:
+  - BearerAuth: []
+paths:
+  /protected:
+    get:
+      operationId: getProtected
+      responses:
+        '200':
+          description: OK
+  /anonymous:
+    get:
+      operationId: getAnonymous
+      security: []
+      responses:
+        '200':
+          description: OK
+  /optional:
+    get:
+      operationId: getOptional
+      security:
+        - {}
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+  /combined:
+    get:
+      operationId: getCombined
+      security:
+        - BearerAuth: []
+          ApiKey: []
+      responses:
+        '200':
+          description: OK
+  /alternative:
+    get:
+      operationId: getAlternative
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key

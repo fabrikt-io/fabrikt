@@ -43,6 +43,7 @@ class OkHttpEnhancedClientGenerator(
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE,
 ) {
     private val multipartParameterToSpecBuilder = ClientGeneratorUtils.MultipartParameterToSpecBuilder(packages.client)
+    private val bearerSecurity = ClientBearerSecurity(api.openApi3)
 
     fun generateDynamicClientCode(options: Set<ClientCodeGenOptionType>): Collection<ClientType> =
         options.ifResilience4jIsEnabled {
@@ -55,40 +56,51 @@ class OkHttpEnhancedClientGenerator(
             .map { (resourceName, paths) ->
                 val funSpecs: List<FunSpec> =
                     paths.flatMap { (resource, path) ->
-                        path.operations.map { (verb, operation) ->
+                        path.operations.flatMap { (verb, operation) ->
                             val parameters = deriveClientParameters(path, operation, packages.base)
-                            FunSpec
-                                .builder(functionName(operation, resource, verb))
-                                .addDeprecation(operation)
-                                .apply {
-                                    if (parameters.any { it is RequestParameter && it.isDeprecated }) {
-                                        addKdoc(operation.toKdoc(parameters))
-                                    }
-                                }.addModifiers(KModifier.PUBLIC)
-                                .addAnnotation(
-                                    AnnotationSpec
-                                        .builder(Throws::class)
-                                        .addMember("%T::class", "ApiException".toClassName(packages.client))
-                                        .build(),
-                                ).addIncomingParameters(
-                                    parameters,
-                                    multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder(),
-                                ).addParameter(
-                                    ParameterSpec
-                                        .builder(
-                                            ADDITIONAL_HEADERS_PARAMETER_NAME,
-                                            TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
-                                        ).defaultValue("emptyMap()")
-                                        .build(),
-                                ).addCode(
-                                    Resilience4jClientOperationStatement(
-                                        resource,
-                                        verb,
-                                        operation,
+                            val function =
+                                FunSpec
+                                    .builder(functionName(operation, resource, verb))
+                                    .addDeprecation(operation)
+                                    .apply {
+                                        if (parameters.any { it is RequestParameter && it.isDeprecated }) {
+                                            addKdoc(operation.toKdoc(parameters))
+                                        }
+                                    }.addModifiers(KModifier.PUBLIC)
+                                    .addAnnotation(
+                                        AnnotationSpec
+                                            .builder(Throws::class)
+                                            .addMember("%T::class", "ApiException".toClassName(packages.client))
+                                            .build(),
+                                    ).addIncomingParameters(
                                         parameters,
-                                    ).toStatement(),
-                                ).returns(operation.toClientReturnType(packages))
-                                .build()
+                                        multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder(),
+                                    ).addParameter(
+                                        ParameterSpec
+                                            .builder(
+                                                ADDITIONAL_HEADERS_PARAMETER_NAME,
+                                                TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
+                                            ).defaultValue("emptyMap()")
+                                            .build(),
+                                    ).addCode(
+                                        Resilience4jClientOperationStatement(
+                                            resource,
+                                            verb,
+                                            operation,
+                                            parameters,
+                                        ).toStatement(),
+                                    ).returns(operation.toClientReturnType(packages))
+                                    .build()
+                            listOfNotNull(
+                                function,
+                                if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
+                                    bearerSecurity.forOperation(operation)?.let {
+                                        function.withBearerTokenWrapper(it, BearerWrapperTarget.ADDITIONAL_HEADERS)
+                                    }
+                                } else {
+                                    null
+                                },
+                            )
                         }
                     }
 
