@@ -54,6 +54,7 @@ class OkHttpSimpleClientGenerator(
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE,
 ) {
     private val multipartParameterToSpecBuilder = ClientGeneratorUtils.MultipartParameterToSpecBuilder(packages.client)
+    private val bearerSecurity = ClientBearerSecurity(api.openApi3)
 
     fun generateDynamicClientCode(options: Set<ClientCodeGenOptionType> = emptySet()): Collection<ClientType> =
         api
@@ -61,46 +62,57 @@ class OkHttpSimpleClientGenerator(
             .map { (resourceName, paths) ->
                 val funcSpecs: List<FunSpec> =
                     paths.flatMap { (resource, path) ->
-                        path.operations.map { (verb, operation) ->
+                        path.operations.flatMap { (verb, operation) ->
                             val parameters = deriveClientParameters(path, operation, packages.base)
-                            FunSpec
-                                .builder(functionName(operation, resource, verb))
-                                .addDeprecation(operation)
-                                .addModifiers(KModifier.PUBLIC)
-                                .addKdoc(operation.toKdoc(parameters))
-                                .addAnnotation(
-                                    AnnotationSpec
-                                        .builder(Throws::class)
-                                        .addMember("%T::class", "ApiException".toClassName(packages.client))
-                                        .build(),
-                                ).addIncomingParameters(
-                                    parameters,
-                                    multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder(),
-                                ).addParameter(
-                                    ParameterSpec
-                                        .builder(
-                                            ADDITIONAL_HEADERS_PARAMETER_NAME,
-                                            TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
-                                        ).defaultValue("emptyMap()")
-                                        .build(),
-                                ).addParameter(
-                                    ParameterSpec
-                                        .builder(
-                                            ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME,
-                                            TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
-                                        ).defaultValue("emptyMap()")
-                                        .build(),
-                                ).addCode(
-                                    SimpleClientOperationStatement(
-                                        packages,
-                                        resource,
-                                        verb,
-                                        operation,
+                            val function =
+                                FunSpec
+                                    .builder(functionName(operation, resource, verb))
+                                    .addDeprecation(operation)
+                                    .addModifiers(KModifier.PUBLIC)
+                                    .addKdoc(operation.toKdoc(parameters))
+                                    .addAnnotation(
+                                        AnnotationSpec
+                                            .builder(Throws::class)
+                                            .addMember("%T::class", "ApiException".toClassName(packages.client))
+                                            .build(),
+                                    ).addIncomingParameters(
                                         parameters,
-                                        options,
-                                    ).toStatement(),
-                                ).returns(operation.toClientReturnType(packages))
-                                .build()
+                                        multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder(),
+                                    ).addParameter(
+                                        ParameterSpec
+                                            .builder(
+                                                ADDITIONAL_HEADERS_PARAMETER_NAME,
+                                                TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
+                                            ).defaultValue("emptyMap()")
+                                            .build(),
+                                    ).addParameter(
+                                        ParameterSpec
+                                            .builder(
+                                                ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME,
+                                                TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
+                                            ).defaultValue("emptyMap()")
+                                            .build(),
+                                    ).addCode(
+                                        SimpleClientOperationStatement(
+                                            packages,
+                                            resource,
+                                            verb,
+                                            operation,
+                                            parameters,
+                                            options,
+                                        ).toStatement(),
+                                    ).returns(operation.toClientReturnType(packages))
+                                    .build()
+                            listOfNotNull(
+                                function,
+                                if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
+                                    bearerSecurity.forOperation(operation)?.let {
+                                        function.withBearerTokenWrapper(it, BearerWrapperTarget.ADDITIONAL_HEADERS)
+                                    }
+                                } else {
+                                    null
+                                },
+                            )
                         }
                     }
 

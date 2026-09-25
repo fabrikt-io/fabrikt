@@ -12,6 +12,7 @@ import com.reprezen.kaizen.oasparser.model3.RequestBody
 import com.reprezen.kaizen.oasparser.model3.Response
 import com.reprezen.kaizen.oasparser.model3.Schema
 import com.reprezen.kaizen.oasparser.model3.SecurityRequirement
+import com.reprezen.kaizen.oasparser.model3.SecurityScheme
 import com.reprezen.kaizen.oasparser.model3.Server
 
 /**
@@ -122,6 +123,8 @@ class OpenApi3Document(
     val servers: List<OpenApiServer> get() = kaizen.servers?.map(::OpenApiServer) ?: emptyList()
     val securityRequirements: List<OpenApiSecurityRequirement>
         get() = kaizen.securityRequirements?.map(::OpenApiSecurityRequirement) ?: emptyList()
+    val securitySchemes: Map<String, OpenApiSecurityScheme>
+        get() = kaizen.securitySchemes?.mapValues { OpenApiSecurityScheme(it.value) } ?: emptyMap()
     val parsedJson: JsonNode? get() = Overlay.of(kaizen).parsedJson
 
     override fun equals(other: Any?): Boolean = other is OpenApi3Document && kaizen == other.kaizen
@@ -264,6 +267,18 @@ class OpenApiSecurityRequirement(
     override fun hashCode(): Int = kaizen.hashCode()
 
     override fun toString(): String = kaizen.toString()
+}
+
+class OpenApiSecurityScheme(
+    internal val kaizen: SecurityScheme,
+) {
+    val type: String? get() = kaizen.type
+
+    val scheme: String? get() = kaizen.scheme
+
+    override fun equals(other: Any?): Boolean = other is OpenApiSecurityScheme && kaizen == other.kaizen
+
+    override fun hashCode(): Int = kaizen.hashCode()
 }
 
 class OpenApiServer(

@@ -46,6 +46,8 @@ class OpenFeignInterfaceGenerator(
     private val packages: Packages,
     private val api: SourceApi,
 ) : ClientGenerator {
+    private val bearerSecurity = ClientBearerSecurity(api.openApi3)
+
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
         val clientTypes =
             api
@@ -54,7 +56,20 @@ class OpenFeignInterfaceGenerator(
                     val funcSpecs: List<FunSpec> =
                         paths.flatMap { (resource, path) ->
                             path.operations.flatMap { (verb, operation) ->
-                                buildFunctions(path, resource, operation, verb, options)
+                                val functions = buildFunctions(path, resource, operation, verb, options)
+                                functions +
+                                    listOfNotNull(
+                                        if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
+                                            bearerSecurity.forOperation(operation)?.let {
+                                                functions.first().withBearerTokenWrapper(
+                                                    it,
+                                                    BearerWrapperTarget.ADDITIONAL_HEADERS,
+                                                )
+                                            }
+                                        } else {
+                                            null
+                                        },
+                                    )
                             }
                         }
 
