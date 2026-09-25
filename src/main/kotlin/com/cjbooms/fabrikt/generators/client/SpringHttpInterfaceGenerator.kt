@@ -44,6 +44,8 @@ class SpringHttpInterfaceGenerator(
     private val api: SourceApi,
     private val srcPath: java.nio.file.Path = Destinations.MAIN_KT_SOURCE,
 ) : ClientGenerator {
+    private val bearerSecurity = ClientBearerSecurity(api.openApi3)
+
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
         val clientTypes =
             api
@@ -51,8 +53,18 @@ class SpringHttpInterfaceGenerator(
                 .map { (resourceName, paths) ->
                     val funcSpecs: List<FunSpec> =
                         paths.flatMap { (resource, path) ->
-                            path.operations.map { (verb, operation) ->
-                                buildFunction(path, resource, operation, verb, options)
+                            path.operations.flatMap { (verb, operation) ->
+                                val function = buildFunction(path, resource, operation, verb, options)
+                                listOfNotNull(
+                                    function,
+                                    if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
+                                        bearerSecurity.forOperation(operation)?.let {
+                                            function.withBearerTokenWrapper(it, BearerWrapperTarget.ADDITIONAL_HEADERS)
+                                        }
+                                    } else {
+                                        null
+                                    },
+                                )
                             }
                         }
 
