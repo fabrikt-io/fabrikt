@@ -1,0 +1,3 @@
+package examples.directionalModels.models
+
+public object ReadOnlyRecordRequest

@@ -1,0 +1,100 @@
+openapi: 3.0.3
+info:
+  title: Directional models
+  version: 1.0.0
+paths:
+  /pets:
+    post:
+      operationId: createPet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+      responses:
+        '200':
+          description: Created pet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+components:
+  schemas:
+    Pet:
+      type: object
+      required: [id, name, age, readList, writeObject, nullableSecret]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          readOnly: true
+        age:
+          type: integer
+          writeOnly: true
+        nickname:
+          type: string
+          writeOnly: true
+        nullableSecret:
+          type: string
+          nullable: true
+          writeOnly: true
+        readList:
+          type: array
+          readOnly: true
+          items:
+            type: string
+        writeObject:
+          type: object
+          writeOnly: true
+          required: [token]
+          properties:
+            token:
+              type: string
+        readMap:
+          type: object
+          readOnly: true
+          additionalProperties:
+            type: string
+        child:
+          $ref: '#/components/schemas/Pet'
+        nested:
+          type: object
+          required: [code, password]
+          properties:
+            code:
+              type: string
+              readOnly: true
+            password:
+              type: string
+              writeOnly: true
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pet'
+        index:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Pet'
+        state:
+          $ref: '#/components/schemas/State'
+    State:
+      type: string
+      enum: [active, inactive]
+    ComposedPet:
+      allOf:
+        - $ref: '#/components/schemas/Pet'
+        - type: object
+          required: [serial]
+          properties:
+            serial:
+              type: string
+              readOnly: true
+    ReadOnlyRecord:
+      type: object
+      required: [value]
+      properties:
+        value:
+          type: string
+          readOnly: true

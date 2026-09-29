@@ -1,5 +1,8 @@
 package com.cjbooms.fabrikt.model
 
+import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
+import com.cjbooms.fabrikt.generators.MutableSettings
+import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getKeyIfSingleDiscriminatorValue
@@ -42,9 +45,23 @@ sealed class PropertyInfo {
             val markReadWriteOnlyOptional: Boolean = true,
             val markAllOptional: Boolean = false,
             val excludeWriteOnly: Boolean = false,
+            val excludeReadOnly: Boolean = false,
         )
 
-        val HTTP_SETTINGS = Settings()
+        val HTTP_SETTINGS: Settings
+            get() {
+                val excludeReadOnly =
+                    ModelCodeGenOptionType.EXCLUDE_READ_ONLY in MutableSettings.modelOptions ||
+                        ModelNameRegistry.direction == ModelNameRegistry.Direction.REQUEST
+                val excludeWriteOnly =
+                    ModelCodeGenOptionType.EXCLUDE_WRITE_ONLY in MutableSettings.modelOptions ||
+                        ModelNameRegistry.direction == ModelNameRegistry.Direction.RESPONSE
+                return Settings(
+                    markReadWriteOnlyOptional = !excludeReadOnly && !excludeWriteOnly,
+                    excludeReadOnly = excludeReadOnly,
+                    excludeWriteOnly = excludeWriteOnly,
+                )
+            }
 
         internal fun Schema.topLevelProperties(
             settings: Settings,
@@ -129,7 +146,10 @@ sealed class PropertyInfo {
 
             val mainProperties: List<PropertyInfo> =
                 properties
-                    .map { property ->
+                    .filterNot { (_, schema) ->
+                        (settings.excludeReadOnly && schema.isReadOnly) ||
+                            (settings.excludeWriteOnly && schema.isWriteOnly)
+                    }.map { property ->
                         val oasKey = property.key
                         val name = names[oasKey]!!
 
@@ -261,30 +281,26 @@ sealed class PropertyInfo {
                                 }
 
                             else ->
-                                if (property.value.isWriteOnly && settings.excludeWriteOnly) {
-                                    null
-                                } else {
-                                    Field(
-                                        isRequired =
-                                            isRequired(
-                                                api,
-                                                property,
-                                                settings.markReadWriteOnlyOptional,
-                                                settings.markAllOptional,
-                                                additionalRequiredFields = additionalRequiredFields,
-                                            ),
-                                        name = name,
-                                        oasKey = oasKey,
-                                        schema = property.value,
-                                        isInherited = settings.markAsInherited,
-                                        isPolymorphicDiscriminator = isDiscriminatorProperty(api, property),
-                                        maybeDiscriminator =
-                                            enclosingSchema?.let {
-                                                this.getKeyIfSingleDiscriminatorValue(api, property, it)
-                                            },
-                                        enclosingSchema = if (property.value.isInlinedEnumDefinition()) this else null,
-                                    )
-                                }
+                                Field(
+                                    isRequired =
+                                        isRequired(
+                                            api,
+                                            property,
+                                            settings.markReadWriteOnlyOptional,
+                                            settings.markAllOptional,
+                                            additionalRequiredFields = additionalRequiredFields,
+                                        ),
+                                    name = name,
+                                    oasKey = oasKey,
+                                    schema = property.value,
+                                    isInherited = settings.markAsInherited,
+                                    isPolymorphicDiscriminator = isDiscriminatorProperty(api, property),
+                                    maybeDiscriminator =
+                                        enclosingSchema?.let {
+                                            this.getKeyIfSingleDiscriminatorValue(api, property, it)
+                                        },
+                                    enclosingSchema = if (property.value.isInlinedEnumDefinition()) this else null,
+                                )
                         }
                     }.filterNotNull()
 

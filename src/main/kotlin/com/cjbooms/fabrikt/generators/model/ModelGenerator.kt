@@ -203,6 +203,17 @@ class ModelGenerator(
     private val externalApiSchemas = mutableMapOf<String, MutableSet<String>>()
 
     fun generate(): Models {
+        if (ModelCodeGenOptionType.REQUEST_RESPONSE_MODELS in options) {
+            return Models(
+                ModelNameRegistry.Direction.entries.flatMap { direction ->
+                    ModelNameRegistry.withDirection(direction) { generateModelSet().models }
+                },
+            )
+        }
+        return generateModelSet()
+    }
+
+    private fun generateModelSet(): Models {
         val models: MutableSet<TypeSpec> = createModels(sourceApi.openApi3, sourceApi.allSchemas)
         externalApiSchemas.forEach { externalReferences ->
             val externalUrl = URL(externalReferences.key)
@@ -227,6 +238,7 @@ class ModelGenerator(
         api: OpenApi3,
         schemas: List<SchemaInfo>,
     ) = schemas
+        .map { if (ModelNameRegistry.direction == null) it else SchemaInfo(it.name, it.schema) }
         .filterNot { it.schema.isSimpleType() }
         .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !isSealedInterfacesForOneOfEnabled() }
         .filterNot { it.schema.isOneOfResolvingToAnyType() }
@@ -239,6 +251,15 @@ class ModelGenerator(
                 )
             when {
                 properties.isNotEmpty() ||
+                    (
+                        (HTTP_SETTINGS.excludeReadOnly || HTTP_SETTINGS.excludeWriteOnly) &&
+                            schemaInfo.schema
+                                .topLevelProperties(
+                                    HTTP_SETTINGS.copy(excludeReadOnly = false, excludeWriteOnly = false),
+                                    api,
+                                    schemaInfo.schema,
+                                ).isNotEmpty()
+                    ) ||
                     schemaInfo.typeInfo is KotlinTypeInfo.Enum ||
                     schemaInfo.schema.findOneOfSuperInterface(schemas.map { it.schema }).isNotEmpty() -> {
                     val primaryModel = buildPrimaryModel(api, schemaInfo, properties, schemas)
