@@ -1,0 +1,103 @@
+openapi: 3.0.3
+info:
+  title: Directional endpoints
+  version: 1.0.0
+paths:
+  /pets:
+    post:
+      operationId: createPet
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/Pet/properties/status'
+        - name: state
+          in: query
+          schema:
+            $ref: '#/components/schemas/State'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+      responses:
+        '200':
+          description: Created pet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+  /pets/list:
+    get:
+      operationId: getPets
+      responses:
+        '200':
+          description: Pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+  /pets/index:
+    get:
+      operationId: getPetIndex
+      responses:
+        '200':
+          description: Pet index
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetIndex'
+  /pets/upload:
+    post:
+      operationId: uploadPet
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [pet, token, created]
+              properties:
+                pet:
+                  $ref: '#/components/schemas/Pet'
+                token:
+                  type: string
+                  writeOnly: true
+                created:
+                  type: string
+                  readOnly: true
+      responses:
+        '200':
+          description: Uploaded pet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+components:
+  schemas:
+    PetIndex:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Pet'
+    Pet:
+      type: object
+      required: [id, name, age]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          readOnly: true
+        age:
+          type: integer
+          writeOnly: true
+        status:
+          type: string
+          readOnly: true
+          enum: [active, inactive]
+    State:
+      type: string
+      enum: [active, inactive]

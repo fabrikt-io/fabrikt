@@ -46,7 +46,9 @@ sealed class PropertyInfo {
             val markAllOptional: Boolean = false,
             val excludeWriteOnly: Boolean = false,
             val excludeReadOnly: Boolean = false,
-        )
+        ) {
+            fun excludes(schema: Schema): Boolean = (excludeReadOnly && schema.isReadOnly) || (excludeWriteOnly && schema.isWriteOnly)
+        }
 
         val HTTP_SETTINGS: Settings
             get() {
@@ -146,10 +148,8 @@ sealed class PropertyInfo {
 
             val mainProperties: List<PropertyInfo> =
                 properties
-                    .filterNot { (_, schema) ->
-                        (settings.excludeReadOnly && schema.isReadOnly) ||
-                            (settings.excludeWriteOnly && schema.isWriteOnly)
-                    }.map { property ->
+                    .filterNot { (_, schema) -> settings.excludes(schema) }
+                    .map { property ->
                         val oasKey = property.key
                         val name = names[oasKey]!!
 

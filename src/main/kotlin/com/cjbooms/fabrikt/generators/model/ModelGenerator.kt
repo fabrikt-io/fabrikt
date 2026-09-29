@@ -231,7 +231,43 @@ class ModelGenerator(
                 if (models.none { it.name == additionalModel.name }) models.add(additionalModel)
             }
         }
+        if (HTTP_SETTINGS.excludeReadOnly || HTTP_SETTINGS.excludeWriteOnly) {
+            val parameters =
+                sourceApi.openApi3.parameters.values +
+                    sourceApi.openApi3.paths.values.flatMap { path ->
+                        path.parameters + path.operations.values.flatMap { it.parameters }
+                    }
+            parameters.forEach { parameter ->
+                addParameterModel(models, parameter.schema, KotlinTypeInfo.fromParameterSchema(parameter.schema, parameter.name))
+            }
+        }
         return Models(models.map { ModelType(it, packages.base) })
+    }
+
+    private fun addParameterModel(
+        models: MutableSet<TypeSpec>,
+        schema: Schema,
+        type: KotlinTypeInfo,
+    ) {
+        if (type is KotlinTypeInfo.Array) {
+            addParameterModel(models, schema.itemsSchema, type.parameterizedType)
+            return
+        }
+        if (type is KotlinTypeInfo.Map) {
+            addParameterModel(models, schema.additionalPropertiesSchema, type.parameterizedType)
+            return
+        }
+        val name = type.generatedModelClassName ?: return
+        if (models.any { it.name == name }) return
+        when (type) {
+            is KotlinTypeInfo.Enum -> models.add(buildEnumClass(schema, type))
+            is KotlinTypeInfo.Object, is KotlinTypeInfo.GeneratedTypedAdditionalProperties -> {
+                val properties = schema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, schema)
+                models.add(standardDataClass(name, schema.safeName(), properties, schema, emptySet()))
+                models.addAll(buildInLinedModels(properties, schema, schema.getDocumentUrl()))
+            }
+            else -> Unit
+        }
     }
 
     private fun createModels(

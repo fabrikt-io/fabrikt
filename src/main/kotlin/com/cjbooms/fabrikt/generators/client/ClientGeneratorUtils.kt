@@ -74,7 +74,7 @@ object ClientGeneratorUtils {
             if (hasOnlyJsonSuccessResponses()) JSON_NODE_CLASS else Any::class
         } else {
             this.getPrimaryContentMediaType()?.let {
-                KotlinTypeInfo.from(it.value.schema)
+                KotlinTypeInfo.fromResponse(it.value.schema)
             } ?: Unit::class
         }
 

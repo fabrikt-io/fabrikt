@@ -370,6 +370,8 @@ In each directional model set, retained properties follow their declared require
 
 For separate generation passes, use `--http-model-suffix Request` and `--http-model-suffix Response` to distinguish the model sets. With `REQUEST_RESPONSE_MODELS`, a custom suffix precedes the direction suffix, for example `PetDtoRequest` and `PetDtoResponse`. Both sets include enums and models without directional properties, keeping all generated references within their respective set. A model whose properties are all excluded becomes an empty Kotlin object.
 
+When `REQUEST_RESPONSE_MODELS` is enabled, all supported clients and controllers use request models for incoming parameters and request bodies, and response models for returned bodies. Array and map element types follow the same direction. For targets that support multipart, requests omit excluded properties and use request models for structured parts. Existing multipart limitations remain unchanged: Micronaut controllers reject multipart parameters, while Ktor clients and controllers do not generate multipart part parameters. A type referenced by a parameter remains available even if its declaring property is excluded from a model. This option works with `HTTP_MODELS`, `CLIENT`, and `CONTROLLERS`; generating clients or controllers also generates both model sets.
+
 ### Polymorphism via `allOf`
 
 The following example shows how `allOf` can be used to generate polymorphic Kotlin data classes. It does the following:
