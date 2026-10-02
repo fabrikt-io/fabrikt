@@ -35,6 +35,7 @@ resilience4j = "2.1.0"
 
 # Validation
 jakarta-validation = "3.0.2"
+hibernate-validator = "8.0.5.Final"
 validation-api = "2.0.1.Final"
 
 # Logging
@@ -84,6 +85,7 @@ junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", vers
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
+hibernate-validator = { module = "org.hibernate.validator:hibernate-validator", version.ref = "hibernate-validator" }
 validation-api = { module = "javax.validation:validation-api", version.ref = "validation-api" }
 jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
 spring-webmvc = { module = "org.springframework:spring-webmvc", version.ref = "spring-framework" }
