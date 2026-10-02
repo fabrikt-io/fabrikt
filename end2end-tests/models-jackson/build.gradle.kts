@@ -31,6 +31,7 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.bundles.junit)
     testImplementation(libs.assertj.core)
+    testImplementation(libs.hibernate.validator)
 }
 
 fun createGenerateCodeTask(name: String, apiFilePath: String, basePackage: String, additionalArgs: List<String> = emptyList()) =
@@ -86,6 +87,13 @@ tasks {
         listOf("--http-model-opts", "FAULT_TOLERANT_OPEN_ENUMS")
     )
 
+    val generateValidationCodeTask = createGenerateCodeTask(
+        "generateValidationCode",
+        "$projectDir/openapi/validation.yaml",
+        "com.example.validation",
+        listOf("--validation-library", "jakarta_validation")
+    )
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         dependsOn(generateCodeTask)
@@ -93,6 +101,7 @@ tasks {
         dependsOn(generateStringFormatOverrideCodeTask)
         dependsOn(generateOneOfMarkerInterfaceCodeTask)
         dependsOn(generateOpenEnumCodeTask)
+        dependsOn(generateValidationCodeTask)
     }
 
     withType<Test> {
