@@ -401,6 +401,7 @@ object SchemaParserExtensions {
     }
 
     fun Schema.safeType(): String? {
+        if (hasMultipleNonNullTypes) return null
         // 1. Direct type is always authoritative
         if (type != null) return type
 

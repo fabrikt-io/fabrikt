@@ -18,7 +18,7 @@ internal data class ParsedOpenApiDocument(
 
     fun asOpenApi3Document(): OpenApi3Document {
         val schemaDocument = toGeneratorSchemaDocument()
-        return OpenApi3Document(kaizenModel, schemaDocument::isUninhabitableAt)
+        return OpenApi3Document(kaizenModel, schemaDocument::schemaSemanticsAt)
     }
 }
 
