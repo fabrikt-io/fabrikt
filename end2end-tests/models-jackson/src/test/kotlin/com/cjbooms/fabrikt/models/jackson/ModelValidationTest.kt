@@ -2,31 +2,37 @@ package com.cjbooms.fabrikt.models.jackson
 
 import com.example.validation.models.AllOfEnumValue
 import com.example.validation.models.AnyOfEnumValue
+import com.example.validation.models.ConstrainedEnum
 import com.example.validation.models.DecimalValue
 import com.example.validation.models.DirectEnumValue
 import com.example.validation.models.InlineEnumValue
+import com.example.validation.models.InlineEnumValueValue
 import com.example.validation.models.IntegerValue
 import com.example.validation.models.ListValue
 import com.example.validation.models.NestedListValue
 import com.example.validation.models.NestedValue
+import com.example.validation.models.Status
 import com.example.validation.models.StringValue
 import com.example.validation.models.UuidValue
 import jakarta.validation.Validation
 import jakarta.validation.ValidatorFactory
+import jakarta.validation.constraints.DecimalMax
+import jakarta.validation.constraints.DecimalMin
+import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.Size
 import org.assertj.core.api.Assertions.assertThat
 import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.MethodSource
-import java.util.stream.Stream
+import java.math.BigDecimal
+import java.util.UUID
+import kotlin.reflect.KClass
 import com.example.validationstrings.models.UuidValue as UuidStringValue
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ModelValidationTest {
-    private val mapper = Helpers.mapper()
     private lateinit var factory: ValidatorFactory
 
     @BeforeAll
@@ -41,62 +47,217 @@ class ModelValidationTest {
         if (::factory.isInitialized) factory.close()
     }
 
-    @ParameterizedTest(name = "{0}: {1}")
-    @MethodSource("validModels")
-    fun `generated constraints accept valid model values`(type: Class<*>, json: String) {
-        val model = mapper.readValue(json, type)
+    @Test
+    fun `string constraints accept a valid string`() {
+        val model = StringValue(value = "ready")
 
         assertThat(factory.validator.validate(model)).isEmpty()
     }
 
-    @ParameterizedTest(name = "{0}: {1} violates {3} at {2}")
-    @MethodSource("invalidModels")
-    fun `generated constraints reject invalid values at the expected property`(
-        type: Class<*>,
-        json: String,
-        path: String,
-        constraint: String,
-    ) {
-        val model = mapper.readValue(json, type)
+    @Test
+    fun `integer bounds accept an interior value`() {
+        val model = IntegerValue(value = 5)
 
-        val violations = factory.validator.validate(model)
-
-        assertThat(violations.map { it.propertyPath.toString() to it.constraintDescriptor.annotation.annotationClass.simpleName })
-            .containsExactly(path to constraint)
+        assertThat(factory.validator.validate(model)).isEmpty()
     }
 
-    companion object {
-        @JvmStatic
-        fun validModels(): Stream<Arguments> = Stream.of(
-            Arguments.of(StringValue::class.java, """{"value":"ready"}"""),
-            Arguments.of(IntegerValue::class.java, """{"value":5}"""),
-            Arguments.of(DecimalValue::class.java, """{"value":5.5}"""),
-            Arguments.of(ListValue::class.java, """{"value":["ready"]}"""),
-            Arguments.of(NestedValue::class.java, """{"value":{"value":"ready"}}"""),
-            Arguments.of(NestedListValue::class.java, """{"value":[{"value":"ready"}]}"""),
-            Arguments.of(DirectEnumValue::class.java, """{"value":"ready"}"""),
-            Arguments.of(InlineEnumValue::class.java, """{"value":"ready"}"""),
-            Arguments.of(AllOfEnumValue::class.java, """{"value":"ready"}"""),
-            Arguments.of(AnyOfEnumValue::class.java, """{"value":"ready"}"""),
-            Arguments.of(UuidStringValue::class.java, """{"value":"123e4567-e89b-12d3-a456-426614174000"}"""),
-            Arguments.of(UuidValue::class.java, """{"value":"123e4567-e89b-12d3-a456-426614174000"}"""),
-        )
+    @Test
+    fun `decimal bounds accept an interior value`() {
+        val model = DecimalValue(value = BigDecimal("5.5"))
 
-        @JvmStatic
-        fun invalidModels(): Stream<Arguments> = Stream.of(
-            Arguments.of(UuidStringValue::class.java, """{"value":"abc"}""", "value", "Size"),
-            Arguments.of(UuidStringValue::class.java, """{"value":"123E4567-E89B-12D3-A456-426614174000"}""", "value", "Pattern"),
-            Arguments.of(StringValue::class.java, """{"value":"a"}""", "value", "Size"),
-            Arguments.of(StringValue::class.java, """{"value":"abcdef"}""", "value", "Size"),
-            Arguments.of(StringValue::class.java, """{"value":"READY"}""", "value", "Pattern"),
-            Arguments.of(IntegerValue::class.java, """{"value":0}""", "value", "DecimalMin"),
-            Arguments.of(IntegerValue::class.java, """{"value":11}""", "value", "DecimalMax"),
-            Arguments.of(DecimalValue::class.java, """{"value":1.5}""", "value", "DecimalMin"),
-            Arguments.of(DecimalValue::class.java, """{"value":9.5}""", "value", "DecimalMax"),
-            Arguments.of(ListValue::class.java, """{"value":[]}""", "value", "Size"),
-            Arguments.of(ListValue::class.java, """{"value":["a","b","c"]}""", "value", "Size"),
-            Arguments.of(NestedValue::class.java, """{"value":{"value":"READY"}}""", "value.value", "Pattern"),
-            Arguments.of(NestedListValue::class.java, """{"value":[{"value":"READY"}]}""", "value[0].value", "Pattern"),
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `list size accepts a valid list`() {
+        val model = ListValue(value = listOf("ready"))
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `nested object validation accepts a valid child`() {
+        val model = NestedValue(value = StringValue(value = "ready"))
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `nested list validation accepts valid children`() {
+        val model = NestedListValue(value = listOf(StringValue(value = "ready")))
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `referenced enum with string constraints validates without exceptions`() {
+        val model = DirectEnumValue(value = ConstrainedEnum.READY)
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `inline enum with string constraints validates without exceptions`() {
+        val model = InlineEnumValue(value = InlineEnumValueValue.READY)
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `allOf enum with string constraints validates without exceptions`() {
+        val model = AllOfEnumValue(value = Status.READY)
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `anyOf enum with string constraints validates without exceptions`() {
+        val model = AnyOfEnumValue(value = Status.READY)
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `UUID as string accepts a valid value`() {
+        val model = UuidStringValue(value = "123e4567-e89b-12d3-a456-426614174000")
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `UUID with string constraints validates without exceptions`() {
+        val model = UuidValue(value = UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `UUID as string enforces minimum length`() {
+        assertViolation(
+            model = UuidStringValue(value = "abc"),
+            propertyPath = "value",
+            constraint = Size::class,
         )
+    }
+
+    @Test
+    fun `UUID as string enforces its pattern`() {
+        assertViolation(
+            model = UuidStringValue(value = "123E4567-E89B-12D3-A456-426614174000"),
+            propertyPath = "value",
+            constraint = Pattern::class,
+        )
+    }
+
+    @Test
+    fun `string enforces minimum length`() {
+        assertViolation(
+            model = StringValue(value = "a"),
+            propertyPath = "value",
+            constraint = Size::class,
+        )
+    }
+
+    @Test
+    fun `string enforces maximum length`() {
+        assertViolation(
+            model = StringValue(value = "abcdef"),
+            propertyPath = "value",
+            constraint = Size::class,
+        )
+    }
+
+    @Test
+    fun `string pattern rejects uppercase letters`() {
+        assertViolation(
+            model = StringValue(value = "READY"),
+            propertyPath = "value",
+            constraint = Pattern::class,
+        )
+    }
+
+    @Test
+    fun `integer enforces its lower bound`() {
+        assertViolation(
+            model = IntegerValue(value = 0),
+            propertyPath = "value",
+            constraint = DecimalMin::class,
+        )
+    }
+
+    @Test
+    fun `integer enforces its upper bound`() {
+        assertViolation(
+            model = IntegerValue(value = 11),
+            propertyPath = "value",
+            constraint = DecimalMax::class,
+        )
+    }
+
+    @Test
+    fun `decimal excludes its lower bound`() {
+        assertViolation(
+            model = DecimalValue(value = BigDecimal("1.5")),
+            propertyPath = "value",
+            constraint = DecimalMin::class,
+        )
+    }
+
+    @Test
+    fun `decimal excludes its upper bound`() {
+        assertViolation(
+            model = DecimalValue(value = BigDecimal("9.5")),
+            propertyPath = "value",
+            constraint = DecimalMax::class,
+        )
+    }
+
+    @Test
+    fun `list enforces minimum size`() {
+        assertViolation(
+            model = ListValue(value = emptyList()),
+            propertyPath = "value",
+            constraint = Size::class,
+        )
+    }
+
+    @Test
+    fun `list enforces maximum size`() {
+        assertViolation(
+            model = ListValue(value = listOf("a", "b", "c")),
+            propertyPath = "value",
+            constraint = Size::class,
+        )
+    }
+
+    @Test
+    fun `nested object validation reports the child property`() {
+        assertViolation(
+            model = NestedValue(value = StringValue(value = "READY")),
+            propertyPath = "value.value",
+            constraint = Pattern::class,
+        )
+    }
+
+    @Test
+    fun `nested list validation reports the child index and property`() {
+        assertViolation(
+            model = NestedListValue(value = listOf(StringValue(value = "READY"))),
+            propertyPath = "value[0].value",
+            constraint = Pattern::class,
+        )
+    }
+
+    private fun assertViolation(
+        model: Any,
+        propertyPath: String,
+        constraint: KClass<out Annotation>,
+    ) {
+        val violations = factory.validator.validate(model)
+
+        assertThat(violations).hasSize(1)
+        val violation = violations.single()
+        assertThat(violation.propertyPath.toString()).isEqualTo(propertyPath)
+        assertThat(violation.constraintDescriptor.annotation.annotationClass).isEqualTo(constraint)
     }
 }
