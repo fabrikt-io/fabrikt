@@ -22,6 +22,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
+import com.example.validationstrings.models.UuidValue as UuidStringValue
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ModelValidationTest {
@@ -77,11 +78,14 @@ class ModelValidationTest {
             Arguments.of(InlineEnumValue::class.java, """{"value":"ready"}"""),
             Arguments.of(AllOfEnumValue::class.java, """{"value":"ready"}"""),
             Arguments.of(AnyOfEnumValue::class.java, """{"value":"ready"}"""),
+            Arguments.of(UuidStringValue::class.java, """{"value":"123e4567-e89b-12d3-a456-426614174000"}"""),
             Arguments.of(UuidValue::class.java, """{"value":"123e4567-e89b-12d3-a456-426614174000"}"""),
         )
 
         @JvmStatic
         fun invalidModels(): Stream<Arguments> = Stream.of(
+            Arguments.of(UuidStringValue::class.java, """{"value":"abc"}""", "value", "Size"),
+            Arguments.of(UuidStringValue::class.java, """{"value":"123E4567-E89B-12D3-A456-426614174000"}""", "value", "Pattern"),
             Arguments.of(StringValue::class.java, """{"value":"a"}""", "value", "Size"),
             Arguments.of(StringValue::class.java, """{"value":"abcdef"}""", "value", "Size"),
             Arguments.of(StringValue::class.java, """{"value":"READY"}""", "value", "Pattern"),

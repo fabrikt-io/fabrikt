@@ -332,15 +332,15 @@ object PropertyUtils {
         if (!info.isNullable(classSettings)) maybeAddAnnotation(validationAnnotations.nonNullAnnotation)
         when (info) {
             is PropertyInfo.Field -> {
-                // Regex validation pattern to validate string input
-                info.pattern?.let { maybeAddAnnotation(validationAnnotations.regexPattern(it)) }
+                if (info.typeInfo !is KotlinTypeInfo.Enum && info.typeInfo != KotlinTypeInfo.Uuid) {
+                    info.pattern?.let { maybeAddAnnotation(validationAnnotations.regexPattern(it)) }
 
-                // Size Restrictions for Strings
-                val (min, max) = Pair(info.minLength, info.maxLength)
-                if (min != null || max != null) {
-                    maybeAddAnnotation(
-                        validationAnnotations.lengthRestriction(min, max),
-                    )
+                    val (min, max) = Pair(info.minLength, info.maxLength)
+                    if (min != null || max != null) {
+                        maybeAddAnnotation(
+                            validationAnnotations.lengthRestriction(min, max),
+                        )
+                    }
                 }
 
                 // Numeric value validation

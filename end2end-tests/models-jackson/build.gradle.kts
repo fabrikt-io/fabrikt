@@ -94,6 +94,13 @@ tasks {
         listOf("--validation-library", "jakarta_validation")
     )
 
+    val generateValidationStringOverrideCodeTask = createGenerateCodeTask(
+        "generateValidationStringOverrideCode",
+        "$projectDir/openapi/validation.yaml",
+        "com.example.validationstrings",
+        listOf("--validation-library", "jakarta_validation", "--type-overrides", "UUID_AS_STRING")
+    )
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         dependsOn(generateCodeTask)
@@ -102,6 +109,7 @@ tasks {
         dependsOn(generateOneOfMarkerInterfaceCodeTask)
         dependsOn(generateOpenEnumCodeTask)
         dependsOn(generateValidationCodeTask)
+        dependsOn(generateValidationStringOverrideCodeTask)
     }
 
     withType<Test> {
