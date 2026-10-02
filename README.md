@@ -284,6 +284,9 @@ Usage: <main class> [options]
 |                                |   `KTOR` - Generate for Ktor server. |
 |   `--http-model-opts`          | Select the options for the http models that you want to be generated. |
 |                                | CHOOSE ANY OF: |
+|                                |   `EXCLUDE_READ_ONLY` - Exclude readOnly properties and honour requiredness of retained writeOnly properties |
+|                                |   `EXCLUDE_WRITE_ONLY` - Exclude writeOnly properties and honour requiredness of retained readOnly properties |
+|                                |   `REQUEST_RESPONSE_MODELS` - Generate separate Request and Response model sets, excluding readOnly and writeOnly properties respectively |
 |                                |   `X_EXTENSIBLE_ENUMS` - This option treats x-extensible-enums as enums |
 |                                |   `JAVA_SERIALIZATION` - This option adds Java Serializable interface to the generated models |
 |                                |   `QUARKUS_REFLECTION` - This option adds @RegisterForReflection to the generated models. Requires dependency "'io.quarkus:quarkus-core:+" |
@@ -354,6 +357,20 @@ The team that built the first version of this tool initially contributed to the 
 This project was started by engineers from [Zalando Tech](https://opensource.zalando.com/) and is battle-tested heavily in production there.
 
 ## Specific Features
+
+### Request and response models
+
+By default, Fabrikt generates one model set and treats `readOnly` and `writeOnly` properties as optional. Directional model generation is opt-in:
+
+* `--http-model-opts EXCLUDE_READ_ONLY` excludes `readOnly` properties for a request-model generation pass.
+* `--http-model-opts EXCLUDE_WRITE_ONLY` excludes `writeOnly` properties for a response-model generation pass.
+* `--http-model-opts REQUEST_RESPONSE_MODELS` generates both model sets in one invocation, with `Request` and `Response` appended to model names.
+
+In each directional model set, retained properties follow their declared requiredness and nullability. Filtering applies to properties of every type, including nested models and compositions. Selecting both exclusion options excludes both categories; explicit exclusion options also apply to both sets when combined with `REQUEST_RESPONSE_MODELS`.
+
+For separate generation passes, use `--http-model-suffix Request` and `--http-model-suffix Response` to distinguish the model sets. With `REQUEST_RESPONSE_MODELS`, a custom suffix precedes the direction suffix, for example `PetDtoRequest` and `PetDtoResponse`. Both sets include enums and models without directional properties, keeping all generated references within their respective set. A model whose properties are all excluded becomes an empty Kotlin object.
+
+When `REQUEST_RESPONSE_MODELS` is enabled, all supported clients and controllers use request models for incoming parameters and request bodies, and response models for returned bodies. Array and map element types follow the same direction. For targets that support multipart, requests omit excluded properties and use request models for structured parts. Existing multipart limitations remain unchanged: Micronaut controllers reject multipart parameters, while Ktor clients and controllers do not generate multipart part parameters. A type referenced by a parameter remains available even if its declaring property is excluded from a model. This option works with `HTTP_MODELS`, `CLIENT`, and `CONTROLLERS`; generating clients or controllers also generates both model sets.
 
 ### Polymorphism via `allOf`
 

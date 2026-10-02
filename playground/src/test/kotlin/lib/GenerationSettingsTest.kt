@@ -20,6 +20,19 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GenerationSettingsTest {
+    @Test
+    fun directionalModelOptions() {
+        val options = setOf(
+            ModelCodeGenOptionType.EXCLUDE_READ_ONLY,
+            ModelCodeGenOptionType.EXCLUDE_WRITE_ONLY,
+            ModelCodeGenOptionType.REQUEST_RESPONSE_MODELS,
+        )
+        val settings = Parameters.build {
+            options.forEach { append("modelOptions", it.name) }
+        }.receiveGenerationSettings()
+        assertEquals(options, settings.modelOptions)
+        options.forEach { assertTrue(settings.toQueryParams().contains("modelOptions=${it.name}")) }
+    }
 
     @Test
     fun generatedAnnotationOutputOption() {

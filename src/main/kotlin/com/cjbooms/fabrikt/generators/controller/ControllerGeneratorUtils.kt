@@ -28,7 +28,7 @@ object ControllerGeneratorUtils {
             ?.contentMediaTypes
             ?.mapNotNull { it.value?.schema }
             ?.firstOrNull()
-            ?.let { toModelType(basePackage, KotlinTypeInfo.from(it), it.isNullable) }
+            ?.let { toModelType(basePackage, KotlinTypeInfo.fromResponse(it), it.isNullable) }
             ?: Unit::class.asTypeName()
 
     private fun OpenApiOperation.primarySuccessResponse(): OpenApiResponse? =
