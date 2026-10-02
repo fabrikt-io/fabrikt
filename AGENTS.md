@@ -33,6 +33,8 @@ Generated code is consumed directly by a large Kotlin community; changing what e
 - Justify any example diff in the PR: why the new output is more correct and worth the downstream impact.
 - Never let a change alter output for unrelated specs — review the full example diff, not just your target case.
 
+**Generated type changes:** When changing a generated Kotlin type or its resolution, check the downstream effects on validation annotations, serialization/deserialization, defaults, nullability and collection elements. Check compatibility against the generated Kotlin type, not just the OpenAPI primitive type. Add targeted regression cases combining the changed behavior with relevant constraints or metadata. Where compatibility depends on runtime behavior, exercise the actual validator or serializer; golden-file comparisons and compilation alone are insufficient. For validation, check that valid values pass without exceptions and that invalid values still produce the expected violations where constraints are supported.
+
 ## Golden-file tests
 
 Tests compare generated code against `src/test/resources/examples/`; never edit those files by hand. When an output change is justified (or for mass changes like a ktlint upgrade):
