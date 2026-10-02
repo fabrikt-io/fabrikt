@@ -1,9 +1,14 @@
 package com.cjbooms.fabrikt.cli
 
+import com.cjbooms.fabrikt.VersionCatalogLibraries
 import com.cjbooms.fabrikt.generators.JakartaAnnotations
 import com.cjbooms.fabrikt.generators.JavaxValidationAnnotations
 import com.cjbooms.fabrikt.generators.NoValidationAnnotations
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
+import com.cjbooms.fabrikt.generators.dependencies.DependencyNotation
+import com.cjbooms.fabrikt.generators.dependencies.DependencyNotation.Companion.dependencyOf
+import com.cjbooms.fabrikt.generators.dependencies.DependencyNotation.Scope.COMPILE
+import com.cjbooms.fabrikt.generators.dependencies.MaybeRequiringDependencies
 import com.cjbooms.fabrikt.model.JacksonAnnotations
 import com.cjbooms.fabrikt.model.KotlinxSerializationAnnotations
 import com.cjbooms.fabrikt.model.SerializationAnnotations
@@ -30,15 +35,35 @@ enum class CodeGenerationType(
 
 enum class ClientCodeGenOptionType(
     private val description: String,
-) {
+) : MaybeRequiringDependencies {
     RESILIENCE4J(
         "Generates a fault tolerance service for the client using the following library \"io.github.resilience4j:resilience4j-all:+\" (only for OkHttp clients)",
-    ),
-    SUSPEND_MODIFIER("This option adds the suspend modifier to the generated client functions (only for OpenFeign clients)"),
+    ) {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.resilience4j_circuitbreaker),
+            )
+    },
+    SUSPEND_MODIFIER("This option adds the suspend modifier to the generated client functions (only for OpenFeign clients)") {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.kotlinx_coroutines_core),
+            )
+    },
     SPRING_RESPONSE_ENTITY_WRAPPER(
         "This option adds the Spring-ResponseEntity generic around the response to be able to get response headers and status (only for OpenFeign clients).",
-    ),
-    SPRING_CLOUD_OPENFEIGN_STARTER_ANNOTATION("This option adds the @FeignClient annotation to generated client interface"),
+    ) {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.spring_web),
+            )
+    },
+    SPRING_CLOUD_OPENFEIGN_STARTER_ANNOTATION("This option adds the @FeignClient annotation to generated client interface") {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.spring_cloud_starter_openfeign),
+            )
+    },
     GROUP_BY_TAG("This option groups clients based on the first tag rather than paths"),
     OKHTTP_NON_NULL_RESPONSE_PAYLOADS(
         "This option makes ApiResponse.data non-null. Responses declared with a body must return one: a missing body, or one that deserializes to null, throws ApiException. An operation that declares both a body response and an empty success response (e.g. 200 and 204) throws on the empty success. Binary responses return an empty ByteArray for an empty body (only for OkHttp clients)",
@@ -50,6 +75,8 @@ enum class ClientCodeGenOptionType(
 
     override fun toString() = "`${super.toString()}` - $description"
 
+    override fun requiredDependencies(): List<DependencyNotation> = listOf()
+
     companion object {
         const val DEFAULT_OPEN_FEIGN_CLIENT_NAME = "fabrikt-client"
     }
@@ -57,14 +84,37 @@ enum class ClientCodeGenOptionType(
 
 enum class ClientCodeGenTargetType(
     val description: String,
-) {
-    OK_HTTP("Generate OkHttp client."),
-    OPEN_FEIGN("Generate OpenFeign client."),
-    SPRING_HTTP_INTERFACE("Generate Spring HTTP Interface."),
-    KTOR("Generate Ktor client."),
+) : MaybeRequiringDependencies {
+    OK_HTTP("Generate OkHttp client.") {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.okhttp),
+            )
+    },
+    OPEN_FEIGN("Generate OpenFeign client.") {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.feign_core),
+            )
+    },
+    SPRING_HTTP_INTERFACE("Generate Spring HTTP Interface.") {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.spring_web),
+            )
+    },
+    KTOR("Generate Ktor client.") {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.ktor_client_core),
+                COMPILE.dependencyOf(VersionCatalogLibraries.ktor_client_content_negotiation),
+            )
+    },
     ;
 
     override fun toString() = "`${super.toString()}` - $description"
+
+    override fun requiredDependencies(): List<DependencyNotation> = listOf()
 
     companion object {
         val default = OK_HTTP
@@ -73,21 +123,41 @@ enum class ClientCodeGenTargetType(
 
 enum class ModelCodeGenOptionType(
     val description: String,
-) {
+) : MaybeRequiringDependencies {
     X_EXTENSIBLE_ENUMS("This option treats x-extensible-enums as enums"),
     JAVA_SERIALIZATION("This option adds Java Serializable interface to the generated models"),
     QUARKUS_REFLECTION(
         "This option adds @RegisterForReflection to the generated models. Requires dependency \"'io.quarkus:quarkus-core:+\"",
-    ),
+    ) {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.quarkus_core),
+            )
+    },
     MICRONAUT_INTROSPECTION(
         "This option adds @Introspected to the generated models. Requires dependency \"'io.micronaut:micronaut-core:+\"",
-    ),
+    ) {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.micronaut_core),
+            )
+    },
     MICRONAUT_REFLECTION(
         "This option adds @ReflectiveAccess to the generated models. Requires dependency \"'io.micronaut:micronaut-core:+\"",
-    ),
+    ) {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.micronaut_core),
+            )
+    },
     MICRONAUT_SERDEABLE(
         "This option adds @Serdeable to the generated models. Requires dependency \"'io.micronaut.serde:micronaut-serde-jackson:+\"",
-    ),
+    ) {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.micronaut_serde_jackson),
+            )
+    },
     INCLUDE_COMPANION_OBJECT("This option adds a companion object to the generated models."),
 
     @Deprecated("Sealed interfaces are enabled by default in v26+. Use DISABLE_SEALED_INTERFACES_FOR_ONE_OF to disable.")
@@ -107,12 +177,19 @@ enum class ModelCodeGenOptionType(
     ;
 
     override fun toString() = "`${super.toString()}` - $description"
+
+    override fun requiredDependencies(): List<DependencyNotation> = listOf()
 }
 
 enum class ControllerCodeGenOptionType(
     val description: String,
-) {
-    SUSPEND_MODIFIER("This option adds the suspend modifier to the generated controller functions"),
+) : MaybeRequiringDependencies {
+    SUSPEND_MODIFIER("This option adds the suspend modifier to the generated controller functions") {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.kotlinx_coroutines_core),
+            )
+    },
     AUTHENTICATION("This option adds the authentication parameter to the generated controller functions"),
     GROUP_BY_TAG("This option groups controllers based on the first tag rather than paths"),
     COMPLETION_STAGE(
@@ -121,17 +198,37 @@ enum class ControllerCodeGenOptionType(
     SSE_EMITTER("This option makes generated controller functions have Type SseEmitter (works only with Spring Controller generator)"), ;
 
     override fun toString() = "`${super.toString()}` - $description"
+
+    override fun requiredDependencies(): List<DependencyNotation> = emptyList()
 }
 
 enum class ControllerCodeGenTargetType(
     val description: String,
-) {
-    SPRING("Generate for Spring framework."),
-    MICRONAUT("Generate for Micronaut framework."),
-    KTOR("Generate for Ktor server."),
+) : MaybeRequiringDependencies {
+    SPRING("Generate for Spring framework.") {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.spring_webmvc),
+            )
+    },
+    MICRONAUT("Generate for Micronaut framework.") {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.micronaut_http),
+                COMPILE.dependencyOf(VersionCatalogLibraries.micronaut_security),
+            )
+    },
+    KTOR("Generate for Ktor server.") {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.ktor_server_core),
+            )
+    },
     ;
 
     override fun toString() = "`${super.toString()}` - $description"
+
+    override fun requiredDependencies(): List<DependencyNotation> = emptyList()
 
     companion object {
         val default = SPRING
@@ -140,7 +237,7 @@ enum class ControllerCodeGenTargetType(
 
 enum class CodeGenTypeOverride(
     val description: String,
-) {
+) : MaybeRequiringDependencies {
     DATETIME_AS_INSTANT("Use `Instant` as the datetime type. Defaults to `OffsetDateTime`"),
     DATETIME_AS_LOCALDATETIME("Use `LocalDateTime` as the datetime type. Defaults to `OffsetDateTime`"),
     BYTE_AS_STRING("Ignore string format `byte` and use `String` as the type"),
@@ -156,6 +253,8 @@ enum class CodeGenTypeOverride(
     ;
 
     override fun toString() = "`${super.toString()}` - $description"
+
+    override fun requiredDependencies(): List<DependencyNotation> = emptyList()
 }
 
 enum class OutputOptionType(
@@ -171,16 +270,31 @@ enum class OutputOptionType(
 enum class ValidationLibrary(
     val description: String,
     val annotations: ValidationAnnotations,
-) {
+) : MaybeRequiringDependencies {
     JAVAX_VALIDATION(
         "Use `javax.validation` annotations in generated model classes",
         JavaxValidationAnnotations,
-    ),
-    JAKARTA_VALIDATION("Use `jakarta.validation` annotations in generated model classes (default)", JakartaAnnotations),
+    ) {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.validation_api),
+            )
+    },
+    JAKARTA_VALIDATION(
+        "Use `jakarta.validation` annotations in generated model classes (default)",
+        JakartaAnnotations,
+    ) {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.jakarta_validation_api),
+            )
+    },
     NO_VALIDATION("Use no validation annotations in generated model classes", NoValidationAnnotations),
     ;
 
     override fun toString() = "`${super.toString()}` - $description"
+
+    override fun requiredDependencies(): List<DependencyNotation> = emptyList()
 
     companion object {
         val default = JAKARTA_VALIDATION
@@ -189,12 +303,19 @@ enum class ValidationLibrary(
 
 enum class InstantLibrary(
     val description: String,
-) {
-    KOTLINX_INSTANT("Use `kotlinx.datetime` Instant in generated classes (default)"),
+) : MaybeRequiringDependencies {
+    KOTLINX_INSTANT("Use `kotlinx.datetime` Instant in generated classes (default)") {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.kotlinx_datetime),
+            )
+    },
     KOTLIN_TIME_INSTANT("Use `kotlin.time` Instant in generated classes"),
     ;
 
     override fun toString() = "`${super.toString()}` - $description"
+
+    override fun requiredDependencies(): List<DependencyNotation> = emptyList()
 
     companion object {
         val default = KOTLINX_INSTANT
@@ -218,19 +339,39 @@ enum class ExternalReferencesResolutionMode(
 enum class SerializationLibrary(
     val description: String,
     val serializationAnnotations: SerializationAnnotations,
-) {
-    JACKSON("Use Jackson 2 for serialization and deserialization", JacksonAnnotations),
-    JACKSON_3("Use Jackson 3 for serialization and deserialization", JacksonAnnotations),
+) : MaybeRequiringDependencies {
+    JACKSON("Use Jackson 2 for serialization and deserialization", JacksonAnnotations) {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.jackson_core),
+                COMPILE.dependencyOf(VersionCatalogLibraries.jackson_databind),
+                COMPILE.dependencyOf(VersionCatalogLibraries.jackson_module_kotlin),
+            )
+    },
+    JACKSON_3("Use Jackson 3 for serialization and deserialization", JacksonAnnotations) {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.jackson3_databind),
+                COMPILE.dependencyOf(VersionCatalogLibraries.jackson3_module_kotlin),
+            )
+    },
     KOTLINX_SERIALIZATION(
         "Use kotlinx.serialization for serialization and deserialization",
         KotlinxSerializationAnnotations,
-    ),
+    ) {
+        override fun requiredDependencies(): List<DependencyNotation> =
+            listOf(
+                COMPILE.dependencyOf(VersionCatalogLibraries.kotlinx_serialization_json),
+            )
+    },
     ;
 
     val isJackson: Boolean
         get() = this == JACKSON || this == JACKSON_3
 
     override fun toString() = "`${super.toString()}` - $description"
+
+    override fun requiredDependencies(): List<DependencyNotation> = emptyList()
 
     companion object {
         val default = JACKSON
@@ -251,4 +392,19 @@ enum class JacksonNullabilityMode(
     companion object {
         val default = NONE
     }
+}
+
+enum class DependenciesGenerationMode(
+    val description: String,
+) {
+    NONE("No extra (dependencies) file is generated."),
+    GRADLE_NOTATION(
+        "Dependencies file is generated with gradle notation (expected to be placed inside dependencies {} block in build.gradle(.kts)",
+    ),
+    MAVEN_NOTATION(
+        "Dependencies file is generated with maven notation (expected to be placed inside <dependencies></dependencies> tags in pom.xml)",
+    ),
+    ;
+
+    override fun toString() = "`${super.toString()}` - $description"
 }

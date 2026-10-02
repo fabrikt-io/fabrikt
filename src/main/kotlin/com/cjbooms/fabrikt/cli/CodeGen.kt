@@ -2,6 +2,9 @@ package com.cjbooms.fabrikt.cli
 
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.MutableSettings
+import com.cjbooms.fabrikt.generators.dependencies.DependenciesFormatter
+import com.cjbooms.fabrikt.generators.dependencies.DependenciesFormatter.Notation
+import com.cjbooms.fabrikt.generators.dependencies.DependenciesResolver
 import com.cjbooms.fabrikt.model.SchemaConversionOptions
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.ApiFileLoader
@@ -10,6 +13,7 @@ import com.cjbooms.fabrikt.util.AuthHeaderResolver
 import com.cjbooms.fabrikt.util.AuthJsonLoader
 import java.nio.file.Path
 import java.util.logging.Logger
+import kotlin.io.path.writeText
 
 object CodeGen {
     private val logger = Logger.getGlobal()
@@ -51,6 +55,10 @@ object CodeGen {
             resolvedAuth = resolvedAuth,
             jsonSchemaRootName = codeGenArgs.jsonSchemaRootName,
         )
+        generateCodeDependencies(
+            outputDir = codeGenArgs.outputDirectory,
+            dependenciesGenerationMode = codeGenArgs.dependenciesGenerationMode,
+        )
     }
 
     internal fun generate(
@@ -79,5 +87,18 @@ object CodeGen {
 
         val generator = CodeGenerator(packages, sourceApi, srcPath, resourcesPath)
         generator.generate().forEach { it.writeFileTo(outputDir.toFile()) }
+    }
+
+    private fun generateCodeDependencies(
+        outputDir: Path,
+        dependenciesGenerationMode: DependenciesGenerationMode,
+    ) = when (dependenciesGenerationMode) {
+        DependenciesGenerationMode.NONE -> null
+        DependenciesGenerationMode.GRADLE_NOTATION -> Notation.GRADLE
+        DependenciesGenerationMode.MAVEN_NOTATION -> Notation.MAVEN
+    }?.let { notation ->
+        DependenciesFormatter(notation).format(DependenciesResolver(MutableSettings).resolve())
+    }?.let { content ->
+        outputDir.resolve("dependencies").writeText(content)
     }
 }
