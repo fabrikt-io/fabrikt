@@ -7,6 +7,24 @@ import org.junit.jupiter.api.assertThrows
 
 class CodeGenArgsTest {
     @Test
+    fun `accepts repeated model annotations`() {
+        val args =
+            CodeGenArgs.parse(
+                arrayOf(
+                    "--base-package",
+                    "com.example",
+                    "--http-model-additional-annotations",
+                    "example.annotations.First",
+                    "--http-model-additional-annotations",
+                    "example.annotations.Second",
+                ),
+            )
+
+        assertThat(args.modelAdditionalAnnotations)
+            .containsExactly("example.annotations.First", "example.annotations.Second")
+    }
+
+    @Test
     fun `parses api-file with no json-schema-file leaving it null`() {
         val args =
             CodeGenArgs.parse(

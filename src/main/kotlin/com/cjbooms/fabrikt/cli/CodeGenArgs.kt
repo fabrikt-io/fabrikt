@@ -156,6 +156,14 @@ class CodeGenArgs {
     var modelOptions: Set<ModelCodeGenOptionType> = emptySet()
 
     @Parameter(
+        names = ["--http-model-additional-annotations"],
+        description =
+            "Repeatable fully qualified annotation class name to add to generated HTTP model types. " +
+                "Only annotations without arguments are supported.",
+    )
+    var modelAdditionalAnnotations: List<String> = emptyList()
+
+    @Parameter(
         names = ["--http-model-suffix"],
         description = "Specify custom suffix for all generated model classes. Defaults to no suffix.",
     )

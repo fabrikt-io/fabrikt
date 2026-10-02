@@ -59,6 +59,12 @@ fun FlowContent.specForm(settings: GenerationSettings) = div {
         enumSelectBox("instantLibrary", InstantLibrary.values(), settings.instantLibrary.name)
         enumSelectBox("jacksonNullabilityMode", JacksonNullabilityMode.values(), settings.jacksonNullabilityMode.name)
         enumCheckboxes("modelOptions", ModelCodeGenOptionType.values(), settings.modelOptions.map { it.name }.toSet())
+        textAreaBox(
+            "modelAdditionalAnnotations",
+            "One fully qualified annotation class name per line; annotations must not require arguments",
+            "com.example.FirstAnnotation\ncom.example.SecondAnnotation",
+            settings.modelAdditionalAnnotations.joinToString("\n"),
+        )
         inputBox("modelSuffix", "Dto", settings.modelSuffix)
         enumCheckboxes("typeOverrides", CodeGenTypeOverride.values(), settings.typeOverrides.map { it.name }.toSet())
         textAreaBox(
