@@ -23,6 +23,7 @@ object CodeGen {
             controllerOptions = codeGenArgs.controllerOptions,
             controllerTarget = codeGenArgs.controllerTarget,
             modelOptions = codeGenArgs.modelOptions,
+            modelAdditionalAnnotations = codeGenArgs.modelAdditionalAnnotations,
             modelSuffix = codeGenArgs.modelSuffix,
             clientOptions = codeGenArgs.clientOptions,
             clientTarget = codeGenArgs.clientTarget,

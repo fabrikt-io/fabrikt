@@ -29,6 +29,8 @@ object MutableSettings {
         private set
     var modelOptions: Set<ModelCodeGenOptionType> = mutableSetOf()
         private set
+    var modelAdditionalAnnotations: List<String> = emptyList()
+        private set
     var modelSuffix: String = ""
         private set
     var clientOptions: Set<ClientCodeGenOptionType> = mutableSetOf()
@@ -81,6 +83,7 @@ object MutableSettings {
         controllerOptions: Set<ControllerCodeGenOptionType> = emptySet(),
         controllerTarget: ControllerCodeGenTargetType = ControllerCodeGenTargetType.default,
         modelOptions: Set<ModelCodeGenOptionType> = emptySet(),
+        modelAdditionalAnnotations: List<String> = emptyList(),
         modelSuffix: String = "",
         clientOptions: Set<ClientCodeGenOptionType> = emptySet(),
         clientTarget: ClientCodeGenTargetType = ClientCodeGenTargetType.default,
@@ -101,6 +104,7 @@ object MutableSettings {
         this.controllerOptions = controllerOptions
         this.controllerTarget = controllerTarget
         this.modelOptions = modelOptions - ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF
+        this.modelAdditionalAnnotations = modelAdditionalAnnotations
         this.modelSuffix = modelSuffix
         this.clientOptions = clientOptions
         this.clientTarget = clientTarget
