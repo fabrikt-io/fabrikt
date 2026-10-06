@@ -9,13 +9,18 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toKdoc
 import com.cjbooms.fabrikt.generators.TypeFactory
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_HEADERS_PARAMETER_NAME
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ClientFunction
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addSuspendModifier
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.modelType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.optionallyParameterizeWithResponseEntity
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.responseMediaTypes
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.withoutAcceptHeader
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.withoutCollidingMediaTypeFunctions
 import com.cjbooms.fabrikt.generators.client.metadata.SpringHttpInterfaceAnnotations
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
@@ -26,15 +31,16 @@ import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.OpenApiOperation
-import com.cjbooms.fabrikt.model.OpenApiPath
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.buildCodeBlock
@@ -50,11 +56,52 @@ class SpringHttpInterfaceGenerator(
                 .groupedClientPaths(options)
                 .map { (resourceName, paths) ->
                     val funcSpecs: List<FunSpec> =
-                        paths.flatMap { (resource, path) ->
-                            path.operations.map { (verb, operation) ->
-                                buildFunction(path, resource, operation, verb, options)
-                            }
-                        }
+                        paths
+                            .flatMap { (resource, path) ->
+                                path.operations.flatMap { (verb, operation) ->
+                                    val parameters = deriveClientParameters(path, operation, packages.base)
+                                    val baseName = functionName(operation, resource, verb)
+                                    val baseFunction =
+                                        ClientFunction(
+                                            buildFunction(
+                                                operation,
+                                                resource,
+                                                verb,
+                                                options,
+                                                parameters,
+                                                baseName,
+                                                operation.getReturnType(packages).optionallyParameterizeWithResponseEntity(options),
+                                                null,
+                                                null,
+                                            ),
+                                            isMediaTypeFunction = false,
+                                        )
+                                    val mediaTypeFunctions =
+                                        operation.responseMediaTypes(options).map { r ->
+                                            ClientFunction(
+                                                buildFunction(
+                                                    operation,
+                                                    resource,
+                                                    verb,
+                                                    options,
+                                                    parameters.withoutAcceptHeader(),
+                                                    r.functionName(baseName),
+                                                    r.modelType(packages).optionallyParameterizeWithResponseEntity(options),
+                                                    r.mediaType,
+                                                    buildCodeBlock {
+                                                        add(
+                                                            "\nAlways sends Accept: %L; use [%N] to choose another representation.\n",
+                                                            r.mediaType,
+                                                            baseName,
+                                                        )
+                                                    },
+                                                ),
+                                                isMediaTypeFunction = true,
+                                            )
+                                        }
+                                    listOf(listOf(baseFunction)) + mediaTypeFunctions.map { listOf(it) }
+                                }
+                            }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 
                     val clientType =
                         TypeSpec
@@ -70,19 +117,23 @@ class SpringHttpInterfaceGenerator(
     }
 
     private fun buildFunction(
-        path: OpenApiPath,
-        resource: String,
         operation: OpenApiOperation,
+        resource: String,
         verb: String,
         options: Set<ClientCodeGenOptionType>,
-    ): FunSpec {
-        val parameters = deriveClientParameters(path, operation, packages.base)
-        return FunSpec
-            .builder(functionName(operation, resource, verb))
+        parameters: List<IncomingParameter>,
+        functionName: String,
+        returnType: TypeName,
+        acceptMediaType: String?,
+        extraKdoc: CodeBlock?,
+    ): FunSpec =
+        FunSpec
+            .builder(functionName)
             .addDeprecation(operation)
             .addModifiers(KModifier.ABSTRACT)
             .addKdoc(operation.toKdoc(parameters))
-            .addHttpExchangeAnnotation(operation, resource, parameters, verb)
+            .apply { extraKdoc?.let { addKdoc(it) } }
+            .addHttpExchangeAnnotation(operation, resource, parameters, verb, acceptMediaType)
             .addSuspendModifier(options)
             .addIncomingParameters(
                 parameters,
@@ -139,21 +190,18 @@ class SpringHttpInterfaceGenerator(
                     ).addAnnotation(SpringHttpInterfaceAnnotations.requestParamBuilder().build())
                     .defaultValue("emptyMap()")
                     .build(),
-            ).returns(
-                operation
-                    .getReturnType(packages)
-                    .optionallyParameterizeWithResponseEntity(options),
-            ).build()
-    }
+            ).returns(returnType)
+            .build()
 
     private fun FunSpec.Builder.addHttpExchangeAnnotation(
         operation: OpenApiOperation,
         resource: String,
         parameters: List<IncomingParameter>,
         verb: String,
+        acceptMediaType: String?,
     ): FunSpec.Builder =
         apply {
-            val annotation = HttpExchangeAnnotationBuilder(operation, resource, parameters, verb).build()
+            val annotation = HttpExchangeAnnotationBuilder(operation, resource, parameters, verb, acceptMediaType).build()
             addAnnotation(annotation)
         }
 
@@ -162,6 +210,7 @@ class SpringHttpInterfaceGenerator(
         private val resource: String,
         private val parameters: List<IncomingParameter>,
         private val verb: String,
+        private val acceptMediaType: String?,
     ) {
         fun build(): AnnotationSpec {
             val headerParams = parameters.getHeaderParameters()
@@ -171,7 +220,7 @@ class SpringHttpInterfaceGenerator(
                 .addUrl()
                 .addMember("method=%S", verb.uppercase())
                 .addContentType(headerParams)
-                .addAccepts(headerParams)
+                .addAccepts(headerParams, acceptMediaType)
                 .addHeaders(headerParams)
                 .build()
         }
@@ -202,8 +251,15 @@ class SpringHttpInterfaceGenerator(
                 }
             }
 
-        private fun AnnotationSpec.Builder.addAccepts(headerParams: List<RequestParameter>): AnnotationSpec.Builder =
+        private fun AnnotationSpec.Builder.addAccepts(
+            headerParams: List<RequestParameter>,
+            acceptMediaType: String?,
+        ): AnnotationSpec.Builder =
             apply {
+                if (acceptMediaType != null) {
+                    addMember("accept=%L", listOf(buildCodeBlock { add("%S", acceptMediaType) }))
+                    return@apply
+                }
                 val acceptHeaders =
                     headerParams
                         .filter { header ->

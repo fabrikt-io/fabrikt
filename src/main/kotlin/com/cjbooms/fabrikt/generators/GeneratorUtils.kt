@@ -36,6 +36,10 @@ import com.cjbooms.fabrikt.model.OpenApiRequestBody as RequestBody
 import com.cjbooms.fabrikt.model.OpenApiResponse as Response
 
 object GeneratorUtils {
+    private val logger =
+        java.util.logging.Logger
+            .getGlobal()
+
     fun FunSpec.Builder.addDeprecation(operation: Operation): FunSpec.Builder =
         apply {
             if (operation.isDeprecated) addAnnotation(DeprecationAnnotations.operation())
@@ -211,6 +215,22 @@ object GeneratorUtils {
         getBodySuccessResponses()
             .flatMap { it.contentMediaTypes.keys }
             .all { it.contains("json", ignoreCase = true) }
+
+    fun Operation.getSuccessResponseSchemasByMediaType(): Map<String, OpenApiSchema> =
+        getBodySuccessResponses()
+            .flatMap { it.contentMediaTypes.entries }
+            .groupBy({ it.key }, { it.value.schema })
+            .mapNotNull { (mediaType, schemas) ->
+                if (schemas.distinct().size == 1) {
+                    mediaType to schemas.first()
+                } else {
+                    logger.warning(
+                        "Media type $mediaType maps to different schemas across this operation's success responses " +
+                            "(first seen at ${schemas.first().jsonPathFromRoot}); skipping its typed response function.",
+                    )
+                    null
+                }
+            }.toMap()
 
     fun Operation.getPathParams(): List<Parameter> = this.filterParams("path")
 

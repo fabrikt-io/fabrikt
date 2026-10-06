@@ -9,12 +9,17 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toKCodeName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKdoc
 import com.cjbooms.fabrikt.generators.TypeFactory
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_HEADERS_PARAMETER_NAME
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ClientFunction
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.enhancedClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.modelType
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.responseMediaTypes
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.withoutAcceptHeader
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.withoutCollidingMediaTypeFunctions
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.OBJECT_MAPPER_CLASS
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
 import com.cjbooms.fabrikt.model.ClientType
@@ -32,7 +37,9 @@ import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 import java.nio.file.Path
@@ -54,46 +61,77 @@ class OkHttpEnhancedClientGenerator(
             .groupedClientPaths(options)
             .map { (resourceName, paths) ->
                 val funSpecs: List<FunSpec> =
-                    paths.flatMap { (resource, path) ->
-                        path.operations.map { (verb, operation) ->
-                            val parameters = deriveClientParameters(path, operation, packages.base)
-                            FunSpec
-                                .builder(functionName(operation, resource, verb))
-                                .addDeprecation(operation)
-                                .apply {
-                                    if (parameters.any { it is RequestParameter && it.isDeprecated }) {
-                                        addKdoc(operation.toKdoc(parameters))
+                    paths
+                        .flatMap { (resource, path) ->
+                            path.operations.flatMap { (verb, operation) ->
+                                val parameters = deriveClientParameters(path, operation, packages.base)
+                                val baseName = functionName(operation, resource, verb)
+                                val baseFunction =
+                                    ClientFunction(
+                                        operationFunSpec(
+                                            baseName,
+                                            operation,
+                                            parameters,
+                                            Resilience4jClientOperationStatement(baseName, parameters).toStatement(),
+                                            operation.toClientReturnType(packages),
+                                        ),
+                                        isMediaTypeFunction = false,
+                                    )
+                                val mediaTypeFunctions =
+                                    operation.responseMediaTypes(options).map { r ->
+                                        val typedParameters = parameters.withoutAcceptHeader()
+                                        val mediaFunctionName = r.functionName(baseName)
+                                        ClientFunction(
+                                            operationFunSpec(
+                                                mediaFunctionName,
+                                                operation,
+                                                typedParameters,
+                                                Resilience4jClientOperationStatement(mediaFunctionName, typedParameters).toStatement(),
+                                                "ApiResponse".toClassName(packages.client).parameterizedBy(r.modelType(packages)),
+                                            ),
+                                            isMediaTypeFunction = true,
+                                        )
                                     }
-                                }.addModifiers(KModifier.PUBLIC)
-                                .addAnnotation(
-                                    AnnotationSpec
-                                        .builder(Throws::class)
-                                        .addMember("%T::class", "ApiException".toClassName(packages.client))
-                                        .build(),
-                                ).addIncomingParameters(
-                                    parameters,
-                                    multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder(),
-                                ).addParameter(
-                                    ParameterSpec
-                                        .builder(
-                                            ADDITIONAL_HEADERS_PARAMETER_NAME,
-                                            TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
-                                        ).defaultValue("emptyMap()")
-                                        .build(),
-                                ).addCode(
-                                    Resilience4jClientOperationStatement(
-                                        resource,
-                                        verb,
-                                        operation,
-                                        parameters,
-                                    ).toStatement(),
-                                ).returns(operation.toClientReturnType(packages))
-                                .build()
-                        }
-                    }
+                                listOf(listOf(baseFunction)) + mediaTypeFunctions.map { listOf(it) }
+                            }
+                        }.withoutCollidingMediaTypeFunctions(enhancedClientName(resourceName))
 
                 generateCircuitBreakerClientCode(resourceName, funSpecs)
             }.toSet()
+
+    private fun operationFunSpec(
+        name: String,
+        operation: OpenApiOperation,
+        parameters: List<IncomingParameter>,
+        statement: CodeBlock,
+        returnType: TypeName,
+    ): FunSpec =
+        FunSpec
+            .builder(name)
+            .addDeprecation(operation)
+            .apply {
+                if (parameters.any { it is RequestParameter && it.isDeprecated }) {
+                    addKdoc(operation.toKdoc(parameters))
+                }
+            }.addModifiers(KModifier.PUBLIC)
+            .addAnnotation(
+                AnnotationSpec
+                    .builder(Throws::class)
+                    .addMember("%T::class", "ApiException".toClassName(packages.client))
+                    .build(),
+            ).addIncomingParameters(
+                parameters,
+                multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder(),
+            ).addParameter(
+                ParameterSpec
+                    .builder(
+                        ADDITIONAL_HEADERS_PARAMETER_NAME,
+                        TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
+                    ).defaultValue("emptyMap()")
+                    .build(),
+            ).addCode(statement)
+            .returns(returnType)
+            .build()
 
     private fun generateCircuitBreakerClientCode(
         resourceName: String,
@@ -185,9 +223,7 @@ class OkHttpEnhancedClientGenerator(
 }
 
 class Resilience4jClientOperationStatement(
-    private val resource: String,
-    private val verb: String,
-    private val operation: OpenApiOperation,
+    private val clientFunctionName: String,
     private val parameters: List<IncomingParameter>,
 ) {
     fun toStatement(): CodeBlock =
@@ -206,7 +242,7 @@ class Resilience4jClientOperationStatement(
     private fun CodeBlock.Builder.addClientCallStatement(parameters: List<IncomingParameter>): CodeBlock.Builder {
         this.add(
             "apiClient.%N(%L)",
-            functionName(operation, resource, verb),
+            clientFunctionName,
             (parameters.map { it.name } + ADDITIONAL_HEADERS_PARAMETER_NAME).joinToString(","),
         )
         return this

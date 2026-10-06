@@ -10,13 +10,18 @@ import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.generators.TypeFactory
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_HEADERS_PARAMETER_NAME
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ClientFunction
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addSuspendModifier
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.modelType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.optionallyParameterizeWithResponseEntity
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.responseMediaTypes
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.withoutAcceptHeader
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.withoutCollidingMediaTypeFunctions
 import com.cjbooms.fabrikt.generators.client.metadata.OpenFeignAnnotations
 import com.cjbooms.fabrikt.generators.client.metadata.OpenFeignImports
 import com.cjbooms.fabrikt.model.ClientType
@@ -27,16 +32,17 @@ import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.OpenApiOperation
-import com.cjbooms.fabrikt.model.OpenApiPath
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.toUpperCase
 import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.buildCodeBlock
@@ -52,11 +58,46 @@ class OpenFeignInterfaceGenerator(
                 .groupedClientPaths(options)
                 .map { (resourceName, paths) ->
                     val funcSpecs: List<FunSpec> =
-                        paths.flatMap { (resource, path) ->
-                            path.operations.flatMap { (verb, operation) ->
-                                buildFunctions(path, resource, operation, verb, options)
-                            }
-                        }
+                        paths
+                            .flatMap { (resource, path) ->
+                                path.operations.flatMap { (verb, operation) ->
+                                    val parameters = deriveClientParameters(path, operation, packages.base)
+                                    val baseName = functionName(operation, resource, verb)
+                                    val baseGroup =
+                                        buildFunctions(
+                                            operation,
+                                            resource,
+                                            verb,
+                                            options,
+                                            parameters,
+                                            baseName,
+                                            operation.getReturnType(packages).optionallyParameterizeWithResponseEntity(options),
+                                            null,
+                                            null,
+                                        ).map { ClientFunction(it, isMediaTypeFunction = false) }
+                                    val mediaTypeGroups =
+                                        operation.responseMediaTypes(options).map { r ->
+                                            buildFunctions(
+                                                operation,
+                                                resource,
+                                                verb,
+                                                options,
+                                                parameters.withoutAcceptHeader(),
+                                                r.functionName(baseName),
+                                                r.modelType(packages).optionallyParameterizeWithResponseEntity(options),
+                                                r.mediaType,
+                                                buildCodeBlock {
+                                                    add(
+                                                        "\nAlways sends Accept: %L; use [%N] to choose another representation.\n",
+                                                        r.mediaType,
+                                                        baseName,
+                                                    )
+                                                },
+                                            ).map { ClientFunction(it, isMediaTypeFunction = true) }
+                                        }
+                                    listOf(baseGroup) + mediaTypeGroups
+                                }
+                            }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 
                     val clientType =
                         TypeSpec
@@ -86,22 +127,36 @@ class OpenFeignInterfaceGenerator(
     override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> = emptyList()
 
     private fun buildFunctions(
-        path: OpenApiPath,
-        resource: String,
         operation: OpenApiOperation,
+        resource: String,
         verb: String,
         options: Set<ClientCodeGenOptionType>,
+        parameters: List<IncomingParameter>,
+        functionName: String,
+        returnType: TypeName,
+        acceptMediaType: String?,
+        extraKdoc: CodeBlock?,
     ): List<FunSpec> {
-        val parameters = deriveClientParameters(path, operation, packages.base)
         val cookieParameters =
             parameters
                 .filterIsInstance<RequestParameter>()
                 .filter { it.parameterLocation is CookieParam }
         if (cookieParameters.isEmpty()) {
-            return listOf(buildRequestFunction(operation, resource, verb, options, parameters))
+            return listOf(
+                buildRequestFunction(
+                    operation,
+                    resource,
+                    verb,
+                    options,
+                    parameters,
+                    functionName,
+                    returnType,
+                    acceptMediaType,
+                    extraKdoc,
+                ),
+            )
         }
 
-        val functionName = functionName(operation, resource, verb)
         val requestFunctionName = "${functionName}WithCookieHeader"
         val cookieHeaderParameterName =
             generateSequence("cookieHeader") { previous -> "${previous}Extra" }
@@ -115,6 +170,8 @@ class OpenFeignInterfaceGenerator(
                 requestFunctionName,
                 cookieHeaderParameterName,
                 cookieParameters,
+                returnType,
+                extraKdoc,
             ),
             buildRequestFunction(
                 operation,
@@ -123,6 +180,9 @@ class OpenFeignInterfaceGenerator(
                 options,
                 parameters.filterNot { it is RequestParameter && it.parameterLocation is CookieParam },
                 requestFunctionName,
+                returnType,
+                acceptMediaType,
+                extraKdoc,
                 hasCookieHeader = true,
                 cookieHeaderParameterName = cookieHeaderParameterName,
             ),
@@ -135,7 +195,10 @@ class OpenFeignInterfaceGenerator(
         verb: String,
         options: Set<ClientCodeGenOptionType>,
         parameters: List<IncomingParameter>,
-        name: String = functionName(operation, resource, verb),
+        name: String,
+        returnType: TypeName,
+        acceptMediaType: String?,
+        extraKdoc: CodeBlock?,
         hasCookieHeader: Boolean = false,
         cookieHeaderParameterName: String = "cookieHeader",
     ): FunSpec =
@@ -143,9 +206,13 @@ class OpenFeignInterfaceGenerator(
             .builder(name)
             .addDeprecation(operation)
             .addModifiers(KModifier.ABSTRACT)
-            .apply { if (!hasCookieHeader) addKdoc(operation.toKdoc(parameters)) }
-            .addRequestLineAnnotation(resource, verb, parameters)
-            .addHeadersAnnotation(operation, parameters, hasCookieHeader, cookieHeaderParameterName)
+            .apply {
+                if (!hasCookieHeader) {
+                    addKdoc(operation.toKdoc(parameters))
+                    extraKdoc?.let { addKdoc(it) }
+                }
+            }.addRequestLineAnnotation(resource, verb, parameters)
+            .addHeadersAnnotation(operation, parameters, hasCookieHeader, cookieHeaderParameterName, acceptMediaType)
             .addSuspendModifier(options)
             .addIncomingParameters(
                 parameters,
@@ -185,11 +252,8 @@ class OpenFeignInterfaceGenerator(
                     ).addAnnotation(OpenFeignAnnotations.QUERY_MAP)
                     .defaultValue("emptyMap()")
                     .build(),
-            ).returns(
-                operation
-                    .getReturnType(packages)
-                    .optionallyParameterizeWithResponseEntity(options),
-            ).build()
+            ).returns(returnType)
+            .build()
 
     private fun buildCookieWrapperFunction(
         operation: OpenApiOperation,
@@ -199,11 +263,14 @@ class OpenFeignInterfaceGenerator(
         requestFunctionName: String,
         cookieHeaderParameterName: String,
         cookieParameters: List<RequestParameter>,
+        returnType: TypeName,
+        extraKdoc: CodeBlock?,
     ): FunSpec =
         FunSpec
             .builder(name)
             .addDeprecation(operation)
             .addKdoc(operation.toKdoc(parameters))
+            .apply { extraKdoc?.let { addKdoc(it) } }
             .addSuspendModifier(options)
             .addIncomingParameters(parameters)
             .addParameter(
@@ -220,11 +287,8 @@ class OpenFeignInterfaceGenerator(
                         TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
                     ).defaultValue("emptyMap()")
                     .build(),
-            ).returns(
-                operation
-                    .getReturnType(packages)
-                    .optionallyParameterizeWithResponseEntity(options),
-            ).addCode(
+            ).returns(returnType)
+            .addCode(
                 buildCodeBlock {
                     add("return %N(\n", requestFunctionName)
                     indent()
@@ -408,10 +472,11 @@ class OpenFeignInterfaceGenerator(
         parameters: List<IncomingParameter>,
         hasCookieHeader: Boolean,
         cookieHeaderParameterName: String,
+        acceptMediaType: String?,
     ): FunSpec.Builder {
-        HeadersAnnotationBuilder(operation, parameters, hasCookieHeader, cookieHeaderParameterName).build()?.let { annotation ->
-            addAnnotation(annotation)
-        }
+        HeadersAnnotationBuilder(operation, parameters, hasCookieHeader, cookieHeaderParameterName, acceptMediaType)
+            .build()
+            ?.let { annotation -> addAnnotation(annotation) }
 
         return this
     }
@@ -421,6 +486,7 @@ class OpenFeignInterfaceGenerator(
         private val parameters: List<IncomingParameter>,
         private val hasCookieHeader: Boolean,
         private val cookieHeaderParameterName: String,
+        private val acceptMediaType: String?,
     ) {
         fun build(): AnnotationSpec? {
             val headersValueParts = mutableListOf<String>()
@@ -435,9 +501,8 @@ class OpenFeignInterfaceGenerator(
             if (hasCookieHeader) headersValueParts.add("Cookie: {$cookieHeaderParameterName}")
             // Add default accept header
             if (!acceptHeaderExists) {
-                getDefaultAcceptHeaderAnnotationValue()?.let {
-                    headersValueParts.add(it)
-                }
+                (acceptMediaType?.let { "${ClientGeneratorUtils.ACCEPT_HEADER_NAME}: $it" } ?: getDefaultAcceptHeaderAnnotationValue())
+                    ?.let { headersValueParts.add(it) }
             }
 
             return if (headersValueParts.isNotEmpty()) {

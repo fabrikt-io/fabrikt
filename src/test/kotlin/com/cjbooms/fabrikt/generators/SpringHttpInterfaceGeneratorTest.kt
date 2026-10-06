@@ -78,6 +78,20 @@ class SpringHttpInterfaceGeneratorTest {
         )
     }
 
+    @Test
+    fun `one typed function per response media type is generated for the Spring HTTP Interface client`() {
+        val packages = Packages("examples.multiMediaType")
+        val sourceApi = SourceApi(readTextResource("/examples/multiMediaType/api.yaml"))
+
+        val clientCode =
+            SpringHttpInterfaceGenerator(packages, sourceApi)
+                .generate(setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS))
+                .clients
+                .toSingleFile()
+
+        assertThatGenerated(clientCode).isEqualTo("/examples/multiMediaType/client/responseMediaTypeFunctions/SpringHttpInterfaceClient.kt")
+    }
+
     @ParameterizedTest
     @ValueSource(strings = ["3.0.3", "3.1.2", "3.2.0"])
     fun `request body media type is used as content type`(openApiVersion: String) {

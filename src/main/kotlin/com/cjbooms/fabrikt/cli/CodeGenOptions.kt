@@ -43,6 +43,9 @@ enum class ClientCodeGenOptionType(
     OKHTTP_NON_NULL_RESPONSE_PAYLOADS(
         "This option makes ApiResponse.data non-null. Responses declared with a body must return one: a missing body, or one that deserializes to null, throws ApiException. An operation that declares both a body response and an empty success response (e.g. 200 and 204) throws on the empty success. Binary responses return an empty ByteArray for an empty body (only for OkHttp clients)",
     ),
+    RESPONSE_MEDIA_TYPE_FUNCTIONS(
+        "This option adds, for each operation whose success responses declare a different JSON schema per media type, one function per media type. The function always sends that media type as the Accept header and returns that schema's type instead of JsonNode. Its name is the operation's function name plus the media subtype, e.g. getItemsVndCustomJson for application/vnd.custom+json (only for OkHttp, OpenFeign and Spring HTTP Interface clients)",
+    ),
     DYNAMIC_BASE_URL(
         "This option makes ApiConfiguration.basePath empty, allowing you to set the base URL at runtime (only for Ktor clients)",
     ),
