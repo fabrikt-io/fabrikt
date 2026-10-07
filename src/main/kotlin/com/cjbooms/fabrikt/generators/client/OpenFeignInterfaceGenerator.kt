@@ -52,6 +52,8 @@ class OpenFeignInterfaceGenerator(
     private val packages: Packages,
     private val api: SourceApi,
 ) : ClientGenerator {
+    private val bearerSecurity = ClientBearerSecurity(api.openApi3)
+
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
         val clientTypes =
             api
@@ -62,6 +64,12 @@ class OpenFeignInterfaceGenerator(
                             .flatMap { (resource, path) ->
                                 path.operations.flatMap { (verb, operation) ->
                                     val parameters = deriveClientParameters(path, operation, packages.base)
+                                    val securityPlan =
+                                        if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
+                                            bearerSecurity.forOperation(operation)
+                                        } else {
+                                            null
+                                        }
                                     val baseName = functionName(operation, resource, verb)
                                     val baseGroup =
                                         buildFunctions(
@@ -95,7 +103,7 @@ class OpenFeignInterfaceGenerator(
                                                 },
                                             ).map { ClientFunction(it, isMediaTypeFunction = true) }
                                         }
-                                    listOf(baseGroup) + mediaTypeGroups
+                                    (listOf(baseGroup) + mediaTypeGroups).map { it.withBearerTokenWrapper(securityPlan) }
                                 }
                             }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 

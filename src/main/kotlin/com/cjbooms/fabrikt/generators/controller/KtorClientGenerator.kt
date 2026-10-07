@@ -8,8 +8,11 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.kdocDescription
 import com.cjbooms.fabrikt.generators.GeneratorUtils.splitByType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKCodeName
+import com.cjbooms.fabrikt.generators.client.BearerWrapperTarget
+import com.cjbooms.fabrikt.generators.client.ClientBearerSecurity
 import com.cjbooms.fabrikt.generators.client.ClientGenerator
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
+import com.cjbooms.fabrikt.generators.client.withBearerTokenWrapper
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.toSuccessResponseType
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
@@ -39,6 +42,7 @@ class KtorClientGenerator(
     private val api: SourceApi,
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE,
 ) : ClientGenerator {
+    private val bearerSecurity = ClientBearerSecurity(api.openApi3)
     private val networkResultClassName = ClassName(packages.client, "NetworkResult")
     private val networkErrorClassName = ClassName(packages.client, "NetworkError")
 
@@ -369,7 +373,15 @@ class KtorClientGenerator(
 
                         clientFunctionBuilder.addKdoc(buildFunKdoc(operation, params))
 
-                        clientClassBuilder.addFunction(clientFunctionBuilder.build())
+                        val function = clientFunctionBuilder.build()
+                        clientClassBuilder.addFunction(function)
+                        if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
+                            bearerSecurity.forOperation(operation)?.let {
+                                clientClassBuilder.addFunction(
+                                    function.withBearerTokenWrapper(it, BearerWrapperTarget.API_CONFIGURATION),
+                                )
+                            }
+                        }
                     }
                 }
 
