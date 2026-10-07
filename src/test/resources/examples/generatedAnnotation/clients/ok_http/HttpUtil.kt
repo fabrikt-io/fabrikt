@@ -1,7 +1,5 @@
 package com.example.client
 
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
 import okhttp3.FormBody
 import okhttp3.Headers
 import okhttp3.HttpUrl
@@ -10,6 +8,8 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.Response
 import okhttp3.ResponseBody
+import tools.jackson.core.type.TypeReference
+import tools.jackson.databind.json.JsonMapper
 import javax.`annotation`.processing.Generated
 import kotlin.Any
 import kotlin.Boolean
@@ -86,7 +86,7 @@ public fun Headers.Builder.`header`(
 )
 public fun <T> Request.execute(
     client: OkHttpClient,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     typeRef: TypeReference<T>,
 ): ApiResponse<T> =
     doRequest(client) { responseBody ->
@@ -140,7 +140,7 @@ public fun String.pathParam(vararg params: Pair<String, Any>): String =
     comments = "Generated with Fabrikt v27.0.1",
 )
 public fun <T> ResponseBody.deserialize(
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     typeRef: TypeReference<T>,
 ): T? = this.string().isNotBlankOrNull()?.let { objectMapper.readValue(it, typeRef) }
 

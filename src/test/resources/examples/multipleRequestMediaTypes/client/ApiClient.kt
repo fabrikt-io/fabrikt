@@ -1,7 +1,5 @@
 package examples.multipleRequestMediaTypes.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.multipleRequestMediaTypes.models.ArrayDetailsRequestItem
 import examples.multipleRequestMediaTypes.models.CountRequest
 import examples.multipleRequestMediaTypes.models.DifferentInlineRequestApplicationJson
@@ -15,6 +13,8 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.String
 import kotlin.Suppress
 import kotlin.Unit
@@ -24,7 +24,7 @@ import kotlin.jvm.Throws
 
 @Suppress("unused")
 public class AliasClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -64,7 +64,7 @@ public class AliasClient(
 
 @Suppress("unused")
 public class DistinctClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -151,7 +151,7 @@ public class DistinctClient(
 
 @Suppress("unused")
 public class InlineClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -191,7 +191,7 @@ public class InlineClient(
 
 @Suppress("unused")
 public class DifferentInlineClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -264,7 +264,7 @@ public class DifferentInlineClient(
 
 @Suppress("unused")
 public class ArraysClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -304,7 +304,7 @@ public class ArraysClient(
 
 @Suppress("unused")
 public class ComponentClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {

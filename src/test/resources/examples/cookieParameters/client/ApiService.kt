@@ -1,11 +1,11 @@
 package examples.cookieParameters.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.cookieParameters.models.CookiePreferences
 import examples.cookieParameters.models.DisplayMode
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import okhttp3.OkHttpClient
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.List
@@ -23,7 +23,7 @@ import kotlin.jvm.Throws
 @Suppress("unused")
 public class CookiesService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {

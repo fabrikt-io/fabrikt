@@ -1,12 +1,12 @@
 package examples.multipartUpload.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.multipartUpload.models.FileMetadata
 import examples.multipartUpload.models.SimpleUploadResult
 import examples.multipartUpload.models.UploadResult
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import okhttp3.OkHttpClient
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.Double
 import kotlin.String
 import kotlin.Suppress
@@ -25,7 +25,7 @@ import kotlin.jvm.Throws
 @Suppress("unused")
 public class ApiUploadService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -57,7 +57,7 @@ public class ApiUploadService(
 @Suppress("unused")
 public class ApiUploadSimpleService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -91,7 +91,7 @@ public class ApiUploadSimpleService(
 @Suppress("unused")
 public class ApiUploadMultipleService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {

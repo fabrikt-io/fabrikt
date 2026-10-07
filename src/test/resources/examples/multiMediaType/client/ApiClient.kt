@@ -1,8 +1,5 @@
 package examples.multiMediaType.client
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.multiMediaType.models.ContentType
 import examples.multiMediaType.models.QueryResult
 import examples.multiMediaType.models.SuccessResponse
@@ -11,6 +8,9 @@ import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.Int
 import kotlin.String
 import kotlin.Suppress
@@ -20,7 +20,7 @@ import kotlin.jvm.Throws
 
 @Suppress("unused")
 public class ExamplePath1Client(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -69,7 +69,7 @@ public class ExamplePath1Client(
 
 @Suppress("unused")
 public class ExamplePath2Client(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -118,7 +118,7 @@ public class ExamplePath2Client(
 
 @Suppress("unused")
 public class MultipleResponseSchemasClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -161,7 +161,7 @@ public class MultipleResponseSchemasClient(
 
 @Suppress("unused")
 public class DifferentSuccessAndErrorResponseSchemaClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {

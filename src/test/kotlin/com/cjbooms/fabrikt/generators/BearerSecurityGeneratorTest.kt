@@ -54,6 +54,7 @@ class BearerSecurityGeneratorTest {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.CLIENT),
             clientTarget = ClientCodeGenTargetType.OK_HTTP,
+            serializationLibrary = SerializationLibrary.JACKSON,
             clientOptions =
                 setOf(
                     ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION,

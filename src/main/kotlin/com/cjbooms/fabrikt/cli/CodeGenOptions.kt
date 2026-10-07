@@ -239,7 +239,7 @@ enum class SerializationLibrary(
     override fun toString() = "`${super.toString()}` - $description"
 
     companion object {
-        val default = JACKSON
+        val default = JACKSON_3
     }
 }
 

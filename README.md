@@ -329,7 +329,7 @@ Usage: <main class> [options]
 |                                         |   `ADD_FILE_DISCLAIMER` - This option adds a disclaimer to the generated files. |
 |                                         |   `ADD_GENERATED_ANNOTATION` - Annotate generated types and top-level functions with javax.annotation.processing.Generated. |
 |   `--resources-path`                    | Allows the path for generated resources to be overridden. Defaults to `src/main/resources` |
-|   `--serialization-library`             | Specify which serialization library to use for annotations in generated model classes. Default: JACKSON |
+|   `--serialization-library`             | Specify which serialization library to use for annotations in generated model classes. Default: JACKSON_3 |
 |                                         | CHOOSE ONE OF: |
 |                                         |   `JACKSON` - Use Jackson 2 for serialization and deserialization |
 |                                         |   `JACKSON_3` - Use Jackson 3 for serialization and deserialization |

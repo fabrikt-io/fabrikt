@@ -1,13 +1,13 @@
 package examples.okHttpClient.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.okHttpClient.models.Content
 import examples.okHttpClient.models.EnumQueryParam
 import examples.okHttpClient.models.FirstModel
 import examples.okHttpClient.models.QueryResult
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import okhttp3.OkHttpClient
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.Boolean
 import kotlin.Int
 import kotlin.String
@@ -28,7 +28,7 @@ import kotlin.jvm.Throws
 @Suppress("unused")
 public class ExamplePath1Service(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -83,7 +83,7 @@ public class ExamplePath1Service(
 @Suppress("unused")
 public class ExamplePath2Service(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -142,7 +142,7 @@ public class ExamplePath2Service(
 @Suppress("unused")
 public class ExamplePath3SubresourceService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -179,7 +179,7 @@ public class ExamplePath3SubresourceService(
 @Suppress("unused")
 public class ExamplePath4OnlyFailureResponseService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {

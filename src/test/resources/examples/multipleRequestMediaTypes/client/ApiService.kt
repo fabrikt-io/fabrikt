@@ -1,7 +1,5 @@
 package examples.multipleRequestMediaTypes.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.multipleRequestMediaTypes.models.ArrayDetailsRequestItem
 import examples.multipleRequestMediaTypes.models.CountRequest
 import examples.multipleRequestMediaTypes.models.DifferentInlineRequestApplicationJson
@@ -10,6 +8,8 @@ import examples.multipleRequestMediaTypes.models.InlineDetailsRequest
 import examples.multipleRequestMediaTypes.models.RequestsDetailsRequest
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import okhttp3.OkHttpClient
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.String
 import kotlin.Suppress
 import kotlin.Unit
@@ -28,7 +28,7 @@ import kotlin.jvm.Throws
 @Suppress("unused")
 public class AliasService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -57,7 +57,7 @@ public class AliasService(
 @Suppress("unused")
 public class DistinctService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -97,7 +97,7 @@ public class DistinctService(
 @Suppress("unused")
 public class InlineService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -127,7 +127,7 @@ public class InlineService(
 @Suppress("unused")
 public class DifferentInlineService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -170,7 +170,7 @@ public class DifferentInlineService(
 @Suppress("unused")
 public class ArraysService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -199,7 +199,7 @@ public class ArraysService(
 @Suppress("unused")
 public class ComponentService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {

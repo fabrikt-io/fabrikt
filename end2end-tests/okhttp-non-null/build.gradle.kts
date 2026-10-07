@@ -48,7 +48,6 @@ tasks {
             "--targets", "http_models",
             "--targets", "client",
             "--http-client-opts", "okhttp_non_null_response_payloads",
-            "--serialization-library", "jackson_3",
         )
         dependsOn(":jar")
         dependsOn(":shadowJar")

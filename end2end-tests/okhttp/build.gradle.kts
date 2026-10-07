@@ -50,7 +50,6 @@ tasks {
             "--targets", "client",
             "--http-client-opts", "resilience4j",
             "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF",
-            "--serialization-library", "jackson_3",
         )
         dependsOn(":jar")
         dependsOn(":shadowJar")

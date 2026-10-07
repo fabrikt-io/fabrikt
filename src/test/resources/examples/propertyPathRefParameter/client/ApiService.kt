@@ -1,7 +1,5 @@
 package examples.propertyPathRefParameter.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.propertyPathRefParameter.models.DictValue
 import examples.propertyPathRefParameter.models.Product
 import examples.propertyPathRefParameter.models.ProductMeta
@@ -9,6 +7,8 @@ import examples.propertyPathRefParameter.models.ProductState
 import examples.propertyPathRefParameter.models.ProductTags
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import okhttp3.OkHttpClient
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.List
@@ -26,7 +26,7 @@ import kotlin.jvm.Throws
 @Suppress("unused")
 public class ProductsService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
