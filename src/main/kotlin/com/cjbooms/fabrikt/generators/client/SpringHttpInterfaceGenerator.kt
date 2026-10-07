@@ -35,6 +35,7 @@ import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.requestOperations
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
@@ -50,6 +51,8 @@ class SpringHttpInterfaceGenerator(
     private val api: SourceApi,
     private val srcPath: java.nio.file.Path = Destinations.MAIN_KT_SOURCE,
 ) : ClientGenerator {
+    private val bearerSecurity = ClientBearerSecurity(api.openApi3)
+
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
         val clientTypes =
             api
@@ -58,8 +61,14 @@ class SpringHttpInterfaceGenerator(
                     val funcSpecs: List<FunSpec> =
                         paths
                             .flatMap { (resource, path) ->
-                                path.operations.flatMap { (verb, operation) ->
+                                api.requestOperations(path).flatMap { (verb, operation) ->
                                     val parameters = deriveClientParameters(path, operation, packages.base)
+                                    val securityPlan =
+                                        if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
+                                            bearerSecurity.forOperation(operation)
+                                        } else {
+                                            null
+                                        }
                                     val baseName = functionName(operation, resource, verb)
                                     val baseFunction =
                                         ClientFunction(
@@ -99,7 +108,11 @@ class SpringHttpInterfaceGenerator(
                                                 isMediaTypeFunction = true,
                                             )
                                         }
-                                    listOf(listOf(baseFunction)) + mediaTypeFunctions.map { listOf(it) }
+                                    (
+                                        listOf(
+                                            listOf(baseFunction),
+                                        ) + mediaTypeFunctions.map { listOf(it) }
+                                    ).map { it.withBearerTokenWrapper(securityPlan) }
                                 }
                             }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 

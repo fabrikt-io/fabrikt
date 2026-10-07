@@ -1,11 +1,15 @@
 package com.cjbooms.fabrikt.model
 
 import com.beust.jcommander.ParameterException
+import com.cjbooms.fabrikt.generators.GeneratorUtils.toKCodeName
 import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaAbsent
 import com.cjbooms.fabrikt.util.YamlUtils
+import com.cjbooms.fabrikt.util.capitalized
+import com.cjbooms.fabrikt.util.effectiveRequestSchema
+import com.cjbooms.fabrikt.util.requestRepresentationGroups
 import com.cjbooms.fabrikt.validation.ValidationError
 import com.reprezen.jsonoverlay.JsonLoader
 import java.net.URI
@@ -84,13 +88,36 @@ class SourceApi private constructor(
 
         val inlineRequestBodySchemas =
             openApi3.requestBodies.entries.flatMap { requestBody ->
-                requestBody.value.contentMediaTypes.entries
-                    .filter { content ->
-                        val schema = content.value.schema
-                        schema.jsonPathFromRoot.contains("requestBodies") &&
-                            schema.oneOfSchemas.isEmpty() &&
-                            schema.anyOfSchemas.isEmpty()
-                    }.map { content -> requestBody.key to content.value.schema }
+                val groups = requestBody.value.requestRepresentationGroups()
+                groups.mapNotNull { content ->
+                    val rawSchema = content.values.first().schema
+                    val schema = if (requestBody.value.contentMediaTypes.size > 1) rawSchema.effectiveRequestSchema() else rawSchema
+                    if (schema.jsonPathFromRoot.contains("requestBodies") &&
+                        schema.oneOfSchemas.isEmpty() &&
+                        schema.anyOfSchemas.isEmpty()
+                    ) {
+                        val name =
+                            if (groups.size ==
+                                1
+                            ) {
+                                requestBody.key
+                            } else {
+                                requestBody.key +
+                                    content.keys
+                                        .first()
+                                        .replace("*", "Wildcard")
+                                        .toKCodeName()
+                                        .capitalized()
+                            }
+                        val registeredName = ModelNameRegistry.preRegisterByReference(schema, name)
+                        content.values.drop(1).forEach { media ->
+                            ModelNameRegistry.preRegisterReferenceAlias(media.schema.effectiveRequestSchema(), registeredName)
+                        }
+                        registeredName to schema
+                    } else {
+                        null
+                    }
+                }
             }
 
         inlineRequestBodySchemas.forEach { (name, schema) ->
@@ -170,26 +197,44 @@ class SourceApi private constructor(
 
         val inlineOperationRequestBodySchemas =
             openApi3.paths.entries.flatMap { (pathTemplate, path) ->
-                path.operations.entries.mapNotNull { (method, operation) ->
-                    val requestSchemas =
-                        operation.requestBody.contentMediaTypes
-                            .filterKeys { !it.equals("multipart/form-data", ignoreCase = true) }
-                            .values
-                            .map { it.schema }
-                            .distinctBy { it.jsonReference }
-
-                    requestSchemas
-                        .singleOrNull()
-                        ?.takeIf { it.isOperationLevelObjectOrArray() }
-                        ?.let { schema ->
-                            val name =
+                path.operations.entries.flatMap { (method, operation) ->
+                    val groups = operation.requestRepresentationGroups()
+                    groups.mapNotNull { content ->
+                        val rawSchema = content.values.first().schema
+                        val schema = if (operation.requestBody.contentMediaTypes.size > 1) rawSchema.effectiveRequestSchema() else rawSchema
+                        if (schema.isOperationLevelObjectOrArray() && content.keys.none { it.equals("multipart/form-data", true) }) {
+                            val baseName =
                                 schema.title?.takeIf { it.isNotBlank() }
                                     ?: operation.operationId?.takeIf { it.isNotBlank() }?.let {
                                         "$it${if (schema.type == OasType.Array.type) "RequestItem" else "Request"}"
                                     }
                                     ?: "${method}_${pathTemplate}_${if (schema.type == OasType.Array.type) "request_item" else "request"}"
-                            name to schema
+                            val name =
+                                if (groups.size ==
+                                    1
+                                ) {
+                                    baseName
+                                } else {
+                                    baseName +
+                                        content.keys
+                                            .first()
+                                            .replace("*", "Wildcard")
+                                            .toKCodeName()
+                                            .capitalized()
+                                }
+                            val registeredName = ModelNameRegistry.preRegisterByReference(schema, name)
+                            content.values.drop(1).forEach { media ->
+                                val alias = media.schema.effectiveRequestSchema()
+                                ModelNameRegistry.preRegisterReferenceAlias(alias, registeredName)
+                                if (alias.type == OasType.Array.type) {
+                                    ModelNameRegistry.preRegisterReferenceAlias(alias.itemsSchema, registeredName)
+                                }
+                            }
+                            registeredName to schema
+                        } else {
+                            null
                         }
+                    }
                 }
             }
 

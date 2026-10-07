@@ -170,14 +170,14 @@ object GeneratorUtils {
             MutableSettings.operationIdTransform?.let { (regex, replacement) ->
                 operationId.replace(regex, replacement)
             } ?: operationId
-        return transformed.camelCase()
+        return transformed.camelCase() + op.requestFunctionSuffix
     }
 
     fun functionName(
         op: Operation,
         resource: String,
         verb: String,
-    ) = functionNameFromOperation(op) ?: "$verb $resource".toKCodeName()
+    ) = functionNameFromOperation(op) ?: ("$verb $resource".toKCodeName() + op.requestFunctionSuffix)
 
     fun OpenApiSchema.toVarName() = this.name?.toKCodeName() ?: this.toClassName().simpleName.toKCodeName()
 

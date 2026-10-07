@@ -379,11 +379,7 @@ object SchemaParserExtensions {
     fun Schema.safeName(): String {
         return when {
             isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !(isOneOfSuperInterfaceWithDiscriminator()) ->
-                this.oneOfSchemas
-                    .first()
-                    .allOfSchemas
-                    .first()
-                    .safeName()
+                checkNotNull(commonAllOfSuperType()).safeName()
             isInlinedAggregationOfExactlyOne() -> combinedAnyOfAndAllOfSchemas().first().safeName()
             name != null -> name!!
             else -> {
@@ -437,19 +433,12 @@ object SchemaParserExtensions {
 
     private fun List<Schema>?.hasAnyDefinedProperties(): Boolean = this?.any { it.properties.isNotEmpty() } == true
 
-    fun Schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType(): Boolean {
-        val maybeAllOfInFirstOneOf =
-            this.oneOfSchemas
-                ?.firstOrNull()
-                ?.allOfSchemas
-                ?.firstOrNull()
-        // This identifies the OLD allOf-based polymorphism pattern where the BASE type has the discriminator
-        return if (maybeAllOfInFirstOneOf != null && maybeAllOfInFirstOneOf.hasDiscriminator()) {
-            this.oneOfSchemas.all { it.allOfSchemas.contains(maybeAllOfInFirstOneOf) }
-        } else {
-            false
+    fun Schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType(): Boolean = commonAllOfSuperType() != null
+
+    private fun Schema.commonAllOfSuperType(): Schema? =
+        oneOfSchemas.firstOrNull()?.allOfSchemas?.firstOrNull { candidate ->
+            candidate.hasDiscriminator() && oneOfSchemas.all { candidate in it.allOfSchemas }
         }
-    }
 
     fun Schema.isOneOfResolvingToAnyType(): Boolean {
         // oneOf schemas with discriminators that resolve to Any when sealed interfaces are not enabled

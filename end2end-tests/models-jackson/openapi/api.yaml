@@ -1,5 +1,59 @@
 openapi: 3.0.0
 paths:
+  /request-media-object:
+    post:
+      operationId: createRequestMedia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label]
+              properties:
+                label:
+                  type: string
+                  minLength: 1
+          text/json:
+            schema:
+              type: object
+              required: [label]
+              properties:
+                label:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Success
+  /request-media-array:
+    post:
+      operationId: arrayRequestMedia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required: [label]
+                properties:
+                  label:
+                    type: string
+                    minLength: 1
+          text/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required: [label]
+                properties:
+                  label:
+                    type: string
+                    minLength: 1
+      responses:
+        '204':
+          description: Success
 info:
   title:
   version:
@@ -511,3 +565,11 @@ components:
         optional_int:
           type: integer
           format: int32
+
+    OrderX: {"type": "object", "required": ["id", "kind"], "properties": {"id": {"type": "string"}, "kind": {"type": "string"}}, "discriminator": {"propertyName": "kind", "mapping": {"child": "#/components/schemas/OrderChild", "sibling": "#/components/schemas/OrderSibling"}}}
+
+    OrderChild: {"allOf": [{"type": "object", "required": ["label"], "properties": {"label": {"type": "string"}}}, {"$ref": "#/components/schemas/OrderX"}]}
+
+    OrderSibling: {"allOf": [{"type": "object", "required": ["count"], "properties": {"count": {"type": "integer", "format": "int32"}}}, {"$ref": "#/components/schemas/OrderX"}]}
+
+    OrderHolder: {"type": "object", "required": ["value", "choice"], "properties": {"value": {"$ref": "#/components/schemas/OrderX"}, "choice": {"oneOf": [{"$ref": "#/components/schemas/OrderChild"}, {"$ref": "#/components/schemas/OrderSibling"}]}, "choices": {"type": "array", "items": {"oneOf": [{"$ref": "#/components/schemas/OrderChild"}, {"$ref": "#/components/schemas/OrderSibling"}]}}}}

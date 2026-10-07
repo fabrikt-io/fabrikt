@@ -8,6 +8,7 @@ import com.cjbooms.fabrikt.model.OpenApiPath
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.basePath
+import com.cjbooms.fabrikt.util.requestOperations
 import com.cjbooms.fabrikt.util.toUpperCase
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -42,13 +43,14 @@ abstract class AnnotationBasedControllerInterfaceGenerator(
 
         paths
             .flatMap { path ->
-                path.operations
-                    .filter { it.key.toUpperCase() != "HEAD" }
+                api
+                    .requestOperations(path)
+                    .filter { it.first.toUpperCase() != "HEAD" }
                     .map { op ->
                         buildFunction(
                             path,
-                            op.value,
-                            op.key,
+                            op.second,
+                            op.first,
                         )
                     }
             }.forEach { typeBuilder.addFunction(it) }
