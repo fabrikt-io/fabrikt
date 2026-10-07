@@ -113,7 +113,7 @@ public interface ArraysController {
     @Post(uri = "/arrays")
     @Consumes(value = ["application/json", "text/json"])
     public fun arrayDetails(
-        @Body @Valid body: List<ArrayDetailsRequestItem>,
+        @Body body: List<@Valid ArrayDetailsRequestItem>,
     ): HttpResponse<Unit>
 }
 
