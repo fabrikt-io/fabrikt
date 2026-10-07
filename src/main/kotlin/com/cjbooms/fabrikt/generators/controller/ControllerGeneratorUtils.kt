@@ -52,7 +52,7 @@ object ControllerGeneratorUtils {
         op: OpenApiOperation,
         verb: String,
         isSingleResource: Boolean,
-    ) = functionNameFromOperation(op) ?: httpVerbMethodName(verb, isSingleResource)
+    ) = functionNameFromOperation(op) ?: (httpVerbMethodName(verb, isSingleResource) + op.requestFunctionSuffix)
 
     private fun httpVerbMethodName(
         verb: String,

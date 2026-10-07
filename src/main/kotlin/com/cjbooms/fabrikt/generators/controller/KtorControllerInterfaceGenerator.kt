@@ -26,6 +26,7 @@ import com.cjbooms.fabrikt.util.GroupingStrategy
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.groupedPaths
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSingleResource
+import com.cjbooms.fabrikt.util.requestOperations
 import com.cjbooms.fabrikt.util.toUpperCase
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
@@ -78,12 +79,26 @@ class KtorControllerInterfaceGenerator(
                         ).addKdoc("Mounts all routes for the $resourceName resource\n\n")
 
                 paths.forEach { path ->
-                    path.value.operations
+                    api
+                        .requestOperations(path.value)
                         .filter { (verb, _) -> verb.toUpperCase() != "HEAD" }
                         .forEach { (verb, operation) ->
                             // add route handler
                             val routeCode = buildRouteCode(operation, verb, path)
-                            routeFunBuilder.addCode(routeCode)
+                            if (operation.hasDistinctRequestRepresentations) {
+                                operation.requestBody.contentMediaTypes.keys.forEach { mediaType ->
+                                    routeFunBuilder
+                                        .beginControlFlow(
+                                            "%M(%T.parse(%S))",
+                                            MemberName("io.ktor.server.routing", "contentType"),
+                                            ClassName("io.ktor.http", "ContentType"),
+                                            mediaType,
+                                        ).addCode(routeCode)
+                                        .endControlFlow()
+                                }
+                            } else {
+                                routeFunBuilder.addCode(routeCode)
+                            }
                             routeFunBuilder.addKdoc(
                                 "- %L %L %L\n",
                                 verb.toUpperCase(),

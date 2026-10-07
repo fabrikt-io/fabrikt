@@ -32,6 +32,7 @@ class SpringHttpInterfaceGeneratorTest {
     @Suppress("unused")
     private fun fullApiTestCases(): Stream<String> =
         Stream.of(
+            "multipleRequestMediaTypes",
             "springHttpInterfaceClient",
             "multiMediaType",
             "pathLevelParameters",

@@ -42,6 +42,7 @@ import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.GeneratedAnnotations.addGeneratedAnnotations
+import com.cjbooms.fabrikt.util.requestOperations
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.CodeBlock
@@ -71,7 +72,7 @@ class OkHttpSimpleClientGenerator(
                 val funcSpecs: List<FunSpec> =
                     paths
                         .flatMap { (resource, path) ->
-                            path.operations.flatMap { (verb, operation) ->
+                            api.requestOperations(path).flatMap { (verb, operation) ->
                                 val parameters = deriveClientParameters(path, operation, packages.base)
                                 val securityPlan =
                                     if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {

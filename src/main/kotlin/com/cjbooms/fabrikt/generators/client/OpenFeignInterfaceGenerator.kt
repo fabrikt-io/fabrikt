@@ -36,6 +36,7 @@ import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.requestOperations
 import com.cjbooms.fabrikt.util.toUpperCase
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.CodeBlock
@@ -62,7 +63,7 @@ class OpenFeignInterfaceGenerator(
                     val funcSpecs: List<FunSpec> =
                         paths
                             .flatMap { (resource, path) ->
-                                path.operations.flatMap { (verb, operation) ->
+                                api.requestOperations(path).flatMap { (verb, operation) ->
                                     val parameters = deriveClientParameters(path, operation, packages.base)
                                     val securityPlan =
                                         if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
@@ -507,6 +508,9 @@ class OpenFeignInterfaceGenerator(
                     parameter.name == ClientGeneratorUtils.ACCEPT_HEADER_NAME
             }
             if (hasCookieHeader) headersValueParts.add("Cookie: {$cookieHeaderParameterName}")
+            if (operation.hasDistinctRequestRepresentations) {
+                headersValueParts.add("Content-Type: ${operation.requestBody.contentMediaTypes.keys.first()}")
+            }
             // Add default accept header
             if (!acceptHeaderExists) {
                 (acceptMediaType?.let { "${ClientGeneratorUtils.ACCEPT_HEADER_NAME}: $it" } ?: getDefaultAcceptHeaderAnnotationValue())

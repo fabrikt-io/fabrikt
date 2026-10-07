@@ -28,6 +28,7 @@ class OpenFeignClientGeneratorTest {
     @Suppress("unused")
     private fun fullApiTestCases(): Stream<String> =
         Stream.of(
+            "multipleRequestMediaTypes",
             "openFeignClient",
             "multiMediaType",
             "pathLevelParameters",

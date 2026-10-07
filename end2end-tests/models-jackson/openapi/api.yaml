@@ -1,5 +1,59 @@
 openapi: 3.0.0
 paths:
+  /request-media-object:
+    post:
+      operationId: createRequestMedia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label]
+              properties:
+                label:
+                  type: string
+                  minLength: 1
+          text/json:
+            schema:
+              type: object
+              required: [label]
+              properties:
+                label:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Success
+  /request-media-array:
+    post:
+      operationId: arrayRequestMedia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required: [label]
+                properties:
+                  label:
+                    type: string
+                    minLength: 1
+          text/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required: [label]
+                properties:
+                  label:
+                    type: string
+                    minLength: 1
+      responses:
+        '204':
+          description: Success
 info:
   title:
   version:

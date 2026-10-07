@@ -149,6 +149,9 @@ class OpenApi3Document(
 class OpenApiOperation(
     internal val kaizen: Operation,
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
+    private val requestContentOverride: Map<String, OpenApiMediaType>? = null,
+    val requestFunctionSuffix: String = "",
+    val hasDistinctRequestRepresentations: Boolean = false,
 ) {
     val parameters: List<OpenApiParameter>
         get() = kaizen.parameters?.map { OpenApiParameter(it, schemaSemanticsAt) } ?: emptyList()
@@ -159,10 +162,16 @@ class OpenApiOperation(
     val summary: String? get() = kaizen.summary
     val description: String? get() = kaizen.description
     val isDeprecated: Boolean get() = kaizen.isDeprecated ?: false
-    val requestBody: OpenApiRequestBody get() = OpenApiRequestBody(kaizen.requestBody, schemaSemanticsAt)
+    val requestBody: OpenApiRequestBody get() = OpenApiRequestBody(kaizen.requestBody, schemaSemanticsAt, requestContentOverride)
     val securityRequirements: List<OpenApiSecurityRequirement>
         get() = kaizen.securityRequirements?.map(::OpenApiSecurityRequirement) ?: emptyList()
     val extensions: Map<String, Any> get() = kaizen.extensions ?: emptyMap()
+
+    fun withRequestContent(
+        content: Map<String, OpenApiMediaType>,
+        functionSuffix: String,
+        distinctRepresentations: Boolean,
+    ): OpenApiOperation = OpenApiOperation(kaizen, schemaSemanticsAt, content, functionSuffix, distinctRepresentations)
 
     fun hasSecurityRequirements(): Boolean = kaizen.hasSecurityRequirements()
 
@@ -229,9 +238,10 @@ class OpenApiResponse(
 class OpenApiRequestBody(
     internal val kaizen: RequestBody,
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
+    private val contentOverride: Map<String, OpenApiMediaType>? = null,
 ) {
     val contentMediaTypes: Map<String, OpenApiMediaType>
-        get() = kaizen.contentMediaTypes?.mapValues { OpenApiMediaType(it.value, schemaSemanticsAt) } ?: emptyMap()
+        get() = contentOverride ?: kaizen.contentMediaTypes?.mapValues { OpenApiMediaType(it.value, schemaSemanticsAt) } ?: emptyMap()
     val description: String? get() = kaizen.description
     val isRequired: Boolean get() = kaizen.isRequired ?: false
 
@@ -245,8 +255,11 @@ class OpenApiRequestBody(
 class OpenApiMediaType(
     internal val kaizen: MediaType,
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
+    private val schemaOverride: OpenApiSchema? = null,
 ) {
-    val schema: OpenApiSchema get() = OpenApiSchema(kaizen.schema, schemaSemanticsAt)
+    val schema: OpenApiSchema get() = schemaOverride ?: OpenApiSchema(kaizen.schema, schemaSemanticsAt)
+
+    fun withSchema(schema: OpenApiSchema): OpenApiMediaType = OpenApiMediaType(kaizen, schemaSemanticsAt, schema)
 
     override fun equals(other: Any?): Boolean = other is OpenApiMediaType && kaizen == other.kaizen
 
