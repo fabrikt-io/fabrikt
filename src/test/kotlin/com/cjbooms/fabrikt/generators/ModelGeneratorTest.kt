@@ -42,6 +42,7 @@ class ModelGeneratorTest {
     @Suppress("unused")
     private fun testCases(): Stream<String> =
         Stream.of(
+            "allOfParentOrder",
             "additionalModelAnnotations",
             "additionalProperties",
             "arrays",
