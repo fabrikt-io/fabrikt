@@ -9,6 +9,5 @@ public data class ContainsUniqueArrayRef(
   @param:JsonProperty("weight_on_mars")
   @get:JsonProperty("weight_on_mars")
   @get:NotNull
-  @get:Valid
-  public val weightOnMars: LinkedHashSet<ArrayRef>,
+  public val weightOnMars: LinkedHashSet<@Valid ArrayRef>,
 )

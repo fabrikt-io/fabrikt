@@ -11,6 +11,5 @@ public data class ContainsOneOfPolymorphicTypes(
   public val oneOneOf: PolymorphicSuperTypeOne? = null,
   @param:JsonProperty("many_one_of")
   @get:JsonProperty("many_one_of")
-  @get:Valid
-  public val manyOneOf: List<PolymorphicSuperTypeOne>? = null,
+  public val manyOneOf: List<@Valid PolymorphicSuperTypeOne>? = null,
 )

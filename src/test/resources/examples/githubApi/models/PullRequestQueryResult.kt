@@ -24,6 +24,5 @@ public data class PullRequestQueryResult(
   @get:JsonProperty("items")
   @get:NotNull
   @get:Size(min = 0)
-  @get:Valid
-  public val items: List<PullRequest>,
+  public val items: List<@Valid PullRequest>,
 )

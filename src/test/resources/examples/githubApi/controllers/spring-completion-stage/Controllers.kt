@@ -450,8 +450,8 @@ public interface RepositoriesController {
         @Min(1) @Max(100) @RequestParam(value = "limit", required = false, defaultValue = "10")
         limit: Int,
         @RequestHeader(value = "X-Flow-Id", required = false) xFlowId: String?,
-        @Valid @RequestParam(value = "slug", required = false) slug: List<String>?,
-        @Valid @RequestParam(value = "name", required = false) name: List<String>?,
+        @RequestParam(value = "slug", required = false) slug: List<String>?,
+        @RequestParam(value = "name", required = false) name: List<String>?,
         @RequestParam(value = "include_inactive", required = false) includeInactive: Boolean?,
         @RequestParam(value = "cursor", required = false) cursor: String?,
     ): CompletionStage<ResponseEntity<RepositoryQueryResult>>

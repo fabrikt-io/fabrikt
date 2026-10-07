@@ -67,7 +67,9 @@ abstract class AnnotationBasedControllerInterfaceGenerator(
                 (validationAnnotations.size(parameter.minLength?.toInt(), parameter.maxLength?.toInt())),
             )
         }
-        if (parameter.typeInfo.isComplexType) this.maybeAddAnnotation(validationAnnotations.parameterValid())
+        if (parameter.typeInfo.isComplexType && !parameter.typeInfo.isContainer) {
+            this.maybeAddAnnotation(validationAnnotations.parameterValid())
+        }
         return this
     }
 

@@ -17,7 +17,6 @@ import org.springframework.web.bind.`annotation`.RequestHeader
 import org.springframework.web.bind.`annotation`.RequestMapping
 import org.springframework.web.bind.`annotation`.RequestMethod
 import org.springframework.web.bind.`annotation`.RequestParam
-import javax.validation.Valid
 import kotlin.String
 import kotlin.collections.List
 
@@ -77,9 +76,9 @@ public interface ItemsSearchController {
         method = [RequestMethod.GET],
     )
     public fun searchItems(
-        @Valid @RequestParam(value = "categories", required = true) categories: List<Categories>,
-        @Valid @RequestParam(value = "tags", required = false) tags: List<Tags>?,
-        @Valid @RequestParam(value = "nested_filters", required = false)
+        @RequestParam(value = "categories", required = true) categories: List<Categories>,
+        @RequestParam(value = "tags", required = false) tags: List<Tags>?,
+        @RequestParam(value = "nested_filters", required = false)
         nestedFilters: List<List<NestedFilters>>?,
     ): ResponseEntity<List<Item>>
 }

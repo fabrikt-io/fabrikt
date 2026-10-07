@@ -9,6 +9,5 @@ public data class Items(
   @param:JsonProperty("items")
   @get:JsonProperty("items")
   @get:NotNull
-  @get:Valid
-  public val items: List<ItemReference>,
+  public val items: List<@Valid ItemReference>,
 )

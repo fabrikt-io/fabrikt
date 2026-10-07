@@ -79,6 +79,5 @@ public data class Organisation(
   public val icon: String? = null,
   @param:JsonProperty("hooks")
   @get:JsonProperty("hooks")
-  @get:Valid
-  public val hooks: List<Webhook>? = null,
+  public val hooks: List<@Valid Webhook>? = null,
 )

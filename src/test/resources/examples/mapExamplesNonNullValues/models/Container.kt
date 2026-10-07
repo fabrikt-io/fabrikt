@@ -15,8 +15,7 @@ public data class Container(
   @param:JsonProperty("typed_object_map")
   @get:JsonProperty("typed_object_map")
   @get:NotNull
-  @get:Valid
-  public val typedObjectMap: Map<String, TypedObjectMapValue>,
+  public val typedObjectMap: Map<String, @Valid TypedObjectMapValue>,
   @param:JsonProperty("object_map")
   @get:JsonProperty("object_map")
   @get:NotNull

@@ -13,6 +13,5 @@ public data class SomeRequest(
   @SerialName("id")
   public val id: BigDecimal? = null,
   @SerialName("events")
-  @get:Valid
-  public val events: List<Test>? = null,
+  public val events: List<@Valid Test>? = null,
 )

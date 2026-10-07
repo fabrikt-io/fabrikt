@@ -110,6 +110,8 @@ sealed class IncomingParameter(
 ) {
     val name: String = oasName.toKotlinParameterName()
 
+    abstract val typeInfo: KotlinTypeInfo
+
     /**
      * Whether the generated Kotlin type should be nullable. Optional parameters are nullable unless they
      * supply a default value, in which case the value is always populated (e.g. Spring's
@@ -128,6 +130,7 @@ open class BodyParameter(
     oasName: String,
     description: String?,
     type: TypeName,
+    override val typeInfo: KotlinTypeInfo,
     isRequired: Boolean = false,
     open val schema: OpenApiSchema,
 ) : IncomingParameter(oasName, description, type, isRequired)
@@ -136,6 +139,7 @@ class MultipartParameter(
     oasName: String,
     description: String?,
     type: TypeName,
+    override val typeInfo: KotlinTypeInfo,
     isRequired: Boolean = false,
     val schema: OpenApiSchema,
     val partName: String,
@@ -150,7 +154,7 @@ class RequestParameter(
     isRequired: Boolean = false,
     var originalName: String,
     val parameterLocation: RequestParameterLocation,
-    val typeInfo: KotlinTypeInfo,
+    override val typeInfo: KotlinTypeInfo,
     val minimum: Number? = null,
     val maximum: Number? = null,
     val minLength: Number? = null,

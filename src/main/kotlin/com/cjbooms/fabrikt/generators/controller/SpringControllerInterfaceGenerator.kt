@@ -84,7 +84,7 @@ class SpringControllerInterfaceGenerator(
     ): FunSpec {
         val methodName = methodName(op, verb, path.pathString.isSingleResource())
         val returnType = op.toSuccessResponseType(packages.base)
-        val parameters = op.toIncomingParameters(packages.base, path.parameters, emptyList())
+        val parameters = op.toIncomingParameters(packages.base, path.parameters, emptyList(), validationAnnotations)
         val globalSecurity = api.openApi3.securityRequirements.securitySupport()
 
         // Main method builder
@@ -120,14 +120,14 @@ class SpringControllerInterfaceGenerator(
                     is MultipartParameter ->
                         toParameterSpecBuilder(it)
                             .addSpringParamAnnotation(it)
-                            .maybeAddAnnotation(validationAnnotations.parameterValid())
+                            .maybeAddAnnotation(if (!it.typeInfo.isContainer) validationAnnotations.parameterValid() else null)
                             .build()
 
                     is BodyParameter ->
                         it
                             .toParameterSpecBuilder()
                             .addAnnotation(SpringAnnotations.requestBodyBuilder().build())
-                            .maybeAddAnnotation(validationAnnotations.parameterValid())
+                            .maybeAddAnnotation(if (!it.typeInfo.isContainer) validationAnnotations.parameterValid() else null)
                             .build()
 
                     is RequestParameter ->

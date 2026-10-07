@@ -35,6 +35,5 @@ public data class NewNullableFormat(
   public val singleRequiredFieldNullableRef: SingleRequiredFieldNullableObject?,
   @param:JsonProperty("complexNullable")
   @get:JsonProperty("complexNullable")
-  @get:Valid
-  public val complexNullable: List<NewNullableFormatComplexNullable>? = null,
+  public val complexNullable: List<@Valid NewNullableFormatComplexNullable>? = null,
 )

@@ -505,10 +505,25 @@ data class DiscriminatedChild3(
 data class Responses(
     @param:JsonProperty("entries")
     @get:JsonProperty("entries")
-    @get:Valid
-    val entries: List<ChildDefinition>? = null
+    val entries: List<@Valid ChildDefinition>? = null
 )
 ```
+
+### Bean validation
+
+When a validated library is selected, `@Valid` is placed on the container's type argument for
+collection properties and controller parameters, e.g. `List<@Valid ChildDefinition>` and
+`Map<String, @Valid ChildDefinition?>`, rather than on the container itself
+(`List<ChildDefinition>`). Hibernate Validator 9.1 deprecates the legacy container-level
+placement.
+
+Nested containers keep `@Valid` on the innermost element only (e.g.
+`List<List<@Valid ChildDefinition>>`), and containers with a non-cascadable element such as
+`List<String>` carry no `@Valid`.
+
+> Kotlin only writes type-argument annotations into bytecode when compiled with
+> `-Xemit-jvm-type-annotations`. Enable that flag in consumer projects so Hibernate Validator
+> can see the cascading `@Valid` at runtime.
 
 ## Contributing
 

@@ -9,6 +9,5 @@ public data class ArrayComplexInLined(
   @param:JsonProperty("quantities")
   @get:JsonProperty("quantities")
   @get:NotNull
-  @get:Valid
-  public val quantities: List<ArrayComplexInLinedQuantities>,
+  public val quantities: List<@Valid ArrayComplexInLinedQuantities>,
 )

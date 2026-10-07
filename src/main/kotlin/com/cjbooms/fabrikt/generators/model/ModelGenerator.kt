@@ -111,6 +111,7 @@ class ModelGenerator(
             basePackage: String,
             typeInfo: KotlinTypeInfo,
             isNullable: Boolean = false,
+            validationAnnotations: ValidationAnnotations? = null,
         ): TypeName {
             val className =
                 toClassName(
@@ -125,10 +126,12 @@ class ModelGenerator(
                                 basePackage,
                                 typeInfo.parameterizedType,
                                 typeInfo.isParameterizedTypeNullable,
+                                validationAnnotations,
                             )
                         val annotatedElementType =
                             MutableSettings.serializationLibrary.serializationAnnotations
                                 .annotateArrayElementType(elementType, typeInfo.parameterizedType)
+                                .withContainerElementAnnotations(typeInfo.parameterizedType, validationAnnotations)
                         if (typeInfo.hasUniqueItems) {
                             createSet(annotatedElementType)
                         } else {
@@ -152,16 +155,16 @@ class ModelGenerator(
                                     toClassName(
                                         basePackage,
                                         paramType,
-                                    ),
+                                    ).withContainerElementAnnotations(paramType, validationAnnotations),
                                 )
 
                             else ->
                                 createMapOfStringToType(
                                     MutableSettings.serializationLibrary.serializationAnnotations
                                         .annotateMapValueType(
-                                            toModelType(basePackage, paramType),
+                                            toModelType(basePackage, paramType, validationAnnotations = validationAnnotations),
                                             paramType,
-                                        ),
+                                        ).withContainerElementAnnotations(paramType, validationAnnotations),
                                 )
                         }
 
@@ -188,6 +191,14 @@ class ModelGenerator(
                     else -> className
                 }
             return if (isNullable) typeName.copy(nullable = true) else typeName
+        }
+
+        private fun TypeName.withContainerElementAnnotations(
+            elementInfo: KotlinTypeInfo,
+            validationAnnotations: ValidationAnnotations?,
+        ): TypeName {
+            val extra = validationAnnotations?.containerElementAnnotations(elementInfo).orEmpty()
+            return if (extra.isEmpty()) this else copy(annotations = annotations + extra)
         }
 
         private fun toClassName(
@@ -1076,6 +1087,10 @@ class ModelGenerator(
         classBuilder: TypeSpec.Builder,
         classType: ClassSettings,
     ): TypeSpec.Builder {
+        // Supertype properties deliberately carry no validation annotations (see PropertyUtils.addToClass),
+        // so the container element annotation must be suppressed there too.
+        val propertyValidationAnnotations =
+            validationAnnotations.takeIf { classType.polymorphyType != ClassSettings.PolymorphyType.SUPER }
         this.forEach {
             it.addToClass(
                 schemaName = schemaName,
@@ -1084,6 +1099,7 @@ class ModelGenerator(
                         packages.base,
                         it.typeInfo,
                         it.isNullable(classType),
+                        propertyValidationAnnotations,
                     ),
                 parameterizedType =
                     toClassName(
