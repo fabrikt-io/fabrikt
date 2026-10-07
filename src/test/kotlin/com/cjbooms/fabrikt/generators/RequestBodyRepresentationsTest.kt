@@ -1,6 +1,12 @@
 package com.cjbooms.fabrikt.generators
 
+import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
+import com.cjbooms.fabrikt.cli.ClientCodeGenTargetType
 import com.cjbooms.fabrikt.cli.CodeGenerationType
+import com.cjbooms.fabrikt.configurations.Packages
+import com.cjbooms.fabrikt.generators.client.OkHttpClientGenerator
+import com.cjbooms.fabrikt.generators.client.OpenFeignInterfaceGenerator
+import com.cjbooms.fabrikt.generators.client.SpringHttpInterfaceGenerator
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.ModelNameRegistry
@@ -12,6 +18,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
+import java.nio.file.Paths
 
 class RequestBodyRepresentationsTest {
     private val mapper = jacksonObjectMapper()
@@ -97,5 +106,50 @@ class RequestBodyRepresentationsTest {
             com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils
                 .methodName(variants[1].second, "post", false),
         ).isEqualTo("postTextJsonExtra")
+    }
+
+    @ParameterizedTest
+    @EnumSource(ClientCodeGenTargetType::class, names = ["OK_HTTP", "OPEN_FEIGN", "SPRING_HTTP_INTERFACE"])
+    fun `typed response functions retain each request representation`(target: ClientCodeGenTargetType) {
+        val document = mapper.readTree(readTextResource("/examples/multipleRequestMediaTypes/api.yaml"))
+        val responses = document.at("/paths/~1distinct/post/responses") as ObjectNode
+        val response = responses.removeAll().putObject("200").put("description", "Success")
+        response.set<com.fasterxml.jackson.databind.JsonNode>(
+            "content",
+            mapper.readTree(
+                """
+                {
+                  "application/json": {"schema": {"${'$'}ref": "#/components/schemas/Requests.DetailsRequest"}},
+                  "application/problem+json": {"schema": {"${'$'}ref": "#/components/schemas/CountRequest"}}
+                }
+                """.trimIndent(),
+            ),
+        )
+        val options = setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS, ClientCodeGenOptionType.RESILIENCE4J)
+        MutableSettings.updateSettings(genTypes = setOf(CodeGenerationType.CLIENT), clientTarget = target, clientOptions = options)
+        val api = SourceApi(document.toString())
+        val packages = Packages("examples.multipleRequestMediaTypes")
+        val generator =
+            when (target) {
+                ClientCodeGenTargetType.OK_HTTP -> OkHttpClientGenerator(packages, api, Paths.get("src/main/kotlin"))
+                ClientCodeGenTargetType.OPEN_FEIGN -> OpenFeignInterfaceGenerator(packages, api)
+                ClientCodeGenTargetType.SPRING_HTTP_INTERFACE -> SpringHttpInterfaceGenerator(packages, api)
+                else -> error("Unsupported target")
+            }
+        val expectedRequestTypes = mapOf("createDetails" to "RequestsDetailsRequest", "createDetailsTextJson" to "CountRequest")
+        val expectedResponseTypes = mapOf("Json" to "RequestsDetailsRequest", "ProblemJson" to "CountRequest")
+        val clients = generator.generate(options).clients.filter { it.spec.name in setOf("DistinctClient", "DistinctService") }
+        assertThat(clients).isNotEmpty()
+        clients.forEach { client ->
+            val functions = client.spec.funSpecs.associateBy { it.name }
+            expectedRequestTypes.forEach { (baseName, requestType) ->
+                expectedResponseTypes.forEach { (suffix, responseType) ->
+                    val function = functions.getValue(baseName + suffix)
+                    assertThat(function.parameters.map { it.type.toString().removeSuffix("?") })
+                        .contains("${packages.models}.$requestType")
+                    assertThat(function.returnType.toString()).contains("${packages.models}.$responseType")
+                }
+            }
+        }
     }
 }
