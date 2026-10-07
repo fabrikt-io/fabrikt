@@ -8,8 +8,6 @@ import com.example.multipart.models.FileMetadata
 import com.example.multipart.models.FileMetadataCategory
 import com.example.multipart.models.SimpleUploadResult
 import com.example.multipart.models.UploadResult
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
@@ -27,12 +25,14 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.net.ServerSocket
 import java.time.OffsetDateTime
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.kotlinModule
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class MultipartUploadTest {
     private val port: Int = ServerSocket(0).use { socket -> socket.localPort }
     private val wiremock: WireMockServer = WireMockServer(options().port(port).notifier(ConsoleNotifier(true)))
-    private val mapper = ObjectMapper().registerModule(JavaTimeModule())
+    private val mapper = JsonMapper.builder().addModule(kotlinModule()).build()
     private val httpClient = OkHttpClient.Builder().build()
     private val uploadClient = ApiUploadClient(mapper, "http://localhost:$port", httpClient)
     private val uploadMultipleClient = ApiUploadMultipleClient(mapper, "http://localhost:$port", httpClient)

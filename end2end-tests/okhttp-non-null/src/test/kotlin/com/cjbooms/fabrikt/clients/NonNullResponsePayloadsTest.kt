@@ -6,8 +6,6 @@ import com.example.client.WidgetsClient
 import com.example.client.WidgetsImageClient
 import com.example.client.WidgetsSummaryClient
 import com.example.models.Widget
-import com.fasterxml.jackson.core.JsonParseException
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
@@ -25,12 +23,15 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import tools.jackson.core.exc.StreamReadException
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.kotlinModule
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class NonNullResponsePayloadsTest {
     private val port: Int = ServerSocket(0).use { socket -> socket.localPort }
     private val wiremock: WireMockServer = WireMockServer(options().port(port).notifier(ConsoleNotifier(true)))
-    private val mapper = jacksonObjectMapper()
+    private val mapper = JsonMapper.builder().addModule(kotlinModule()).build()
     private val httpClient = OkHttpClient.Builder().build()
     private val widgetsClient = WidgetsClient(mapper, "http://localhost:$port", httpClient)
     private val widgetsImageClient = WidgetsImageClient(mapper, "http://localhost:$port", httpClient)
@@ -88,7 +89,7 @@ class NonNullResponsePayloadsTest {
         )
 
         assertThatThrownBy { widgetsClient.getWidget("1") }
-            .isExactlyInstanceOf(JsonParseException::class.java)
+            .isExactlyInstanceOf(StreamReadException::class.java)
     }
 
     @Test

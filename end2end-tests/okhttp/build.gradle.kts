@@ -20,15 +20,13 @@ java {
 }
 
 dependencies {
-    implementation(platform(libs.jackson.bom))
+    implementation(platform(libs.jackson3.bom))
     implementation(libs.okhttp)
     implementation(libs.resilience4j.circuitbreaker)
     implementation(libs.jakarta.validation.api)
     implementation(libs.validation.api)
-    implementation(libs.jackson.module.kotlin)
-    implementation(libs.jackson.databind)
-    implementation(libs.jackson.core)
-    implementation(libs.jackson.annotations)
+    implementation(libs.jackson3.module.kotlin)
+    implementation(libs.jackson3.databind)
 
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.bundles.junit)
@@ -51,7 +49,8 @@ tasks {
             "--targets", "http_models",
             "--targets", "client",
             "--http-client-opts", "resilience4j",
-            "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF"
+            "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF",
+            "--serialization-library", "jackson_3",
         )
         dependsOn(":jar")
         dependsOn(":shadowJar")
