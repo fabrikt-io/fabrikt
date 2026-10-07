@@ -304,6 +304,250 @@ class OkHttpClientGeneratorTest {
     }
 
     @Test
+    fun `one typed function per response media type is generated for the OkHttp client`() {
+        val packages = Packages("examples.multiMediaType")
+        val apiLocation = javaClass.getResource("/examples/multiMediaType/api.yaml")!!
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
+        val options = setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS)
+
+        val expectedClient = "/examples/multiMediaType/client/responseMediaTypeFunctions/ApiClient.kt"
+
+        val clientCode =
+            OkHttpClientGenerator(
+                packages,
+                sourceApi,
+                Paths.get("src/main/kotlin"),
+            ).generate(options)
+                .clients
+                .toSingleFile()
+
+        assertThatGenerated(clientCode).isEqualTo(expectedClient)
+    }
+
+    @Test
+    fun `a response media type function drops its Accept parameter when none is declared`() {
+        MutableSettings.updateSettings(
+            genTypes = setOf(CodeGenerationType.CLIENT),
+            clientTarget = ClientCodeGenTargetType.OK_HTTP,
+        )
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /items:
+                get:
+                  responses:
+                    '200':
+                      description: Success
+                      content:
+                        application/json:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/A'
+                        application/vnd.custom+json:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/B'
+            components:
+              schemas:
+                A:
+                  type: object
+                  properties:
+                    a:
+                      type: string
+                B:
+                  type: object
+                  properties:
+                    b:
+                      type: string
+            """.trimIndent()
+
+        val content =
+            OkHttpSimpleClientGenerator(Packages("com.test"), SourceApi(spec))
+                .generateDynamicClientCode(setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS))
+                .let { Clients(it) }
+                .files
+                .first()
+                .toString()
+                .let { Linter.lintString(it) }
+
+        val mediaTypeFunction = content.substringAfter("fun getItemsJson(").substringBefore("\n    public fun ")
+        assertThat(mediaTypeFunction).doesNotContain("acceptHeader")
+    }
+
+    @Test
+    fun `a response media type function is dropped when its name collides with another function in the same client`() {
+        MutableSettings.updateSettings(
+            genTypes = setOf(CodeGenerationType.CLIENT),
+            clientTarget = ClientCodeGenTargetType.OK_HTTP,
+        )
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /items:
+                get:
+                  responses:
+                    '200':
+                      description: Success
+                      content:
+                        application/json:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/A'
+                        application/vnd.custom+json:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/B'
+                post:
+                  operationId: getItemsJson
+                  responses:
+                    '200':
+                      description: Success
+                      content:
+                        application/json:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/A'
+            components:
+              schemas:
+                A:
+                  type: object
+                  properties:
+                    a:
+                      type: string
+                B:
+                  type: object
+                  properties:
+                    b:
+                      type: string
+            """.trimIndent()
+
+        val content =
+            OkHttpSimpleClientGenerator(Packages("com.test"), SourceApi(spec))
+                .generateDynamicClientCode(setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS))
+                .let { Clients(it) }
+                .files
+                .first()
+                .toString()
+
+        assertThat(content.split("fun getItemsJson(")).hasSize(2)
+    }
+
+    @Test
+    fun `a media type function is skipped when the same media type maps to different schemas across statuses`() {
+        MutableSettings.updateSettings(
+            genTypes = setOf(CodeGenerationType.CLIENT),
+            clientTarget = ClientCodeGenTargetType.OK_HTTP,
+        )
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /items:
+                get:
+                  responses:
+                    '200':
+                      description: Success
+                      content:
+                        application/json:
+                          schema:
+                            type: string
+                        application/vnd.custom+json:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/B'
+                    '201':
+                      description: Created
+                      content:
+                        application/json:
+                          schema:
+                            type: array
+                            items:
+                              type: integer
+            components:
+              schemas:
+                B:
+                  type: object
+                  properties:
+                    b:
+                      type: string
+            """.trimIndent()
+
+        val content =
+            OkHttpSimpleClientGenerator(Packages("com.test"), SourceApi(spec))
+                .generateDynamicClientCode(setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS))
+                .let { Clients(it) }
+                .files
+                .first()
+                .toString()
+
+        assertThat(content).doesNotContain("fun getItemsJson(")
+        assertThat(content).contains("fun getItemsVndCustomJson(")
+    }
+
+    @Test
+    fun `a media type function is skipped when two different anonymous object schemas share a media type`() {
+        MutableSettings.updateSettings(
+            genTypes = setOf(CodeGenerationType.CLIENT),
+            clientTarget = ClientCodeGenTargetType.OK_HTTP,
+        )
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /items:
+                get:
+                  responses:
+                    '200':
+                      description: Success
+                      content:
+                        application/json:
+                          schema:
+                            type: object
+                            properties:
+                              a:
+                                type: string
+                        application/vnd.custom+json:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/B'
+                    '201':
+                      description: Created
+                      content:
+                        application/json:
+                          schema:
+                            type: object
+                            properties:
+                              c:
+                                type: boolean
+            components:
+              schemas:
+                B:
+                  type: object
+                  properties:
+                    b:
+                      type: string
+            """.trimIndent()
+
+        val content =
+            OkHttpSimpleClientGenerator(Packages("com.test"), SourceApi(spec))
+                .generateDynamicClientCode(setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS))
+                .let { Clients(it) }
+                .files
+                .first()
+                .toString()
+
+        assertThat(content).doesNotContain("fun getItemsJson(")
+        assertThat(content).contains("fun getItemsVndCustomJson(")
+    }
+
+    @Test
     fun `adds disclaimer as comment to files if enabled`() {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.CLIENT),

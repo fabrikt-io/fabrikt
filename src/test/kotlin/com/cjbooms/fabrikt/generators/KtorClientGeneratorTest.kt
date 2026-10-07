@@ -63,6 +63,26 @@ class KtorClientGeneratorTest {
         assertThatGenerated(clientCode).isEqualTo(expectedClient)
     }
 
+    @Test
+    fun `the response media type functions option leaves the Ktor client unchanged`() {
+        val testCaseName = "ktorClient"
+        val packages = Packages("examples.$testCaseName")
+        val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
+        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
+
+        val expectedClient = expectedClientPath(testCaseName, "KtorClient.kt")
+
+        val clientCode =
+            KtorClientGenerator(
+                packages,
+                sourceApi,
+            ).generate(setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS))
+                .clients
+                .toSingleFile()
+
+        assertThatGenerated(clientCode).isEqualTo(expectedClient)
+    }
+
     @ParameterizedTest
     @MethodSource("fullApiTestCases")
     fun `correct Ktor client library files are generated`(testCaseName: String) {

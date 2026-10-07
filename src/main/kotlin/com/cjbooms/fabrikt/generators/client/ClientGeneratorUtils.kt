@@ -5,12 +5,14 @@ import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.GeneratorUtils
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaTypeKey
+import com.cjbooms.fabrikt.generators.GeneratorUtils.getSuccessResponseSchemasByMediaType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasAnySuccessResponseSchemas
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipleContentMediaTypes
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipleSuccessResponseSchemas
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasOnlyJsonSuccessResponses
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toClassName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
+import com.cjbooms.fabrikt.generators.GeneratorUtils.toKCodeName
 import com.cjbooms.fabrikt.generators.OasDefault
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringImports.RESPONSE_ENTITY
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.JSON_NODE_CLASS
@@ -23,10 +25,12 @@ import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.OpenApiPath
+import com.cjbooms.fabrikt.model.OpenApiSchema
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.groupByPathSegment
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.routeToPathsByFirstTag
+import com.cjbooms.fabrikt.util.capitalized
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
@@ -44,6 +48,9 @@ object ClientGeneratorUtils {
     const val CONTENT_TYPE_HEADER_NAME = "Content-Type"
     const val ADDITIONAL_HEADERS_PARAMETER_NAME = "additionalHeaders"
     const val ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME = "additionalQueryParameters"
+    private val logger =
+        java.util.logging.Logger
+            .getGlobal()
 
     fun SourceApi.groupedClientPaths(options: Set<ClientCodeGenOptionType>): Map<String, Map<String, OpenApiPath>> =
         if (ClientCodeGenOptionType.GROUP_BY_TAG in options) {
@@ -196,6 +203,61 @@ object ClientGeneratorUtils {
             return RESPONSE_ENTITY.parameterizedBy(this)
         }
         return this
+    }
+
+    data class ResponseMediaType(
+        val mediaType: String,
+        val schema: OpenApiSchema,
+    ) {
+        fun functionName(baseFunctionName: String): String = baseFunctionName + mediaType.substringAfter('/').toKCodeName().capitalized()
+    }
+
+    data class ClientFunction(
+        val spec: FunSpec,
+        val isMediaTypeFunction: Boolean,
+    )
+
+    fun OpenApiOperation.responseMediaTypes(options: Set<ClientCodeGenOptionType>): List<ResponseMediaType> =
+        if (ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS in options &&
+            hasMultipleSuccessResponseSchemas() &&
+            hasOnlyJsonSuccessResponses()
+        ) {
+            getSuccessResponseSchemasByMediaType().map { (mediaType, schema) -> ResponseMediaType(mediaType, schema) }
+        } else {
+            emptyList()
+        }
+
+    fun List<IncomingParameter>.withoutAcceptHeader(): List<IncomingParameter> =
+        filterNot {
+            it is RequestParameter &&
+                it.parameterLocation == HeaderParam &&
+                it.originalName.equals(ACCEPT_HEADER_NAME, ignoreCase = true)
+        }
+
+    fun ResponseMediaType.modelType(packages: Packages): TypeName = toModelType(packages.base, KotlinTypeInfo.from(schema))
+
+    fun List<List<ClientFunction>>.withoutCollidingMediaTypeFunctions(clientName: String): List<FunSpec> {
+        val baseNames = flatten().filterNot { it.isMediaTypeFunction }.map { it.spec.name }.toSet()
+        val emittedMediaTypeNames = mutableSetOf<String>()
+        return flatMap { group ->
+            val isMediaTypeGroup = group.any { it.isMediaTypeFunction }
+            if (!isMediaTypeGroup) {
+                group.map { it.spec }
+            } else {
+                val names = group.map { it.spec.name }
+                val collides = names.any { it in baseNames || it in emittedMediaTypeNames }
+                if (collides) {
+                    logger.warning(
+                        "Skipping media-type function(s) ${names.joinToString()} in $clientName: another function already has " +
+                            "one of these names. Rename the operationId that produces the clash to generate it.",
+                    )
+                    emptyList()
+                } else {
+                    emittedMediaTypeNames += names
+                    group.map { it.spec }
+                }
+            }
+        }
     }
 
     class MultipartParameterToSpecBuilder(

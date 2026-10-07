@@ -15,6 +15,7 @@ import com.cjbooms.fabrikt.util.Linter
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.ResourceHelper.readTextResource
 import com.squareup.kotlinpoet.FileSpec
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -72,6 +73,77 @@ class OpenFeignClientGeneratorTest {
                     ClientCodeGenOptionType.SPRING_CLOUD_OPENFEIGN_STARTER_ANNOTATION,
                 ),
         )
+    }
+
+    @Test
+    fun `one typed function per response media type is generated for the Open Feign client`() {
+        val packages = Packages("examples.multiMediaType")
+        val sourceApi = SourceApi(readTextResource("/examples/multiMediaType/api.yaml"))
+
+        val clientCode =
+            OpenFeignInterfaceGenerator(packages, sourceApi)
+                .generate(setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS))
+                .clients
+                .toSingleFile()
+
+        assertThatGenerated(clientCode).isEqualTo("/examples/multiMediaType/client/responseMediaTypeFunctions/OpenFeignClient.kt")
+    }
+
+    @Test
+    fun `a cookie wrapper and its request helper are dropped together when the helper's name collides`() {
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /items:
+                get:
+                  parameters:
+                    - name: trackingId
+                      in: cookie
+                      required: true
+                      schema:
+                        type: string
+                  responses:
+                    '200':
+                      description: Success
+                      content:
+                        application/json:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/A'
+                        application/vnd.custom+json:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/B'
+                post:
+                  operationId: getItemsJsonWithCookieHeader
+                  responses:
+                    '204':
+                      description: No content
+            components:
+              schemas:
+                A:
+                  type: object
+                  properties:
+                    a:
+                      type: string
+                B:
+                  type: object
+                  properties:
+                    b:
+                      type: string
+            """.trimIndent()
+
+        val content =
+            OpenFeignInterfaceGenerator(Packages("com.test"), SourceApi(spec))
+                .generate(setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS))
+                .clients
+                .toSingleFile()
+
+        assertThat(content.split("fun getItemsJsonWithCookieHeader(")).hasSize(2)
+        assertThat(content).doesNotContain("fun getItemsJson(")
+        assertThat(content).contains("fun getItemsVndCustomJson(")
     }
 
     private fun runTestCase(

@@ -10,14 +10,20 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.primaryPropertiesConstructo
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toClassName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKdoc
 import com.cjbooms.fabrikt.generators.TypeFactory
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ACCEPT_HEADER_NAME
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_HEADERS_PARAMETER_NAME
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ClientFunction
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.modelType
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.responseMediaTypes
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.toClientReturnType
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.withoutAcceptHeader
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.withoutCollidingMediaTypeFunctions
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.OBJECT_MAPPER_CLASS
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.TYPE_REFERENCE_IMPORT
 import com.cjbooms.fabrikt.model.BodyParameter
@@ -42,7 +48,9 @@ import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 import java.nio.file.Path
@@ -60,49 +68,54 @@ class OkHttpSimpleClientGenerator(
             .groupedClientPaths(options)
             .map { (resourceName, paths) ->
                 val funcSpecs: List<FunSpec> =
-                    paths.flatMap { (resource, path) ->
-                        path.operations.map { (verb, operation) ->
-                            val parameters = deriveClientParameters(path, operation, packages.base)
-                            FunSpec
-                                .builder(functionName(operation, resource, verb))
-                                .addDeprecation(operation)
-                                .addModifiers(KModifier.PUBLIC)
-                                .addKdoc(operation.toKdoc(parameters))
-                                .addAnnotation(
-                                    AnnotationSpec
-                                        .builder(Throws::class)
-                                        .addMember("%T::class", "ApiException".toClassName(packages.client))
-                                        .build(),
-                                ).addIncomingParameters(
-                                    parameters,
-                                    multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder(),
-                                ).addParameter(
-                                    ParameterSpec
-                                        .builder(
-                                            ADDITIONAL_HEADERS_PARAMETER_NAME,
-                                            TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
-                                        ).defaultValue("emptyMap()")
-                                        .build(),
-                                ).addParameter(
-                                    ParameterSpec
-                                        .builder(
-                                            ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME,
-                                            TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
-                                        ).defaultValue("emptyMap()")
-                                        .build(),
-                                ).addCode(
-                                    SimpleClientOperationStatement(
-                                        packages,
-                                        resource,
-                                        verb,
-                                        operation,
-                                        parameters,
-                                        options,
-                                    ).toStatement(),
-                                ).returns(operation.toClientReturnType(packages))
-                                .build()
-                        }
-                    }
+                    paths
+                        .flatMap { (resource, path) ->
+                            path.operations.flatMap { (verb, operation) ->
+                                val parameters = deriveClientParameters(path, operation, packages.base)
+                                val baseName = functionName(operation, resource, verb)
+                                val baseFunction =
+                                    ClientFunction(
+                                        operationFunSpec(
+                                            baseName,
+                                            operation,
+                                            parameters,
+                                            SimpleClientOperationStatement(
+                                                packages,
+                                                resource,
+                                                verb,
+                                                operation,
+                                                parameters,
+                                                options,
+                                            ).toStatement(),
+                                            operation.toClientReturnType(packages),
+                                        ),
+                                        isMediaTypeFunction = false,
+                                    )
+                                val mediaTypeFunctions =
+                                    operation.responseMediaTypes(options).map { r ->
+                                        val typedParameters = parameters.withoutAcceptHeader()
+                                        ClientFunction(
+                                            operationFunSpec(
+                                                r.functionName(baseName),
+                                                operation,
+                                                typedParameters,
+                                                SimpleClientOperationStatement(
+                                                    packages,
+                                                    resource,
+                                                    verb,
+                                                    operation,
+                                                    typedParameters,
+                                                    options,
+                                                    acceptMediaType = r.mediaType,
+                                                ).toStatement(),
+                                                "ApiResponse".toClassName(packages.client).parameterizedBy(r.modelType(packages)),
+                                            ),
+                                            isMediaTypeFunction = true,
+                                        )
+                                    }
+                                listOf(listOf(baseFunction)) + mediaTypeFunctions.map { listOf(it) }
+                            }
+                        }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 
                 val clientType =
                     TypeSpec
@@ -119,6 +132,44 @@ class OkHttpSimpleClientGenerator(
 
                 ClientType(clientType, packages.base, setOf(TYPE_REFERENCE_IMPORT))
             }.toSet()
+
+    private fun operationFunSpec(
+        name: String,
+        operation: OpenApiOperation,
+        parameters: List<IncomingParameter>,
+        statement: CodeBlock,
+        returnType: TypeName,
+    ): FunSpec =
+        FunSpec
+            .builder(name)
+            .addDeprecation(operation)
+            .addModifiers(KModifier.PUBLIC)
+            .addKdoc(operation.toKdoc(parameters))
+            .addAnnotation(
+                AnnotationSpec
+                    .builder(Throws::class)
+                    .addMember("%T::class", "ApiException".toClassName(packages.client))
+                    .build(),
+            ).addIncomingParameters(
+                parameters,
+                multipartParameterToSpecBuilder = multipartParameterToSpecBuilder.toSpecBuilder(),
+            ).addParameter(
+                ParameterSpec
+                    .builder(
+                        ADDITIONAL_HEADERS_PARAMETER_NAME,
+                        TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
+                    ).defaultValue("emptyMap()")
+                    .build(),
+            ).addParameter(
+                ParameterSpec
+                    .builder(
+                        ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME,
+                        TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
+                    ).defaultValue("emptyMap()")
+                    .build(),
+            ).addCode(statement)
+            .returns(returnType)
+            .build()
 
     fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> {
         val codeDir = srcPath.resolve(CodeGenerationUtils.packageToPath(packages.base))
@@ -145,6 +196,7 @@ data class SimpleClientOperationStatement(
     private val operation: OpenApiOperation,
     private val parameters: List<IncomingParameter>,
     private val options: Set<ClientCodeGenOptionType>,
+    private val acceptMediaType: String? = null,
 ) {
     fun toStatement(): CodeBlock =
         CodeBlock
@@ -221,6 +273,7 @@ data class SimpleClientOperationStatement(
             }
         addCookieParams()
         this.add("\nadditionalHeaders.forEach { headerBuilder.header(it.key, it.value) }")
+        acceptMediaType?.let { this.add("\nheaderBuilder.set(%S, %S)", ACCEPT_HEADER_NAME, it) }
 
         return this.add("\nval httpHeaders: %T = headerBuilder.build()\n", "Headers".toClassName("okhttp3"))
     }
