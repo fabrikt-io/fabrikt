@@ -5,7 +5,6 @@ import com.example.models.EnumQueryParam
 import com.example.models.Failure
 import com.example.models.FirstModel
 import com.example.models.QueryResult
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.common.ConsoleNotifier
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
@@ -18,6 +17,8 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.net.ServerSocket
 import java.util.*
 import java.util.stream.Stream
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.kotlinModule
 
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -26,7 +27,7 @@ class Okio3Test {
 
     private val wiremock: WireMockServer = WireMockServer(options().port(port).notifier(ConsoleNotifier(true)))
 
-    private val mapper = ObjectMapper()
+    private val mapper = JsonMapper.builder().addModule(kotlinModule()).build()
     private val httpClient = OkHttpClient.Builder().build()
     private val examplePath1Client = ExamplePath1Client(mapper, "http://localhost:$port", httpClient)
     private val examplePath2Client = ExamplePath2Client(mapper, "http://localhost:$port", httpClient)
