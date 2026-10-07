@@ -15,6 +15,7 @@ import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenera
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.ResourceHelper.readTextResource
 import com.cjbooms.fabrikt.util.TestFileUtils.toSingleFile
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -63,6 +64,77 @@ class BearerSecurityGeneratorTest {
             generator(ClientCodeGenTargetType.OK_HTTP, api).generate(MutableSettings.clientOptions)
         assertThatGenerated(generated.clients.toSingleFile())
             .isEqualTo("/examples/bearerSecurity/client/okhttp-enhanced/Client.kt")
+    }
+
+    @ParameterizedTest
+    @EnumSource(ClientCodeGenTargetType::class, names = ["OK_HTTP", "OPEN_FEIGN", "SPRING_HTTP_INTERFACE"])
+    fun `typed response functions receive matching Bearer helpers`(target: ClientCodeGenTargetType) {
+        val options =
+            setOf(
+                ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION,
+                ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS,
+                ClientCodeGenOptionType.RESILIENCE4J,
+            )
+        MutableSettings.updateSettings(genTypes = setOf(CodeGenerationType.CLIENT), clientTarget = target, clientOptions = options)
+        val api =
+            SourceApi(
+                """
+                openapi: 3.0.3
+                info:
+                  title: Secured response representations
+                  version: '1.0'
+                security:
+                  - BearerAuth: []
+                paths:
+                  /details:
+                    get:
+                      operationId: getDetails
+                      parameters:
+                        - name: session
+                          in: cookie
+                          schema:
+                            type: string
+                      responses:
+                        '200':
+                          description: OK
+                          content:
+                            application/json:
+                              schema:
+                                ${'$'}ref: '#/components/schemas/First'
+                            application/problem+json:
+                              schema:
+                                ${'$'}ref: '#/components/schemas/Second'
+                components:
+                  securitySchemes:
+                    BearerAuth:
+                      type: http
+                      scheme: bearer
+                  schemas:
+                    First:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                    Second:
+                      type: object
+                      properties:
+                        count:
+                          type: integer
+                """.trimIndent(),
+            )
+        generator(target, api).generate(options).clients.forEach { client ->
+            val functions = client.spec.funSpecs.associateBy { it.name }
+            mapOf("Json" to "First", "ProblemJson" to "Second").forEach { (suffix, model) ->
+                val name = "getDetails$suffix"
+                val function = functions.getValue(name)
+                val wrapper = functions.getValue("${name}WithBearerToken")
+                assertThat(wrapper.returnType).isEqualTo(function.returnType)
+                assertThat(wrapper.returnType.toString()).contains("${packages.models}.$model")
+                assertThat(wrapper.parameters.map { it.name }).contains("bearerTokenProvider", "session")
+                assertThat(wrapper.toString()).contains("return $name(", "Authorization", "BearerAuth")
+            }
+            assertThat(functions).containsKey("getDetailsWithBearerToken")
+        }
     }
 
     private fun generator(

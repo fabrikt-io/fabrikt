@@ -120,7 +120,11 @@ class OkHttpSimpleClientGenerator(
                                             isMediaTypeFunction = true,
                                         )
                                     }
-                                (listOf(listOf(baseFunction)) + mediaTypeFunctions.map { listOf(it) }).map { it.withBearerTokenWrapper(securityPlan) }
+                                (
+                                    listOf(
+                                        listOf(baseFunction),
+                                    ) + mediaTypeFunctions.map { listOf(it) }
+                                ).map { it.withBearerTokenWrapper(securityPlan) }
                             }
                         }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 

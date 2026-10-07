@@ -63,12 +63,12 @@ class SpringHttpInterfaceGenerator(
                                 path.operations.flatMap { (verb, operation) ->
                                     val parameters = deriveClientParameters(path, operation, packages.base)
                                     val securityPlan =
-                                    if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
-                                        bearerSecurity.forOperation(operation)
-                                    } else {
-                                        null
-                                    }
-                                val baseName = functionName(operation, resource, verb)
+                                        if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
+                                            bearerSecurity.forOperation(operation)
+                                        } else {
+                                            null
+                                        }
+                                    val baseName = functionName(operation, resource, verb)
                                     val baseFunction =
                                         ClientFunction(
                                             buildFunction(
@@ -107,7 +107,11 @@ class SpringHttpInterfaceGenerator(
                                                 isMediaTypeFunction = true,
                                             )
                                         }
-                                    (listOf(listOf(baseFunction)) + mediaTypeFunctions.map { listOf(it) }).map { it.withBearerTokenWrapper(securityPlan) }
+                                    (
+                                        listOf(
+                                            listOf(baseFunction),
+                                        ) + mediaTypeFunctions.map { listOf(it) }
+                                    ).map { it.withBearerTokenWrapper(securityPlan) }
                                 }
                             }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 
