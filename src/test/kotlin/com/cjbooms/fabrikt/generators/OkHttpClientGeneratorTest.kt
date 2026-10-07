@@ -49,7 +49,8 @@ class OkHttpClientGeneratorTest {
         )
 
     @Suppress("unused")
-    private fun groupedClientTestCases(): Stream<String> = Stream.concat(fullApiTestCases(), Stream.of("tagGrouping", "cookieParameters"))
+    private fun groupedClientTestCases(): Stream<String> =
+        Stream.concat(fullApiTestCases(), Stream.of("tagGrouping", "cookieParameters", "multipleRequestMediaTypes"))
 
     @BeforeEach
     fun init() {

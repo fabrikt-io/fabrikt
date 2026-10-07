@@ -22,6 +22,7 @@ import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.GeneratedAnnotations.addGeneratedAnnotations
+import com.cjbooms.fabrikt.util.requestOperations
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -62,7 +63,7 @@ class KtorClientGenerator(
                         )
 
                 paths.forEach { path ->
-                    path.value.operations.map { (verb, operation) ->
+                    api.requestOperations(path.value).map { (verb, operation) ->
                         val params =
                             operation.toIncomingParameters(
                                 packages.base,
@@ -153,8 +154,14 @@ class KtorClientGenerator(
                                             )
                                             if (bodyParams.isNotEmpty()) {
                                                 addStatement(
-                                                    "%M(\"Content-Type\", \"application/json\")",
+                                                    "%M(\"Content-Type\", %S)",
                                                     MemberName("io.ktor.client.request", "header"),
+                                                    if (operation.hasDistinctRequestRepresentations) {
+                                                        operation.requestBody.contentMediaTypes.keys
+                                                            .first()
+                                                    } else {
+                                                        "application/json"
+                                                    },
                                                 )
                                                 addStatement(
                                                     "%M(%L)",
@@ -409,6 +416,7 @@ class KtorClientGenerator(
         append(
             if (params.isNotEmpty()) "By" + params.joinToString("And") { it -> it.name.replaceFirstChar { it.uppercase() } } else "",
         )
+        append(op.requestFunctionSuffix)
     }
 
     private fun buildFunKdoc(

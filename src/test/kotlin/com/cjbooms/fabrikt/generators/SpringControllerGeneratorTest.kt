@@ -39,6 +39,7 @@ class SpringControllerGeneratorTest {
     @Suppress("unused")
     private fun testCases(): Stream<String> =
         Stream.of(
+            "multipleRequestMediaTypes",
             "arrays",
             "boundedModelNameCollisions",
             "githubApi",

@@ -35,6 +35,7 @@ import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.requestOperations
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
@@ -58,7 +59,7 @@ class SpringHttpInterfaceGenerator(
                     val funcSpecs: List<FunSpec> =
                         paths
                             .flatMap { (resource, path) ->
-                                path.operations.flatMap { (verb, operation) ->
+                                api.requestOperations(path).flatMap { (verb, operation) ->
                                     val parameters = deriveClientParameters(path, operation, packages.base)
                                     val baseName = functionName(operation, resource, verb)
                                     val baseFunction =
