@@ -1,0 +1,106 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "reordered",
+    "version": "1"
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "OrderX": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          }
+        },
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "child": "#/components/schemas/OrderChild",
+            "sibling": "#/components/schemas/OrderSibling"
+          }
+        }
+      },
+      "OrderChild": {
+        "allOf": [
+          {
+            "type": "object",
+            "required": [
+              "label"
+            ],
+            "properties": {
+              "label": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/OrderX"
+          }
+        ]
+      },
+      "OrderSibling": {
+        "allOf": [
+          {
+            "type": "object",
+            "required": [
+              "count"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/OrderX"
+          }
+        ]
+      },
+      "OrderHolder": {
+        "type": "object",
+        "required": [
+          "value",
+          "choice"
+        ],
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/OrderX"
+          },
+          "choice": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/OrderChild"
+              },
+              {
+                "$ref": "#/components/schemas/OrderSibling"
+              }
+            ]
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/OrderChild"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderSibling"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}
