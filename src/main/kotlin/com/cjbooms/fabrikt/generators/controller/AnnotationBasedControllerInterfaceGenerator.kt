@@ -3,6 +3,7 @@ package com.cjbooms.fabrikt.generators.controller
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
 import com.cjbooms.fabrikt.model.ControllerType
+import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.OpenApiPath
 import com.cjbooms.fabrikt.model.RequestParameter
@@ -74,6 +75,13 @@ abstract class AnnotationBasedControllerInterfaceGenerator(
         }
         return this
     }
+
+    /**
+     * Adds a declaration-level `@Valid` for a body or multipart part, unless the parameter is a
+     * container — those carry `@Valid` on the container's type argument instead (see ModelGenerator).
+     */
+    fun ParameterSpec.Builder.maybeAddValidAnnotation(parameter: IncomingParameter): ParameterSpec.Builder =
+        maybeAddAnnotation(if (!parameter.typeInfo.isContainer) validationAnnotations.parameterValid() else null)
 
     fun ParameterSpec.Builder.maybeAddAnnotation(annotation: AnnotationSpec?) =
         if (annotation != null) this.addAnnotation(annotation) else this

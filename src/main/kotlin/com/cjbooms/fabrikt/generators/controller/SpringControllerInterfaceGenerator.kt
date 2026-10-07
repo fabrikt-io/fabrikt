@@ -120,14 +120,14 @@ class SpringControllerInterfaceGenerator(
                     is MultipartParameter ->
                         toParameterSpecBuilder(it)
                             .addSpringParamAnnotation(it)
-                            .maybeAddAnnotation(if (!it.typeInfo.isContainer) validationAnnotations.parameterValid() else null)
+                            .maybeAddValidAnnotation(it)
                             .build()
 
                     is BodyParameter ->
                         it
                             .toParameterSpecBuilder()
                             .addAnnotation(SpringAnnotations.requestBodyBuilder().build())
-                            .maybeAddAnnotation(if (!it.typeInfo.isContainer) validationAnnotations.parameterValid() else null)
+                            .maybeAddValidAnnotation(it)
                             .build()
 
                     is RequestParameter ->

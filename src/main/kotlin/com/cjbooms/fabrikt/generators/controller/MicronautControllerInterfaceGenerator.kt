@@ -118,7 +118,7 @@ class MicronautControllerInterfaceGenerator(
                                 AnnotationSpec
                                     .builder(MicronautImports.BODY)
                                     .build(),
-                            ).maybeAddAnnotation(if (!it.typeInfo.isContainer) validationAnnotations.parameterValid() else null)
+                            ).maybeAddValidAnnotation(it)
                             .build()
 
                     is RequestParameter ->
