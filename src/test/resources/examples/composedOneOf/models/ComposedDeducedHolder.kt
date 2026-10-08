@@ -15,10 +15,8 @@ public data class ComposedDeducedHolder(
   public val `value`: ComposedDeducedCombined,
   @param:JsonProperty("values")
   @get:JsonProperty("values")
-  @get:Valid
-  public val values: List<ComposedDeducedCombined>? = null,
+  public val values: List<@Valid ComposedDeducedCombined>? = null,
   @param:JsonProperty("byKey")
   @get:JsonProperty("byKey")
-  @get:Valid
-  public val byKey: Map<String, ComposedDeducedCombined?>? = null,
+  public val byKey: Map<String, @Valid ComposedDeducedCombined?>? = null,
 )

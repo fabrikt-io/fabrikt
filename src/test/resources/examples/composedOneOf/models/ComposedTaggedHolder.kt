@@ -15,10 +15,8 @@ public data class ComposedTaggedHolder(
   public val `value`: ComposedTaggedCombined,
   @param:JsonProperty("values")
   @get:JsonProperty("values")
-  @get:Valid
-  public val values: List<ComposedTaggedCombined>? = null,
+  public val values: List<@Valid ComposedTaggedCombined>? = null,
   @param:JsonProperty("byKey")
   @get:JsonProperty("byKey")
-  @get:Valid
-  public val byKey: Map<String, ComposedTaggedCombined?>? = null,
+  public val byKey: Map<String, @Valid ComposedTaggedCombined?>? = null,
 )
