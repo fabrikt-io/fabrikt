@@ -15,12 +15,10 @@ public data class DeductionHolder(
   public val `value`: DeductionChoice,
   @param:JsonProperty("choices")
   @get:JsonProperty("choices")
-  @get:Valid
-  public val choices: List<DeductionChoice>? = null,
+  public val choices: List<@Valid DeductionChoice>? = null,
   @param:JsonProperty("byKey")
   @get:JsonProperty("byKey")
-  @get:Valid
-  public val byKey: Map<String, DeductionChoice?>? = null,
+  public val byKey: Map<String, @Valid DeductionChoice?>? = null,
   @param:JsonProperty("optional")
   @get:JsonProperty("optional")
   @get:Valid
