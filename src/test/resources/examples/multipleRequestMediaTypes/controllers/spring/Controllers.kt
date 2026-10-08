@@ -150,7 +150,7 @@ public interface ArraysController {
         consumes = ["application/json", "text/json"],
     )
     public fun arrayDetails(
-        @RequestBody @Valid body: List<ArrayDetailsRequestItem>,
+        @RequestBody body: List<@Valid ArrayDetailsRequestItem>,
     ): ResponseEntity<Unit>
 }
 

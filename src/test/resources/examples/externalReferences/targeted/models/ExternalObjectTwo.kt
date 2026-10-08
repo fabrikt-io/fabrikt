@@ -13,8 +13,7 @@ import kotlin.collections.MutableMap
 public data class ExternalObjectTwo(
   @param:JsonProperty("list-others")
   @get:JsonProperty("list-others")
-  @get:Valid
-  public val listOthers: List<ExternalObjectThree>? = null,
+  public val listOthers: List<@Valid ExternalObjectThree>? = null,
   @get:JsonIgnore
   public val properties: MutableMap<String, Map<String, ExternalObjectFour?>?> = mutableMapOf(),
 ) {

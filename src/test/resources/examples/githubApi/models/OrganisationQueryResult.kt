@@ -24,6 +24,5 @@ public data class OrganisationQueryResult(
   @get:JsonProperty("items")
   @get:NotNull
   @get:Size(min = 0)
-  @get:Valid
-  public val items: List<Organisation>,
+  public val items: List<@Valid Organisation>,
 )

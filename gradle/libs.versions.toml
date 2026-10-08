@@ -34,8 +34,11 @@ feign = "13.3"
 resilience4j = "2.1.0"
 
 # Validation
-jakarta-validation = "3.0.2"
-hibernate-validator = "8.0.5.Final"
+# Hibernate Validator 9.1 targets Jakarta Validation 3.1.
+jakarta-validation = "3.1.1"
+# 9.1 deprecates container-level `@Valid` (HV000271); kept current so end2end tests
+# actually exercise the container element type-argument placement.
+hibernate-validator = "9.1.4.Final"
 validation-api = "2.0.1.Final"
 
 # Logging

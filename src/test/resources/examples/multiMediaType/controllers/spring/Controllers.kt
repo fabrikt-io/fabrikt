@@ -10,8 +10,6 @@ import org.springframework.web.bind.`annotation`.RequestHeader
 import org.springframework.web.bind.`annotation`.RequestMapping
 import org.springframework.web.bind.`annotation`.RequestMethod
 import org.springframework.web.bind.`annotation`.RequestParam
-import tools.jackson.databind.JsonNode
-import javax.validation.Valid
 import kotlin.Int
 import kotlin.String
 import kotlin.collections.List
@@ -35,7 +33,7 @@ public interface ExamplePath1Controller {
         method = [RequestMethod.GET],
     )
     public fun `get`(
-        @Valid @RequestParam(value = "explode_list_query_param", required = false)
+        @RequestParam(value = "explode_list_query_param", required = false)
         explodeListQueryParam: List<String>?,
         @RequestParam(value = "query_param2", required = false)
         queryParam2: Int?,
@@ -59,7 +57,7 @@ public interface ExamplePath2Controller {
         method = [RequestMethod.GET],
     )
     public fun `get`(
-        @Valid @RequestParam(value = "explode_list_query_param", required = false)
+        @RequestParam(value = "explode_list_query_param", required = false)
         explodeListQueryParam: List<String>?,
         @RequestParam(value = "query_param2", required = false) queryParam2: Int?,
         @RequestHeader(value = "Accept", required = false) accept: String?,

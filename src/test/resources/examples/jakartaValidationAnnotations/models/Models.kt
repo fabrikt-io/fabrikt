@@ -48,14 +48,12 @@ public data class ValidationAnnotations(
         min = 0,
         max = 10,
     )
-    @get:Valid
-    public val friends: List<ValidationAnnotationsFriends>,
+    public val friends: List<@Valid ValidationAnnotationsFriends>,
     @param:JsonProperty("address")
     @get:JsonProperty("address")
     @get:Valid
     public val address: ValidationAnnotationsAddress? = null,
     @param:JsonProperty("qualities")
     @get:JsonProperty("qualities")
-    @get:Valid
-    public val qualities: Map<String, QualitiesValue?>? = null,
+    public val qualities: Map<String, @Valid QualitiesValue?>? = null,
 )

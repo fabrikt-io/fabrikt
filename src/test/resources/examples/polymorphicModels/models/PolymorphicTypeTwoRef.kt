@@ -19,8 +19,7 @@ public data class PolymorphicTypeTwoRef(
   @param:JsonProperty("pets")
   @get:JsonProperty("pets")
   @get:NotNull
-  @get:Valid
-  override val pets: List<Pet>,
+  override val pets: List<@Valid Pet>,
   @param:JsonProperty("some_integer_propery")
   @get:JsonProperty("some_integer_propery")
   public val someIntegerPropery: Int? = null,

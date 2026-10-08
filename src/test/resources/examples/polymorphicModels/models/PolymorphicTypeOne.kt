@@ -18,8 +18,7 @@ public data class PolymorphicTypeOne(
   @param:JsonProperty("pets")
   @get:JsonProperty("pets")
   @get:NotNull
-  @get:Valid
-  override val pets: List<Pet>,
+  override val pets: List<@Valid Pet>,
   @param:JsonProperty("child_one_name")
   @get:JsonProperty("child_one_name")
   public val childOneName: String? = null,

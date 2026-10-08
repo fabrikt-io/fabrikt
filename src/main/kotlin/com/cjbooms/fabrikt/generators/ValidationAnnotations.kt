@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.generators
 
+import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 
@@ -35,6 +36,8 @@ interface ValidationAnnotations {
         min: Int?,
         max: Int?,
     ): AnnotationSpec?
+
+    fun containerElementAnnotations(elementInfo: KotlinTypeInfo): List<AnnotationSpec>
 }
 
 abstract class PackageValidationAnnotations(
@@ -129,6 +132,13 @@ abstract class PackageValidationAnnotations(
         .addMember("inclusive = %L", !exclusive)
         .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
         .build()
+
+    override fun containerElementAnnotations(elementInfo: KotlinTypeInfo): List<AnnotationSpec> =
+        if (elementInfo.isComplexType && !elementInfo.isContainer) {
+            listOf(AnnotationSpec.builder(validClass).build())
+        } else {
+            emptyList()
+        }
 }
 
 object JavaxValidationAnnotations : PackageValidationAnnotations("javax.validation")
@@ -167,4 +177,6 @@ object NoValidationAnnotations : ValidationAnnotations {
         max: Number,
         exclusive: Boolean,
     ): AnnotationSpec? = null
+
+    override fun containerElementAnnotations(elementInfo: KotlinTypeInfo): List<AnnotationSpec> = emptyList()
 }

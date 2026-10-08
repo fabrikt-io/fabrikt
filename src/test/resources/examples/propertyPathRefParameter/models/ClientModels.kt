@@ -29,8 +29,7 @@ public data class Product(
     public val tags: List<ProductTags>? = null,
     @param:JsonProperty("dict")
     @get:JsonProperty("dict")
-    @get:Valid
-    public val dict: Map<String, DictValue?>? = null,
+    public val dict: Map<String, @Valid DictValue?>? = null,
 )
 
 public data class ProductMeta(

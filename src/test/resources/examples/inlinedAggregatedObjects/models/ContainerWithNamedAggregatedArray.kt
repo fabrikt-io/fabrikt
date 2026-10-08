@@ -7,6 +7,5 @@ import kotlin.collections.List
 public data class ContainerWithNamedAggregatedArray(
   @param:JsonProperty("entries")
   @get:JsonProperty("entries")
-  @get:Valid
-  public val entries: List<NamedAggregatedArray>? = null,
+  public val entries: List<@Valid NamedAggregatedArray>? = null,
 )

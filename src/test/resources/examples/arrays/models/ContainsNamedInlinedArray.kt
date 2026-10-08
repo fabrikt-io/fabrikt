@@ -7,6 +7,5 @@ import kotlin.collections.List
 public data class ContainsNamedInlinedArray(
   @param:JsonProperty("items")
   @get:JsonProperty("items")
-  @get:Valid
-  public val items: List<ArrayContainingComplexInlined>? = null,
+  public val items: List<@Valid ArrayContainingComplexInlined>? = null,
 )

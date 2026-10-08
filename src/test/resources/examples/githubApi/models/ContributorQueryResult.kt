@@ -24,6 +24,5 @@ public data class ContributorQueryResult(
   @get:JsonProperty("items")
   @get:NotNull
   @get:Size(min = 0)
-  @get:Valid
-  public val items: List<Contributor>,
+  public val items: List<@Valid Contributor>,
 )

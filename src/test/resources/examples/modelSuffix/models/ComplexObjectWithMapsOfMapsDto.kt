@@ -9,10 +9,8 @@ import kotlin.collections.Map
 public data class ComplexObjectWithMapsOfMapsDto(
   @param:JsonProperty("list-others")
   @get:JsonProperty("list-others")
-  @get:Valid
-  public val listOthers: List<BasicObjectDto>? = null,
+  public val listOthers: List<@Valid BasicObjectDto>? = null,
   @param:JsonProperty("map-of-maps")
   @get:JsonProperty("map-of-maps")
-  @get:Valid
-  public val mapOfMaps: Map<String, Map<String, BasicObjectDto?>?>? = null,
+  public val mapOfMaps: Map<String, Map<String, @Valid BasicObjectDto?>?>? = null,
 )

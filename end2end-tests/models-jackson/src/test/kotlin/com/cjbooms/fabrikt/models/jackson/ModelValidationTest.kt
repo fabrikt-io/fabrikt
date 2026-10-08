@@ -9,11 +9,15 @@ import com.example.validation.models.InlineEnumValue
 import com.example.validation.models.InlineEnumValueValue
 import com.example.validation.models.IntegerValue
 import com.example.validation.models.ListValue
+import com.example.validation.models.MapValue
 import com.example.validation.models.NestedListValue
+import com.example.validation.models.NestedSetValue
 import com.example.validation.models.NestedValue
 import com.example.validation.models.Status
 import com.example.validation.models.StringValue
+import com.example.validation.models.TypedMapValue
 import com.example.validation.models.UuidValue
+import com.example.validation.models.ValueValue
 import jakarta.validation.Validation
 import jakarta.validation.ValidatorFactory
 import jakarta.validation.constraints.DecimalMax
@@ -28,6 +32,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.math.BigDecimal
 import java.util.UUID
+import java.util.logging.Handler
+import java.util.logging.Level
+import java.util.logging.LogRecord
+import java.util.logging.Logger
 import kotlin.reflect.KClass
 import com.example.validationstrings.models.UuidValue as UuidStringValue
 
@@ -246,6 +254,123 @@ class ModelValidationTest {
             propertyPath = "value[0].value",
             constraint = Pattern::class,
         )
+    }
+
+    @Test
+    fun `nested set validation reports the child property`() {
+        assertViolation(
+            model = NestedSetValue(value = linkedSetOf(StringValue(value = "READY"))),
+            propertyPath = "value[].value",
+            constraint = Pattern::class,
+        )
+    }
+
+    @Test
+    fun `map value validation reports the child property`() {
+        assertViolation(
+            model = MapValue(value = mapOf("first" to StringValue(value = "READY"))),
+            propertyPath = "value[first].value",
+            constraint = Pattern::class,
+        )
+    }
+
+    @Test
+    fun `nested set validation accepts valid children`() {
+        val model = NestedSetValue(value = linkedSetOf(StringValue(value = "ready")))
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `map value validation accepts valid children`() {
+        val model = MapValue(value = mapOf("first" to StringValue(value = "ready")))
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `typed map value validation reports the child property`() {
+        assertViolation(
+            model = TypedMapValue(value = mapOf("first" to ValueValue(text = "READY"))),
+            propertyPath = "value[first].text",
+            constraint = Pattern::class,
+        )
+    }
+
+    @Test
+    fun `typed map value validation accepts valid children`() {
+        val model = TypedMapValue(value = mapOf("first" to ValueValue(text = "ready")))
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `generated models do not use the deprecated container level Valid`() {
+        // A fresh factory forces metadata building, which is when HV000271 is reported.
+        val warnings =
+            captureHibernateWarnings {
+                freshValidator().use { validating ->
+                    validating.validator.validate(
+                        NestedListValue(value = listOf(StringValue(value = "ready"))),
+                    )
+                    validating.validator.validate(
+                        NestedSetValue(value = linkedSetOf(StringValue(value = "ready"))),
+                    )
+                    validating.validator.validate(
+                        MapValue(value = mapOf("first" to StringValue(value = "ready"))),
+                    )
+                    validating.validator.validate(
+                        TypedMapValue(value = mapOf("first" to ValueValue(text = "ready"))),
+                    )
+                }
+            }
+
+        assertThat(warnings)
+            .describedAs("container-level @Valid deprecation warnings")
+            .noneMatch { it.contains("HV000271") }
+    }
+
+    @Test
+    fun `the deprecated container level Valid is detected`() {
+        // Positive control: proves the capture above would fail if fabrikt regressed to `@Valid List<T>`.
+        val warnings =
+            captureHibernateWarnings {
+                freshValidator().use { validating ->
+                    validating.validator.validate(LegacyContainerValidModel())
+                }
+            }
+
+        assertThat(warnings).anyMatch { it.contains("HV000271") }
+    }
+
+    private fun freshValidator(): ValidatorFactory =
+        Validation.byDefaultProvider().configure()
+            .messageInterpolator(ParameterMessageInterpolator())
+            .buildValidatorFactory()
+
+    private inline fun captureHibernateWarnings(block: () -> Unit): List<String> {
+        val messages = mutableListOf<String>()
+        val logger = Logger.getLogger("org.hibernate.validator")
+        val handler =
+            object : Handler() {
+                override fun publish(record: LogRecord) {
+                    messages += record.message
+                }
+
+                override fun flush() = Unit
+
+                override fun close() = Unit
+            }
+        val previousLevel = logger.level
+        logger.addHandler(handler)
+        logger.level = Level.ALL
+        try {
+            block()
+        } finally {
+            logger.removeHandler(handler)
+            logger.level = previousLevel
+        }
+        return messages
     }
 
     private fun assertViolation(

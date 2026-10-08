@@ -296,6 +296,8 @@ Usage: <main class> [options]
 |   `--http-model-additional-annotations` | Repeatable fully qualified annotation class name to add to generated HTTP model types. Only annotations without arguments are supported. |
 |   `--http-model-opts`                   | Select the options for the http models that you want to be generated. |
 |                                         | CHOOSE ANY OF: |
+|                                         |   `EXCLUDE_READ_ONLY` - Exclude readOnly properties and honour requiredness of retained writeOnly properties |
+|                                         |   `EXCLUDE_WRITE_ONLY` - Exclude writeOnly properties and honour requiredness of retained readOnly properties |
 |                                         |   `X_EXTENSIBLE_ENUMS` - This option treats x-extensible-enums as enums |
 |                                         |   `JAVA_SERIALIZATION` - This option adds Java Serializable interface to the generated models |
 |                                         |   `QUARKUS_REFLECTION` - This option adds @RegisterForReflection to the generated models. Requires dependency "'io.quarkus:quarkus-core:+" |
@@ -366,6 +368,12 @@ The team that built the first version of this tool initially contributed to the 
 This project was started by engineers from [Zalando Tech](https://opensource.zalando.com/) and is battle-tested heavily in production there.
 
 ## Specific Features
+
+### Excluding readOnly and writeOnly properties
+
+By default, Fabrikt generates one model set and treats `readOnly` and `writeOnly` properties as optional. Use `--http-model-opts EXCLUDE_READ_ONLY` to exclude `readOnly` properties, or `--http-model-opts EXCLUDE_WRITE_ONLY` to exclude `writeOnly` properties. Retained properties follow their declared requiredness and nullability.
+
+Filtering applies to properties of every type, including nested models and compositions. Selecting both options excludes both categories. A model whose properties are all excluded remains available as an empty Kotlin object. For separate generation passes, use `--http-model-suffix Request` and `--http-model-suffix Response` to distinguish the model sets.
 
 ### Polymorphism via `allOf`
 
@@ -508,10 +516,25 @@ data class DiscriminatedChild3(
 data class Responses(
     @param:JsonProperty("entries")
     @get:JsonProperty("entries")
-    @get:Valid
-    val entries: List<ChildDefinition>? = null
+    val entries: List<@Valid ChildDefinition>? = null
 )
 ```
+
+### Bean validation
+
+When a validated library is selected, `@Valid` is placed on the container's type argument for
+collection properties and controller parameters, e.g. `List<@Valid ChildDefinition>` and
+`Map<String, @Valid ChildDefinition?>`, rather than on the container itself
+(`List<ChildDefinition>`). Hibernate Validator 9.1 deprecates the legacy container-level
+placement.
+
+Nested containers keep `@Valid` on the innermost element only (e.g.
+`List<List<@Valid ChildDefinition>>`), and containers with a non-cascadable element such as
+`List<String>` carry no `@Valid`.
+
+> Kotlin only writes type-argument annotations into bytecode when compiled with
+> `-Xemit-jvm-type-annotations`. Enable that flag in consumer projects so Hibernate Validator
+> can see the cascading `@Valid` at runtime.
 
 ## Contributing
 

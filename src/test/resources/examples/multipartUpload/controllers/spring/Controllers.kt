@@ -38,7 +38,7 @@ public interface ApiUploadController {
     public fun uploadFile(
         @RequestPart(value = "file", required = true) @Valid `file`: MultipartFile,
         @RequestPart(value = "metadata", required = true) @Valid metadata: FileMetadata,
-        @RequestPart(value = "tags", required = false) @Valid tags: List<String>?,
+        @RequestPart(value = "tags", required = false) tags: List<String>?,
         @RequestParam(value = "version", required = false) @Valid version: Double?,
     ): ResponseEntity<UploadResult>
 }
@@ -82,7 +82,7 @@ public interface ApiUploadMultipleController {
         consumes = ["multipart/form-data"],
     )
     public fun uploadMultipleFiles(
-        @RequestPart(value = "files", required = true) @Valid files: List<MultipartFile>,
+        @RequestPart(value = "files", required = true) files: List<MultipartFile>,
         @RequestPart(value = "commonMetadata", required = true) @Valid commonMetadata: FileMetadata,
         @RequestParam(value = "description", required = false) @Valid description: String?,
     ): ResponseEntity<List<UploadResult>>

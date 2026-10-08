@@ -7,6 +7,5 @@ import kotlin.collections.List
 public data class Responses(
   @param:JsonProperty("entries")
   @get:JsonProperty("entries")
-  @get:Valid
-  public val entries: List<ChildDefinition>? = null,
+  public val entries: List<@Valid ChildDefinition>? = null,
 )
