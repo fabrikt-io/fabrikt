@@ -11,11 +11,10 @@ import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.OpenApiSchema
 import com.cjbooms.fabrikt.model.PathParam
-import com.cjbooms.fabrikt.model.PropertyInfo.Companion.HTTP_SETTINGS
+import com.cjbooms.fabrikt.model.PropertyInfo
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.util.GroupingStrategy
-import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.NormalisedString.toKotlinParameterName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleType
@@ -269,7 +268,7 @@ object GeneratorUtils {
         extraParameters: List<IncomingParameter>,
         validationAnnotations: ValidationAnnotations? = null,
     ): List<IncomingParameter> {
-        val requestSettings = ModelNameRegistry.withDirection(ModelNameRegistry.Direction.REQUEST) { HTTP_SETTINGS }
+        val requestSettings = PropertyInfo.httpSettings(KotlinTypeInfo.requestDirection())
         val bodies =
             if (hasMultipartRequestBody()) {
                 // For multipart requests, create individual parameters for each part

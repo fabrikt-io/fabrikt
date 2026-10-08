@@ -128,7 +128,6 @@ class DirectionalEndpointGeneratorTest {
                     }
                 }
             }
-            assertThat(ModelNameRegistry.direction).isNull()
         }
     }
 
@@ -190,7 +189,6 @@ class DirectionalEndpointGeneratorTest {
             assertThat(contracts.map { "${it.name}.kt" }).containsExactlyInAnyOrderElementsOf(
                 getFileNamesInFolder(Path.of("src/test/resources/examples/directionalEndpoints/$target")),
             )
-            assertThat(ModelNameRegistry.direction).isNull()
         }
     }
 }

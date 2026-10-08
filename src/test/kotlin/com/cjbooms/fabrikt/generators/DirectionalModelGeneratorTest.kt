@@ -8,6 +8,11 @@ import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
+import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.ModelDirection
+import com.cjbooms.fabrikt.model.PropertyInfo
+import com.cjbooms.fabrikt.model.PropertyInfo.Companion.topLevelProperties
+import com.cjbooms.fabrikt.model.SchemaInfo
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
 import com.cjbooms.fabrikt.util.Linter
@@ -67,19 +72,48 @@ class DirectionalModelGeneratorTest {
                     assertThat(response).contains("val child: PetResponse?", "List<PetResponse>", "PetNestedResponse", "StateResponse")
                     assertThat(files["ReadOnlyRecordRequest"]).contains("object ReadOnlyRecordRequest")
                 }
-                assertThat(ModelNameRegistry.direction).isNull()
             }
         }
     }
 
     @Test
-    fun `keeps custom suffix before direction and restores naming after failure`() {
+    fun `keeps custom suffix before direction`() {
         val files = generate("3.0.3", SerializationLibrary.JACKSON, setOf(REQUEST_RESPONSE_MODELS), "Dto")
         assertThat(files.keys).contains("PetDtoRequest", "PetDtoResponse", "StateDtoRequest", "StateDtoResponse")
-        runCatching {
-            ModelNameRegistry.withDirection(ModelNameRegistry.Direction.REQUEST) { error("test") }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["3.0.3", "3.1.2", "3.2.0"])
+    fun `interleaved resolution keeps direction local to types and properties`(version: String) {
+        MutableSettings.updateSettings(modelOptions = setOf(REQUEST_RESPONSE_MODELS))
+        val spec = readTextResource("/examples/directionalModels/api.yaml").replace("3.0.3", version)
+        val api = SourceApi(spec)
+        val schema = api.openApi3.schemas.getValue("Pet")
+        val original = SchemaInfo("Pet", schema)
+        val request = SchemaInfo("Pet", schema, ModelDirection.REQUEST)
+        val response = SchemaInfo("Pet", schema, ModelDirection.RESPONSE)
+        val requestProperties = schema.topLevelProperties(PropertyInfo.httpSettings(ModelDirection.REQUEST), api.openApi3, schema)
+        val responseProperties = schema.topLevelProperties(PropertyInfo.httpSettings(ModelDirection.RESPONSE), api.openApi3, schema)
+
+        listOf(ModelDirection.RESPONSE, ModelDirection.REQUEST, null, ModelDirection.RESPONSE).forEach { direction ->
+            val suffix = direction?.suffix ?: ""
+            assertThat(KotlinTypeInfo.from(schema, direction = direction).generatedModelClassName).isEqualTo("Pet$suffix")
+            val children = KotlinTypeInfo.from(schema.properties.getValue("children"), direction = direction) as KotlinTypeInfo.Array
+            assertThat(children.parameterizedType.generatedModelClassName).isEqualTo("Pet$suffix")
+            val index = KotlinTypeInfo.from(schema.properties.getValue("index"), direction = direction) as KotlinTypeInfo.Map
+            assertThat(index.parameterizedType.generatedModelClassName).isEqualTo("Pet$suffix")
+            val state = KotlinTypeInfo.from(schema.properties.getValue("state"), direction = direction)
+            assertThat(state.generatedModelClassName).isEqualTo("State$suffix")
         }
-        assertThat(ModelNameRegistry.direction).isNull()
+
+        assertThat(original.typeInfo.generatedModelClassName).isEqualTo("Pet")
+        assertThat(request.typeInfo.generatedModelClassName).isEqualTo("PetRequest")
+        assertThat(response.typeInfo.generatedModelClassName).isEqualTo("PetResponse")
+        assertThat(requestProperties.map { it.name }).contains("age").doesNotContain("name")
+        assertThat(responseProperties.map { it.name }).contains("name").doesNotContain("age")
+        assertThat(requestProperties.first { it.name == "child" }.typeInfo.generatedModelClassName).isEqualTo("PetRequest")
+        assertThat(responseProperties.first { it.name == "child" }.typeInfo.generatedModelClassName).isEqualTo("PetResponse")
+        assertThat(KotlinTypeInfo.from(schema).generatedModelClassName).isEqualTo("Pet")
     }
 
     @ParameterizedTest

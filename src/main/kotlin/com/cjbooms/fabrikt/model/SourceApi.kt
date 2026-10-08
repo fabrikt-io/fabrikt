@@ -20,8 +20,9 @@ import java.nio.file.Paths
 data class SchemaInfo(
     val name: String,
     val schema: OpenApiSchema,
+    val direction: ModelDirection? = null,
 ) {
-    val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, name)
+    val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, name, direction = direction)
 }
 
 class SourceApi private constructor(

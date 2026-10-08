@@ -3,6 +3,7 @@ package com.cjbooms.fabrikt.model
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
 import com.cjbooms.fabrikt.cli.CodeGenerationType
 import com.cjbooms.fabrikt.cli.InstantLibrary
+import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.SerializationLibrary.KOTLINX_SERIALIZATION
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.OasType.Companion.toOasType
@@ -140,21 +141,30 @@ sealed class KotlinTypeInfo(
     companion object {
         private val logger = Logger.getGlobal()
 
-        fun fromRequest(schema: OpenApiSchema): KotlinTypeInfo =
-            ModelNameRegistry.withDirection(ModelNameRegistry.Direction.REQUEST) { from(schema) }
+        fun fromRequest(schema: OpenApiSchema): KotlinTypeInfo = from(schema, direction = requestDirection())
 
-        fun fromResponse(schema: OpenApiSchema): KotlinTypeInfo =
-            ModelNameRegistry.withDirection(ModelNameRegistry.Direction.RESPONSE) { from(schema) }
+        fun fromResponse(schema: OpenApiSchema): KotlinTypeInfo = from(schema, direction = responseDirection())
 
         fun fromRequestParameterSchema(
             schema: OpenApiSchema,
             oasKey: String,
-        ): KotlinTypeInfo = ModelNameRegistry.withDirection(ModelNameRegistry.Direction.REQUEST) { fromParameterSchema(schema, oasKey) }
+        ): KotlinTypeInfo = fromParameterSchema(schema, oasKey, requestDirection())
+
+        fun requestDirection(): ModelDirection? =
+            ModelDirection.REQUEST.takeIf {
+                ModelCodeGenOptionType.REQUEST_RESPONSE_MODELS in MutableSettings.modelOptions
+            }
+
+        private fun responseDirection(): ModelDirection? =
+            ModelDirection.RESPONSE.takeIf {
+                ModelCodeGenOptionType.REQUEST_RESPONSE_MODELS in MutableSettings.modelOptions
+            }
 
         fun from(
             schema: OpenApiSchema,
             oasKey: String = "",
             enclosingSchema: OpenApiSchema? = null,
+            direction: ModelDirection? = null,
         ): KotlinTypeInfo {
             MutableSettings.customTypeMappings
                 .find {
@@ -175,7 +185,7 @@ sealed class KotlinTypeInfo(
                 )
                 return fallbackType
             }
-            schema.singleAggregatedEnumAliasSchema()?.let { return from(it, oasKey, enclosingSchema) }
+            schema.singleAggregatedEnumAliasSchema()?.let { return from(it, oasKey, enclosingSchema, direction = direction) }
             if (schema.isUnsupportedComplexInlinedDefinition() && !ModelNameRegistry.hasPreRegisteredReference(schema)) {
                 /*
                  * Defaults to Any for complex schemas under paths unless SourceApi discovered and named the schema.
@@ -219,7 +229,7 @@ sealed class KotlinTypeInfo(
 
                 OasType.Text -> Text
                 OasType.Enum ->
-                    Enum(schema.getEnumValues(), ModelNameRegistry.getOrRegister(schema, enclosingSchema))
+                    Enum(schema.getEnumValues(), ModelNameRegistry.getOrRegister(schema, enclosingSchema, direction = direction))
 
                 OasType.Uuid -> {
                     if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.UUID_AS_STRING)) {
@@ -265,41 +275,52 @@ sealed class KotlinTypeInfo(
                 OasType.Integer -> Integer
                 OasType.Boolean -> Boolean
                 OasType.Set -> {
-                    val parameterizedType = getParameterizedTypeForArray(schema, enclosingSchema, oasKey)
+                    val parameterizedType = getParameterizedTypeForArray(schema, enclosingSchema, oasKey, direction = direction)
                     Array(parameterizedType, schema.itemsSchema.isNullable, true)
                 }
 
                 OasType.Array -> {
-                    val parameterizedType = getParameterizedTypeForArray(schema, enclosingSchema, oasKey)
+                    val parameterizedType = getParameterizedTypeForArray(schema, enclosingSchema, oasKey, direction = direction)
                     Array(parameterizedType, schema.itemsSchema.isNullable, schema.itemsSchema.isUniqueItems)
                 }
 
                 OasType.Object -> {
                     val aliasedSchema = schema.singleAggregatedAliasSchema()
                     if (aliasedSchema != null) {
-                        from(aliasedSchema, oasKey, enclosingSchema)
+                        from(aliasedSchema, oasKey, enclosingSchema, direction = direction)
                     } else {
-                        Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema))
+                        Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema, direction = direction))
                     }
                 }
 
                 OasType.Map ->
-                    Map(from(schema.additionalPropertiesSchema, OasType.ADDITIONAL_PROPERTIES_VALUE, enclosingSchema))
+                    Map(
+                        from(
+                            schema.additionalPropertiesSchema,
+                            OasType.ADDITIONAL_PROPERTIES_VALUE,
+                            enclosingSchema,
+                            direction = direction,
+                        ),
+                    )
 
                 OasType.TypedObjectAdditionalProperties ->
                     GeneratedTypedAdditionalProperties(
-                        ModelNameRegistry.getOrRegister(schema, valueSuffix = schema.isInlinedTypedAdditionalProperties()),
+                        ModelNameRegistry.getOrRegister(
+                            schema,
+                            valueSuffix = schema.isInlinedTypedAdditionalProperties(),
+                            direction = direction,
+                        ),
                     )
 
                 OasType.SimpleTypedAdditionalProperties ->
-                    SimpleTypedAdditionalProperties(from(schema, OasType.ADDITIONAL_PROPERTIES_VALUE))
+                    SimpleTypedAdditionalProperties(from(schema, OasType.ADDITIONAL_PROPERTIES_VALUE, direction = direction))
 
                 OasType.UntypedObjectAdditionalProperties -> UntypedObjectAdditionalProperties
                 OasType.UntypedObject -> if (isAnyAsJsonElementActive()) JsonObject else UntypedObject
                 OasType.UnknownAdditionalProperties -> UnknownAdditionalProperties
                 OasType.TypedMapAdditionalProperties ->
                     MapTypeAdditionalProperties(
-                        from(schema.additionalPropertiesSchema, "", enclosingSchema),
+                        from(schema.additionalPropertiesSchema, "", enclosingSchema, direction = direction),
                     )
 
                 OasType.Any -> getOverridableAnyType()
@@ -311,7 +332,7 @@ sealed class KotlinTypeInfo(
                                 MutableSettings.serializationLibrary != KOTLINX_SERIALIZATION
                         )
                     ) {
-                        Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema))
+                        Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema, direction = direction))
                     } else {
                         getOverridableAnyType()
                     }
@@ -327,35 +348,37 @@ sealed class KotlinTypeInfo(
         fun fromParameterSchema(
             schema: OpenApiSchema,
             oasKey: String,
+            direction: ModelDirection? = null,
         ): KotlinTypeInfo {
             val component =
                 COMPONENT_PROPERTY_PATH.find(schema.jsonPathFromRoot)?.groupValues?.get(1)
-                    ?: return from(schema, oasKey)
+                    ?: return from(schema, oasKey, direction = direction)
             if (schema.isInlinedEnumDefinition()) {
-                return Enum(schema.getEnumValues(), ModelNameRegistry.getOrRegisterPropertyRef(schema, component))
+                return Enum(schema.getEnumValues(), ModelNameRegistry.getOrRegisterPropertyRef(schema, component, direction = direction))
             }
             if (schema.isInlinedObjectDefinition()) {
-                return Object(ModelNameRegistry.getOrRegisterPropertyRef(schema, component))
+                return Object(ModelNameRegistry.getOrRegisterPropertyRef(schema, component, direction = direction))
             }
             val items = schema.itemsSchema
             if (schema.type == OasType.Array.type && !items.isSchemaAbsent()) {
                 val itemType =
                     when {
                         items.isInlinedEnumDefinition() ->
-                            Enum(items.getEnumValues(), ModelNameRegistry.getOrRegisterPropertyRef(items, component))
+                            Enum(items.getEnumValues(), ModelNameRegistry.getOrRegisterPropertyRef(items, component, direction = direction))
                         items.isInlinedObjectDefinition() ->
-                            Object(ModelNameRegistry.getOrRegisterPropertyRef(items, component))
-                        else -> return from(schema, oasKey)
+                            Object(ModelNameRegistry.getOrRegisterPropertyRef(items, component, direction = direction))
+                        else -> return from(schema, oasKey, direction = direction)
                     }
                 return Array(itemType, items.isNullable, schema.isUniqueItems)
             }
-            return from(schema, oasKey)
+            return from(schema, oasKey, direction = direction)
         }
 
         private fun getParameterizedTypeForArray(
             arraySchema: OpenApiSchema,
             enclosingSchema: OpenApiSchema?,
             oasKey: String,
+            direction: ModelDirection? = null,
         ): KotlinTypeInfo {
             val itemsSchema = arraySchema.itemsSchema
             return when {
@@ -364,11 +387,11 @@ sealed class KotlinTypeInfo(
                         itemsSchema.isInlinedDiscriminatedOneOfSuperInterface()
                 ) &&
                     !itemsSchema.isUnsupportedComplexInlinedDefinition() ->
-                    Object(ModelNameRegistry.getOrRegister(arraySchema, enclosingSchema))
+                    Object(ModelNameRegistry.getOrRegister(arraySchema, enclosingSchema, direction = direction))
                 arraySchema.hasInlinedItemsSchemaWithOneOf() || arraySchema.hasInlinedItemsSchemaOfTypeObject() ->
-                    Object(ModelNameRegistry.getOrRegister(arraySchema))
+                    Object(ModelNameRegistry.getOrRegister(arraySchema, direction = direction))
                 arraySchema.itemsSchema.isSchemaAbsent() -> getOverridableAnyType()
-                else -> from(arraySchema.itemsSchema, oasKey, enclosingSchema)
+                else -> from(arraySchema.itemsSchema, oasKey, enclosingSchema, direction = direction)
             }
         }
 
