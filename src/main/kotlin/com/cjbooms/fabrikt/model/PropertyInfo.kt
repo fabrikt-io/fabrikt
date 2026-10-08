@@ -13,7 +13,6 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedItemsSchemaUnder
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectUnderAllOf
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isRequired
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaLess
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleMapDefinition
@@ -207,7 +206,7 @@ sealed class PropertyInfo {
                                     )
                                 } else if (property.value.isInlinedObjectDefinition() ||
                                     property.value.isSingleAggregatedInlinedObject() ||
-                                    (property.value.isOneOfSuperInterface() && property.value.isSubTypeDeductionEnabled())
+                                    (property.value.isInlinedOneOfSuperInterface() && property.value.isSubTypeDeductionEnabled())
                                 ) {
                                     ObjectInlinedField(
                                         isRequired =

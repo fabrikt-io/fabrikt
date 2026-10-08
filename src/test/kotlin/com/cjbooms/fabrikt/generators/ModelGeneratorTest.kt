@@ -43,6 +43,7 @@ class ModelGeneratorTest {
     private fun testCases(): Stream<String> =
         Stream.of(
             "allOfParentOrder",
+            "namedOneOfDeduction",
             "additionalModelAnnotations",
             "additionalProperties",
             "arrays",

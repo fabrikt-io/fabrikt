@@ -573,3 +573,10 @@ components:
     OrderSibling: {"allOf": [{"type": "object", "required": ["count"], "properties": {"count": {"type": "integer", "format": "int32"}}}, {"$ref": "#/components/schemas/OrderX"}]}
 
     OrderHolder: {"type": "object", "required": ["value", "choice"], "properties": {"value": {"$ref": "#/components/schemas/OrderX"}, "choice": {"oneOf": [{"$ref": "#/components/schemas/OrderChild"}, {"$ref": "#/components/schemas/OrderSibling"}]}, "choices": {"type": "array", "items": {"oneOf": [{"$ref": "#/components/schemas/OrderChild"}, {"$ref": "#/components/schemas/OrderSibling"}]}}}}
+    DeductionChoice: {"oneOf": [{"$ref": "#/components/schemas/DeductionA"}, {"$ref": "#/components/schemas/DeductionB"}], "x-jackson-subtype-deduction": true}
+
+    DeductionA: {"type": "object", "required": ["a"], "properties": {"a": {"type": "string", "minLength": 1}}}
+
+    DeductionB: {"type": "object", "required": ["b"], "properties": {"b": {"type": "integer", "format": "int32"}}}
+
+    DeductionHolder: {"type": "object", "required": ["value"], "properties": {"value": {"$ref": "#/components/schemas/DeductionChoice"}, "choices": {"type": "array", "items": {"$ref": "#/components/schemas/DeductionChoice"}, "default": []}, "byKey": {"type": "object", "additionalProperties": {"$ref": "#/components/schemas/DeductionChoice"}}, "optional": {"$ref": "#/components/schemas/DeductionChoice"}}}
