@@ -75,6 +75,8 @@ The library currently has support for generating:
 
 Client generators can add HTTP Bearer authentication helpers with `--http-client-opts OPENAPI_BEARER_AUTHENTICATION`. For operations secured by a standalone OpenAPI Bearer scheme, the generated `<operation>WithBearerToken` function accepts a `(schemeName) -> String?` token provider and sends `Authorization: Bearer <token>` when a token is available. Global security requirements are inherited unless an operation overrides them; anonymous alternatives keep the token optional. A Bearer requirement combined with another scheme is not treated as satisfied by a token alone, and Fabrikt warns when it cannot generate a helper for that combination. Existing client methods remain available.
 
+When an operation also allows a non-Bearer security alternative, the token is optional: if the provider returns `null` or a blank string for every Bearer scheme, the helper adds no Bearer header and preserves the existing headers or client configuration. Configure credentials for the alternative scheme through those headers or the transport.
+
 ## Examples
 
 Consult the test directory for OpenAPI code generation examples.
