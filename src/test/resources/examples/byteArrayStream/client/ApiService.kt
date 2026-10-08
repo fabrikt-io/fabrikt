@@ -1,9 +1,9 @@
 package examples.byteArrayStream.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import okhttp3.OkHttpClient
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.ByteArray
 import kotlin.String
 import kotlin.Suppress
@@ -21,7 +21,7 @@ import kotlin.jvm.Throws
 @Suppress("unused")
 public class BinaryDataService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {

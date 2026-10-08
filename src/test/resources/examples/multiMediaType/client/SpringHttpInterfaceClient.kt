@@ -1,12 +1,12 @@
 package examples.multiMediaType.client
 
-import com.fasterxml.jackson.databind.JsonNode
 import examples.multiMediaType.models.ContentType
 import examples.multiMediaType.models.QueryResult
 import examples.multiMediaType.models.SuccessResponse
 import org.springframework.web.bind.`annotation`.RequestHeader
 import org.springframework.web.bind.`annotation`.RequestParam
 import org.springframework.web.service.`annotation`.HttpExchange
+import tools.jackson.databind.JsonNode
 import kotlin.Any
 import kotlin.Int
 import kotlin.String

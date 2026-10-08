@@ -1,7 +1,5 @@
 package examples.deleteRequestBody.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.deleteRequestBody.models.DeleteResourcesRequest
 import okhttp3.Headers
 import okhttp3.HttpUrl
@@ -12,6 +10,8 @@ import okhttp3.MultipartBody.Builder
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.String
 import kotlin.Suppress
 import kotlin.Unit
@@ -20,7 +20,7 @@ import kotlin.jvm.Throws
 
 @Suppress("unused")
 public class ResourcesClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -61,7 +61,7 @@ public class ResourcesClient(
 
 @Suppress("unused")
 public class ResourcesSearchClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -101,7 +101,7 @@ public class ResourcesSearchClient(
 
 @Suppress("unused")
 public class ResourcesAttachmentsClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {

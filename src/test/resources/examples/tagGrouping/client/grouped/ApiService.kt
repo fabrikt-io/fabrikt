@@ -1,12 +1,12 @@
 package examples.tagGrouping.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.tagGrouping.models.Owner
 import examples.tagGrouping.models.Pet
 import examples.tagGrouping.models.Vehicle
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import okhttp3.OkHttpClient
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import java.util.UUID
 import kotlin.Int
 import kotlin.String
@@ -27,7 +27,7 @@ import kotlin.jvm.Throws
 @Suppress("unused")
 public class PetService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -83,7 +83,7 @@ public class PetService(
 @Suppress("unused")
 public class OwnerService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -127,7 +127,7 @@ public class OwnerService(
 @Suppress("unused")
 public class VehicleService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {

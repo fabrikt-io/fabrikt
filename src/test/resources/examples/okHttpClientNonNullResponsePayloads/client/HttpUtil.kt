@@ -1,7 +1,5 @@
 package examples.okHttpClientNonNullResponsePayloads.client
 
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
 import kotlin.Any
 import kotlin.Boolean
 import kotlin.ByteArray
@@ -19,6 +17,8 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.Response
 import okhttp3.ResponseBody
+import tools.jackson.core.type.TypeReference
+import tools.jackson.databind.json.JsonMapper
 
 @Suppress("unused")
 public fun <T : Any> HttpUrl.Builder.queryParam(key: String, `value`: T?): HttpUrl.Builder {
@@ -54,7 +54,7 @@ public fun Headers.Builder.`header`(key: String, `value`: Any?): Headers.Builder
 @Throws(ApiException::class)
 public fun <T> Request.execute(
   client: OkHttpClient,
-  objectMapper: ObjectMapper,
+  objectMapper: JsonMapper,
   typeRef: TypeReference<T>,
 ): ApiResponse<T> = doRequest(client) { response ->
   response.body?.string().isNotBlankOrNull()?.let {

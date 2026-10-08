@@ -1,7 +1,5 @@
 package examples.okHttpClient.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.okHttpClient.models.Content
 import examples.okHttpClient.models.EnumQueryParam
 import examples.okHttpClient.models.FirstModel
@@ -13,6 +11,8 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.Boolean
 import kotlin.Int
 import kotlin.String
@@ -24,7 +24,7 @@ import kotlin.jvm.Throws
 
 @Suppress("unused")
 public class ExamplePath1Client(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -115,7 +115,7 @@ public class ExamplePath1Client(
 
 @Suppress("unused")
 public class ExamplePath2Client(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -250,7 +250,7 @@ public class ExamplePath2Client(
 
 @Suppress("unused")
 public class ExamplePath3SubresourceClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -301,7 +301,7 @@ public class ExamplePath3SubresourceClient(
 
 @Suppress("unused")
 public class ExamplePath4OnlyFailureResponseClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {

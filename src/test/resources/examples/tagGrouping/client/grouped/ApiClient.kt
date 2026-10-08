@@ -1,7 +1,5 @@
 package examples.tagGrouping.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.tagGrouping.models.Owner
 import examples.tagGrouping.models.Pet
 import examples.tagGrouping.models.Vehicle
@@ -12,6 +10,8 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import java.util.UUID
 import kotlin.Int
 import kotlin.String
@@ -23,7 +23,7 @@ import kotlin.jvm.Throws
 
 @Suppress("unused")
 public class PetClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -165,7 +165,7 @@ public class PetClient(
 
 @Suppress("unused")
 public class OwnerClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -269,7 +269,7 @@ public class OwnerClient(
 
 @Suppress("unused")
 public class VehicleClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {

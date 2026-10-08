@@ -1,6 +1,5 @@
 package examples.multiMediaType.controllers
 
-import com.fasterxml.jackson.databind.JsonNode
 import examples.multiMediaType.models.QueryResult
 import examples.multiMediaType.models.SuccessResponse
 import org.springframework.http.HttpStatus
@@ -11,6 +10,7 @@ import org.springframework.web.bind.`annotation`.RequestHeader
 import org.springframework.web.bind.`annotation`.RequestMapping
 import org.springframework.web.bind.`annotation`.RequestMethod
 import org.springframework.web.bind.`annotation`.RequestParam
+import tools.jackson.databind.JsonNode
 import kotlin.Int
 import kotlin.String
 import kotlin.collections.List

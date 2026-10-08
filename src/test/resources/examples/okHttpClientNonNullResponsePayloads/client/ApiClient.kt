@@ -1,14 +1,14 @@
 package examples.okHttpClientNonNullResponsePayloads.client
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.okHttpClientNonNullResponsePayloads.models.Widget
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.ByteArray
 import kotlin.String
 import kotlin.Suppress
@@ -18,7 +18,7 @@ import kotlin.jvm.Throws
 
 @Suppress("unused")
 public class WidgetsClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -93,7 +93,7 @@ public class WidgetsClient(
 
 @Suppress("unused")
 public class WidgetsImageClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -134,7 +134,7 @@ public class WidgetsImageClient(
 
 @Suppress("unused")
 public class WidgetsSummaryClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {

@@ -48,7 +48,6 @@ tasks {
             "--api-file", apiFile,
             "--targets", "http_models",
             "--targets", "client",
-            "--serialization-library", "jackson_3",
         )
         dependsOn(":jar")
         dependsOn(":shadowJar")

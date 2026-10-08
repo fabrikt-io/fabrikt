@@ -49,7 +49,6 @@ tasks {
             "--targets", "http_models",
             "--targets", "client",
             "--http-client-opts", "resilience4j",
-            "--serialization-library", "jackson_3",
         )
         dependsOn(":jar")
         dependsOn(":shadowJar")

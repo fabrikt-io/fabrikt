@@ -1,13 +1,13 @@
 package examples.multiMediaType.client
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.multiMediaType.models.ContentType
 import examples.multiMediaType.models.QueryResult
 import examples.multiMediaType.models.SuccessResponse
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import okhttp3.OkHttpClient
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.Int
 import kotlin.String
 import kotlin.Suppress
@@ -26,7 +26,7 @@ import kotlin.jvm.Throws
 @Suppress("unused")
 public class ExamplePath1Service(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -62,7 +62,7 @@ public class ExamplePath1Service(
 @Suppress("unused")
 public class ExamplePath2Service(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -98,7 +98,7 @@ public class ExamplePath2Service(
 @Suppress("unused")
 public class MultipleResponseSchemasService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {
@@ -132,7 +132,7 @@ public class MultipleResponseSchemasService(
 @Suppress("unused")
 public class DifferentSuccessAndErrorResponseSchemaService(
     private val circuitBreakerRegistry: CircuitBreakerRegistry,
-    objectMapper: ObjectMapper,
+    objectMapper: JsonMapper,
     baseUrl: String,
     okHttpClient: OkHttpClient,
 ) {

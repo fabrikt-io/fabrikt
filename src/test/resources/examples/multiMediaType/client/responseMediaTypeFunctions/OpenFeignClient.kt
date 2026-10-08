@@ -1,6 +1,5 @@
 package examples.multiMediaType.client
 
-import com.fasterxml.jackson.databind.JsonNode
 import examples.multiMediaType.models.ContentType
 import examples.multiMediaType.models.OtherQueryResult
 import examples.multiMediaType.models.QueryResult
@@ -10,6 +9,7 @@ import feign.Headers
 import feign.Param
 import feign.QueryMap
 import feign.RequestLine
+import tools.jackson.databind.JsonNode
 import kotlin.Int
 import kotlin.String
 import kotlin.Suppress

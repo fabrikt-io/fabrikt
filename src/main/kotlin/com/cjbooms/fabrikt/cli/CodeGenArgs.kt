@@ -245,10 +245,10 @@ class CodeGenArgs {
 
     @Parameter(
         names = ["--serialization-library"],
-        description = "Specify which serialization library to use for annotations in generated model classes. Default: JACKSON",
+        description = "Specify which serialization library to use for annotations in generated model classes. Default: JACKSON_3",
         converter = SerializationLibraryOptionConverter::class,
     )
-    var serializationLibrary: SerializationLibrary = SerializationLibrary.JACKSON
+    var serializationLibrary: SerializationLibrary = SerializationLibrary.default
 
     @Parameter(
         names = ["--instant-library"],

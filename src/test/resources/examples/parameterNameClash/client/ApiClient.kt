@@ -1,7 +1,5 @@
 package examples.parameterNameClash.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.parameterNameClash.models.SomeObject
 import okhttp3.Headers
 import okhttp3.HttpUrl
@@ -10,6 +8,8 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.String
 import kotlin.Suppress
 import kotlin.Unit
@@ -18,7 +18,7 @@ import kotlin.jvm.Throws
 
 @Suppress("unused")
 public class ExampleClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {

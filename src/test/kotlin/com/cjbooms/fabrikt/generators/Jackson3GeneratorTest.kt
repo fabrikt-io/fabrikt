@@ -35,8 +35,8 @@ class Jackson3GeneratorTest {
     }
 
     @Test
-    fun `Jackson 2 remains the default serialization library`() {
-        assertThat(SerializationLibrary.default).isEqualTo(SerializationLibrary.JACKSON)
+    fun `Jackson 3 remains the default serialization library`() {
+        assertThat(SerializationLibrary.default).isEqualTo(SerializationLibrary.JACKSON_3)
     }
 
     @Test

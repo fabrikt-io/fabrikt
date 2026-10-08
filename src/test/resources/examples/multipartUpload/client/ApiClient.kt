@@ -1,7 +1,5 @@
 package examples.multipartUpload.client
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import examples.multipartUpload.models.FileMetadata
 import examples.multipartUpload.models.SimpleUploadResult
 import examples.multipartUpload.models.UploadResult
@@ -12,6 +10,8 @@ import okhttp3.MultipartBody
 import okhttp3.MultipartBody.Builder
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.jacksonTypeRef
 import kotlin.Double
 import kotlin.String
 import kotlin.Suppress
@@ -21,7 +21,7 @@ import kotlin.jvm.Throws
 
 @Suppress("unused")
 public class ApiUploadClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -80,7 +80,7 @@ public class ApiUploadClient(
 
 @Suppress("unused")
 public class ApiUploadSimpleClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
@@ -126,7 +126,7 @@ public class ApiUploadSimpleClient(
 
 @Suppress("unused")
 public class ApiUploadMultipleClient(
-    private val objectMapper: ObjectMapper,
+    private val objectMapper: JsonMapper,
     private val baseUrl: String,
     private val okHttpClient: OkHttpClient,
 ) {
