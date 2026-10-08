@@ -52,6 +52,7 @@ class SpringHttpInterfaceGenerator(
     private val srcPath: java.nio.file.Path = Destinations.MAIN_KT_SOURCE,
 ) : ClientGenerator {
     private val bearerSecurity = ClientBearerSecurity(api.openApi3)
+    private val oauth2Security = ClientOAuth2Security(api.openApi3)
 
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
         val clientTypes =
@@ -66,6 +67,14 @@ class SpringHttpInterfaceGenerator(
                                     val securityPlan =
                                         if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
                                             bearerSecurity.forOperation(operation)
+                                        } else {
+                                            null
+                                        }
+                                    val oauth2Plan =
+                                        if (ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION in
+                                            options
+                                        ) {
+                                            oauth2Security.forOperation(operation)
                                         } else {
                                             null
                                         }
@@ -112,7 +121,7 @@ class SpringHttpInterfaceGenerator(
                                         listOf(
                                             listOf(baseFunction),
                                         ) + mediaTypeFunctions.map { listOf(it) }
-                                    ).map { it.withBearerTokenWrapper(securityPlan) }
+                                    ).map { it.withBearerTokenWrapper(securityPlan).withOAuth2TokenWrapper(oauth2Plan) }
                                 }
                             }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 

@@ -1,0 +1,76 @@
+openapi: 3.0.4
+info:
+  title: OAuth2 security
+  version: '1.0'
+security:
+  - OAuth2: [read:pets]
+paths:
+  /protected:
+    get:
+      operationId: getProtected
+      responses:
+        '200': { description: OK }
+  /anonymous:
+    get:
+      operationId: getAnonymous
+      security: []
+      responses:
+        '200': { description: OK }
+  /optional:
+    get:
+      operationId: getOptional
+      security: [{}, { OAuth2: [read:pets] }]
+      responses:
+        '200': { description: OK }
+  /combined:
+    get:
+      operationId: getCombined
+      security: [{ OAuth2: [read:pets], ApiKey: [] }]
+      responses:
+        '200': { description: OK }
+  /alternative:
+    get:
+      operationId: getAlternative
+      security: [{ OAuth2: [read:pets] }, { ApiKey: [] }]
+      responses:
+        '200': { description: OK }
+  /scope-alternatives:
+    get:
+      operationId: getScopeAlternatives
+      security: [{ OAuth2: [read:pets] }, { OAuth2: [write:pets] }]
+      responses:
+        '200': { description: OK }
+  /unscoped:
+    get:
+      operationId: getUnscoped
+      security: [{ OAuth2: [] }]
+      responses:
+        '200': { description: OK }
+  /schemes:
+    get:
+      operationId: getSchemes
+      security: [{ OAuth2: [read:pets] }, { OtherOAuth2: [write:pets] }]
+      responses:
+        '200': { description: OK }
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://example.com/token
+          scopes:
+            read:pets: Read pets
+            write:pets: Write pets
+    OtherOAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://example.com/authorize
+          tokenUrl: https://example.com/token
+          scopes:
+            write:pets: Write pets
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key

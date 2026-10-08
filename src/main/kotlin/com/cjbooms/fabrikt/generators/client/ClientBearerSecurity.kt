@@ -55,7 +55,7 @@ internal class ClientBearerSecurity(
     }
 }
 
-internal enum class BearerWrapperTarget {
+internal enum class TokenWrapperTarget {
     ADDITIONAL_HEADERS,
     API_CONFIGURATION,
 }
@@ -65,20 +65,15 @@ internal fun List<ClientFunction>.withBearerTokenWrapper(plan: BearerSecurityPla
     val function = first()
     return this +
         ClientFunction(
-            function.spec.withBearerTokenWrapper(plan, BearerWrapperTarget.ADDITIONAL_HEADERS),
+            function.spec.withBearerTokenWrapper(plan, TokenWrapperTarget.ADDITIONAL_HEADERS),
             function.isMediaTypeFunction,
         )
 }
 
 internal fun FunSpec.withBearerTokenWrapper(
     plan: BearerSecurityPlan,
-    target: BearerWrapperTarget,
+    target: TokenWrapperTarget,
 ): FunSpec {
-    val parameterNames = parameters.map { it.name }.toSet()
-    val providerName = uniqueBearerName("bearerTokenProvider", parameterNames)
-    val tokenName = uniqueBearerName("bearerToken", parameterNames + providerName)
-    val adjustedName = uniqueBearerName("bearerHeaders", parameterNames + providerName + tokenName)
-    val isSuspend = KModifier.SUSPEND in modifiers
     val names = CodeBlock.builder().add("listOf(")
     plan.schemeNames.forEachIndexed { index, schemeName ->
         if (index > 0) names.add(", ")
@@ -86,15 +81,44 @@ internal fun FunSpec.withBearerTokenWrapper(
     }
     names.add(")")
 
-    return FunSpec
-        .builder("${name}WithBearerToken")
-        .apply { if (isSuspend) addModifiers(KModifier.SUSPEND) }
-        .addParameter(
-            providerName,
+    return withAccessTokenWrapper(
+        prefix = "bearer",
+        suffix = "WithBearerToken",
+        providerType =
             LambdaTypeName.get(
                 parameters = arrayOf(String::class.asTypeName()),
                 returnType = String::class.asTypeName().copy(nullable = true),
             ),
+        tokenExpression = { provider ->
+            CodeBlock.of("%L.firstNotNullOfOrNull { scheme -> %N(scheme)?.takeIf { it.isNotBlank() } }", names.build(), provider)
+        },
+        tokenRequired = plan.tokenRequired,
+        missingTokenMessage = "A Bearer token is required for this operation",
+        target = target,
+    )
+}
+
+internal fun FunSpec.withAccessTokenWrapper(
+    prefix: String,
+    suffix: String,
+    providerType: LambdaTypeName,
+    tokenExpression: (String) -> CodeBlock,
+    tokenRequired: Boolean,
+    missingTokenMessage: String,
+    target: TokenWrapperTarget,
+): FunSpec {
+    val parameterNames = parameters.map { it.name }.toSet()
+    val providerName = uniqueTokenName("${prefix}TokenProvider", parameterNames)
+    val tokenName = uniqueTokenName("${prefix}Token", parameterNames + providerName)
+    val adjustedName = uniqueTokenName("${prefix}Headers", parameterNames + providerName + tokenName)
+    val isSuspend = KModifier.SUSPEND in modifiers
+
+    return FunSpec
+        .builder("$name$suffix")
+        .apply { if (isSuspend) addModifiers(KModifier.SUSPEND) }
+        .addParameter(
+            providerName,
+            providerType,
         ).addParameters(
             parameters.map { original ->
                 ParameterSpec
@@ -107,24 +131,23 @@ internal fun FunSpec.withBearerTokenWrapper(
             CodeBlock
                 .builder()
                 .addStatement(
-                    "val %N = %L.firstNotNullOfOrNull { scheme -> %N(scheme)?.takeIf { it.isNotBlank() } }",
+                    "val %N = %L",
                     tokenName,
-                    names.build(),
-                    providerName,
+                    tokenExpression(providerName),
                 ).apply {
-                    if (plan.tokenRequired) {
-                        addStatement("checkNotNull(%N) { %S }", tokenName, "A Bearer token is required for this operation")
+                    if (tokenRequired) {
+                        addStatement("checkNotNull(%N) { %S }", tokenName, missingTokenMessage)
                     }
                 }.apply {
                     when (target) {
-                        BearerWrapperTarget.ADDITIONAL_HEADERS ->
+                        TokenWrapperTarget.ADDITIONAL_HEADERS ->
                             addStatement(
                                 "val %N = %N?.let { additionalHeaders + (%S to \"Bearer \$it\") } ?: additionalHeaders",
                                 adjustedName,
                                 tokenName,
                                 "Authorization",
                             )
-                        BearerWrapperTarget.API_CONFIGURATION ->
+                        TokenWrapperTarget.API_CONFIGURATION ->
                             addStatement(
                                 "val %N = %N?.let { apiConfiguration.copy(customHeaders = apiConfiguration.customHeaders + (%S to \"Bearer \$it\")) } ?: apiConfiguration",
                                 adjustedName,
@@ -138,9 +161,9 @@ internal fun FunSpec.withBearerTokenWrapper(
                     parameters.forEach { original ->
                         val value =
                             when (target) {
-                                BearerWrapperTarget.ADDITIONAL_HEADERS ->
+                                TokenWrapperTarget.ADDITIONAL_HEADERS ->
                                     if (original.name == "additionalHeaders") adjustedName else original.name
-                                BearerWrapperTarget.API_CONFIGURATION ->
+                                TokenWrapperTarget.API_CONFIGURATION ->
                                     if (original.name == "apiConfiguration") adjustedName else original.name
                             }
                         add("%N = %N,\n", original.name, value)
@@ -151,7 +174,7 @@ internal fun FunSpec.withBearerTokenWrapper(
         ).build()
 }
 
-private fun uniqueBearerName(
+private fun uniqueTokenName(
     base: String,
     used: Set<String>,
 ): String = generateSequence(base) { "${it}Extra" }.first { it !in used }

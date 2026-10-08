@@ -52,6 +52,9 @@ enum class ClientCodeGenOptionType(
     OPENAPI_BEARER_AUTHENTICATION(
         "Adds operation-specific Bearer token helpers for OpenAPI HTTP Bearer security schemes",
     ),
+    OPENAPI_OAUTH2_AUTHENTICATION(
+        "Adds operation-specific OAuth2 access-token helpers that pass required scopes to a caller-provided token provider",
+    ),
     ;
 
     override fun toString() = "`${super.toString()}` - $description"

@@ -73,7 +73,7 @@ The library currently has support for generating:
   * **Micronaut** HTTP annotated controller interfaces
   * **Ktor server** routes and controller interfaces
 
-Client generators can add HTTP Bearer authentication helpers with `--http-client-opts OPENAPI_BEARER_AUTHENTICATION`. For operations secured by a standalone OpenAPI Bearer scheme, the generated `<operation>WithBearerToken` function accepts a `(schemeName) -> String?` token provider and sends `Authorization: Bearer <token>` when a token is available. Global security requirements are inherited unless an operation overrides them; anonymous alternatives keep the token optional. A Bearer requirement combined with another scheme is not treated as satisfied by a token alone, and Fabrikt warns when it cannot generate a helper for that combination. Existing client methods remain available.
+Client generators offer opt-in HTTP Bearer and OAuth2 access-token helpers through `--http-client-opts OPENAPI_BEARER_AUTHENTICATION` and `OPENAPI_OAUTH2_AUTHENTICATION`. See [Client authentication](CLIENT_AUTHENTICATION.md) for token providers, operation scopes, security alternatives and examples.
 
 ## Examples
 
@@ -275,6 +275,7 @@ Usage: <main class> [options]
 |                                         |   `RESPONSE_MEDIA_TYPE_FUNCTIONS` - This option adds, for each operation whose success responses declare a different JSON schema per media type, one function per media type. The function always sends that media type as the Accept header and returns that schema's type instead of JsonNode. Its name is the operation's function name plus the media subtype, e.g. getItemsVndCustomJson for application/vnd.custom+json (only for OkHttp, OpenFeign and Spring HTTP Interface clients) |
 |                                         |   `DYNAMIC_BASE_URL` - This option makes ApiConfiguration.basePath empty, allowing you to set the base URL at runtime (only for Ktor clients) |
 |                                         |   `OPENAPI_BEARER_AUTHENTICATION` - Adds operation-specific Bearer token helpers for OpenAPI HTTP Bearer security schemes |
+|                                         |   `OPENAPI_OAUTH2_AUTHENTICATION` - Adds operation-specific OAuth2 access-token helpers that pass required scopes to a caller-provided token provider |
 |   `--http-client-target`                | Optionally select the target client that you want to be generated. Defaults to OK_HTTP |
 |                                         | CHOOSE ONE OF: |
 |                                         |   `OK_HTTP` - Generate OkHttp client. |

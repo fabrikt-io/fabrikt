@@ -52,6 +52,7 @@ class OkHttpEnhancedClientGenerator(
 ) {
     private val multipartParameterToSpecBuilder = ClientGeneratorUtils.MultipartParameterToSpecBuilder(packages.client)
     private val bearerSecurity = ClientBearerSecurity(api.openApi3)
+    private val oauth2Security = ClientOAuth2Security(api.openApi3)
 
     fun generateDynamicClientCode(options: Set<ClientCodeGenOptionType>): Collection<ClientType> =
         options.ifResilience4jIsEnabled {
@@ -70,6 +71,14 @@ class OkHttpEnhancedClientGenerator(
                                 val securityPlan =
                                     if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
                                         bearerSecurity.forOperation(operation)
+                                    } else {
+                                        null
+                                    }
+                                val oauth2Plan =
+                                    if (ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION in
+                                        options
+                                    ) {
+                                        oauth2Security.forOperation(operation)
                                     } else {
                                         null
                                     }
@@ -104,7 +113,7 @@ class OkHttpEnhancedClientGenerator(
                                     listOf(
                                         listOf(baseFunction),
                                     ) + mediaTypeFunctions.map { listOf(it) }
-                                ).map { it.withBearerTokenWrapper(securityPlan) }
+                                ).map { it.withBearerTokenWrapper(securityPlan).withOAuth2TokenWrapper(oauth2Plan) }
                             }
                         }.withoutCollidingMediaTypeFunctions(enhancedClientName(resourceName))
 
