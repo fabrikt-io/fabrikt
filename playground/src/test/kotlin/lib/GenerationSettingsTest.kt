@@ -33,6 +33,7 @@ class GenerationSettingsTest {
         val options = setOf(
             ModelCodeGenOptionType.EXCLUDE_READ_ONLY,
             ModelCodeGenOptionType.EXCLUDE_WRITE_ONLY,
+            ModelCodeGenOptionType.REQUEST_RESPONSE_MODELS,
         )
         val settings = Parameters.build {
             options.forEach { append("modelOptions", it.name) }

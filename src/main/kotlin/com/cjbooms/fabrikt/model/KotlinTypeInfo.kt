@@ -140,6 +140,17 @@ sealed class KotlinTypeInfo(
     companion object {
         private val logger = Logger.getGlobal()
 
+        fun fromRequest(schema: OpenApiSchema): KotlinTypeInfo =
+            ModelNameRegistry.withDirection(ModelNameRegistry.Direction.REQUEST) { from(schema) }
+
+        fun fromResponse(schema: OpenApiSchema): KotlinTypeInfo =
+            ModelNameRegistry.withDirection(ModelNameRegistry.Direction.RESPONSE) { from(schema) }
+
+        fun fromRequestParameterSchema(
+            schema: OpenApiSchema,
+            oasKey: String,
+        ): KotlinTypeInfo = ModelNameRegistry.withDirection(ModelNameRegistry.Direction.REQUEST) { fromParameterSchema(schema, oasKey) }
+
         fun from(
             schema: OpenApiSchema,
             oasKey: String = "",

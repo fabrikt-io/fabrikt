@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt.model
 
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.generators.MutableSettings
+import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getKeyIfSingleDiscriminatorValue
@@ -51,9 +52,11 @@ sealed class PropertyInfo {
         val HTTP_SETTINGS: Settings
             get() {
                 val excludeReadOnly =
-                    ModelCodeGenOptionType.EXCLUDE_READ_ONLY in MutableSettings.modelOptions
+                    ModelCodeGenOptionType.EXCLUDE_READ_ONLY in MutableSettings.modelOptions ||
+                        ModelNameRegistry.direction == ModelNameRegistry.Direction.REQUEST
                 val excludeWriteOnly =
-                    ModelCodeGenOptionType.EXCLUDE_WRITE_ONLY in MutableSettings.modelOptions
+                    ModelCodeGenOptionType.EXCLUDE_WRITE_ONLY in MutableSettings.modelOptions ||
+                        ModelNameRegistry.direction == ModelNameRegistry.Direction.RESPONSE
                 return Settings(
                     markReadWriteOnlyOptional = !excludeReadOnly && !excludeWriteOnly,
                     excludeReadOnly = excludeReadOnly,

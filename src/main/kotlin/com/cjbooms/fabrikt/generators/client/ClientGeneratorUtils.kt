@@ -81,7 +81,7 @@ object ClientGeneratorUtils {
             if (hasOnlyJsonSuccessResponses()) JSON_NODE_CLASS else Any::class
         } else {
             this.getPrimaryContentMediaType()?.let {
-                KotlinTypeInfo.from(it.value.schema)
+                KotlinTypeInfo.fromResponse(it.value.schema)
             } ?: Unit::class
         }
 
@@ -232,7 +232,7 @@ object ClientGeneratorUtils {
                 it.originalName.equals(ACCEPT_HEADER_NAME, ignoreCase = true)
         }
 
-    fun ResponseMediaType.modelType(packages: Packages): TypeName = toModelType(packages.base, KotlinTypeInfo.from(schema))
+    fun ResponseMediaType.modelType(packages: Packages): TypeName = toModelType(packages.base, KotlinTypeInfo.fromResponse(schema))
 
     fun List<List<ClientFunction>>.withoutCollidingMediaTypeFunctions(clientName: String): List<FunSpec> {
         val baseNames = flatten().filterNot { it.isMediaTypeFunction }.map { it.spec.name }.toSet()
