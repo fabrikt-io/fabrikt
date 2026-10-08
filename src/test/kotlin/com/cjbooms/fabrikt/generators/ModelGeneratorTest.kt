@@ -44,6 +44,7 @@ class ModelGeneratorTest {
         Stream.of(
             "allOfParentOrder",
             "namedOneOfDeduction",
+            "composedOneOf",
             "additionalModelAnnotations",
             "additionalProperties",
             "arrays",
