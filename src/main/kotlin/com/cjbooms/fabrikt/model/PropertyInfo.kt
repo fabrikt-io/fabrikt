@@ -1,5 +1,7 @@
 package com.cjbooms.fabrikt.model
 
+import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
+import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getKeyIfSingleDiscriminatorValue
@@ -42,9 +44,23 @@ sealed class PropertyInfo {
             val markReadWriteOnlyOptional: Boolean = true,
             val markAllOptional: Boolean = false,
             val excludeWriteOnly: Boolean = false,
-        )
+            val excludeReadOnly: Boolean = false,
+        ) {
+            fun excludes(schema: Schema): Boolean = (excludeReadOnly && schema.isReadOnly) || (excludeWriteOnly && schema.isWriteOnly)
+        }
 
-        val HTTP_SETTINGS = Settings()
+        val HTTP_SETTINGS: Settings
+            get() {
+                val excludeReadOnly =
+                    ModelCodeGenOptionType.EXCLUDE_READ_ONLY in MutableSettings.modelOptions
+                val excludeWriteOnly =
+                    ModelCodeGenOptionType.EXCLUDE_WRITE_ONLY in MutableSettings.modelOptions
+                return Settings(
+                    markReadWriteOnlyOptional = !excludeReadOnly && !excludeWriteOnly,
+                    excludeReadOnly = excludeReadOnly,
+                    excludeWriteOnly = excludeWriteOnly,
+                )
+            }
 
         internal fun Schema.topLevelProperties(
             settings: Settings,
@@ -129,6 +145,7 @@ sealed class PropertyInfo {
 
             val mainProperties: List<PropertyInfo> =
                 properties
+                    .filterNot { (_, schema) -> settings.excludes(schema) }
                     .map { property ->
                         val oasKey = property.key
                         val name = names[oasKey]!!
@@ -261,30 +278,26 @@ sealed class PropertyInfo {
                                 }
 
                             else ->
-                                if (property.value.isWriteOnly && settings.excludeWriteOnly) {
-                                    null
-                                } else {
-                                    Field(
-                                        isRequired =
-                                            isRequired(
-                                                api,
-                                                property,
-                                                settings.markReadWriteOnlyOptional,
-                                                settings.markAllOptional,
-                                                additionalRequiredFields = additionalRequiredFields,
-                                            ),
-                                        name = name,
-                                        oasKey = oasKey,
-                                        schema = property.value,
-                                        isInherited = settings.markAsInherited,
-                                        isPolymorphicDiscriminator = isDiscriminatorProperty(api, property),
-                                        maybeDiscriminator =
-                                            enclosingSchema?.let {
-                                                this.getKeyIfSingleDiscriminatorValue(api, property, it)
-                                            },
-                                        enclosingSchema = if (property.value.isInlinedEnumDefinition()) this else null,
-                                    )
-                                }
+                                Field(
+                                    isRequired =
+                                        isRequired(
+                                            api,
+                                            property,
+                                            settings.markReadWriteOnlyOptional,
+                                            settings.markAllOptional,
+                                            additionalRequiredFields = additionalRequiredFields,
+                                        ),
+                                    name = name,
+                                    oasKey = oasKey,
+                                    schema = property.value,
+                                    isInherited = settings.markAsInherited,
+                                    isPolymorphicDiscriminator = isDiscriminatorProperty(api, property),
+                                    maybeDiscriminator =
+                                        enclosingSchema?.let {
+                                            this.getKeyIfSingleDiscriminatorValue(api, property, it)
+                                        },
+                                    enclosingSchema = if (property.value.isInlinedEnumDefinition()) this else null,
+                                )
                         }
                     }.filterNotNull()
 
