@@ -54,6 +54,7 @@ class OpenFeignInterfaceGenerator(
     private val api: SourceApi,
 ) : ClientGenerator {
     private val bearerSecurity = ClientBearerSecurity(api.openApi3)
+    private val oauth2Security = ClientOAuth2Security(api.openApi3)
 
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
         val clientTypes =
@@ -68,6 +69,14 @@ class OpenFeignInterfaceGenerator(
                                     val securityPlan =
                                         if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
                                             bearerSecurity.forOperation(operation)
+                                        } else {
+                                            null
+                                        }
+                                    val oauth2Plan =
+                                        if (ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION in
+                                            options
+                                        ) {
+                                            oauth2Security.forOperation(operation)
                                         } else {
                                             null
                                         }
@@ -104,7 +113,11 @@ class OpenFeignInterfaceGenerator(
                                                 },
                                             ).map { ClientFunction(it, isMediaTypeFunction = true) }
                                         }
-                                    (listOf(baseGroup) + mediaTypeGroups).map { it.withBearerTokenWrapper(securityPlan) }
+                                    (
+                                        listOf(
+                                            baseGroup,
+                                        ) + mediaTypeGroups
+                                    ).map { it.withBearerTokenWrapper(securityPlan).withOAuth2TokenWrapper(oauth2Plan) }
                                 }
                             }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 
