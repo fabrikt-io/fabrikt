@@ -9,7 +9,6 @@ import io.micronaut.http.`annotation`.Get
 import io.micronaut.http.`annotation`.PathVariable
 import io.micronaut.http.`annotation`.Produces
 import io.micronaut.security.rules.SecurityRule
-import javax.validation.Valid
 import kotlin.String
 import kotlin.collections.List
 
@@ -31,8 +30,8 @@ public interface CookiesController {
         @PathVariable(value = "id") id: String,
         @CookieValue(value = "sessionId") sessionId: String,
         @CookieValue(value = "displayMode") displayMode: DisplayMode,
-        @Valid @CookieValue(value = "features") features: List<String>,
+        @CookieValue(value = "features") features: List<String>,
         @CookieValue(value = "locale") locale: String?,
-        @Valid @CookieValue(value = "scopes") scopes: List<String>?,
+        @CookieValue(value = "scopes") scopes: List<String>?,
     ): HttpResponse<CookiePreferences>
 }

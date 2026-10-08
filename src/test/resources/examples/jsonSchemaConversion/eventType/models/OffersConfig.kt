@@ -22,8 +22,7 @@ public data class OffersConfig(
   public val state: State,
   @param:JsonProperty("campaigns")
   @get:JsonProperty("campaigns")
-  @get:Valid
-  public val campaigns: List<Campaign>? = null,
+  public val campaigns: List<@Valid Campaign>? = null,
   @param:JsonProperty("release_restrictions")
   @get:JsonProperty("release_restrictions")
   public val releaseRestrictions: Any? = null,

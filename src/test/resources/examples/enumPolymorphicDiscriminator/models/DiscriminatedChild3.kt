@@ -12,8 +12,7 @@ public data class DiscriminatedChild3(
   override val inlineObj: ChildDefinitionInlineObj? = null,
   @param:JsonProperty("inline_array")
   @get:JsonProperty("inline_array")
-  @get:Valid
-  override val inlineArray: List<ChildDefinitionInlineArray>? = null,
+  override val inlineArray: List<@Valid ChildDefinitionInlineArray>? = null,
   @param:JsonProperty("inline_enum")
   @get:JsonProperty("inline_enum")
   override val inlineEnum: ChildDefinitionInlineEnum? = null,

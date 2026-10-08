@@ -388,8 +388,8 @@ public interface RepositoriesController {
     public fun `get`(
         @Min(1) @Max(100) @QueryValue(value = "limit", defaultValue = "10") limit: Int,
         @Header(value = "X-Flow-Id") xFlowId: String?,
-        @Valid @QueryValue(value = "slug") slug: List<String>?,
-        @Valid @QueryValue(value = "name") name: List<String>?,
+        @QueryValue(value = "slug") slug: List<String>?,
+        @QueryValue(value = "name") name: List<String>?,
         @QueryValue(value = "include_inactive") includeInactive: Boolean?,
         @QueryValue(value = "cursor") cursor: String?,
     ): HttpResponse<RepositoryQueryResult>

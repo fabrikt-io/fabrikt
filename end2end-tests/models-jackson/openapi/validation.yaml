@@ -57,6 +57,38 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/StringValue'
+    NestedSetValue:
+      type: object
+      required: [value]
+      properties:
+        value:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/StringValue'
+    MapValue:
+      type: object
+      required: [value]
+      properties:
+        value:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/StringValue'
+    TypedMapValue:
+      type: object
+      required: [value]
+      properties:
+        value:
+          type: object
+          additionalProperties:
+            type: object
+            required: [text]
+            properties:
+              text:
+                type: string
+                minLength: 2
+                maxLength: 5
+                pattern: '^[a-z]+$'
     DirectEnumValue:
       type: object
       required: [value]

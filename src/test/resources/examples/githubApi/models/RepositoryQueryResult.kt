@@ -24,6 +24,5 @@ public data class RepositoryQueryResult(
   @get:JsonProperty("items")
   @get:NotNull
   @get:Size(min = 0)
-  @get:Valid
-  public val items: List<Repository>,
+  public val items: List<@Valid Repository>,
 )

@@ -155,8 +155,7 @@ public data class QueryResult(
     @get:JsonProperty("items")
     @get:NotNull
     @get:Size(min = 0)
-    @get:Valid
-    public val items: List<Content>,
+    public val items: List<@Valid Content>,
 )
 
 public data class SecondModel(

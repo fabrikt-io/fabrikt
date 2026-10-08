@@ -8,8 +8,7 @@ import kotlin.collections.List
 public data class ContainerArrayWithAnyOfAggregationOfMany(
   @param:JsonProperty("annotations")
   @get:JsonProperty("annotations")
-  @get:Valid
-  public val annotations: List<ContainerAnnotations>? = null,
+  public val annotations: List<@Valid ContainerAnnotations>? = null,
   /**
    * The identifier of the chat message.
    */

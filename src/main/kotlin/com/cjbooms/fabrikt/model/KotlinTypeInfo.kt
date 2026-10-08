@@ -127,6 +127,9 @@ sealed class KotlinTypeInfo(
                 else -> false
             }
 
+    val isContainer: kotlin.Boolean
+        get() = this is Array || this is Map
+
     val isPrimitiveType: kotlin.Boolean
         get() =
             when (this) {

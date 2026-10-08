@@ -18,6 +18,5 @@ public data class OrderHolder(
   public val choice: OrderX,
   @param:JsonProperty("choices")
   @get:JsonProperty("choices")
-  @get:Valid
-  public val choices: List<OrderX>? = null,
+  public val choices: List<@Valid OrderX>? = null,
 )

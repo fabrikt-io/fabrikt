@@ -8,8 +8,7 @@ import kotlin.collections.List
 public data class ThirdInlineObjectGeneration(
   @param:JsonProperty("urls")
   @get:JsonProperty("urls")
-  @get:Valid
-  public val urls: List<ThirdInlineObjectUrls>? = null,
+  public val urls: List<@Valid ThirdInlineObjectUrls>? = null,
   @param:JsonProperty("view_name")
   @get:JsonProperty("view_name")
   public val viewName: String? = null,

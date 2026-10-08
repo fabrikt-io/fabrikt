@@ -16,8 +16,7 @@ public data class BulkEntityDetails(
   @param:JsonProperty("entities")
   @get:JsonProperty("entities")
   @get:NotNull
-  @get:Valid
-  public val entities: List<EntityDetails>,
+  public val entities: List<@Valid EntityDetails>,
   @get:JsonIgnore
   public val properties: MutableMap<String, Any?> = mutableMapOf(),
 ) {

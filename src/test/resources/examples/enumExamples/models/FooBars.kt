@@ -10,6 +10,5 @@ public data class FooBars(
   public val propOne: List<FooBarsFoo>? = null,
   @param:JsonProperty("prop_two")
   @get:JsonProperty("prop_two")
-  @get:Valid
-  public val propTwo: List<Bar>? = null,
+  public val propTwo: List<@Valid Bar>? = null,
 )

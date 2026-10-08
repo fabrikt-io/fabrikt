@@ -29,9 +29,7 @@ public interface ItemsController {
         method = [RequestMethod.GET],
     )
     public fun `get`(
-        @Valid @RequestParam(value = "category", required = false)
-        category: List<SomeEnum>?,
-        @Valid @RequestParam(value = "status", required = false)
-        status: List<Something>?,
+        @RequestParam(value = "category", required = false) category: List<SomeEnum>?,
+        @RequestParam(value = "status", required = false) status: List<@Valid Something>?,
     ): ResponseEntity<List<ArrayContainingComplexInlined>>
 }

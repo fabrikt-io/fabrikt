@@ -11,6 +11,5 @@ public data class SomeRequest(
   public val id: BigDecimal? = null,
   @param:JsonProperty("events")
   @get:JsonProperty("events")
-  @get:Valid
-  public val events: List<Test>? = null,
+  public val events: List<@Valid Test>? = null,
 )

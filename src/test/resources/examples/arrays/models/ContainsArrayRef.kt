@@ -9,6 +9,5 @@ public data class ContainsArrayRef(
   @param:JsonProperty("weight_on_mars")
   @get:JsonProperty("weight_on_mars")
   @get:NotNull
-  @get:Valid
-  public val weightOnMars: List<ArrayRef>,
+  public val weightOnMars: List<@Valid ArrayRef>,
 )

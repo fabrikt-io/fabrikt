@@ -19,8 +19,7 @@ public data class MapHolderDto(
   public val stringMap: Map<String, String?>? = null,
   @param:JsonProperty("typed_object_map")
   @get:JsonProperty("typed_object_map")
-  @get:Valid
-  public val typedObjectMap: Map<String, TypedObjectMapValueDto?>? = null,
+  public val typedObjectMap: Map<String, @Valid TypedObjectMapValueDto?>? = null,
   @param:JsonProperty("object_map")
   @get:JsonProperty("object_map")
   public val objectMap: Map<String, Map<String, Any?>?>? = null,
@@ -35,8 +34,7 @@ public data class MapHolderDto(
   public val inlinedUnknownMap: Map<String, Any?>? = null,
   @param:JsonProperty("inlined_typed_object_map")
   @get:JsonProperty("inlined_typed_object_map")
-  @get:Valid
-  public val inlinedTypedObjectMap: Map<String, InlinedTypedObjectMapValueDto?>? = null,
+  public val inlinedTypedObjectMap: Map<String, @Valid InlinedTypedObjectMapValueDto?>? = null,
   @param:JsonProperty("complex_object_with_untyped_map")
   @get:JsonProperty("complex_object_with_untyped_map")
   @get:Valid
