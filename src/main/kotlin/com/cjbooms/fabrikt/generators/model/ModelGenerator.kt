@@ -263,6 +263,15 @@ class ModelGenerator(
                 )
             when {
                 properties.isNotEmpty() ||
+                    (
+                        (HTTP_SETTINGS.excludeReadOnly || HTTP_SETTINGS.excludeWriteOnly) &&
+                            schemaInfo.schema
+                                .topLevelProperties(
+                                    HTTP_SETTINGS.copy(excludeReadOnly = false, excludeWriteOnly = false),
+                                    api,
+                                    schemaInfo.schema,
+                                ).isNotEmpty()
+                    ) ||
                     schemaInfo.typeInfo is KotlinTypeInfo.Enum ||
                     schemaInfo.schema.findOneOfSuperInterface(schemas.map { it.schema }).isNotEmpty() -> {
                     val primaryModel = buildPrimaryModel(api, schemaInfo, properties, schemas)
