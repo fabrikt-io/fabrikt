@@ -193,8 +193,7 @@ public data class OtherQueryResult(
     @get:JsonProperty("items")
     @get:NotNull
     @get:Size(min = 0)
-    @get:Valid
-    public val items: List<AlternateResponseModel>,
+    public val items: List<@Valid AlternateResponseModel>,
 )
 
 public data class QueryResult(
@@ -202,8 +201,7 @@ public data class QueryResult(
     @get:JsonProperty("items")
     @get:NotNull
     @get:Size(min = 0)
-    @get:Valid
-    public val items: List<Content>,
+    public val items: List<@Valid Content>,
 )
 
 public data class SecondModel(

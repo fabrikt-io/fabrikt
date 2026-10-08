@@ -85,7 +85,7 @@ class MicronautControllerInterfaceGenerator(
     ): FunSpec {
         val methodName = methodName(op, verb, path.pathString.isSingleResource())
         val returnType = MicronautImports.RESPONSE.parameterizedBy(op.toSuccessResponseType(packages.base))
-        val parameters = op.toIncomingParameters(packages.base, path.parameters, emptyList())
+        val parameters = op.toIncomingParameters(packages.base, path.parameters, emptyList(), validationAnnotations)
         val globalSecurity =
             this.api.openApi3.securityRequirements
                 .securitySupport()
@@ -118,7 +118,7 @@ class MicronautControllerInterfaceGenerator(
                                 AnnotationSpec
                                     .builder(MicronautImports.BODY)
                                     .build(),
-                            ).maybeAddAnnotation(validationAnnotations.parameterValid())
+                            ).maybeAddValidAnnotation(it)
                             .build()
 
                     is RequestParameter ->

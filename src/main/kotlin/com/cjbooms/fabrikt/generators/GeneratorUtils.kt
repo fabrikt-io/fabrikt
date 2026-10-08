@@ -265,6 +265,7 @@ object GeneratorUtils {
         basePackage: String,
         pathParameters: List<Parameter>,
         extraParameters: List<IncomingParameter>,
+        validationAnnotations: ValidationAnnotations? = null,
     ): List<IncomingParameter> {
         val bodies =
             if (hasMultipartRequestBody()) {
@@ -278,11 +279,13 @@ object GeneratorUtils {
                                         partSchema.itemsSchema.format == "binary" &&
                                         partSchema.itemsSchema.type == "string"
                                 )
+                        val partTypeInfo = KotlinTypeInfo.from(partSchema)
                         val type =
                             toModelType(
                                 basePackage,
-                                KotlinTypeInfo.from(partSchema),
+                                partTypeInfo,
                                 !multipartSchema.requiredFields.contains(partName),
+                                validationAnnotations,
                             )
                         val contentType =
                             when {
@@ -295,6 +298,7 @@ object GeneratorUtils {
                             oasName = partName,
                             description = partSchema.description,
                             type = type,
+                            typeInfo = partTypeInfo,
                             schema = partSchema,
                             partName = partName,
                             isBinaryFile = isBinaryFile,
@@ -307,6 +311,7 @@ object GeneratorUtils {
                 // Regular body parameters (non-multipart)
                 requestBody.contentMediaTypes.values
                     .map {
+                        val bodyTypeInfo = KotlinTypeInfo.from(it.schema)
                         BodyParameter(
                             oasName =
                                 it.schema
@@ -314,7 +319,8 @@ object GeneratorUtils {
                                     .toKotlinParameterName()
                                     .ifEmpty { it.schema.toVarName() },
                             description = requestBody.description,
-                            type = toModelType(basePackage, KotlinTypeInfo.from(it.schema)),
+                            type = toModelType(basePackage, bodyTypeInfo, validationAnnotations = validationAnnotations),
+                            typeInfo = bodyTypeInfo,
                             schema = it.schema,
                             isRequired = requestBody.isRequired,
                         )
@@ -328,6 +334,7 @@ object GeneratorUtils {
                             oasName = "body",
                             description = acc.description,
                             type = acc.type,
+                            typeInfo = acc.typeInfo,
                             schema = acc.schema,
                             isRequired = acc.isRequired && bodyParam.isRequired,
                         )
@@ -340,7 +347,12 @@ object GeneratorUtils {
                     RequestParameter(
                         it.name,
                         it.description,
-                        toModelType(basePackage, KotlinTypeInfo.fromParameterSchema(it.schema, ""), isNullable(it)),
+                        toModelType(
+                            basePackage,
+                            KotlinTypeInfo.fromParameterSchema(it.schema, ""),
+                            isNullable(it),
+                            validationAnnotations,
+                        ),
                         it,
                     )
                 }.sortedBy { it.type.isNullable }
@@ -362,6 +374,7 @@ object GeneratorUtils {
                         oasName = "multipart_${p.oasName}".toKotlinParameterName(),
                         description = p.description,
                         type = p.type,
+                        typeInfo = p.typeInfo,
                         schema = p.schema,
                         partName = p.partName,
                         isBinaryFile = p.isBinaryFile,
@@ -374,6 +387,7 @@ object GeneratorUtils {
                         oasName = "body_${p.oasName}".toKotlinParameterName(),
                         description = p.description,
                         type = p.type,
+                        typeInfo = p.typeInfo,
                         isRequired = p.isRequired,
                         schema = p.schema,
                     )

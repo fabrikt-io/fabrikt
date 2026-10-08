@@ -13,12 +13,10 @@ public data class SomeObj(
   public val state: State,
   @param:JsonProperty("arrayOfStates")
   @get:JsonProperty("arrayOfStates")
-  @get:Valid
-  public val arrayOfStates: List<State>? = null,
+  public val arrayOfStates: List<@Valid State>? = null,
   @param:JsonProperty("inlinedArray")
   @get:JsonProperty("inlinedArray")
-  @get:Valid
-  public val inlinedArray: List<SomeObjInlinedArray>? = null,
+  public val inlinedArray: List<@Valid SomeObjInlinedArray>? = null,
   @param:JsonProperty("inlinedObject")
   @get:JsonProperty("inlinedObject")
   @get:Valid

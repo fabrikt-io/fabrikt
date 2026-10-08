@@ -19,12 +19,11 @@ public data class MapHolder(
   public val stringMap: Map<String, String?>? = null,
   @param:JsonProperty("typed_object_map")
   @get:JsonProperty("typed_object_map")
-  @get:Valid
-  public val typedObjectMap: Map<String, TypedObjectMapValue?>? = null,
+  public val typedObjectMap: Map<String, @Valid TypedObjectMapValue?>? = null,
   @param:JsonProperty("typed_object_map_with_enum_value")
   @get:JsonProperty("typed_object_map_with_enum_value")
-  @get:Valid
-  public val typedObjectMapWithEnumValue: Map<String, TypedObjectMapWithEnumValueValue?>? = null,
+  public val typedObjectMapWithEnumValue: Map<String, @Valid TypedObjectMapWithEnumValueValue?>? =
+      null,
   @param:JsonProperty("object_map")
   @get:JsonProperty("object_map")
   public val objectMap: Map<String, Map<String, Any?>?>? = null,
@@ -39,8 +38,7 @@ public data class MapHolder(
   public val inlinedUnknownMap: Map<String, Any?>? = null,
   @param:JsonProperty("inlined_typed_object_map")
   @get:JsonProperty("inlined_typed_object_map")
-  @get:Valid
-  public val inlinedTypedObjectMap: Map<String, InlinedTypedObjectMapValue?>? = null,
+  public val inlinedTypedObjectMap: Map<String, @Valid InlinedTypedObjectMapValue?>? = null,
   @param:JsonProperty("complex_object_with_untyped_map")
   @get:JsonProperty("complex_object_with_untyped_map")
   @get:Valid

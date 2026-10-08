@@ -573,3 +573,62 @@ components:
     OrderSibling: {"allOf": [{"type": "object", "required": ["count"], "properties": {"count": {"type": "integer", "format": "int32"}}}, {"$ref": "#/components/schemas/OrderX"}]}
 
     OrderHolder: {"type": "object", "required": ["value", "choice"], "properties": {"value": {"$ref": "#/components/schemas/OrderX"}, "choice": {"oneOf": [{"$ref": "#/components/schemas/OrderChild"}, {"$ref": "#/components/schemas/OrderSibling"}]}, "choices": {"type": "array", "items": {"oneOf": [{"$ref": "#/components/schemas/OrderChild"}, {"$ref": "#/components/schemas/OrderSibling"}]}}}}
+    DeductionChoice: {"oneOf": [{"$ref": "#/components/schemas/DeductionA"}, {"$ref": "#/components/schemas/DeductionB"}], "x-jackson-subtype-deduction": true}
+
+    DeductionA: {"type": "object", "required": ["a"], "properties": {"a": {"type": "string", "minLength": 1}}}
+
+    DeductionB: {"type": "object", "required": ["b"], "properties": {"b": {"type": "integer", "format": "int32"}}}
+
+    DeductionHolder: {"type": "object", "required": ["value"], "properties": {"value": {"$ref": "#/components/schemas/DeductionChoice"}, "choices": {"type": "array", "items": {"$ref": "#/components/schemas/DeductionChoice"}, "default": []}, "byKey": {"type": "object", "additionalProperties": {"$ref": "#/components/schemas/DeductionChoice"}}, "optional": {"$ref": "#/components/schemas/DeductionChoice"}}}
+
+    ComposedNestedX: {"type": "object", "required": ["id"], "properties": {"id": {"type": "string", "minLength": 1}}}
+
+    ComposedNestedA: {"type": "object", "required": ["a"], "properties": {"a": {"type": "string"}}}
+
+    ComposedNestedB: {"type": "object", "required": ["b"], "properties": {"b": {"type": "integer", "format": "int32"}}}
+
+    ComposedNestedCombined: {"allOf": [{"$ref": "#/components/schemas/ComposedNestedX"}, {"oneOf": [{"$ref": "#/components/schemas/ComposedNestedA"}, {"$ref": "#/components/schemas/ComposedNestedB"}]}]}
+
+    ComposedNestedHolder: {"type": "object", "required": ["value"], "properties": {"value": {"$ref": "#/components/schemas/ComposedNestedCombined"}}}
+
+    ComposedNamedX: {"type": "object", "required": ["id"], "properties": {"id": {"type": "string", "minLength": 1}}}
+
+    ComposedNamedA: {"type": "object", "required": ["a"], "properties": {"a": {"type": "string"}}}
+
+    ComposedNamedB: {"type": "object", "required": ["b"], "properties": {"b": {"type": "integer", "format": "int32"}}}
+
+    ComposedNamedVariant: {"oneOf": [{"$ref": "#/components/schemas/ComposedNamedA"}, {"$ref": "#/components/schemas/ComposedNamedB"}]}
+
+    ComposedNamedCombined: {"allOf": [{"$ref": "#/components/schemas/ComposedNamedX"}, {"$ref": "#/components/schemas/ComposedNamedVariant"}]}
+
+    ComposedNamedHolder: {"type": "object", "required": ["value"], "properties": {"value": {"$ref": "#/components/schemas/ComposedNamedCombined"}}}
+
+    ComposedSiblingX: {"type": "object", "required": ["id"], "properties": {"id": {"type": "string", "minLength": 1}}}
+
+    ComposedSiblingA: {"type": "object", "required": ["a"], "properties": {"a": {"type": "string"}}}
+
+    ComposedSiblingB: {"type": "object", "required": ["b"], "properties": {"b": {"type": "integer", "format": "int32"}}}
+
+    ComposedSiblingCombined: {"allOf": [{"$ref": "#/components/schemas/ComposedSiblingX"}], "oneOf": [{"$ref": "#/components/schemas/ComposedSiblingA"}, {"$ref": "#/components/schemas/ComposedSiblingB"}]}
+
+    ComposedSiblingHolder: {"type": "object", "required": ["value"], "properties": {"value": {"$ref": "#/components/schemas/ComposedSiblingCombined"}}}
+
+    ComposedDeducedX: {"type": "object", "required": ["id"], "properties": {"id": {"type": "string", "minLength": 1}}}
+
+    ComposedDeducedA: {"type": "object", "required": ["a"], "properties": {"a": {"type": "string"}}}
+
+    ComposedDeducedB: {"type": "object", "required": ["b"], "properties": {"b": {"type": "integer", "format": "int32"}}}
+
+    ComposedDeducedCombined: {"allOf": [{"$ref": "#/components/schemas/ComposedDeducedX"}, {"oneOf": [{"$ref": "#/components/schemas/ComposedDeducedA"}, {"$ref": "#/components/schemas/ComposedDeducedB"}], "x-jackson-subtype-deduction": true}]}
+
+    ComposedDeducedHolder: {"type": "object", "required": ["value"], "properties": {"value": {"$ref": "#/components/schemas/ComposedDeducedCombined"}, "values": {"type": "array", "items": {"$ref": "#/components/schemas/ComposedDeducedCombined"}, "default": []}, "byKey": {"type": "object", "additionalProperties": {"$ref": "#/components/schemas/ComposedDeducedCombined"}}}}
+
+    ComposedTaggedX: {"type": "object", "required": ["id"], "properties": {"id": {"type": "string", "minLength": 1}}}
+
+    ComposedTaggedA: {"type": "object", "required": ["a", "kind"], "properties": {"a": {"type": "string"}, "kind": {"type": "string", "enum": ["a"]}}}
+
+    ComposedTaggedB: {"type": "object", "required": ["b", "kind"], "properties": {"b": {"type": "integer", "format": "int32"}, "kind": {"type": "string", "enum": ["b"]}}}
+
+    ComposedTaggedCombined: {"allOf": [{"$ref": "#/components/schemas/ComposedTaggedX"}, {"oneOf": [{"$ref": "#/components/schemas/ComposedTaggedA"}, {"$ref": "#/components/schemas/ComposedTaggedB"}], "discriminator": {"propertyName": "kind", "mapping": {"a": "#/components/schemas/ComposedTaggedA", "b": "#/components/schemas/ComposedTaggedB"}}}]}
+
+    ComposedTaggedHolder: {"type": "object", "required": ["value"], "properties": {"value": {"$ref": "#/components/schemas/ComposedTaggedCombined"}, "values": {"type": "array", "items": {"$ref": "#/components/schemas/ComposedTaggedCombined"}, "default": []}, "byKey": {"type": "object", "additionalProperties": {"$ref": "#/components/schemas/ComposedTaggedCombined"}}}}

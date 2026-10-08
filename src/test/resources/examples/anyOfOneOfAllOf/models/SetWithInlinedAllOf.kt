@@ -7,6 +7,5 @@ import java.util.LinkedHashSet
 public data class SetWithInlinedAllOf(
   @param:JsonProperty("items")
   @get:JsonProperty("items")
-  @get:Valid
-  public val items: LinkedHashSet<SetWithInlinedAllOfItems>? = null,
+  public val items: LinkedHashSet<@Valid SetWithInlinedAllOfItems>? = null,
 )

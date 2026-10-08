@@ -36,7 +36,14 @@ internal object OpenApiDocumentParser {
                 )
             } ?: input
         return try {
-            val source = SourceOpenApiDocumentParser.parse(effectiveInput, baseUri)
+            val normalized = YamlObjectMapper.instance.readTree(effectiveInput)
+            val normalizedInput =
+                if (ComposedOneOfNormalizer.normalize(normalized)) {
+                    YamlObjectMapper.instance.writeValueAsString(normalized)
+                } else {
+                    effectiveInput
+                }
+            val source = SourceOpenApiDocumentParser.parse(normalizedInput, baseUri)
             val kaizenInput = source.root.deepCopy<JsonNode>()
             OpenApi31Downgrader.downgradeIncompatibleElements(kaizenInput)
             OpenApiInputCleaner.resolveIntraDocumentParameterRefs(kaizenInput)

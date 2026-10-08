@@ -18,14 +18,12 @@ public data class Container(
   public val aggregationOfMany: ContainerAggregationOfMany? = null,
   @param:JsonProperty("arrayWithAllOfAggregationOfMany")
   @get:JsonProperty("arrayWithAllOfAggregationOfMany")
-  @get:Valid
-  public val arrayWithAllOfAggregationOfMany: List<ContainerArrayWithAllOfAggregationOfMany>? =
-      null,
+  public val arrayWithAllOfAggregationOfMany: List<@Valid ContainerArrayWithAllOfAggregationOfMany>?
+      = null,
   @param:JsonProperty("arrayWithAnyOfAggregationOfMany")
   @get:JsonProperty("arrayWithAnyOfAggregationOfMany")
-  @get:Valid
-  public val arrayWithAnyOfAggregationOfMany: List<ContainerArrayWithAnyOfAggregationOfMany>? =
-      null,
+  public val arrayWithAnyOfAggregationOfMany: List<@Valid ContainerArrayWithAnyOfAggregationOfMany>?
+      = null,
   @param:JsonProperty("arrayWithOneOf")
   @get:JsonProperty("arrayWithOneOf")
   public val arrayWithOneOf: List<Any>? = null,
@@ -44,6 +42,5 @@ public data class Container(
   public val aliasedInlineObject: ContainerAliasedInlineObject? = null,
   @param:JsonProperty("arrayOfAliasedFreeFormMap")
   @get:JsonProperty("arrayOfAliasedFreeFormMap")
-  @get:Valid
   public val arrayOfAliasedFreeFormMap: List<Map<String, Any?>>? = null,
 )

@@ -7,8 +7,7 @@ import kotlin.collections.List
 public data class NamedAggregatedArray(
   @param:JsonProperty("annotations")
   @get:JsonProperty("annotations")
-  @get:Valid
-  public val annotations: List<Annotations>? = null,
+  public val annotations: List<@Valid Annotations>? = null,
   @param:JsonProperty("metadata")
   @get:JsonProperty("metadata")
   @get:Valid

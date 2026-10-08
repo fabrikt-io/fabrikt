@@ -10,6 +10,5 @@ import kotlin.collections.List
 public data class ReferencedObjectWithArrayInlining(
   @param:JsonProperty("annotations")
   @get:JsonProperty("annotations")
-  @get:Valid
-  public val annotations: List<ReferencedObjectWithArrayInliningAnnotations>? = null,
+  public val annotations: List<@Valid ReferencedObjectWithArrayInliningAnnotations>? = null,
 )

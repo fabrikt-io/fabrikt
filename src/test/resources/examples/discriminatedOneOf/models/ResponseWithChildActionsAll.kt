@@ -7,6 +7,5 @@ import kotlin.collections.List
 public data class ResponseWithChildActionsAll(
   @param:JsonProperty("actions")
   @get:JsonProperty("actions")
-  @get:Valid
-  public val actions: List<ChildActionsAll>? = null,
+  public val actions: List<@Valid ChildActionsAll>? = null,
 )

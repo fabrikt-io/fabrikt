@@ -8,6 +8,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 public data class ResponseWithChildActionsPartial(
   @SerialName("actions")
-  @get:Valid
-  public val actions: List<ChildActionsPartial>? = null,
+  public val actions: List<@Valid ChildActionsPartial>? = null,
 )

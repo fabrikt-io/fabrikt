@@ -18,8 +18,7 @@ public data class EventResults(
   @get:JsonProperty("change_events")
   @get:NotNull
   @get:Size(min = 0)
-  @get:Valid
-  public val changeEvents: List<Event>,
+  public val changeEvents: List<@Valid Event>,
   @get:JsonIgnore
   public val properties: MutableMap<String, Any?> = mutableMapOf(),
 ) {

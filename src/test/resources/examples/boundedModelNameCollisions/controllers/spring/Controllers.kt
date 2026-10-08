@@ -11,7 +11,6 @@ import org.springframework.validation.`annotation`.Validated
 import org.springframework.web.bind.`annotation`.RequestMapping
 import org.springframework.web.bind.`annotation`.RequestMethod
 import org.springframework.web.bind.`annotation`.RequestParam
-import javax.validation.Valid
 import kotlin.Unit
 import kotlin.collections.List
 
@@ -30,8 +29,7 @@ public interface AController {
         method = [RequestMethod.GET],
     )
     public fun getA(
-        @Valid @RequestParam(value = "${'$'}select", required = false)
-        select: List<Select>?,
+        @RequestParam(value = "${'$'}select", required = false) select: List<Select>?,
     ): ResponseEntity<Unit>
 }
 
@@ -50,7 +48,7 @@ public interface BController {
         method = [RequestMethod.GET],
     )
     public fun getB(
-        @Valid @RequestParam(value = "${'$'}select", required = false)
+        @RequestParam(value = "${'$'}select", required = false)
         select: List<SelectExtra>?,
     ): ResponseEntity<Unit>
 }
@@ -70,7 +68,7 @@ public interface CController {
         method = [RequestMethod.GET],
     )
     public fun getC(
-        @Valid @RequestParam(value = "${'$'}select", required = false)
+        @RequestParam(value = "${'$'}select", required = false)
         select: List<SelectExtra2>?,
     ): ResponseEntity<Unit>
 }

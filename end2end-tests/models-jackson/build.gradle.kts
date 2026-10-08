@@ -103,6 +103,10 @@ tasks {
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+        // Generated models place cascading `@Valid` on container type arguments (e.g. `List<@Valid Foo>`).
+        // Kotlin only emits type-argument annotations into bytecode with this flag, which is required for
+        // Hibernate Validator to see the cascade at runtime.
+        compilerOptions.freeCompilerArgs.add("-Xemit-jvm-type-annotations")
         dependsOn(generateCodeTask)
         dependsOn(generatePrimitiveTypesCodeTask)
         dependsOn(generateStringFormatOverrideCodeTask)

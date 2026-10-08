@@ -11,6 +11,5 @@ public data class QueryResult(
   @get:JsonProperty("items")
   @get:NotNull
   @get:Size(min = 0)
-  @get:Valid
-  public val items: List<FirstModel>,
+  public val items: List<@Valid FirstModel>,
 )

@@ -29,6 +29,19 @@ class GenerationSettingsTest {
     }
 
     @Test
+    fun directionalModelOptions() {
+        val options = setOf(
+            ModelCodeGenOptionType.EXCLUDE_READ_ONLY,
+            ModelCodeGenOptionType.EXCLUDE_WRITE_ONLY,
+        )
+        val settings = Parameters.build {
+            options.forEach { append("modelOptions", it.name) }
+        }.receiveGenerationSettings()
+        assertEquals(options, settings.modelOptions)
+        options.forEach { assertTrue(settings.toQueryParams().contains("modelOptions=${it.name}")) }
+    }
+
+    @Test
     fun generatedAnnotationOutputOption() {
         val settings = Parameters.build {
             append("outputOptions", "ADD_GENERATED_ANNOTATION")

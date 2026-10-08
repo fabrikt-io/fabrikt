@@ -373,17 +373,9 @@ object PropertyUtils {
         }
 
         when (val typeInfo = info.typeInfo) {
-            is KotlinTypeInfo.Map -> {
-                if (typeInfo.parameterizedType.isComplexType) {
-                    maybeAddAnnotation(validationAnnotations.fieldValid())
-                }
-            }
-
-            is KotlinTypeInfo.Array -> {
-                if (typeInfo.parameterizedType.isComplexType) {
-                    maybeAddAnnotation(validationAnnotations.fieldValid())
-                }
-            }
+            // Container element @Valid is emitted as a type-argument annotation in
+            // ModelGenerator.toModelType, not as a @get:Valid on the container.
+            is KotlinTypeInfo.Map, is KotlinTypeInfo.Array -> Unit
 
             else -> {
                 if (typeInfo.isComplexType) {
