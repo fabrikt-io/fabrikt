@@ -22,16 +22,8 @@ import kotlin.collections.Map
     visible = true,
 )
 @JsonSubTypes(
-    JsonSubTypes.Type(
-        value = FirstModel::class,
-        name =
-            "first_model",
-    ),
-    JsonSubTypes.Type(
-        value = SecondModel::class,
-        name =
-            "second_model",
-    ),
+    JsonSubTypes.Type(value = FirstModel::class, name = "first_model"),
+    JsonSubTypes.Type(value = SecondModel::class, name = "second_model"),
     JsonSubTypes.Type(value = ThirdModel::class, name = "third_model"),
 )
 public sealed class Content(

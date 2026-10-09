@@ -46,13 +46,13 @@ public data class MapHolderDto(
   @param:JsonProperty("inlined_complex_object_with_untyped_map")
   @get:JsonProperty("inlined_complex_object_with_untyped_map")
   @get:Valid
-  public val inlinedComplexObjectWithUntypedMap: MapHolderDtoInlinedComplexObjectWithUntypedMapDto?
-      = null,
+  public val inlinedComplexObjectWithUntypedMap:
+      MapHolderDtoInlinedComplexObjectWithUntypedMapDto? = null,
   @param:JsonProperty("inlined_complex_object_with_typed_map")
   @get:JsonProperty("inlined_complex_object_with_typed_map")
   @get:Valid
-  public val inlinedComplexObjectWithTypedMap: MapHolderDtoInlinedComplexObjectWithTypedMapDto? =
-      null,
+  public val inlinedComplexObjectWithTypedMap:
+      MapHolderDtoInlinedComplexObjectWithTypedMapDto? = null,
   @get:JsonIgnore
   public val properties: MutableMap<String, Map<String, ExternalObjectFourDto?>?> = mutableMapOf(),
 ) {

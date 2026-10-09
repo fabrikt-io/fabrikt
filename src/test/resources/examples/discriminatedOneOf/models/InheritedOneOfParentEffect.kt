@@ -9,6 +9,5 @@ import com.fasterxml.jackson.`annotation`.JsonTypeInfo
   property = "kind",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = InheritedOneOfBranchA::class, name =
-    "a"),JsonSubTypes.Type(value = InheritedOneOfBranchB::class, name = "b"))
+@JsonSubTypes(JsonSubTypes.Type(value = InheritedOneOfBranchA::class, name = "a"),JsonSubTypes.Type(value = InheritedOneOfBranchB::class, name = "b"))
 public sealed interface InheritedOneOfParentEffect

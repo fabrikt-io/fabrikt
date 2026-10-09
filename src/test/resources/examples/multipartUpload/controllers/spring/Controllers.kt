@@ -59,8 +59,7 @@ public interface ApiUploadSimpleController {
         consumes = ["multipart/form-data"],
     )
     public fun uploadSingleFile(
-        @RequestPart(value = "file", required = true) @Valid
-        `file`: MultipartFile,
+        @RequestPart(value = "file", required = true) @Valid `file`: MultipartFile,
     ): ResponseEntity<SimpleUploadResult>
 }
 

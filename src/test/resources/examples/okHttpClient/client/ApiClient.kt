@@ -311,8 +311,7 @@ public class ExamplePath4OnlyFailureResponseClient(
      */
     @Throws(ApiException::class)
     public fun postExamplePath4OnlyFailureResponse(
-        additionalHeaders: Map<String, String> =
-            emptyMap(),
+        additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<Unit> {
         val httpUrl: HttpUrl =

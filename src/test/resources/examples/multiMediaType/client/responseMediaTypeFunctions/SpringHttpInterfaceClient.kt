@@ -83,8 +83,7 @@ public interface MultipleResponseSchemasClient {
      * GET with multiple response content schemas
      *
      *
-     * Always sends Accept: application/json; use [getMultipleResponseSchemas] to choose another
-     * representation.
+     * Always sends Accept: application/json; use [getMultipleResponseSchemas] to choose another representation.
      */
     @HttpExchange(
         url = "/multiple-response-schemas",
@@ -92,8 +91,7 @@ public interface MultipleResponseSchemasClient {
         accept = ["application/json"],
     )
     public fun getMultipleResponseSchemasJson(
-        @RequestHeader additionalHeaders: Map<String, Any> =
-            emptyMap(),
+        @RequestHeader additionalHeaders: Map<String, Any> = emptyMap(),
         @RequestParam additionalQueryParameters: Map<String, Any> = emptyMap(),
     ): QueryResult
 
@@ -101,8 +99,7 @@ public interface MultipleResponseSchemasClient {
      * GET with multiple response content schemas
      *
      *
-     * Always sends Accept: application/vnd.custom.media+json; use [getMultipleResponseSchemas] to
-     * choose another representation.
+     * Always sends Accept: application/vnd.custom.media+json; use [getMultipleResponseSchemas] to choose another representation.
      */
     @HttpExchange(
         url = "/multiple-response-schemas",
@@ -110,10 +107,8 @@ public interface MultipleResponseSchemasClient {
         accept = ["application/vnd.custom.media+json"],
     )
     public fun getMultipleResponseSchemasVndCustomMediaJson(
-        @RequestHeader
-        additionalHeaders: Map<String, Any> = emptyMap(),
-        @RequestParam
-        additionalQueryParameters: Map<String, Any> = emptyMap(),
+        @RequestHeader additionalHeaders: Map<String, Any> = emptyMap(),
+        @RequestParam additionalQueryParameters: Map<String, Any> = emptyMap(),
     ): OtherQueryResult
 }
 
@@ -128,9 +123,7 @@ public interface DifferentSuccessAndErrorResponseSchemaClient {
         accept = ["application/json"],
     )
     public fun getDifferentSuccessAndErrorResponseSchema(
-        @RequestHeader
-        additionalHeaders: Map<String, Any> = emptyMap(),
-        @RequestParam
-        additionalQueryParameters: Map<String, Any> = emptyMap(),
+        @RequestHeader additionalHeaders: Map<String, Any> = emptyMap(),
+        @RequestParam additionalQueryParameters: Map<String, Any> = emptyMap(),
     ): SuccessResponse
 }

@@ -14,7 +14,6 @@ import com.cjbooms.fabrikt.model.toFileSpec
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
 import com.cjbooms.fabrikt.util.Linter
 import com.cjbooms.fabrikt.util.ModelNameRegistry
-import com.cjbooms.fabrikt.util.ResourceHelper.readFolder
 import com.cjbooms.fabrikt.util.ResourceHelper.readTextResource
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -26,7 +25,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.nio.file.Path
 import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -217,17 +215,13 @@ class KtorControllerInterfaceGeneratorTest {
                 api,
             )
 
-        val expectedFiles = readFolder(Path.of("src/test/resources/examples/fileComment/controllers/ktor"))
-
         val controllers = generator.generate()
         val lib = generator.generateLibrary()
 
         val files = controllers.files + lib.toFileSpec()
 
         files.forEach { file ->
-            val key = "${file.name}.kt"
-            val content = file.toString()
-            assertThat(content).isEqualTo(expectedFiles[key])
+            assertThatGenerated(file.toString()).isEqualTo("/examples/fileComment/controllers/ktor/${file.name}.kt")
         }
     }
 

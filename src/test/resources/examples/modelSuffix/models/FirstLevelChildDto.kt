@@ -14,9 +14,7 @@ import kotlin.String
   property = "firstLevelDiscriminator",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = SecondLevelChild1Dto::class, name =
-    "secondLevelChild1"),JsonSubTypes.Type(value = SecondLevelChild2Dto::class, name =
-    "secondLevelChild2"))
+@JsonSubTypes(JsonSubTypes.Type(value = SecondLevelChild1Dto::class, name = "secondLevelChild1"),JsonSubTypes.Type(value = SecondLevelChild2Dto::class, name = "secondLevelChild2"))
 public sealed class FirstLevelChildDto(
   @param:JsonProperty("rootField1")
   @get:JsonProperty("rootField1")

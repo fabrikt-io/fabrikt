@@ -31,8 +31,7 @@ public class CookiesClient(
      * 	 @param scopes
      *
      * Returns:
-     * 	[NetworkResult.Success] with [examples.cookieParameters.models.CookiePreferences] if the
-     * request was successful.
+     * 	[NetworkResult.Success] with [examples.cookieParameters.models.CookiePreferences] if the request was successful.
      * 	[NetworkResult.Failure] with a [NetworkError] if the request failed.
      */
     public suspend fun getCookiePreferences(

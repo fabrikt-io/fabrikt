@@ -84,14 +84,12 @@ public interface MultipleResponseSchemasClient {
      * GET with multiple response content schemas
      *
      *
-     * Always sends Accept: application/json; use [getMultipleResponseSchemas] to choose another
-     * representation.
+     * Always sends Accept: application/json; use [getMultipleResponseSchemas] to choose another representation.
      */
     @RequestLine("GET /multiple-response-schemas")
     @Headers("Accept: application/json")
     public fun getMultipleResponseSchemasJson(
-        @HeaderMap additionalHeaders: Map<String, String> =
-            emptyMap(),
+        @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
         @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     ): QueryResult
 
@@ -99,16 +97,13 @@ public interface MultipleResponseSchemasClient {
      * GET with multiple response content schemas
      *
      *
-     * Always sends Accept: application/vnd.custom.media+json; use [getMultipleResponseSchemas] to
-     * choose another representation.
+     * Always sends Accept: application/vnd.custom.media+json; use [getMultipleResponseSchemas] to choose another representation.
      */
     @RequestLine("GET /multiple-response-schemas")
     @Headers("Accept: application/vnd.custom.media+json")
     public fun getMultipleResponseSchemasVndCustomMediaJson(
-        @HeaderMap
-        additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     ): OtherQueryResult
 }
 
@@ -120,9 +115,7 @@ public interface DifferentSuccessAndErrorResponseSchemaClient {
     @RequestLine("GET /different-success-and-error-response-schema")
     @Headers("Accept: application/json")
     public fun getDifferentSuccessAndErrorResponseSchema(
-        @HeaderMap
-        additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     ): SuccessResponse
 }

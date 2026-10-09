@@ -9,4 +9,6 @@ import kotlinx.serialization.Serializable
 public data class ChildActionA(
   @SerialName("fieldA")
   public val fieldA: String? = null,
-) : ParentAction(), ChildActionsAll, ChildActionsPartial
+) : ParentAction(),
+    ChildActionsAll,
+    ChildActionsPartial

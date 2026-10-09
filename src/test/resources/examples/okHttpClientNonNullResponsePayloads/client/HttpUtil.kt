@@ -64,17 +64,14 @@ public fun <T> Request.execute(
 }
 
 @Throws(ApiException::class)
-public fun Request.execute(client: OkHttpClient): ApiResponse<ByteArray> =
-    doRequest(client) { response ->
+public fun Request.execute(client: OkHttpClient): ApiResponse<ByteArray> = doRequest(client) { response ->
   response.body?.deserialize() ?: ByteArray(0)
 }
 
 @Throws(ApiException::class)
-public fun Request.executeWithoutResponseBody(client: OkHttpClient): ApiResponse<Unit> =
-    doRequest(client) {}
+public fun Request.executeWithoutResponseBody(client: OkHttpClient): ApiResponse<Unit> = doRequest(client) {}
 
-private fun <T> Request.doRequest(client: OkHttpClient, bodyReader: (Response) -> T): ApiResponse<T>
-    = client.newCall(this).execute().use { response ->
+private fun <T> Request.doRequest(client: OkHttpClient, bodyReader: (Response) -> T): ApiResponse<T> = client.newCall(this).execute().use { response ->
   when {
     response.isSuccessful ->
       ApiResponse(response.code, response.headers, bodyReader(response))
@@ -89,8 +86,7 @@ private fun <T> Request.doRequest(client: OkHttpClient, bodyReader: (Response) -
 }
 
 @Suppress("unused")
-public fun String.pathParam(vararg params: Pair<String, Any>): String =
-    params.fold(this) { acc, param ->
+public fun String.pathParam(vararg params: Pair<String, Any>): String = params.fold(this) { acc, param ->
   acc.replace(param.first, param.second.toString())
 }
 

@@ -11,8 +11,8 @@ public data class ContainsArrayOfArrays(
   public val arrayOfArrays: List<List<@Valid Something>>? = null,
   @param:JsonProperty("absent-object-type-in-array")
   @get:JsonProperty("absent-object-type-in-array")
-  public val absentObjectTypeInArray: List<@Valid ContainsArrayOfArraysAbsentObjectTypeInArray>? =
-      null,
+  public val absentObjectTypeInArray:
+      List<@Valid ContainsArrayOfArraysAbsentObjectTypeInArray>? = null,
   @param:JsonProperty("a-nullable-array")
   @get:JsonProperty("a-nullable-array")
   public val aNullableArray: List<String?>? = null,

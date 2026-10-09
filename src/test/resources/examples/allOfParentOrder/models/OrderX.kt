@@ -10,8 +10,7 @@ import kotlin.String
   property = "kind",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = OrderChild::class, name = "child"),JsonSubTypes.Type(value =
-    OrderSibling::class, name = "sibling"))
+@JsonSubTypes(JsonSubTypes.Type(value = OrderChild::class, name = "child"),JsonSubTypes.Type(value = OrderSibling::class, name = "sibling"))
 public sealed class OrderX(
   public open val id: String,
 ) {

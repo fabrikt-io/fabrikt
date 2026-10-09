@@ -90,9 +90,7 @@ public interface DifferentSuccessAndErrorResponseSchemaClient {
         accept = ["application/json"],
     )
     public fun getDifferentSuccessAndErrorResponseSchema(
-        @RequestHeader
-        additionalHeaders: Map<String, Any> = emptyMap(),
-        @RequestParam
-        additionalQueryParameters: Map<String, Any> = emptyMap(),
+        @RequestHeader additionalHeaders: Map<String, Any> = emptyMap(),
+        @RequestParam additionalQueryParameters: Map<String, Any> = emptyMap(),
     ): SuccessResponse
 }

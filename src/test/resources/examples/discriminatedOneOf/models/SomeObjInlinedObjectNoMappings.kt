@@ -9,6 +9,5 @@ import com.fasterxml.jackson.`annotation`.JsonTypeInfo
   property = "type",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = OneObject::class, name =
-    "OneObject"),JsonSubTypes.Type(value = TwoObject::class, name = "TwoObject"))
+@JsonSubTypes(JsonSubTypes.Type(value = OneObject::class, name = "OneObject"),JsonSubTypes.Type(value = TwoObject::class, name = "TwoObject"))
 public sealed interface SomeObjInlinedObjectNoMappings

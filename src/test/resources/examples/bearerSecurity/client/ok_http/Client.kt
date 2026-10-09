@@ -54,14 +54,9 @@ public class ProtectedClient(
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<Unit> {
-        val bearerToken =
-            listOf("BearerAuth").firstNotNullOfOrNull { scheme ->
-                bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() }
-            }
+        val bearerToken = listOf("BearerAuth").firstNotNullOfOrNull { scheme -> bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() } }
         checkNotNull(bearerToken) { "A Bearer token is required for this operation" }
-        val bearerHeaders =
-            bearerToken?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val bearerHeaders = bearerToken?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getProtected(
             additionalHeaders = bearerHeaders,
             additionalQueryParameters = additionalQueryParameters,
@@ -147,13 +142,8 @@ public class OptionalClient(
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<Unit> {
-        val bearerToken =
-            listOf("BearerAuth").firstNotNullOfOrNull { scheme ->
-                bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() }
-            }
-        val bearerHeaders =
-            bearerToken?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val bearerToken = listOf("BearerAuth").firstNotNullOfOrNull { scheme -> bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() } }
+        val bearerHeaders = bearerToken?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getOptional(
             additionalHeaders = bearerHeaders,
             additionalQueryParameters = additionalQueryParameters,
@@ -239,13 +229,8 @@ public class AlternativeClient(
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<Unit> {
-        val bearerToken =
-            listOf("BearerAuth").firstNotNullOfOrNull { scheme ->
-                bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() }
-            }
-        val bearerHeaders =
-            bearerToken?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val bearerToken = listOf("BearerAuth").firstNotNullOfOrNull { scheme -> bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() } }
+        val bearerHeaders = bearerToken?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getAlternative(
             additionalHeaders = bearerHeaders,
             additionalQueryParameters = additionalQueryParameters,

@@ -30,13 +30,8 @@ public interface ExampleController {
         method = [RequestMethod.GET],
     )
     public fun `get`(
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) @RequestParam(
-            value = "bDateTime",
-            required =
-            true,
-        ) bDateTime: OffsetDateTime,
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) @RequestParam(value = "bDateTime", required = true) bDateTime: OffsetDateTime,
         @RequestParam(value = "cInt", required = true) cInt: Int,
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @RequestParam(value = "aDate", required = false)
-        aDate: LocalDate?,
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @RequestParam(value = "aDate", required = false) aDate: LocalDate?,
     ): ResponseEntity<Unit>
 }

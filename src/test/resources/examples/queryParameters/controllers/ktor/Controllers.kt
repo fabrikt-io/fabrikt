@@ -26,8 +26,7 @@ public interface QueryParamsController {
      * GET with required query parameter
      *
      * Route is expected to respond with [examples.queryParameters.models.QueryParamsResult].
-     * Use [examples.queryParameters.controllers.TypedApplicationCall.respondTyped] to send the
-     * response.
+     * Use [examples.queryParameters.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
      * @param name
      * @param order
@@ -74,12 +73,7 @@ public interface QueryParamsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -101,12 +95,7 @@ public interface QueryParamsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -116,9 +105,7 @@ public interface QueryParamsController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 

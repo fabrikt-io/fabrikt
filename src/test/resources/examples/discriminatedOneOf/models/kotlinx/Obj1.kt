@@ -11,4 +11,5 @@ public data class Obj1(
   @SerialName("id1")
   @get:NotNull
   public val id1: String,
-) : Poly1, Poly2
+) : Poly1,
+    Poly2

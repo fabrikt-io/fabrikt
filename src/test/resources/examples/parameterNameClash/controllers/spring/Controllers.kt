@@ -50,10 +50,6 @@ public interface ExampleController {
     )
     public fun post(
         @RequestBody @Valid bodySomeObject: SomeObject?,
-        @RequestParam(
-            value =
-                "querySomeObject",
-            required = true,
-        ) querySomeObject: String,
+        @RequestParam(value = "querySomeObject", required = true) querySomeObject: String,
     ): ResponseEntity<Unit>
 }

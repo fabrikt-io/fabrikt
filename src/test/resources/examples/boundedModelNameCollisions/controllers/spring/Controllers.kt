@@ -48,8 +48,7 @@ public interface BController {
         method = [RequestMethod.GET],
     )
     public fun getB(
-        @RequestParam(value = "${'$'}select", required = false)
-        select: List<SelectExtra>?,
+        @RequestParam(value = "${'$'}select", required = false) select: List<SelectExtra>?,
     ): ResponseEntity<Unit>
 }
 
@@ -68,8 +67,7 @@ public interface CController {
         method = [RequestMethod.GET],
     )
     public fun getC(
-        @RequestParam(value = "${'$'}select", required = false)
-        select: List<SelectExtra2>?,
+        @RequestParam(value = "${'$'}select", required = false) select: List<SelectExtra2>?,
     ): ResponseEntity<Unit>
 }
 

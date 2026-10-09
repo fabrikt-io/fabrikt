@@ -9,6 +9,5 @@ import com.fasterxml.jackson.`annotation`.JsonTypeInfo
   property = "type",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = Obj3::class, name = "obj3"),JsonSubTypes.Type(value =
-    Obj1::class, name = "obj1"))
+@JsonSubTypes(JsonSubTypes.Type(value = Obj3::class, name = "obj3"),JsonSubTypes.Type(value = Obj1::class, name = "obj1"))
 public sealed interface Poly2

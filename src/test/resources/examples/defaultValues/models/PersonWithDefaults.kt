@@ -39,8 +39,8 @@ public data class PersonWithDefaults(
   @get:JsonProperty("enum_quoted_default")
   @get:NotNull
   @param:JsonInclude(JsonInclude.Include.NON_NULL)
-  public val enumQuotedDefault: PersonWithDefaultsEnumQuotedDefault =
-      PersonWithDefaultsEnumQuotedDefault.`2X`,
+  public val enumQuotedDefault:
+      PersonWithDefaultsEnumQuotedDefault = PersonWithDefaultsEnumQuotedDefault.`2X`,
   @param:JsonProperty("boolean_default")
   @get:JsonProperty("boolean_default")
   @get:NotNull
