@@ -415,7 +415,7 @@ class ModelGenerator(
                                         it.name,
                                         props,
                                         it.schema,
-                                        oneOfInterfaces = emptySet(),
+                                        oneOfInterfaces = emptyList(),
                                     )
                                 val inlinedModels = buildInLinedModels(props, enclosingSchema, apiDocUrl)
                                 inlinedModels + currentModel
@@ -459,7 +459,7 @@ class ModelGenerator(
                                     schemaName = it.name,
                                     properties = props,
                                     schema = it.schema,
-                                    oneOfInterfaces = emptySet(),
+                                    oneOfInterfaces = emptyList(),
                                 )
                             buildInLinedModels(props, enclosingSchema, apiDocUrl) + currentModel
                         } else {
@@ -537,7 +537,7 @@ class ModelGenerator(
                                     schemaName = schemaName,
                                     properties = props,
                                     schema = schema,
-                                    oneOfInterfaces = emptySet(),
+                                    oneOfInterfaces = emptyList(),
                                 )
                         }
 
@@ -716,7 +716,7 @@ class ModelGenerator(
                 schemaName = schema.safeName(),
                 properties = props,
                 schema = schema,
-                oneOfInterfaces = emptySet(),
+                oneOfInterfaces = emptyList(),
             )
         return buildInLinedModels(props, enclosingSchema, apiDocUrl) + currentModel
     }
@@ -726,7 +726,7 @@ class ModelGenerator(
         schemaName: String,
         properties: Collection<PropertyInfo>,
         schema: Schema,
-        oneOfInterfaces: Set<Schema>,
+        oneOfInterfaces: List<Schema>,
     ): TypeSpec {
         val name = generatedType(packages.base, modelName)
         val generateObject = properties.isEmpty()
@@ -791,7 +791,7 @@ class ModelGenerator(
         discriminator: Discriminator,
         superType: SchemaInfo,
         extensions: Map<String, Any>,
-        oneOfSuperInterfaces: Set<Schema>,
+        oneOfSuperInterfaces: List<Schema>,
         allSchemas: List<SchemaInfo>,
     ): TypeSpec =
         with(FunSpec.constructorBuilder()) {
@@ -822,7 +822,7 @@ class ModelGenerator(
         discriminator: Discriminator?,
         allSchemas: List<SchemaInfo>,
         members: List<Schema>,
-        oneOfSuperInterfaces: Set<Schema>,
+        oneOfSuperInterfaces: List<Schema>,
         isSubTypeDeductionEnabled: Boolean,
     ): TypeSpec {
         val interfaceBuilder =
@@ -944,7 +944,7 @@ class ModelGenerator(
         properties: Collection<PropertyInfo>,
         discriminator: Discriminator,
         extensions: Map<String, Any>,
-        oneOfSuperInterfaces: Set<Schema>,
+        oneOfSuperInterfaces: List<Schema>,
         allSchemas: List<SchemaInfo>,
     ): TypeSpec =
         TypeSpec
@@ -965,7 +965,7 @@ class ModelGenerator(
         properties: Collection<PropertyInfo>,
         discriminator: Discriminator,
         extensions: Map<String, Any>,
-        oneOfSuperInterfaces: Set<Schema>,
+        oneOfSuperInterfaces: List<Schema>,
         allSchemas: List<SchemaInfo>,
         constructorBuilder: FunSpec.Builder = FunSpec.constructorBuilder(),
     ): TypeSpec.Builder {
@@ -1026,7 +1026,7 @@ class ModelGenerator(
         properties: Collection<PropertyInfo>,
         superType: SchemaInfo,
         extensions: Map<String, Any>,
-        oneOfSuperInterfaces: Set<Schema>,
+        oneOfSuperInterfaces: List<Schema>,
     ): TypeSpec =
         TypeSpec
             .classBuilder(generatedType(packages.base, modelName))
@@ -1038,7 +1038,7 @@ class ModelGenerator(
         allProperties: Collection<PropertyInfo>,
         superType: SchemaInfo,
         extensions: Map<String, Any>,
-        oneOfSuperInterfaces: Set<Schema>,
+        oneOfSuperInterfaces: List<Schema>,
         constructorBuilder: FunSpec.Builder = FunSpec.constructorBuilder(),
     ): TypeSpec.Builder {
         this

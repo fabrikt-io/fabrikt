@@ -5,7 +5,9 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toKCodeName
 import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isEnumDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaAbsent
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
 import com.cjbooms.fabrikt.util.YamlUtils
 import com.cjbooms.fabrikt.util.capitalized
 import com.cjbooms.fabrikt.util.effectiveRequestSchema
@@ -93,21 +95,23 @@ class SourceApi private constructor(
                     val rawSchema = content.values.first().schema
                     val schema = if (requestBody.value.contentMediaTypes.size > 1) rawSchema.effectiveRequestSchema() else rawSchema
                     if (schema.jsonPathFromRoot.contains("requestBodies") &&
-                        schema.oneOfSchemas.isEmpty() &&
-                        schema.anyOfSchemas.isEmpty()
+                        (
+                            (schema.oneOfSchemas.isEmpty() && schema.anyOfSchemas.isEmpty()) ||
+                                schema.isOneOfSuperInterface()
+                        )
                     ) {
                         val name =
-                            if (groups.size ==
-                                1
-                            ) {
-                                requestBody.key
-                            } else {
-                                requestBody.key +
-                                    content.keys
-                                        .first()
-                                        .replace("*", "Wildcard")
-                                        .toKCodeName()
-                                        .capitalized()
+                            when {
+                                schema.isOneOfSuperInterface() -> schema.safeName()
+                                groups.size ==
+                                    1 -> requestBody.key
+                                else ->
+                                    requestBody.key +
+                                        content.keys
+                                            .first()
+                                            .replace("*", "Wildcard")
+                                            .toKCodeName()
+                                            .capitalized()
                             }
                         val registeredName = ModelNameRegistry.preRegisterByReference(schema, name)
                         content.values.drop(1).forEach { media ->
@@ -130,8 +134,10 @@ class SourceApi private constructor(
                     .filter { content ->
                         val schema = content.value.schema
                         schema.jsonPathFromRoot.contains("responses") &&
-                            schema.oneOfSchemas.isEmpty() &&
-                            schema.anyOfSchemas.isEmpty()
+                            (
+                                (schema.oneOfSchemas.isEmpty() && schema.anyOfSchemas.isEmpty()) ||
+                                    schema.isOneOfSuperInterface()
+                            )
                     }.map { content -> response.key to content.value.schema }
             }
 
@@ -147,8 +153,11 @@ class SourceApi private constructor(
 
                     responseSchemas
                         .singleOrNull()
-                        ?.takeIf { it.isOperationLevelObjectOrArray() }
+                        ?.takeIf { it.isOperationLevelObjectOrArray() || it.isOneOfSuperInterface() }
                         ?.let { schema ->
+                            if (schema.isOneOfSuperInterface()) {
+                                return@let schema.safeName() to schema
+                            }
                             val name =
                                 schema.title?.takeIf { it.isNotBlank() }
                                     ?: operation.operationId?.takeIf { it.isNotBlank() }?.let {
@@ -172,14 +181,18 @@ class SourceApi private constructor(
                                 .map { it.schema }
                                 .distinctBy { it.jsonReference }
                                 .mapNotNull { schema ->
-                                    schema.takeIf { it.isOperationLevelObjectOrArray() }?.let {
+                                    schema.takeIf { it.isOperationLevelObjectOrArray() || it.isOneOfSuperInterface() }?.let {
                                         val suffix = if (schema.type == OasType.Array.type) "Item" else ""
                                         val name =
-                                            schema.title?.takeIf { it.isNotBlank() }
-                                                ?: operation.operationId?.takeIf { it.isNotBlank() }?.let {
-                                                    "${it}Response$status$suffix"
-                                                }
-                                                ?: "${method}_${pathTemplate}_response_${status}$suffix"
+                                            if (schema.isOneOfSuperInterface()) {
+                                                schema.safeName()
+                                            } else {
+                                                schema.title?.takeIf { it.isNotBlank() }
+                                                    ?: operation.operationId?.takeIf { it.isNotBlank() }?.let {
+                                                        "${it}Response$status$suffix"
+                                                    }
+                                                    ?: "${method}_${pathTemplate}_response_${status}$suffix"
+                                            }
                                         name to schema
                                     }
                                 }
@@ -202,7 +215,8 @@ class SourceApi private constructor(
                     groups.mapNotNull { content ->
                         val rawSchema = content.values.first().schema
                         val schema = if (operation.requestBody.contentMediaTypes.size > 1) rawSchema.effectiveRequestSchema() else rawSchema
-                        if (schema.isOperationLevelObjectOrArray() && content.keys.none { it.equals("multipart/form-data", true) }) {
+                        val isOperationBody = schema.isOperationLevelObjectOrArray() || schema.isOneOfSuperInterface()
+                        if (isOperationBody && content.keys.none { it.equals("multipart/form-data", true) }) {
                             val baseName =
                                 schema.title?.takeIf { it.isNotBlank() }
                                     ?: operation.operationId?.takeIf { it.isNotBlank() }?.let {
@@ -210,7 +224,9 @@ class SourceApi private constructor(
                                     }
                                     ?: "${method}_${pathTemplate}_${if (schema.type == OasType.Array.type) "request_item" else "request"}"
                             val name =
-                                if (groups.size ==
+                                if (schema.isOneOfSuperInterface()) {
+                                    schema.safeName()
+                                } else if (groups.size ==
                                     1
                                 ) {
                                     baseName

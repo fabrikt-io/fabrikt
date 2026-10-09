@@ -47,7 +47,6 @@ tasks {
             "--api-file", apiFile,
             "--targets", "http_models",
             "--targets", "client",
-            "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF",
         )
         dependsOn(":jar")
         dependsOn(":shadowJar")
