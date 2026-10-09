@@ -138,6 +138,14 @@ object MutableSettings {
 
     fun isSealedInterfacesForOneOfEnabled(): Boolean = ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF !in modelOptions
 
+    /**
+     * Groups the type overrides that resolve for the same OAS type. Options in a group are mutually
+     * exclusive, so selecting two logs a warning and the fixed precedence in `KotlinTypeInfo.from`
+     * decides the result. Different OAS types use different groups (e.g. `date` and `date-time` are
+     * separate) so combining overrides across types never warns. `BYTEARRAY_AS_INPUTSTREAM` sits with
+     * the binary overrides because it only affects the ByteArray producer, which `string/byte` does
+     * not use.
+     */
     private fun warnOnConflictingTypeOverrides() {
         val families =
             listOf(
@@ -155,6 +163,23 @@ object MutableSettings {
                 setOf(
                     CodeGenTypeOverride.URI_AS_STRING,
                     CodeGenTypeOverride.URI_AS_URI,
+                ),
+                setOf(
+                    CodeGenTypeOverride.BYTE_AS_STRING,
+                    CodeGenTypeOverride.BYTE_AS_BYTEARRAY,
+                ),
+                setOf(
+                    CodeGenTypeOverride.UUID_AS_STRING,
+                    CodeGenTypeOverride.UUID_AS_UUID,
+                ),
+                setOf(
+                    CodeGenTypeOverride.DATE_AS_STRING,
+                    CodeGenTypeOverride.DATE_AS_LOCALDATE,
+                    CodeGenTypeOverride.DATE_AS_KOTLINXLOCALDATE,
+                ),
+                setOf(
+                    CodeGenTypeOverride.ANY_AS_JSONELEMENT,
+                    CodeGenTypeOverride.ANY_AS_ANY,
                 ),
             )
         families.forEach { family ->
