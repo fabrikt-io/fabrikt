@@ -1,0 +1,3 @@
+package examples.sharedCompositionRequestProjection.models
+
+public interface AComposite

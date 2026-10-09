@@ -1,0 +1,79 @@
+openapi: 3.0.4
+info: {title: Compatible Kotlin refinements, version: '1'}
+paths: {}
+components:
+  schemas:
+    Pet:
+      type: object
+      required: [id, kind]
+      discriminator:
+        propertyName: kind
+        mapping:
+          cat: '#/components/schemas/Cat'
+          dog: '#/components/schemas/Dog'
+      properties:
+        id: {type: string, minLength: 2}
+        kind: {type: string}
+    Cat:
+      allOf:
+        - $ref: '#/components/schemas/Pet'
+        - type: object
+          required: [name]
+          properties:
+            name: {type: string, minLength: 1}
+    Dog:
+      allOf:
+        - type: object
+          required: [age]
+          properties:
+            age: {type: integer, format: int32, minimum: 0}
+        - $ref: '#/components/schemas/Pet'
+    Profile:
+      type: object
+      required: [pet, pets, petsByName]
+      properties:
+        pet:
+          $ref: '#/components/schemas/Pet'
+        pets:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/Pet'
+        petsByName:
+          type: object
+          minProperties: 1
+          additionalProperties:
+            $ref: '#/components/schemas/Pet'
+        optionalPet:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Pet'
+        note: {type: string, default: untitled, maxLength: 20}
+    CatProfile:
+      allOf:
+        - type: object
+          required: [pet, pets, petsByName, optionalPet]
+          properties:
+            pet:
+              $ref: '#/components/schemas/Cat'
+            pets:
+              type: array
+              minItems: 1
+              maxItems: 3
+              items:
+                $ref: '#/components/schemas/Cat'
+            petsByName:
+              type: object
+              minProperties: 1
+              additionalProperties:
+                $ref: '#/components/schemas/Cat'
+            optionalPet:
+              $ref: '#/components/schemas/Cat'
+        - $ref: '#/components/schemas/Profile'
+    ExtendedCatProfile:
+      allOf:
+        - $ref: '#/components/schemas/CatProfile'
+        - type: object
+          properties:
+            extra: {type: boolean}

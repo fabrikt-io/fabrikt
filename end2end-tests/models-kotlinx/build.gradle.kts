@@ -87,6 +87,24 @@ tasks {
         listOf("--type-overrides", "ANY_AS_JSONELEMENT")
     )
 
+    val generateCompositionRefinementsCodeTask = createGenerateCodeTask(
+        "generateCompositionRefinementsCode",
+        "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionRefinements/api.yaml",
+        "com.example.compositionrefinements",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS")
+    )
+    val generateCompositionRequestProjectionCodeTask = createGenerateCodeTask(
+        "generateCompositionRequestProjectionCode",
+        "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionRequestProjection/api.yaml",
+        "com.example.compositionrequestprojection",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS", "--http-model-opts", "EXCLUDE_READ_ONLY")
+    )
+    val generateCompositionResponseProjectionCodeTask = createGenerateCodeTask(
+        "generateCompositionResponseProjectionCode",
+        "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionResponseProjection/api.yaml",
+        "com.example.compositionresponseprojection",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS", "--http-model-opts", "EXCLUDE_WRITE_ONLY")
+    )
     val generateCompositionExternalCodeTask = createGenerateCodeTask(
         "generateCompositionExternalCode",
         "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionExternal/api.yaml",
@@ -122,6 +140,9 @@ tasks {
         dependsOn(generateCompositionCodeTask)
         dependsOn(generateCompositionUnionsCodeTask)
         dependsOn(generateCompositionExternalCodeTask)
+        dependsOn(generateCompositionRefinementsCodeTask)
+        dependsOn(generateCompositionRequestProjectionCodeTask)
+        dependsOn(generateCompositionResponseProjectionCodeTask)
     }
 
     withType<Test> {

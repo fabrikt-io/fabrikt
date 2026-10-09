@@ -1,0 +1,30 @@
+openapi: 3.0.4
+info: {title: Filtered shared composition contracts, version: '1'}
+paths: {}
+components:
+  schemas:
+    A:
+      type: object
+      required: [id]
+      properties:
+        id: {type: string, readOnly: true, minLength: 2}
+    B:
+      allOf:
+        - $ref: '#/components/schemas/A'
+        - type: object
+          required: [secret]
+          properties:
+            secret: {type: string, writeOnly: true, minLength: 3}
+            label: {type: string, default: untitled}
+    C:
+      allOf:
+        - $ref: '#/components/schemas/A'
+        - type: object
+          required: [code]
+          properties:
+            code: {type: integer, format: int32, minimum: 1}
+    Choice:
+      oneOf:
+        - $ref: '#/components/schemas/B'
+        - $ref: '#/components/schemas/C'
+      x-jackson-subtype-deduction: true
