@@ -46,6 +46,9 @@ class ModelGeneratorTest {
             "sharedCompositionContracts",
             "sharedCompositionUnions",
             "sharedCompositionExternal",
+            "sharedCompositionRefinements",
+            "sharedCompositionRequestProjection",
+            "sharedCompositionResponseProjection",
             "namedOneOfDeduction",
             "composedOneOf",
             "additionalModelAnnotations",
@@ -111,8 +114,14 @@ class ModelGeneratorTest {
     @MethodSource("testCases")
     fun `correct models are generated for different OpenApi Specifications`(testCaseName: String) {
         print("Testcase: $testCaseName")
-        if (testCaseName in listOf("sharedCompositionContracts", "sharedCompositionUnions", "sharedCompositionExternal")) {
+        if (testCaseName.startsWith("sharedComposition")) {
             MutableSettings.addOption(ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS)
+        }
+        if (testCaseName == "sharedCompositionRequestProjection") {
+            MutableSettings.addOption(ModelCodeGenOptionType.EXCLUDE_READ_ONLY)
+        }
+        if (testCaseName == "sharedCompositionResponseProjection") {
+            MutableSettings.addOption(ModelCodeGenOptionType.EXCLUDE_WRITE_ONLY)
         }
         MutableSettings.addOption(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS)
         if (testCaseName == "instantDateTime") {

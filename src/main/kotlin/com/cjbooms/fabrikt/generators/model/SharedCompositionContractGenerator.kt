@@ -2,10 +2,13 @@ package com.cjbooms.fabrikt.generators.model
 
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.model.Destinations.modelsPackage
+import com.cjbooms.fabrikt.model.OasType
 import com.cjbooms.fabrikt.model.OpenApiSchema
 import com.cjbooms.fabrikt.model.SchemaCompositionRelationships
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeType
+import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName
@@ -23,6 +26,7 @@ internal class SharedCompositionContractGenerator(
     private val schemas = componentSchemas.distinctBy { it.jsonReference }
     private val relationships = SchemaCompositionRelationships(schemas)
     private val modelsByName = primaryModels.values.associateBy { it.name }
+    private val modelPackage = modelsPackage(packages.base)
 
     fun apply(models: MutableSet<TypeSpec>): MutableSet<TypeSpec> {
         val contracts = mutableListOf<TypeSpec>()
@@ -40,9 +44,8 @@ internal class SharedCompositionContractGenerator(
                 }.distinctBy { it.jsonReference }
         ancestors.forEach { ancestor ->
             val baseModel = primaryModels[ancestor.jsonReference] ?: return@forEach
-            if (baseModel.kind != TypeSpec.Kind.CLASS) return@forEach
+            if (ancestor.safeType() != OasType.Object.type || !baseModel.isConcreteObject()) return@forEach
             val properties = effectiveProperties(baseModel)
-            if (properties.isEmpty()) return@forEach
             val name = ModelNameRegistry.compositionContractName(ancestor, checkNotNull(baseModel.name))
             val contractType = ClassName(modelsPackage(packages.base), name)
             contracts.add(
@@ -54,7 +57,7 @@ internal class SharedCompositionContractGenerator(
             val compatibleMembers = mutableSetOf<String>()
             schemas.filter { includes(it, ancestor) }.forEach member@{ schema ->
                 val model = primaryModels[schema.jsonReference] ?: return@member
-                if (model.kind != TypeSpec.Kind.CLASS) return@member
+                if (!model.isConcreteObject()) return@member
                 val memberProperties = effectiveProperties(model)
                 val incompatible =
                     properties.values.firstOrNull { property ->
@@ -63,7 +66,9 @@ internal class SharedCompositionContractGenerator(
                     }
                 if (incompatible != null) {
                     logger.warning(
-                        "Omitting $name from ${model.name}: property '${incompatible.name}' cannot implement its Kotlin type. " +
+                        "Omitting $name from ${model.name}: property '${incompatible.name}' has type " +
+                            "${memberProperties[incompatible.name]?.type ?: "<missing>"}, " +
+                            "but the contract requires ${incompatible.type}. " +
                             "Align the composed property types or disable SHARED_COMPOSITION_CONTRACTS.",
                     )
                     return@member
@@ -127,19 +132,43 @@ internal class SharedCompositionContractGenerator(
     ): Map<String, PropertySpec> {
         val name = model.name ?: return emptyMap()
         if (name in visited) return emptyMap()
-        val parent = (model.superclass as? ClassName)?.simpleName?.let(modelsByName::get)
+        val parent = (model.superclass as? ClassName)?.generatedModel()
         return parent?.let { effectiveProperties(it, visited + name) }.orEmpty() + model.propertySpecs.associateBy { it.name }
     }
 
     private fun isCompatible(
         actual: TypeName,
         expected: TypeName,
+        visited: Set<Pair<TypeName, TypeName>> = emptySet(),
     ): Boolean {
         val actualType = actual.withoutTypeAnnotations()
         val expectedType = expected.withoutTypeAnnotations()
-        return (!actualType.isNullable || expectedType.isNullable) &&
-            actualType.copy(nullable = false) == expectedType.copy(nullable = false)
+        if (actualType.isNullable && !expectedType.isNullable) return false
+        val source = actualType.copy(nullable = false)
+        val target = expectedType.copy(nullable = false)
+        if (source == target || target == ANY) return true
+        val pair = source to target
+        if (pair in visited) return false
+        val next = visited + pair
+        if (source is ParameterizedTypeName && target is ParameterizedTypeName && source.rawType == target.rawType) {
+            return when (source.rawType.canonicalName) {
+                "kotlin.collections.List", "kotlin.collections.Set", "kotlin.collections.Collection",
+                "kotlin.collections.Iterable", "kotlin.sequences.Sequence",
+                -> isCompatible(source.typeArguments.single(), target.typeArguments.single(), next)
+                "kotlin.collections.Map" ->
+                    source.typeArguments.first() == target.typeArguments.first() &&
+                        isCompatible(source.typeArguments.last(), target.typeArguments.last(), next)
+                else -> false
+            }
+        }
+        val model = (source as? ClassName)?.generatedModel() ?: return false
+        return (listOf(model.superclass) + model.superinterfaces.keys).any { isCompatible(it, target, next) }
     }
+
+    private fun ClassName.generatedModel(): TypeSpec? =
+        if (packageName == modelPackage && simpleNames.size == 1) modelsByName[simpleName] else null
+
+    private fun TypeSpec.isConcreteObject(): Boolean = kind == TypeSpec.Kind.CLASS || kind == TypeSpec.Kind.OBJECT
 
     private fun TypeName.withoutTypeAnnotations(): TypeName =
         if (this is ParameterizedTypeName) {

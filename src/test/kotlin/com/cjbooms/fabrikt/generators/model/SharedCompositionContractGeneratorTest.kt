@@ -4,14 +4,23 @@ import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.ModelNameRegistry
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.LIST
+import com.squareup.kotlinpoet.MAP
+import com.squareup.kotlinpoet.MUTABLE_LIST
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.STRING
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
+import java.util.stream.Stream
 
 class SharedCompositionContractGeneratorTest {
     @BeforeEach
@@ -104,6 +113,58 @@ class SharedCompositionContractGeneratorTest {
                 .single()
                 .type,
         ).isEqualTo(STRING.copy(nullable = true))
+    }
+
+    @ParameterizedTest
+    @MethodSource("nativeTypes")
+    fun `contract membership follows Kotlin subtyping rather than schema primitive names`(case: NativeTypes) {
+        val document = SourceApi(spec).openApi3
+        val petType = ClassName("example.models", "Pet")
+        val cat = TypeSpec.classBuilder("Cat").superclass(petType).build()
+        val pet = TypeSpec.classBuilder("Pet").build()
+        val a = TypeSpec.classBuilder("A").addProperty(PropertySpec.builder("id", case.expected).build()).build()
+        val b = TypeSpec.classBuilder("B").addProperty(PropertySpec.builder("id", case.actual).build()).build()
+        val models =
+            SharedCompositionContractGenerator(
+                Packages("example"),
+                document.schemas.values,
+                mapOf(
+                    document.schemas.getValue("A").jsonReference to a,
+                    document.schemas.getValue("B").jsonReference to b,
+                    "pet" to pet,
+                    "cat" to cat,
+                ),
+            ).apply(mutableSetOf(a, b, pet, cat))
+        val generated = models.single { it.name == "B" }
+        assertThat(generated.superinterfaces.keys.any { it.toString() == "example.models.AComposite" }).isEqualTo(case.compatible)
+        assertThat(generated.propertySpecs.single().type).isEqualTo(case.actual)
+    }
+
+    data class NativeTypes(
+        val actual: TypeName,
+        val expected: TypeName,
+        val compatible: Boolean,
+    )
+
+    companion object {
+        @JvmStatic
+        fun nativeTypes(): Stream<NativeTypes> {
+            val pet = ClassName("example.models", "Pet")
+            val cat = ClassName("example.models", "Cat")
+            return Stream.of(
+                NativeTypes(cat, pet, true),
+                NativeTypes(pet, cat, false),
+                NativeTypes(ClassName("other.models", "Cat"), pet, false),
+                NativeTypes(cat.copy(nullable = true), pet, false),
+                NativeTypes(cat, pet.copy(nullable = true), true),
+                NativeTypes(LIST.parameterizedBy(cat), LIST.parameterizedBy(pet), true),
+                NativeTypes(LIST.parameterizedBy(cat.copy(nullable = true)), LIST.parameterizedBy(pet), false),
+                NativeTypes(MAP.parameterizedBy(STRING, cat), MAP.parameterizedBy(STRING, pet), true),
+                NativeTypes(MAP.parameterizedBy(cat, STRING), MAP.parameterizedBy(pet, STRING), false),
+                NativeTypes(MUTABLE_LIST.parameterizedBy(cat), MUTABLE_LIST.parameterizedBy(pet), false),
+                NativeTypes(INT, STRING, false),
+            )
+        }
     }
 
     private val spec =
