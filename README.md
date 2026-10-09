@@ -85,6 +85,8 @@ Furthermore, the [end-to-end tests](/end2end-tests) demonstrate how to integrate
 
 ## Usage Instructions
 
+Jackson 3 is the default serialization library. Use `--serialization-library JACKSON_2` or `JACKSON_3` to select a version explicitly. `JACKSON` is a deprecated alias for Jackson 3. When upgrading to v28, replace an existing `JACKSON` selection with `JACKSON_2` if your application still uses Jackson 2, or `JACKSON_3` when migrating to Jackson 3.
+
 The library can be used in a variety of ways, including as a command line tool, a Gradle task, or a Maven plugin.
 
 Please refer to [Configuration Options](#configuration-options) section for a list of available parameters.
@@ -331,7 +333,8 @@ Usage: <main class> [options]
 |   `--resources-path`                    | Allows the path for generated resources to be overridden. Defaults to `src/main/resources` |
 |   `--serialization-library`             | Specify which serialization library to use for annotations in generated model classes. Default: JACKSON_3 |
 |                                         | CHOOSE ONE OF: |
-|                                         |   `JACKSON` - Use Jackson 2 for serialization and deserialization |
+|                                         |   `JACKSON` - Deprecated alias for JACKSON_3. Use JACKSON_2 or JACKSON_3 explicitly |
+|                                         |   `JACKSON_2` - Use Jackson 2 for serialization and deserialization |
 |                                         |   `JACKSON_3` - Use Jackson 3 for serialization and deserialization |
 |                                         |   `KOTLINX_SERIALIZATION` - Use kotlinx.serialization for serialization and deserialization |
 |   `--src-path`                          | Allows the path for generated source files to be overridden. Defaults to `src/main/kotlin` |

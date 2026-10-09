@@ -18,8 +18,20 @@ import lib.GenerationSettings.Companion.receiveGenerationSettings
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 class GenerationSettingsTest {
+    @ParameterizedTest
+    @EnumSource(SerializationLibrary::class)
+    fun serializationLibraryFromForm(library: SerializationLibrary) {
+        val settings = Parameters.build {
+            append("serializationLibrary", library.name)
+        }.receiveGenerationSettings()
+        assertEquals(library, settings.serializationLibrary)
+        assertTrue(settings.toQueryParams().contains("serializationLibrary=${library.name}"))
+    }
+
     @Test
     fun oauth2ClientOption() {
         val option = com.cjbooms.fabrikt.cli.ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION

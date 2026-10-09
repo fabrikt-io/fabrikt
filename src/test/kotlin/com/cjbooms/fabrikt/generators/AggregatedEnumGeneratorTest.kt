@@ -32,6 +32,16 @@ class AggregatedEnumGeneratorTest {
         val models = ModelGenerator(Packages("examples.aggregatedEnum"), SourceApi(spec)).generate()
         assertThat(models.models.map { it.spec.name }).containsExactlyInAnyOrder("SomeEnumDto", "SomeObjectDto")
         val generated = models.toSingleFile()
+        val exampleLibrary =
+            if (library ==
+                SerializationLibrary.JACKSON_2
+            ) {
+                "jackson"
+            } else if (library.isJackson3) {
+                "jackson_3"
+            } else {
+                library.name.lowercase()
+            }
 
         assertThat(generated)
             .contains("withDefault: SomeEnumDto = SomeEnumDto.BAZ")
@@ -41,7 +51,7 @@ class AggregatedEnumGeneratorTest {
             .contains("values: List<SomeEnumDto>? = null")
             .contains("A wrapped enum with its own default.")
         assertThatGenerated(generated)
-            .isEqualTo("/examples/aggregatedEnum/models/${library.name.lowercase()}/Models.kt")
+            .isEqualTo("/examples/aggregatedEnum/models/$exampleLibrary/Models.kt")
     }
 
     companion object {

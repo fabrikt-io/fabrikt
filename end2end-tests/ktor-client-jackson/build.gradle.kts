@@ -72,7 +72,7 @@ fun createGenerateCodeTask(name: String, apiFilePath: String, additionalArgs: Li
         "--targets", "http_models",
         "--targets", "client",
         "--http-client-target", "ktor",
-        "--serialization-library", "jackson",
+        "--serialization-library", "jackson_2",
         "--validation-library", "no_validation",
         "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF"
     ).plus(additionalArgs)

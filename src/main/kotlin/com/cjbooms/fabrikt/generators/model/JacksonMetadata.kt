@@ -1,6 +1,5 @@
 package com.cjbooms.fabrikt.generators.model
 
-import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.util.NormalisedString.pascalCase
@@ -19,7 +18,7 @@ object JacksonMetadata {
     private const val JACKSON_3_TYPE_REFERENCE_PACKAGE = "tools.jackson.core.type"
 
     private val isJackson3: Boolean
-        get() = MutableSettings.serializationLibrary == SerializationLibrary.JACKSON_3
+        get() = MutableSettings.serializationLibrary.isJackson3
 
     val OBJECT_MAPPER_CLASS: ClassName
         get() =

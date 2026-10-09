@@ -36,13 +36,23 @@ class DirectionalModelGeneratorTest {
                 "both" to setOf(EXCLUDE_READ_ONLY, EXCLUDE_WRITE_ONLY),
             )
         SerializationLibrary.entries.forEach { library ->
+            val exampleLibrary =
+                if (library ==
+                    SerializationLibrary.JACKSON_2
+                ) {
+                    "jackson"
+                } else if (library.isJackson3) {
+                    "jackson_3"
+                } else {
+                    library.name.lowercase()
+                }
             modes.forEach { (mode, options) ->
                 val files = generate(version, library, options)
                 files.forEach { (name, code) ->
-                    assertThatGenerated(code).isEqualTo("/examples/directionalModels/models/$mode/${library.name.lowercase()}/$name.kt")
+                    assertThatGenerated(code).isEqualTo("/examples/directionalModels/models/$mode/$exampleLibrary/$name.kt")
                 }
                 assertThat(files.keys.map { "$it.kt" }).containsExactlyInAnyOrderElementsOf(
-                    getFileNamesInFolder(Path.of("src/test/resources/examples/directionalModels/models/$mode/${library.name.lowercase()}")),
+                    getFileNamesInFolder(Path.of("src/test/resources/examples/directionalModels/models/$mode/$exampleLibrary")),
                 )
                 val request = files["Pet"]!!
                 val response = files["Pet"]!!
