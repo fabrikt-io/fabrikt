@@ -153,7 +153,6 @@ class OkHttpClientGeneratorTest {
         val expectedApiModels = "/examples/externalReferences/aggressive/client/ApiModels.kt"
         val expectedOAuth = "/examples/externalReferences/aggressive/client/OAuth.kt"
         MutableSettings.updateSettings(
-            modelOptions = setOf(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
             externalRefResolutionMode = ExternalReferencesResolutionMode.AGGRESSIVE,
         )
 

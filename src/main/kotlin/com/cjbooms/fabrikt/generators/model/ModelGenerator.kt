@@ -42,6 +42,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.getDiscriminatorForInline
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getSuperType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasInlinedItemsSchemaOfTypeObject
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasInlinedItemsSchemaWithOneOf
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasNoDiscriminator
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isComplexTypedAdditionalProperties
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
@@ -265,6 +266,7 @@ class ModelGenerator(
         .filterNot { it.schema.isSimpleType() }
         .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !isSealedInterfacesForOneOfEnabled() }
         .filterNot { it.schema.isOneOfResolvingToAnyType() }
+        .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && it.schema.hasNoDiscriminator() }
         .flatMap { schemaInfo ->
             val properties =
                 schemaInfo.schema.topLevelProperties(
