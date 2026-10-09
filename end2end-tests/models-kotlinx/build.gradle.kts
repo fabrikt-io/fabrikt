@@ -87,6 +87,13 @@ tasks {
         listOf("--type-overrides", "ANY_AS_JSONELEMENT")
     )
 
+    val generateCompositionCodeTask = createGenerateCodeTask(
+        "generateCompositionCode",
+        "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionContracts/api.yaml",
+        "com.example.composition",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS")
+    )
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
             optIn.add("kotlinx.serialization.ExperimentalSerializationApi")
@@ -98,6 +105,7 @@ tasks {
         dependsOn(generateStringFormatOverrideCodeTask)
         dependsOn(generateOpenEnumCodeTask)
         dependsOn(generateAnyAsJsonElementCodeTask)
+        dependsOn(generateCompositionCodeTask)
     }
 
     withType<Test> {

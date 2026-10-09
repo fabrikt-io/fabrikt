@@ -17,6 +17,7 @@ object ModelNameRegistry {
     private val allocatedNames: MutableSet<String> = mutableSetOf()
     private val tagToName: MutableMap<String, String> = mutableMapOf()
     private val referenceToName: MutableMap<String, String> = mutableMapOf()
+    private val compositionContractNames: MutableMap<Pair<String, String>, String> = mutableMapOf()
     private const val SUFFIX = "Extra"
 
     /**
@@ -202,10 +203,16 @@ object ModelNameRegistry {
         direction: ModelDirection? = null,
     ): String? = inlineSchemaTracking[schema]?.directionalName(direction)
 
+    fun compositionContractName(
+        schema: Schema,
+        modelName: String,
+    ): String = compositionContractNames.getOrPut(schema.jsonReference to modelName) { allocateUniqueName("${modelName}Composite") }
+
     fun clear() {
         allocatedNames.clear()
         tagToName.clear()
         inlineSchemaTracking.clear()
         referenceToName.clear()
+        compositionContractNames.clear()
     }
 }

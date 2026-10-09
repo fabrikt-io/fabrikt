@@ -229,6 +229,7 @@ class ModelGenerator(
     }
 
     private val externalApiSchemas = mutableMapOf<String, MutableSet<String>>()
+    private val primaryModels = linkedMapOf<String, TypeSpec>()
 
     fun generate(): Models {
         if (ModelCodeGenOptionType.REQUEST_RESPONSE_MODELS in options) {
@@ -338,6 +339,9 @@ class ModelGenerator(
                     schemaInfo.typeInfo is KotlinTypeInfo.Enum ||
                     schemaInfo.schema.findOneOfSuperInterface(schemas.map { it.schema }).isNotEmpty() -> {
                     val primaryModel = buildPrimaryModel(api, schemaInfo, properties, schemas)
+                    if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) {
+                        primaryModels[schemaInfo.schema.jsonReference] = primaryModel
+                    }
                     val inlinedModels =
                         buildInLinedModels(properties, schemaInfo.schema, schemaInfo.schema.getDocumentUrl())
                     listOf(primaryModel) + inlinedModels
@@ -357,6 +361,13 @@ class ModelGenerator(
                 }
             }
         }.toMutableSet()
+        .let { models ->
+            if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) {
+                SharedCompositionContractGenerator(packages, api, primaryModels).apply(models)
+            } else {
+                models
+            }
+        }
 
     private fun buildPrimaryModel(
         api: OpenApi3,
