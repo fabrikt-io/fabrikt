@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 val generationDir = "$buildDir/generated"
 val nullableGenerationDir = "$buildDir/generated-nullable"
 val compositionGenerationDir = "$buildDir/generated-composition"
+val compositionUnionsGenerationDir = "$buildDir/generated-composition-unions"
 val apiFile = "${rootProject.projectDir}/src/test/resources/examples/okHttpClient/api.yaml"
 val nullableApiFile = "${rootProject.projectDir}/src/test/resources/examples/customExtensions/api.yaml"
 
@@ -12,6 +13,7 @@ sourceSets {
             "$generationDir/src/main/kotlin",
             "$nullableGenerationDir/src/main/kotlin",
             "$compositionGenerationDir/src/main/kotlin",
+            "$compositionUnionsGenerationDir/src/main/kotlin",
         )
     }
     test { java.srcDirs("$generationDir/src/test/kotlin") }
@@ -41,6 +43,23 @@ dependencies {
 }
 
 tasks {
+    val generateCompositionUnionsCode by creating(JavaExec::class) {
+        val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionUnions/api.yaml"
+        inputs.files(spec)
+        outputs.dir(compositionUnionsGenerationDir)
+        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        mainClass.set("io.fabrikt.cli.CodeGen")
+        args = listOf(
+            "--output-directory", compositionUnionsGenerationDir,
+            "--base-package", "com.example.compositionunions",
+            "--api-file", spec,
+            "--targets", "http_models",
+            "--serialization-library", "jackson_3",
+            "--validation-library", "jakarta_validation",
+            "--http-model-opts", "SHARED_COMPOSITION_CONTRACTS",
+        )
+        dependsOn(":shadowJar")
+    }
     val generateCompositionCode by creating(JavaExec::class) {
         val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionContracts/api.yaml"
         inputs.files(spec)
@@ -98,6 +117,7 @@ tasks {
         dependsOn(generateCode)
         dependsOn(generateNullableCode)
         dependsOn(generateCompositionCode)
+        dependsOn(generateCompositionUnionsCode)
     }
 
     withType<Test> {

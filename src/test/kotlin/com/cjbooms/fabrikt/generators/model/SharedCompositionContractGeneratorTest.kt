@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.generators.model
 
 import com.cjbooms.fabrikt.configurations.Packages
+import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.squareup.kotlinpoet.INT
@@ -15,7 +16,42 @@ import org.junit.jupiter.api.Test
 class SharedCompositionContractGeneratorTest {
     @BeforeEach
     fun reset() {
+        MutableSettings.updateSettings()
         ModelNameRegistry.clear()
+    }
+
+    @Test
+    fun `only unions whose concrete alternatives implement the contract advertise it`() {
+        val document = SourceApi(unionSpec).openApi3
+        val primaryModels =
+            document.schemas.mapValues { (name, _) ->
+                if (name in setOf("Safe", "Incompatible", "Mixed")) {
+                    TypeSpec.interfaceBuilder(name).addModifiers(KModifier.SEALED).build()
+                } else {
+                    TypeSpec.classBuilder(name).addProperty(PropertySpec.builder("id", if (name == "C") INT else STRING).build()).build()
+                }
+            }
+        val models =
+            SharedCompositionContractGenerator(
+                Packages("example"),
+                document,
+                document.schemas.map { (name, schema) -> schema.jsonReference to primaryModels.getValue(name) }.toMap(),
+            ).apply(primaryModels.values.toMutableSet())
+
+        assertThat(
+            models
+                .single { it.name == "Safe" }
+                .superinterfaces.keys
+                .map { it.toString() },
+        ).contains("example.models.AComposite")
+        listOf("Incompatible", "Mixed", "C", "Other").forEach { name ->
+            assertThat(
+                models
+                    .single { it.name == name }
+                    .superinterfaces.keys
+                    .map { it.toString() },
+            ).doesNotContain("example.models.AComposite")
+        }
     }
 
     @Test
@@ -82,7 +118,49 @@ class SharedCompositionContractGeneratorTest {
               properties:
                 id: {type: string}
             B:
+              type: object
               allOf:
                 - ${'$'}ref: '#/components/schemas/A'
+        """.trimIndent()
+
+    private val unionSpec =
+        """
+        openapi: 3.0.4
+        info: {title: Union contracts, version: '1'}
+        paths: {}
+        components:
+          schemas:
+            A:
+              type: object
+              properties:
+                id: {type: string}
+            B:
+              type: object
+              allOf:
+                - ${'$'}ref: '#/components/schemas/A'
+            C:
+              type: object
+              allOf:
+                - ${'$'}ref: '#/components/schemas/A'
+            D:
+              type: object
+              allOf:
+                - ${'$'}ref: '#/components/schemas/A'
+            Other:
+              type: object
+              properties:
+                id: {type: string}
+            Safe:
+              oneOf:
+                - ${'$'}ref: '#/components/schemas/B'
+                - ${'$'}ref: '#/components/schemas/D'
+            Incompatible:
+              oneOf:
+                - ${'$'}ref: '#/components/schemas/B'
+                - ${'$'}ref: '#/components/schemas/C'
+            Mixed:
+              oneOf:
+                - ${'$'}ref: '#/components/schemas/B'
+                - ${'$'}ref: '#/components/schemas/Other'
         """.trimIndent()
 }

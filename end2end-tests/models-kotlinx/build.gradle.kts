@@ -87,6 +87,12 @@ tasks {
         listOf("--type-overrides", "ANY_AS_JSONELEMENT")
     )
 
+    val generateCompositionUnionsCodeTask = createGenerateCodeTask(
+        "generateCompositionUnionsCode",
+        "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionUnions/api.yaml",
+        "com.example.compositionunions",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS")
+    )
     val generateCompositionCodeTask = createGenerateCodeTask(
         "generateCompositionCode",
         "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionContracts/api.yaml",
@@ -106,6 +112,7 @@ tasks {
         dependsOn(generateOpenEnumCodeTask)
         dependsOn(generateAnyAsJsonElementCodeTask)
         dependsOn(generateCompositionCodeTask)
+        dependsOn(generateCompositionUnionsCodeTask)
     }
 
     withType<Test> {
