@@ -1,0 +1,5 @@
+type: object
+required: [id]
+properties:
+  id: {type: string, minLength: 2}
+  enabled: {type: boolean, default: true}

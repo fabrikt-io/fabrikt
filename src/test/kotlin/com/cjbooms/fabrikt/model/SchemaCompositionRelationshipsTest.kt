@@ -1,11 +1,34 @@
 package com.cjbooms.fabrikt.model
 
 import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isNamedComponent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
 class SchemaCompositionRelationshipsTest {
+    @ParameterizedTest
+    @ValueSource(strings = ["3.0.4", "3.1.2", "3.2.0"])
+    fun `identifies named components from resolved references rather than optional name metadata`(version: String) {
+        val schemas = parse(version).schemas
+
+        assertThat(schemas.getValue("A").isNamedComponent()).isTrue()
+        assertThat(
+            schemas
+                .getValue("Holder")
+                .properties
+                .getValue("value")
+                .isNamedComponent(),
+        ).isTrue()
+        assertThat(
+            schemas
+                .getValue("Inline")
+                .allOfSchemas
+                .single()
+                .isNamedComponent(),
+        ).isFalse()
+    }
+
     @ParameterizedTest
     @ValueSource(strings = ["3.0.4", "3.1.2", "3.2.0"])
     fun `finds direct transitive and nested allOf components by schema identity`(version: String) {

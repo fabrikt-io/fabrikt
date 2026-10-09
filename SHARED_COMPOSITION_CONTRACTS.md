@@ -74,4 +74,10 @@ Existing discriminator mappings, Jackson subtype deduction, and Kotlinx polymorp
 
 Kotlinx retains its existing discriminator configuration requirements. If a concrete property has the same serialized name as its class discriminator, use its supported array polymorphism configuration (`Json { useArrayPolymorphism = true }`) for polymorphic serialization; enabling contracts does not resolve that existing collision.
 
-External references and filtered property projections follow in the remaining parts of [#747](https://github.com/fabrikt-io/fabrikt/issues/747).
+## External composition
+
+Resolved references keep the identity of their source schema across documents. Two paths that resolve to the same definition share one contract; equally named schemas from different documents keep separate contracts, even when their fields match. Transitive external references and standalone schema files are supported. Contract names follow the existing generated model names, including any collision suffixes.
+
+External loading retains the configured reference resolution mode. Enabling contracts additionally discovers explicitly composed ancestors needed to express their contracts; unrelated external definitions do not gain membership.
+
+Filtered property projections follow in the final part of [#747](https://github.com/fabrikt-io/fabrikt/issues/747).

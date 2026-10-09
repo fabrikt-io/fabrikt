@@ -1,0 +1,11 @@
+openapi: 3.0.4
+info: {title: Other models, version: '1'}
+paths: {}
+components:
+  schemas:
+    A:
+      type: object
+      required: [id, label]
+      properties:
+        id: {type: string, minLength: 2}
+        label: {type: string, minLength: 1}
