@@ -125,7 +125,7 @@ class RequestBodyRepresentationsTest {
                 """.trimIndent(),
             ),
         )
-        val options = setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS, ClientCodeGenOptionType.RESILIENCE4J)
+        val options = setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS)
         MutableSettings.updateSettings(genTypes = setOf(CodeGenerationType.CLIENT), clientTarget = target, clientOptions = options)
         val api = SourceApi(document.toString())
         val packages = Packages("examples.multipleRequestMediaTypes")
@@ -138,7 +138,7 @@ class RequestBodyRepresentationsTest {
             }
         val expectedRequestTypes = mapOf("createDetails" to "RequestsDetailsRequest", "createDetailsTextJson" to "CountRequest")
         val expectedResponseTypes = mapOf("Json" to "RequestsDetailsRequest", "ProblemJson" to "CountRequest")
-        val clients = generator.generate(options).clients.filter { it.spec.name in setOf("DistinctClient", "DistinctService") }
+        val clients = generator.generate(options).clients.filter { it.spec.name in setOf("DistinctClient") }
         assertThat(clients).isNotEmpty()
         clients.forEach { client ->
             val functions = client.spec.funSpecs.associateBy { it.name }

@@ -31,7 +31,6 @@ micronaut = "3.8.7"
 # HTTP clients
 okhttp = "4.10.0"
 feign = "13.3"
-resilience4j = "2.1.0"
 
 # Validation
 # Hibernate Validator 9.1 targets Jakarta Validation 3.1.
@@ -120,7 +119,6 @@ logback-classic-legacy = { module = "ch.qos.logback:logback-classic", version.re
 
 wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock" }
 kotlin-wiremock = { module = "com.marcinziolo:kotlin-wiremock", version.ref = "kotlin-wiremock" }
-resilience4j-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version.ref = "resilience4j" }
 feign-core = { module = "io.github.openfeign:feign-core", version.ref = "feign" }
 feign-jackson = { module = "io.github.openfeign:feign-jackson", version.ref = "feign" }
 feign-okhttp = { module = "io.github.openfeign:feign-okhttp", version.ref = "feign" }

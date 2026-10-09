@@ -1,12 +1,10 @@
 package com.cjbooms.fabrikt.generators
 
-import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.cli.CodeGenerationType
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.cli.SerializationLibraryOptionConverter
 import com.cjbooms.fabrikt.configurations.Packages
-import com.cjbooms.fabrikt.generators.client.OkHttpEnhancedClientGenerator
 import com.cjbooms.fabrikt.generators.client.OkHttpSimpleClientGenerator
 import com.cjbooms.fabrikt.generators.client.OpenFeignInterfaceGenerator
 import com.cjbooms.fabrikt.generators.controller.SpringControllerInterfaceGenerator
@@ -76,10 +74,6 @@ class Jackson3GeneratorTest {
                 .filterIsInstance<SimpleFile>()
                 .first { it.path.fileName.toString() == "HttpUtil.kt" }
                 .content
-        val enhancedClient =
-            OkHttpEnhancedClientGenerator(packages, sourceApi)
-                .generateDynamicClientCode(setOf(ClientCodeGenOptionType.RESILIENCE4J))
-                .toSingleFile()
 
         assertThat(client)
             .contains("import tools.jackson.databind.JsonNode")
@@ -91,9 +85,6 @@ class Jackson3GeneratorTest {
             .contains("import tools.jackson.core.type.TypeReference")
             .contains("import tools.jackson.databind.json.JsonMapper")
             .doesNotContain("import com.fasterxml.jackson")
-        assertThat(enhancedClient)
-            .contains("import tools.jackson.databind.json.JsonMapper")
-            .contains("import tools.jackson.module.kotlin.jacksonTypeRef")
     }
 
     @Test

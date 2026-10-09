@@ -47,7 +47,7 @@ class GeneratedAnnotationsTest {
             outputOptions = setOf(OutputOptionType.ADD_GENERATED_ANNOTATION),
             generationMetadata = GenerationMetadata(version = "27.0.1"),
         )
-        val code = OkHttpClientLibraryFiles.httpResilience4jUtil(Packages("example")).addGeneratedAnnotations().toString()
+        val code = OkHttpClientLibraryFiles.httpUtil(Packages("example"), false).addGeneratedAnnotations().toString()
         assertThat(code).doesNotContain("date =")
         assertThat(code).contains(
             "value = [\"io.fabrikt.cli.CodeGen\"]",
@@ -67,7 +67,6 @@ class GeneratedAnnotationsTest {
         fun helperFiles(): List<FileSpec> =
             listOf(
                 OkHttpClientLibraryFiles.httpUtil(Packages("example"), false),
-                OkHttpClientLibraryFiles.httpResilience4jUtil(Packages("example")),
             )
     }
 }

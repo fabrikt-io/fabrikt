@@ -1,8 +1,6 @@
 package com.cjbooms.fabrikt.generators
 
-import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.configurations.Packages
-import com.cjbooms.fabrikt.generators.client.OkHttpEnhancedClientGenerator
 import com.cjbooms.fabrikt.generators.client.OkHttpSimpleClientGenerator
 import com.cjbooms.fabrikt.generators.client.OpenFeignInterfaceGenerator
 import com.cjbooms.fabrikt.generators.client.SpringHttpInterfaceGenerator
@@ -37,9 +35,6 @@ class DeprecatedElementGenerationTest {
                 "Spring HTTP Interface" to SpringHttpInterfaceGenerator(packages, sourceApi).generate(emptySet()).clients,
                 "OpenFeign" to OpenFeignInterfaceGenerator(packages, sourceApi).generate(emptySet()).clients,
                 "OkHttp simple" to OkHttpSimpleClientGenerator(packages, sourceApi).generateDynamicClientCode(),
-                "OkHttp enhanced" to
-                    OkHttpEnhancedClientGenerator(packages, sourceApi)
-                        .generateDynamicClientCode(setOf(ClientCodeGenOptionType.RESILIENCE4J)),
                 "Ktor client" to KtorClientGenerator(packages, sourceApi).generate(emptySet()).clients,
                 "Spring controller" to
                     SpringControllerInterfaceGenerator(packages, sourceApi, JavaxValidationAnnotations).generate().controllers,

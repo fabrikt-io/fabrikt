@@ -17,7 +17,6 @@ import com.cjbooms.fabrikt.util.ResourceHelper.readTextResource
 import com.cjbooms.fabrikt.util.TestFileUtils.toSingleFile
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import java.nio.file.Paths
@@ -89,24 +88,6 @@ class OAuth2SecurityGeneratorTest {
             .isEqualTo("/examples/oauth2Security/client/${target.name.lowercase()}/Client.kt")
     }
 
-    @Test
-    fun `OAuth2 helpers are generated for the enhanced OkHttp client`() {
-        val api = SourceApi(spec)
-        MutableSettings.updateSettings(
-            genTypes = setOf(CodeGenerationType.CLIENT),
-            clientTarget = ClientCodeGenTargetType.OK_HTTP,
-            clientOptions =
-                setOf(
-                    ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION,
-                    ClientCodeGenOptionType.RESILIENCE4J,
-                ),
-        )
-        val generated =
-            generator(ClientCodeGenTargetType.OK_HTTP, api).generate(MutableSettings.clientOptions)
-        assertThatGenerated(generated.clients.toSingleFile())
-            .isEqualTo("/examples/oauth2Security/client/okhttp-enhanced/Client.kt")
-    }
-
     @ParameterizedTest
     @EnumSource(ClientCodeGenTargetType::class, names = ["OK_HTTP", "OPEN_FEIGN", "SPRING_HTTP_INTERFACE"])
     fun `typed response functions receive matching OAuth2 helpers`(target: ClientCodeGenTargetType) {
@@ -114,7 +95,6 @@ class OAuth2SecurityGeneratorTest {
             setOf(
                 ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION,
                 ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS,
-                ClientCodeGenOptionType.RESILIENCE4J,
             )
         MutableSettings.updateSettings(genTypes = setOf(CodeGenerationType.CLIENT), clientTarget = target, clientOptions = options)
         val api =

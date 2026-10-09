@@ -74,7 +74,7 @@ class GenerationSettingsTest {
             controllerTarget = ControllerCodeGenTargetType.KTOR,
             controllerOptions = setOf(ControllerCodeGenOptionType.AUTHENTICATION),
             modelSuffix = "Model",
-            clientOptions = setOf(ClientCodeGenOptionType.RESILIENCE4J),
+            clientOptions = setOf(ClientCodeGenOptionType.GROUP_BY_TAG),
             clientTarget = ClientCodeGenTargetType.OK_HTTP,
             openfeignClientName = "my-client",
             operationIdTransform = "^V2_(.*):v2$1",
@@ -99,7 +99,7 @@ class GenerationSettingsTest {
             &controllerTarget=KTOR
             &controllerOptions=AUTHENTICATION
             &modelSuffix=Model
-            &clientOptions=RESILIENCE4J
+            &clientOptions=GROUP_BY_TAG
             &clientTarget=OK_HTTP
             &openfeignClientName=my-client
             &operationIdTransform=%5EV2_%28.%2A%29%3Av2%241

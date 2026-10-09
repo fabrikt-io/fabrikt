@@ -64,7 +64,7 @@ The library currently has support for generating:
   * **Jackson** annotated **data classes**
   * **Kotlinx.serialization** annotated **data classes**
 * Clients
-  * **OkHttp Client (w/ Jackson Models)** - with the option for a resilience4j fault-tolerance wrapper
+  * **OkHttp Client (w/ Jackson Models)**
   * **OpenFeign** annotated client interfaces
   * **Ktor Client (w/ Jackson & Kotlin Serialization models)**
   * **Spring HTTP Interface** annotated client interfaces
@@ -101,8 +101,7 @@ java -jar fabrikt.jar \
     --base-package 'com.example' \
     --api-file '/path-to-api/open-api.yaml' \
     --targets 'client' \
-    --targets 'http_models' \
-    --http-client-opts resilience4j
+    --targets 'http_models'
 ```
 
 `--api-file` and `--api-fragment` also accept a resolvable `http://`/`https://` URL instead of a local path, in which case Fabrikt fetches the spec at generation time.
@@ -166,7 +165,6 @@ tasks {
             "--api-file", apiFile,
             "--targets", "http_models",
             "--targets", "client",
-            "--http-client-opts", "resilience4j"
         )
     }
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
@@ -266,7 +264,6 @@ Usage: <main class> [options]
 |                                         |   `AGGRESSIVE` - Referencing any schema in an external API file triggers generation of every external schema in that file. |
 |   `--http-client-opts`                  | Select the options for the http client code that you want to be generated. |
 |                                         | CHOOSE ANY OF: |
-|                                         |   `RESILIENCE4J` - Generates a fault tolerance service for the client using the following library "io.github.resilience4j:resilience4j-all:+" (only for OkHttp clients) |
 |                                         |   `SUSPEND_MODIFIER` - This option adds the suspend modifier to the generated client functions (only for OpenFeign clients) |
 |                                         |   `SPRING_RESPONSE_ENTITY_WRAPPER` - This option adds the Spring-ResponseEntity generic around the response to be able to get response headers and status (only for OpenFeign clients). |
 |                                         |   `SPRING_CLOUD_OPENFEIGN_STARTER_ANNOTATION` - This option adds the @FeignClient annotation to generated client interface |

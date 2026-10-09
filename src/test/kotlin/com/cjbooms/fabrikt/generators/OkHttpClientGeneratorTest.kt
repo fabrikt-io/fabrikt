@@ -10,10 +10,8 @@ import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.client.OkHttpClientGenerator
-import com.cjbooms.fabrikt.generators.client.OkHttpEnhancedClientGenerator
 import com.cjbooms.fabrikt.generators.client.OkHttpSimpleClientGenerator
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
-import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
@@ -100,50 +98,6 @@ class OkHttpClientGeneratorTest {
     }
 
     @ParameterizedTest
-    @MethodSource("groupedClientTestCases")
-    fun `correct api fault-tolerant service client is generated when the resilience4j option is set`(testCaseName: String) {
-        configureSerializationLibrary(testCaseName)
-        val packages = Packages("examples.$testCaseName")
-        val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
-
-        val expectedLibUtil = "/examples/$testCaseName/client/HttpResilience4jUtil.kt"
-        val expectedClientCode = expectedClientPath(testCaseName, "ApiService.kt")
-        val options = setOf(ClientCodeGenOptionType.RESILIENCE4J) + optionsFor(testCaseName)
-
-        val generator =
-            OkHttpEnhancedClientGenerator(packages, sourceApi)
-        val enhancedLibUtil =
-            generator
-                .generateLibrary(options)
-                .filterIsInstance<SimpleFile>()
-                .contentOf("HttpResilience4jUtil.kt")
-        val enhancedClientCode = generator.generateDynamicClientCode(options)
-
-        if (testCaseName != "tagGrouping" && testCaseName != "cookieParameters") {
-            assertThatGenerated(enhancedLibUtil).isEqualTo(expectedLibUtil)
-        }
-        assertThatGenerated(enhancedClientCode.toSingleFile()).isEqualTo(expectedClientCode)
-    }
-
-    @ParameterizedTest
-    @MethodSource("fullApiTestCases")
-    fun `the enhanced client is not generated when no specific options are provided`(testCaseName: String) {
-        configureSerializationLibrary(testCaseName)
-        val packages = Packages("examples.$testCaseName")
-        val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
-
-        val enhancedClientCode =
-            OkHttpEnhancedClientGenerator(
-                packages,
-                sourceApi,
-            ).generateDynamicClientCode(emptySet())
-
-        assertThat(enhancedClientCode).isEqualTo(emptySet<ClientType>())
-    }
-
-    @ParameterizedTest
     @MethodSource("fullApiTestCases")
     fun `correct client library files are generated`(testCaseName: String) {
         configureSerializationLibrary(testCaseName)
@@ -195,11 +149,9 @@ class OkHttpClientGeneratorTest {
 
         val expectedModel = "/examples/externalReferences/aggressive/models/ClientModels.kt"
         val expectedClient = "/examples/externalReferences/aggressive/client/ApiClient.kt"
-        val expectedClientCode = "/examples/externalReferences/aggressive/client/ApiService.kt"
         val expectedHttpUtils = "/examples/externalReferences/aggressive/client/HttpUtil.kt"
         val expectedApiModels = "/examples/externalReferences/aggressive/client/ApiModels.kt"
         val expectedOAuth = "/examples/externalReferences/aggressive/client/OAuth.kt"
-        val expectedLibUtil = "/examples/externalReferences/aggressive/client/HttpResilience4jUtil.kt"
         MutableSettings.updateSettings(
             modelOptions = setOf(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
             externalRefResolutionMode = ExternalReferencesResolutionMode.AGGRESSIVE,
@@ -210,31 +162,18 @@ class OkHttpClientGeneratorTest {
                 packages,
                 sourceApi,
             ).generate().toSingleFile()
-        val generator =
-            OkHttpEnhancedClientGenerator(packages, sourceApi)
         val simpleClientGenerator = OkHttpSimpleClientGenerator(packages, sourceApi)
         val simpleClientCode =
             simpleClientGenerator
                 .generateDynamicClientCode()
                 .toSingleFile()
-        val enhancedClientCode =
-            generator
-                .generateDynamicClientCode(setOf(ClientCodeGenOptionType.RESILIENCE4J))
-                .toSingleFile()
         val simpleClientLibrary = simpleClientGenerator.generateLibrary(emptySet()).filterIsInstance<SimpleFile>()
-        val enhancedLibUtil =
-            generator
-                .generateLibrary(setOf(ClientCodeGenOptionType.RESILIENCE4J))
-                .filterIsInstance<SimpleFile>()
-                .contentOf("HttpResilience4jUtil.kt")
 
         assertThatGenerated(models).isEqualTo(expectedModel)
         assertThatGenerated(simpleClientCode).isEqualTo(expectedClient)
-        assertThatGenerated(enhancedClientCode).isEqualTo(expectedClientCode)
         assertThatGenerated(simpleClientLibrary.contentOf("HttpUtil.kt")).isEqualTo(expectedHttpUtils)
         assertThatGenerated(simpleClientLibrary.contentOf("ApiModels.kt")).isEqualTo(expectedApiModels)
         assertThatGenerated(simpleClientLibrary.contentOf("OAuth.kt")).isEqualTo(expectedOAuth)
-        assertThatGenerated(enhancedLibUtil).isEqualTo(expectedLibUtil)
     }
 
     @Test

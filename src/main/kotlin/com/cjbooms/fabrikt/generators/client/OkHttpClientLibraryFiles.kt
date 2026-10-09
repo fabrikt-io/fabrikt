@@ -491,25 +491,4 @@ object OkHttpClientLibraryFiles {
                     ).build(),
             ).build()
     }
-
-    fun httpResilience4jUtil(packages: Packages): FileSpec {
-        val circuitBreaker = ClassName("io.github.resilience4j.circuitbreaker", "CircuitBreaker")
-        val circuitBreakerRegistry = ClassName("io.github.resilience4j.circuitbreaker", "CircuitBreakerRegistry")
-        return FileSpec
-            .builder(packages.client, "HttpResilience4jUtil")
-            .addFunction(
-                FunSpec
-                    .builder("withCircuitBreaker")
-                    .addTypeVariable(TypeVariableName("T"))
-                    .addParameter("circuitBreakerRegistry", circuitBreakerRegistry)
-                    .addParameter("apiClientName", String::class)
-                    .addParameter(
-                        "apiCall",
-                        LambdaTypeName.get(returnType = apiResponse(packages).parameterizedBy(TypeVariableName("T"))),
-                    ).returns(apiResponse(packages).parameterizedBy(TypeVariableName("T")))
-                    .addStatement("val circuitBreaker = circuitBreakerRegistry.circuitBreaker(apiClientName)")
-                    .addStatement("return·%T.decorateSupplier(circuitBreaker,·apiCall).get()", circuitBreaker)
-                    .build(),
-            ).build()
-    }
 }

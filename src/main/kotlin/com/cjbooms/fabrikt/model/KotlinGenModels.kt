@@ -46,7 +46,6 @@ class ClientType(
 ) : GeneratedType(spec, clientPackage(basePackage)) {
     companion object {
         const val SIMPLE_CLIENT_SUFFIX = "Client"
-        const val ENHANCED_CLIENT_SUFFIX = "Service"
     }
 }
 

@@ -1,6 +1,5 @@
 package com.cjbooms.fabrikt.generators
 
-import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ClientCodeGenTargetType
 import com.cjbooms.fabrikt.cli.CodeGenArgs
 import com.cjbooms.fabrikt.cli.CodeGenerationType
@@ -56,7 +55,6 @@ class GeneratedAnnotationTest {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.CLIENT),
             clientTarget = target,
-            clientOptions = setOf(ClientCodeGenOptionType.RESILIENCE4J),
             outputOptions = setOf(OutputOptionType.ADD_GENERATED_ANNOTATION),
             generationMetadata = GenerationMetadata(version = "27.0.1"),
         )
