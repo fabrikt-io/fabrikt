@@ -245,6 +245,10 @@ A required property with `type: [string, 'null']` generates `String?`.
 When a schema declares multiple non-null types, Fabrikt logs a warning and generates `Any` with Jackson or `JsonElement` with kotlinx.serialization instead of a dedicated union model.
 Use a supported `oneOf` schema when a concrete polymorphic Kotlin model is needed.
 
+### 5. Read shared fields from explicitly composed models
+
+Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared interfaces for compatible models that explicitly include a named object through `allOf`. See [Shared composition contracts](SHARED_COMPOSITION_CONTRACTS.md) for examples and current scope.
+
 ## Configuration Options
 
 This section documents the available CLI parameters for controlling what gets generated. This documentation is generated using: `./gradlew printCodeGenUsage`
@@ -297,6 +301,7 @@ Usage: <main class> [options]
 |                                         | CHOOSE ANY OF: |
 |                                         |   `EXCLUDE_READ_ONLY` - Exclude readOnly properties and honour requiredness of retained writeOnly properties |
 |                                         |   `EXCLUDE_WRITE_ONLY` - Exclude writeOnly properties and honour requiredness of retained readOnly properties |
+|                                         |   `SHARED_COMPOSITION_CONTRACTS` - Expose explicitly included object schemas through shared Kotlin interfaces |
 |                                         |   `X_EXTENSIBLE_ENUMS` - This option treats x-extensible-enums as enums |
 |                                         |   `JAVA_SERIALIZATION` - This option adds Java Serializable interface to the generated models |
 |                                         |   `QUARKUS_REFLECTION` - This option adds @RegisterForReflection to the generated models. Requires dependency "'io.quarkus:quarkus-core:+" |

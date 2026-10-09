@@ -86,6 +86,12 @@ tasks {
         "com.example.openenum",
         listOf("--http-model-opts", "FAULT_TOLERANT_OPEN_ENUMS")
     )
+    val generateCompositionCodeTask = createGenerateCodeTask(
+        "generateCompositionCode",
+        "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionContracts/api.yaml",
+        "com.example.composition",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS", "--validation-library", "jakarta_validation", "--serialization-library", "jackson")
+    )
 
     val generateValidationCodeTask = createGenerateCodeTask(
         "generateValidationCode",
@@ -112,6 +118,7 @@ tasks {
         dependsOn(generateStringFormatOverrideCodeTask)
         dependsOn(generateOneOfMarkerInterfaceCodeTask)
         dependsOn(generateOpenEnumCodeTask)
+        dependsOn(generateCompositionCodeTask)
         dependsOn(generateValidationCodeTask)
         dependsOn(generateValidationStringOverrideCodeTask)
     }

@@ -82,6 +82,7 @@ enum class ModelCodeGenOptionType(
 ) {
     EXCLUDE_READ_ONLY("Exclude readOnly properties and honour requiredness of retained writeOnly properties"),
     EXCLUDE_WRITE_ONLY("Exclude writeOnly properties and honour requiredness of retained readOnly properties"),
+    SHARED_COMPOSITION_CONTRACTS("Expose explicitly included object schemas through shared Kotlin interfaces"),
     X_EXTENSIBLE_ENUMS("This option treats x-extensible-enums as enums"),
     JAVA_SERIALIZATION("This option adds Java Serializable interface to the generated models"),
     QUARKUS_REFLECTION(
