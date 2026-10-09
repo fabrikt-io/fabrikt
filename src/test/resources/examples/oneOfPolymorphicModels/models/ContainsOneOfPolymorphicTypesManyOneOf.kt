@@ -9,7 +9,5 @@ import com.fasterxml.jackson.`annotation`.JsonTypeInfo
   property = "generation",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = PolymorphicTypeOneB::class, name =
-    "PolymorphicTypeOneB"),JsonSubTypes.Type(value = PolymorphicTypeTwoB::class, name =
-    "PolymorphicTypeTwoB"))
+@JsonSubTypes(JsonSubTypes.Type(value = PolymorphicTypeOneB::class, name = "PolymorphicTypeOneB"),JsonSubTypes.Type(value = PolymorphicTypeTwoB::class, name = "PolymorphicTypeTwoB"))
 public sealed interface ContainsOneOfPolymorphicTypesManyOneOf
