@@ -1,8 +1,9 @@
 package examples.springHttpInterfaceClient.client
 
-import examples.springHttpInterfaceClient.models.Content
 import examples.springHttpInterfaceClient.models.FirstModel
+import examples.springHttpInterfaceClient.models.PostBody
 import examples.springHttpInterfaceClient.models.QueryResult
+import examples.springHttpInterfaceClient.models.Responses
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.`annotation`.PathVariable
 import org.springframework.web.bind.`annotation`.RequestBody
@@ -45,7 +46,7 @@ public interface ExamplePath1Client {
     /**
      * POST example path 1
      *
-     * @param content
+     * @param postBody
      * @param explodeListQueryParam
      */
     @HttpExchange(
@@ -54,7 +55,7 @@ public interface ExamplePath1Client {
         contentType = "application/json",
     )
     public fun postExamplePath1(
-        @RequestBody content: Content,
+        @RequestBody postBody: PostBody,
         @RequestParam("explode_list_query_param") explodeListQueryParam: List<String>? = null,
         @RequestHeader additionalHeaders: Map<String, Any> = emptyMap(),
         @RequestParam additionalQueryParameters: Map<String, Any> = emptyMap(),
@@ -83,7 +84,7 @@ public interface ExamplePath2Client {
         @RequestHeader("If-None-Match") ifNoneMatch: String? = null,
         @RequestHeader additionalHeaders: Map<String, Any> = emptyMap(),
         @RequestParam additionalQueryParameters: Map<String, Any> = emptyMap(),
-    ): ResponseEntity<Content>
+    ): ResponseEntity<Responses>
 
     /**
      * HEAD example path 2

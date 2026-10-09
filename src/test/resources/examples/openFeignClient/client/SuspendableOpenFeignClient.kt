@@ -1,8 +1,9 @@
 package examples.openFeignClient.client
 
-import examples.openFeignClient.models.Content
 import examples.openFeignClient.models.FirstModel
+import examples.openFeignClient.models.PostBody
 import examples.openFeignClient.models.QueryResult
+import examples.openFeignClient.models.Responses
 import feign.CollectionFormat
 import feign.HeaderMap
 import feign.Headers
@@ -44,12 +45,12 @@ public interface ExamplePath1Client {
     /**
      * POST example path 1
      *
-     * @param content
+     * @param postBody
      * @param explodeListQueryParam
      */
     @RequestLine("POST /example-path-1?explode_list_query_param={explodeListQueryParam}")
     public suspend fun postExamplePath1(
-        content: Content,
+        postBody: PostBody,
         @Param("explodeListQueryParam") explodeListQueryParam: List<String>? = null,
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
         @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
@@ -78,7 +79,7 @@ public interface ExamplePath2Client {
         @Param("ifNoneMatch") ifNoneMatch: String? = null,
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
         @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
-    ): Content
+    ): Responses
 
     /**
      * HEAD example path 2

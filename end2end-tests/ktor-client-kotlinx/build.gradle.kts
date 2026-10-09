@@ -79,7 +79,6 @@ fun createGenerateCodeTask(name: String, apiFilePath: String, additionalArgs: Li
         "--http-client-target", "ktor",
         "--serialization-library", "kotlinx_serialization",
         "--validation-library", "no_validation",
-        "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF"
     ).plus(additionalArgs)
     dependsOn(":jar")
     dependsOn(":shadowJar")

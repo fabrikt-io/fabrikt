@@ -97,12 +97,6 @@ enum class ModelCodeGenOptionType(
         "This option adds @Serdeable to the generated models. Requires dependency \"'io.micronaut.serde:micronaut-serde-jackson:+\"",
     ),
     INCLUDE_COMPANION_OBJECT("This option adds a companion object to the generated models."),
-
-    @Deprecated("Sealed interfaces are enabled by default in v26+. Use DISABLE_SEALED_INTERFACES_FOR_ONE_OF to disable.")
-    SEALED_INTERFACES_FOR_ONE_OF(
-        "This option is deprecated. Sealed interfaces are enabled by default in v26+. Use DISABLE_SEALED_INTERFACES_FOR_ONE_OF to disable.",
-    ),
-    DISABLE_SEALED_INTERFACES_FOR_ONE_OF("This option disables the default sealed interfaces for oneOf behavior in v26+"),
     NON_NULL_MAP_VALUES(
         "This option makes map values non-null. The default (since v15) and most spec compliant is make map values nullable",
     ),

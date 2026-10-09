@@ -232,7 +232,7 @@ Fabrikt generates models for inline objects in operation parameters, non-multipa
 Other inline schema shapes can still fall back to generic types. For complex reusable schemas, define them under `components` in the OpenAPI spec. See [PR #713](https://github.com/fabrikt-io/fabrikt/pull/713) for the supported inline object cases.
 
 ### 2. Use `oneOf` with discriminator for polymorphism
-`oneOf` along with the flag `SEALED_INTERFACES_FOR_ONE_OF` will generate polymorphic models with sealed interfaces.
+`oneOf` generates polymorphic models with sealed interfaces.
 The `discriminator` property is used by Fabrikt to determine the subtypes to be generated.
 
 ### 3. Add metadata to references in OpenAPI 3.0
@@ -303,8 +303,6 @@ Usage: <main class> [options]
 |                                         |   `MICRONAUT_REFLECTION` - This option adds @ReflectiveAccess to the generated models. Requires dependency "'io.micronaut:micronaut-core:+" |
 |                                         |   `MICRONAUT_SERDEABLE` - This option adds @Serdeable to the generated models. Requires dependency "'io.micronaut.serde:micronaut-serde-jackson:+" |
 |                                         |   `INCLUDE_COMPANION_OBJECT` - This option adds a companion object to the generated models. |
-|                                         |   `SEALED_INTERFACES_FOR_ONE_OF` - This option is deprecated. Sealed interfaces are enabled by default in v26+. Use DISABLE_SEALED_INTERFACES_FOR_ONE_OF to disable. |
-|                                         |   `DISABLE_SEALED_INTERFACES_FOR_ONE_OF` - This option disables the default sealed interfaces for oneOf behavior in v26+ |
 |                                         |   `NON_NULL_MAP_VALUES` - This option makes map values non-null. The default (since v15) and most spec compliant is make map values nullable |
 |                                         |   `FAULT_TOLERANT_ENUMS` - This option adds an UNRECOGNIZED enum entry as a fallback for unmapped values, preventing deserialization exceptions. If jackson is used, the deserialization option **READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE** will need to be enabled as well |
 |                                         |   `FAULT_TOLERANT_OPEN_ENUMS` - This option converts the "open enum" pattern (an `anyOf` combining a string enum with an open `type: string`) into a fault-tolerant enum, i.e. an enum carrying the declared values plus an UNRECOGNIZED fallback, instead of collapsing the type to a plain `String`. Behaves like FAULT_TOLERANT_ENUMS for the affected enums |
@@ -389,7 +387,7 @@ The following example shows how `allOf` can be used to generate polymorphic Kotl
 - In each child schema, `allOf` is used to merge the `ChildDefinition` with the child's custom schema. This guarantees that each child schema inherits the correct discriminator property.
 - In the `Responses` schema a `oneOf` lists only child schemas. This will be detected by Fabrikt and it will generate the list of parent types: `List<ChildDefinition>`
 
-_NOTE: A new feature has been added that allows Polymorphism to be achieved using only a [discriminated oneOf](src/test/resources/examples/discriminatedOneOf). This feature makes use of Kotlin `sealed interface` and must be explicitly enabled via `--http-model-opts, SEALED_INTERFACES_FOR_ONE_OF`_
+_NOTE: [Discriminated `oneOf`](src/test/resources/examples/discriminatedOneOf) is the recommended way to model polymorphism. Fabrikt generates a Kotlin `sealed interface` for every `oneOf`, so no extra option is needed; the `allOf` pattern shown here remains supported for existing hierarchies._
 
 ```yml
 openapi: 3.0.0

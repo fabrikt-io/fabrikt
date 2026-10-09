@@ -105,7 +105,7 @@ object MutableSettings {
         this.generationTypes = genTypes
         this.controllerOptions = controllerOptions
         this.controllerTarget = controllerTarget
-        this.modelOptions = modelOptions - ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF
+        this.modelOptions = modelOptions
         this.modelAdditionalAnnotations = modelAdditionalAnnotations
         this.modelSuffix = modelSuffix
         this.clientOptions = clientOptions
@@ -135,8 +135,6 @@ object MutableSettings {
     fun addOption(mode: JacksonNullabilityMode) {
         jacksonNullabilityMode = mode
     }
-
-    fun isSealedInterfacesForOneOfEnabled(): Boolean = ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF !in modelOptions
 
     /**
      * Groups the type overrides that resolve for the same OAS type. Options in a group are mutually
