@@ -86,6 +86,24 @@ tasks {
         "com.example.openenum",
         listOf("--http-model-opts", "FAULT_TOLERANT_OPEN_ENUMS")
     )
+    val generateCompositionRefinementsCodeTask = createGenerateCodeTask(
+        "generateCompositionRefinementsCode",
+        "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionRefinements/api.yaml",
+        "com.example.compositionrefinements",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS", "--validation-library", "jakarta_validation", "--serialization-library", "jackson")
+    )
+    val generateCompositionRequestProjectionCodeTask = createGenerateCodeTask(
+        "generateCompositionRequestProjectionCode",
+        "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionRequestProjection/api.yaml",
+        "com.example.compositionrequestprojection",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS", "--validation-library", "jakarta_validation", "--serialization-library", "jackson", "--http-model-opts", "EXCLUDE_READ_ONLY")
+    )
+    val generateCompositionResponseProjectionCodeTask = createGenerateCodeTask(
+        "generateCompositionResponseProjectionCode",
+        "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionResponseProjection/api.yaml",
+        "com.example.compositionresponseprojection",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS", "--validation-library", "jakarta_validation", "--serialization-library", "jackson", "--http-model-opts", "EXCLUDE_WRITE_ONLY")
+    )
     val generateCompositionExternalCodeTask = createGenerateCodeTask(
         "generateCompositionExternalCode",
         "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionExternal/api.yaml",
@@ -135,6 +153,9 @@ tasks {
         dependsOn(generateCompositionCodeTask)
         dependsOn(generateCompositionUnionsCodeTask)
         dependsOn(generateCompositionExternalCodeTask)
+        dependsOn(generateCompositionRefinementsCodeTask)
+        dependsOn(generateCompositionRequestProjectionCodeTask)
+        dependsOn(generateCompositionResponseProjectionCodeTask)
         dependsOn(generateValidationCodeTask)
         dependsOn(generateValidationStringOverrideCodeTask)
     }

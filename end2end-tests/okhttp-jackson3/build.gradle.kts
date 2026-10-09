@@ -5,6 +5,9 @@ val nullableGenerationDir = "$buildDir/generated-nullable"
 val compositionGenerationDir = "$buildDir/generated-composition"
 val compositionUnionsGenerationDir = "$buildDir/generated-composition-unions"
 val compositionExternalGenerationDir = "$buildDir/generated-composition-external"
+val compositionRefinementsGenerationDir = "$buildDir/generated-composition-refinements"
+val compositionRequestProjectionGenerationDir = "$buildDir/generated-composition-requestprojection"
+val compositionResponseProjectionGenerationDir = "$buildDir/generated-composition-responseprojection"
 val apiFile = "${rootProject.projectDir}/src/test/resources/examples/okHttpClient/api.yaml"
 val nullableApiFile = "${rootProject.projectDir}/src/test/resources/examples/customExtensions/api.yaml"
 
@@ -16,6 +19,9 @@ sourceSets {
             "$compositionGenerationDir/src/main/kotlin",
             "$compositionUnionsGenerationDir/src/main/kotlin",
             "$compositionExternalGenerationDir/src/main/kotlin",
+            "$compositionRefinementsGenerationDir/src/main/kotlin",
+            "$compositionRequestProjectionGenerationDir/src/main/kotlin",
+            "$compositionResponseProjectionGenerationDir/src/main/kotlin",
         )
     }
     test { java.srcDirs("$generationDir/src/test/kotlin") }
@@ -45,6 +51,60 @@ dependencies {
 }
 
 tasks {
+    val generateCompositionRefinementsCode by creating(JavaExec::class) {
+        val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionRefinements/api.yaml"
+        inputs.files(spec)
+        outputs.dir(compositionRefinementsGenerationDir)
+        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        mainClass.set("io.fabrikt.cli.CodeGen")
+        args = listOf(
+            "--output-directory", compositionRefinementsGenerationDir,
+            "--base-package", "com.example.compositionrefinements",
+            "--api-file", spec,
+            "--targets", "http_models",
+            "--serialization-library", "jackson_3",
+            "--validation-library", "jakarta_validation",
+            "--http-model-opts", "SHARED_COMPOSITION_CONTRACTS",
+
+        )
+        dependsOn(":shadowJar")
+    }
+    val generateCompositionRequestProjectionCode by creating(JavaExec::class) {
+        val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionRequestProjection/api.yaml"
+        inputs.files(spec)
+        outputs.dir(compositionRequestProjectionGenerationDir)
+        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        mainClass.set("io.fabrikt.cli.CodeGen")
+        args = listOf(
+            "--output-directory", compositionRequestProjectionGenerationDir,
+            "--base-package", "com.example.compositionrequestprojection",
+            "--api-file", spec,
+            "--targets", "http_models",
+            "--serialization-library", "jackson_3",
+            "--validation-library", "jakarta_validation",
+            "--http-model-opts", "SHARED_COMPOSITION_CONTRACTS",
+            "--http-model-opts", "EXCLUDE_READ_ONLY",
+        )
+        dependsOn(":shadowJar")
+    }
+    val generateCompositionResponseProjectionCode by creating(JavaExec::class) {
+        val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionResponseProjection/api.yaml"
+        inputs.files(spec)
+        outputs.dir(compositionResponseProjectionGenerationDir)
+        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        mainClass.set("io.fabrikt.cli.CodeGen")
+        args = listOf(
+            "--output-directory", compositionResponseProjectionGenerationDir,
+            "--base-package", "com.example.compositionresponseprojection",
+            "--api-file", spec,
+            "--targets", "http_models",
+            "--serialization-library", "jackson_3",
+            "--validation-library", "jakarta_validation",
+            "--http-model-opts", "SHARED_COMPOSITION_CONTRACTS",
+            "--http-model-opts", "EXCLUDE_WRITE_ONLY",
+        )
+        dependsOn(":shadowJar")
+    }
     val generateCompositionExternalCode by creating(JavaExec::class) {
         val specDir = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionExternal"
         inputs.files(fileTree(specDir) { include("**/*.yaml") })
@@ -138,6 +198,9 @@ tasks {
         dependsOn(generateCompositionCode)
         dependsOn(generateCompositionUnionsCode)
         dependsOn(generateCompositionExternalCode)
+        dependsOn(generateCompositionRefinementsCode)
+        dependsOn(generateCompositionRequestProjectionCode)
+        dependsOn(generateCompositionResponseProjectionCode)
     }
 
     withType<Test> {

@@ -80,4 +80,14 @@ Resolved references keep the identity of their source schema across documents. T
 
 External loading retains the configured reference resolution mode. Enabling contracts additionally discovers explicitly composed ancestors needed to express their contracts; unrelated external definitions do not gain membership.
 
-Filtered property projections follow in the final part of [#747](https://github.com/fabrikt-io/fabrikt/issues/747).
+## Property compatibility and projections
+
+The contract follows the actual generated Kotlin property set, including nullability, model suffixes and read/write filtering. `EXCLUDE_READ_ONLY` excludes those properties from the contract as well as the concrete model; `EXCLUDE_WRITE_ONLY` does the same for write-only properties. Generate the corresponding projection in its intended package. This does not introduce simultaneous request/response models; integration with that separate option remains an integration point when it is available.
+
+Composition contracts do not change existing property discovery or type resolution. If an existing composition generates a broader type instead of a schema refinement, its contract retains that generated type; this option does not resolve the broader type-resolution limitation.
+
+A non-null property can implement a nullable contract. A generated subtype can implement a property of its generated superclass or interface type, and read-only collections can retain compatible element/value refinements. For example, `List<Cat>` can implement `val pets: List<Pet>` when the generated Cat actually extends Pet. Map keys remain invariant, as do mutable collections. A same-named class from another package is not treated as that generated subtype.
+
+Incompatible primitive types, missing fields or nullable values where the contract requires non-null values prevent membership and produce a warning describing the property types. The generator retains the concrete model's original properties and constructor rather than widening or coercing them to make the interface fit. Empty object projections can still expose an empty contract without inventing filtered properties.
+
+Validation and serialization annotations stay on concrete properties and inherited model properties, including cascading validation on collection elements. Defaults, data-class copy/equality behavior and existing discriminator-based class inheritance remain unchanged. Deserialize into the concrete model or its existing typed union; an ordinary shared contract is not a separate serializer target.
