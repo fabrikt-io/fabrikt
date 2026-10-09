@@ -2,7 +2,6 @@ package com.cjbooms.fabrikt.util
 
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.generators.MutableSettings
-import com.cjbooms.fabrikt.generators.MutableSettings.isSealedInterfacesForOneOfEnabled
 import com.cjbooms.fabrikt.model.OasType
 import com.cjbooms.fabrikt.model.PropertyInfo
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
@@ -253,10 +252,6 @@ object SchemaParserExtensions {
             }
 
     fun Schema.findOneOfSuperInterface(allSchemas: List<Schema>): List<Schema> {
-        if (!isSealedInterfacesForOneOfEnabled()) {
-            return emptyList()
-        }
-
         // Check top-level oneOf schemas
         val topLevelInterfaces =
             allSchemas
@@ -443,13 +438,6 @@ object SchemaParserExtensions {
                 }
         }
 
-    fun Schema.isOneOfResolvingToAnyType(): Boolean {
-        // oneOf schemas with discriminators that resolve to Any when sealed interfaces are not enabled
-        return this.hasDiscriminator() &&
-            this.oneOfSchemas.isNotEmpty() &&
-            !isSealedInterfacesForOneOfEnabled()
-    }
-
     fun Schema.isInlinedOneOfSuperInterface() = isOneOfSuperInterface() && isInlinedPropertySchema()
 
     fun Schema.isInlinedDiscriminatedOneOfSuperInterface() = isOneOfSuperInterfaceWithDiscriminator() && isInlinedPropertySchema()
@@ -460,8 +448,7 @@ object SchemaParserExtensions {
             anyOfSchemas.isEmpty() &&
             properties.isEmpty() &&
             oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() || it.isOneOfSuperInterface() } &&
-            !isRedundantOneOfForExistingDiscriminatedHierarchy() &&
-            isSealedInterfacesForOneOfEnabled()
+            !isRedundantOneOfForExistingDiscriminatedHierarchy()
 
     /**
      * A oneOf is redundant when all its members already inherit from a common allOf super type

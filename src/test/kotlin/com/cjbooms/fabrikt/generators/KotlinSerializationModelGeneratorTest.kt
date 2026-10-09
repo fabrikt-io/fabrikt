@@ -58,9 +58,6 @@ class KotlinSerializationModelGeneratorTest {
     @MethodSource("testCases")
     fun `correct models are generated for different OpenApi Specifications`(testCaseName: String) {
         print("Testcase: $testCaseName")
-        if (testCaseName !in listOf("discriminatedOneOf", "oneOfMarkerInterface")) {
-            MutableSettings.addOption(ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF)
-        }
         if (testCaseName == "openEnum") {
             MutableSettings.addOption(ModelCodeGenOptionType.FAULT_TOLERANT_OPEN_ENUMS)
         }

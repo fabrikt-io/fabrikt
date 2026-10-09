@@ -52,7 +52,6 @@ tasks {
             "--targets", "http_models",
             "--targets", "client",
             "--serialization-library", "jackson_3",
-            "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF",
         )
         dependsOn(":jar")
         dependsOn(":shadowJar")

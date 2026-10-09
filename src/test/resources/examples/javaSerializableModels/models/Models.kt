@@ -150,7 +150,30 @@ public data class FirstModel(
     @param:JsonProperty("model_type")
     override val modelType: ContentModelType = ContentModelType.FIRST_MODEL,
 ) : Content(id, firstAttr, secondAttr, thirdAttr, etag),
-    Serializable
+    Serializable,
+    Responses,
+    PostBody
+
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY,
+    property = "model_type",
+    visible = true,
+)
+@JsonSubTypes(
+    JsonSubTypes.Type(
+        value = FirstModel::class,
+        name =
+            "FirstModel",
+    ),
+    JsonSubTypes.Type(
+        value = SecondModel::class,
+        name =
+            "SecondModel",
+    ),
+    JsonSubTypes.Type(value = ThirdModel::class, name = "ThirdModel"),
+)
+public sealed interface PostBody
 
 public data class QueryResult(
     @param:JsonProperty("items")
@@ -159,6 +182,27 @@ public data class QueryResult(
     @get:Size(min = 0)
     public val items: List<@Valid Content>,
 ) : Serializable
+
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY,
+    property = "model_type",
+    visible = true,
+)
+@JsonSubTypes(
+    JsonSubTypes.Type(
+        value = FirstModel::class,
+        name =
+            "FirstModel",
+    ),
+    JsonSubTypes.Type(
+        value = SecondModel::class,
+        name =
+            "SecondModel",
+    ),
+    JsonSubTypes.Type(value = ThirdModel::class, name = "ThirdModel"),
+)
+public sealed interface Responses
 
 public data class SecondModel(
     /**
@@ -211,7 +255,9 @@ public data class SecondModel(
     @param:JsonProperty("model_type")
     override val modelType: ContentModelType = ContentModelType.SECOND_MODEL,
 ) : Content(id, firstAttr, secondAttr, thirdAttr, etag),
-    Serializable
+    Serializable,
+    Responses,
+    PostBody
 
 public data class ThirdModel(
     /**
@@ -264,4 +310,6 @@ public data class ThirdModel(
     @param:JsonProperty("model_type")
     override val modelType: ContentModelType = ContentModelType.THIRD_MODEL,
 ) : Content(id, firstAttr, secondAttr, thirdAttr, etag),
-    Serializable
+    Serializable,
+    Responses,
+    PostBody

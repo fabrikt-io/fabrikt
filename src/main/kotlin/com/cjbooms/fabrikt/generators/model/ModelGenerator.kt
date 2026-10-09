@@ -10,7 +10,6 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toClassName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKDoc
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toObjectTypeSpec
 import com.cjbooms.fabrikt.generators.MutableSettings
-import com.cjbooms.fabrikt.generators.MutableSettings.isSealedInterfacesForOneOfEnabled
 import com.cjbooms.fabrikt.generators.PropertyUtils.addToClass
 import com.cjbooms.fabrikt.generators.PropertyUtils.isNullable
 import com.cjbooms.fabrikt.generators.TypeFactory.createList
@@ -50,7 +49,6 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedTypedAdditionalProperties
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfResolvingToAnyType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOpenEnumDefinition
@@ -264,8 +262,6 @@ class ModelGenerator(
         schemas: List<SchemaInfo>,
     ) = schemas
         .filterNot { it.schema.isSimpleType() }
-        .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !isSealedInterfacesForOneOfEnabled() }
-        .filterNot { it.schema.isOneOfResolvingToAnyType() }
         .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && it.schema.hasNoDiscriminator() }
         .flatMap { schemaInfo ->
             val properties =

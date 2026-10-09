@@ -69,7 +69,7 @@ class GenerationSettingsTest {
             serializationLibrary = SerializationLibrary.KOTLINX_SERIALIZATION,
             instantLibrary = InstantLibrary.KOTLIN_TIME_INSTANT,
             jacksonNullabilityMode = JacksonNullabilityMode.STRICT,
-            modelOptions = setOf(ModelCodeGenOptionType.SEALED_INTERFACES_FOR_ONE_OF),
+            modelOptions = setOf(ModelCodeGenOptionType.INCLUDE_COMPANION_OBJECT),
             modelAdditionalAnnotations = listOf("com.example.First", "com.example.Second"),
             controllerTarget = ControllerCodeGenTargetType.KTOR,
             controllerOptions = setOf(ControllerCodeGenOptionType.AUTHENTICATION),
@@ -93,7 +93,7 @@ class GenerationSettingsTest {
             &serializationLibrary=KOTLINX_SERIALIZATION
             &instantLibrary=KOTLIN_TIME_INSTANT
             &jacksonNullabilityMode=STRICT
-            &modelOptions=SEALED_INTERFACES_FOR_ONE_OF
+            &modelOptions=INCLUDE_COMPANION_OBJECT
             &modelAdditionalAnnotations=com.example.First
             &modelAdditionalAnnotations=com.example.Second
             &controllerTarget=KTOR

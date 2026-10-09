@@ -524,7 +524,6 @@ class ModelGeneratorTest {
             modelOptions =
                 setOf(
                     ModelCodeGenOptionType.JAVA_SERIALIZATION,
-                    ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF,
                 ),
         )
         val models =
@@ -588,7 +587,6 @@ class ModelGeneratorTest {
             modelOptions =
                 setOf(
                     ModelCodeGenOptionType.QUARKUS_REFLECTION,
-                    ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF,
                 ),
         )
 
@@ -611,7 +609,6 @@ class ModelGeneratorTest {
             modelOptions =
                 setOf(
                     ModelCodeGenOptionType.MICRONAUT_INTROSPECTION,
-                    ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF,
                 ),
         )
 
@@ -634,7 +631,6 @@ class ModelGeneratorTest {
             modelOptions =
                 setOf(
                     ModelCodeGenOptionType.MICRONAUT_SERDEABLE,
-                    ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF,
                 ),
         )
 
@@ -657,7 +653,6 @@ class ModelGeneratorTest {
             modelOptions =
                 setOf(
                     ModelCodeGenOptionType.MICRONAUT_REFLECTION,
-                    ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF,
                 ),
         )
 
