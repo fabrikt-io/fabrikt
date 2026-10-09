@@ -1,0 +1,12 @@
+openapi: 3.0.4
+info: {title: Common models, version: '1'}
+paths: {}
+components:
+  schemas:
+    A:
+      allOf:
+        - $ref: './base.yaml#/components/schemas/Base'
+        - type: object
+          required: [label]
+          properties:
+            label: {type: string, minLength: 1}

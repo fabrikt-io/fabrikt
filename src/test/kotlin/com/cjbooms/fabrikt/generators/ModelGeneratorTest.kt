@@ -45,6 +45,7 @@ class ModelGeneratorTest {
             "allOfParentOrder",
             "sharedCompositionContracts",
             "sharedCompositionUnions",
+            "sharedCompositionExternal",
             "namedOneOfDeduction",
             "composedOneOf",
             "additionalModelAnnotations",
@@ -110,7 +111,7 @@ class ModelGeneratorTest {
     @MethodSource("testCases")
     fun `correct models are generated for different OpenApi Specifications`(testCaseName: String) {
         print("Testcase: $testCaseName")
-        if (testCaseName in listOf("sharedCompositionContracts", "sharedCompositionUnions")) {
+        if (testCaseName in listOf("sharedCompositionContracts", "sharedCompositionUnions", "sharedCompositionExternal")) {
             MutableSettings.addOption(ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS)
         }
         MutableSettings.addOption(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS)

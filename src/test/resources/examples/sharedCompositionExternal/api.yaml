@@ -1,0 +1,64 @@
+openapi: 3.0.4
+info: {title: External composition contracts, version: '1'}
+paths: {}
+components:
+  schemas:
+    LocalSameShape:
+      type: object
+      required: [id, label]
+      properties:
+        id: {type: string, minLength: 2}
+        label: {type: string, minLength: 1}
+    B:
+      allOf:
+        - $ref: './external/common.yaml#/components/schemas/A'
+        - type: object
+          required: [b]
+          properties:
+            b: {type: string}
+    C:
+      allOf:
+        - $ref: './external/../external/common.yaml#/components/schemas/A'
+        - type: object
+          required: [c]
+          properties:
+            c: {type: integer, format: int32}
+    D:
+      allOf:
+        - $ref: '#/components/schemas/C'
+        - type: object
+          required: [d]
+          properties:
+            d: {type: boolean}
+    E:
+      allOf:
+        - $ref: './other.yaml#/components/schemas/A'
+        - type: object
+          required: [e]
+          properties:
+            e: {type: string}
+    F:
+      allOf:
+        - $ref: './external/standalone.yaml'
+        - type: object
+          required: [f]
+          properties:
+            f: {type: string}
+    G:
+      allOf:
+        - $ref: './external/./standalone.yaml'
+        - type: object
+          required: [g]
+          properties:
+            g: {type: integer, format: int32}
+    Mixed:
+      oneOf:
+        - $ref: '#/components/schemas/B'
+        - $ref: '#/components/schemas/C'
+        - $ref: '#/components/schemas/E'
+      x-jackson-subtype-deduction: true
+    Shared:
+      oneOf:
+        - $ref: '#/components/schemas/B'
+        - $ref: '#/components/schemas/C'
+      x-jackson-subtype-deduction: true

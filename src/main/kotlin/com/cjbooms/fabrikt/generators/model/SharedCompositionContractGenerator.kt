@@ -2,8 +2,8 @@ package com.cjbooms.fabrikt.generators.model
 
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.model.Destinations.modelsPackage
-import com.cjbooms.fabrikt.model.OpenApi3Document
 import com.cjbooms.fabrikt.model.OpenApiSchema
+import com.cjbooms.fabrikt.model.SchemaCompositionRelationships
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.squareup.kotlinpoet.ClassName
@@ -17,20 +17,21 @@ import java.util.logging.Logger
 
 internal class SharedCompositionContractGenerator(
     private val packages: Packages,
-    private val document: OpenApi3Document,
+    componentSchemas: Collection<OpenApiSchema>,
     private val primaryModels: Map<String, TypeSpec>,
 ) {
+    private val schemas = componentSchemas.distinctBy { it.jsonReference }
+    private val relationships = SchemaCompositionRelationships(schemas)
     private val modelsByName = primaryModels.values.associateBy { it.name }
 
     fun apply(models: MutableSet<TypeSpec>): MutableSet<TypeSpec> {
         val contracts = mutableListOf<TypeSpec>()
         val interfacesByModel = mutableMapOf<String, MutableList<ClassName>>()
         val overriddenProperties = mutableMapOf<String, MutableSet<String>>()
-        val schemas = document.schemas.values.distinctBy { it.jsonReference }
         val ancestors =
             schemas
                 .flatMap { schema ->
-                    document.allOfComponentSchemas(schema) +
+                    relationships.allOfComponents(schema) +
                         if (schema.isOneOfSuperInterface()) {
                             schema.oneOfSchemas.filter { alternative -> schemas.any { it.jsonReference == alternative.jsonReference } }
                         } else {
@@ -107,7 +108,7 @@ internal class SharedCompositionContractGenerator(
         ancestor: OpenApiSchema,
     ): Boolean =
         schema.jsonReference == ancestor.jsonReference ||
-            document.allOfComponentSchemas(schema).any { it.jsonReference == ancestor.jsonReference }
+            relationships.allOfComponents(schema).any { it.jsonReference == ancestor.jsonReference }
 
     private fun exposesContract(
         schema: OpenApiSchema,

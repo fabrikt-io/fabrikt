@@ -87,6 +87,14 @@ tasks {
         listOf("--type-overrides", "ANY_AS_JSONELEMENT")
     )
 
+    val generateCompositionExternalCodeTask = createGenerateCodeTask(
+        "generateCompositionExternalCode",
+        "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionExternal/api.yaml",
+        "com.example.compositionexternal",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS")
+    ).apply {
+        inputs.files(fileTree("${rootProject.projectDir}/src/test/resources/examples/sharedCompositionExternal") { include("**/*.yaml") })
+    }
     val generateCompositionUnionsCodeTask = createGenerateCodeTask(
         "generateCompositionUnionsCode",
         "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionUnions/api.yaml",
@@ -113,6 +121,7 @@ tasks {
         dependsOn(generateAnyAsJsonElementCodeTask)
         dependsOn(generateCompositionCodeTask)
         dependsOn(generateCompositionUnionsCodeTask)
+        dependsOn(generateCompositionExternalCodeTask)
     }
 
     withType<Test> {

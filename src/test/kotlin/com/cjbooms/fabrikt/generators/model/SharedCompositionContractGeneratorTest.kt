@@ -34,7 +34,7 @@ class SharedCompositionContractGeneratorTest {
         val models =
             SharedCompositionContractGenerator(
                 Packages("example"),
-                document,
+                document.schemas.values,
                 document.schemas.map { (name, schema) -> schema.jsonReference to primaryModels.getValue(name) }.toMap(),
             ).apply(primaryModels.values.toMutableSet())
 
@@ -62,7 +62,7 @@ class SharedCompositionContractGeneratorTest {
         val models =
             SharedCompositionContractGenerator(
                 Packages("example"),
-                document,
+                document.schemas.values,
                 mapOf(document.schemas.getValue("A").jsonReference to a, document.schemas.getValue("B").jsonReference to b),
             ).apply(mutableSetOf(a, b))
 
@@ -90,7 +90,7 @@ class SharedCompositionContractGeneratorTest {
         val models =
             SharedCompositionContractGenerator(
                 Packages("example"),
-                document,
+                document.schemas.values,
                 mapOf(document.schemas.getValue("A").jsonReference to a, document.schemas.getValue("B").jsonReference to b),
             ).apply(mutableSetOf(a, b))
         val property = models.single { it.name == "B" }.propertySpecs.single()
