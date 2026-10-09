@@ -16,6 +16,7 @@
   * [Docker](#docker)
 * [Getting the Most from Fabrikt](#getting-the-most-from-fabrikt)
 * [Configuration Options](#configuration-options)
+* [Migration Guide](MIGRATION.md)
 * [Original Motivation](#original-motivation)
 * [Building Locally](#building-locally)
 * [Publishing](#publishing)
