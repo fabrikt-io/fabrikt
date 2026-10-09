@@ -13,19 +13,10 @@ class OkHttpClientGenerator(
     srcPath: Path,
 ) : ClientGenerator {
     private val simpleClientGenerator = OkHttpSimpleClientGenerator(packages, api, srcPath)
-    private val enhancedClientGenerator = OkHttpEnhancedClientGenerator(packages, api, srcPath)
 
-    override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
-        val simpleClient = simpleClientGenerator.generateDynamicClientCode(options)
-        val enhancedClient = enhancedClientGenerator.generateDynamicClientCode(options)
+    override fun generate(options: Set<ClientCodeGenOptionType>): Clients =
+        Clients(simpleClientGenerator.generateDynamicClientCode(options))
 
-        return Clients(enhancedClient.plus(simpleClient).toSet())
-    }
-
-    override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> {
-        val simpleClientLibrary = simpleClientGenerator.generateLibrary(options)
-        val enhancedClientLibrary = enhancedClientGenerator.generateLibrary(options)
-
-        return simpleClientLibrary.plus(enhancedClientLibrary)
-    }
+    override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> =
+        simpleClientGenerator.generateLibrary(options)
 }

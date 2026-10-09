@@ -22,7 +22,6 @@ java {
 dependencies {
     implementation(platform(libs.jackson3.bom))
     implementation(libs.okhttp)
-    implementation(libs.resilience4j.circuitbreaker)
     implementation(libs.jakarta.validation.api)
     implementation(libs.validation.api)
     implementation(libs.jackson3.module.kotlin)
@@ -48,7 +47,6 @@ tasks {
             "--api-file", apiFile,
             "--targets", "http_models",
             "--targets", "client",
-            "--http-client-opts", "resilience4j",
             "--http-model-opts", "DISABLE_SEALED_INTERFACES_FOR_ONE_OF",
         )
         dependsOn(":jar")

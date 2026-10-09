@@ -1,6 +1,6 @@
 # Authentication in generated clients
 
-Fabrikt can generate opt-in authentication helpers for HTTP Bearer and OAuth2 security schemes declared in an OpenAPI specification. Helpers are supported by OkHttp (simple and enhanced), OpenFeign, Spring HTTP Interface and Ktor clients. They delegate to the ordinary generated client methods, which remain available.
+Fabrikt can generate opt-in authentication helpers for HTTP Bearer and OAuth2 security schemes declared in an OpenAPI specification. Helpers are supported by OkHttp, OpenFeign, Spring HTTP Interface and Ktor clients. They delegate to the ordinary generated client methods, which remain available.
 
 Enable the relevant option through `--http-client-opts` or the corresponding playground control:
 

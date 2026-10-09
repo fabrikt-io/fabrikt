@@ -90,8 +90,6 @@ object ClientGeneratorUtils {
 
     fun simpleClientName(resourceName: String) = "$resourceName${ClientType.SIMPLE_CLIENT_SUFFIX}"
 
-    fun enhancedClientName(resourceName: String) = "$resourceName${ClientType.ENHANCED_CLIENT_SUFFIX}"
-
     fun deriveClientParameters(
         path: OpenApiPath,
         operation: OpenApiOperation,

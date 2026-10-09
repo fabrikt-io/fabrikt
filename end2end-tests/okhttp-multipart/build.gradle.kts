@@ -22,7 +22,6 @@ java {
 dependencies {
     implementation(platform(libs.jackson3.bom))
     implementation(libs.okhttp)
-    implementation(libs.resilience4j.circuitbreaker)
     implementation(libs.jakarta.validation.api)
     implementation(libs.validation.api)
     implementation(libs.jackson3.module.kotlin)
