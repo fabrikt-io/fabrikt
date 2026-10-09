@@ -1,0 +1,10 @@
+package examples.directionalModels.models
+
+import com.fasterxml.jackson.`annotation`.JsonProperty
+import kotlin.String
+
+public data class ComposedPetWriteObjectRequest(
+    @param:JsonProperty("token")
+    @get:JsonProperty("token")
+    public val token: String,
+)

@@ -44,22 +44,28 @@ sealed class PropertyInfo {
             val markAllOptional: Boolean = false,
             val excludeWriteOnly: Boolean = false,
             val excludeReadOnly: Boolean = false,
+            val direction: ModelDirection? = null,
         ) {
             fun excludes(schema: Schema): Boolean = (excludeReadOnly && schema.isReadOnly) || (excludeWriteOnly && schema.isWriteOnly)
         }
 
         val HTTP_SETTINGS: Settings
-            get() {
-                val excludeReadOnly =
-                    ModelCodeGenOptionType.EXCLUDE_READ_ONLY in MutableSettings.modelOptions
-                val excludeWriteOnly =
-                    ModelCodeGenOptionType.EXCLUDE_WRITE_ONLY in MutableSettings.modelOptions
-                return Settings(
-                    markReadWriteOnlyOptional = !excludeReadOnly && !excludeWriteOnly,
-                    excludeReadOnly = excludeReadOnly,
-                    excludeWriteOnly = excludeWriteOnly,
-                )
-            }
+            get() = httpSettings()
+
+        fun httpSettings(direction: ModelDirection? = null): Settings {
+            val excludeReadOnly =
+                ModelCodeGenOptionType.EXCLUDE_READ_ONLY in MutableSettings.modelOptions ||
+                    direction == ModelDirection.REQUEST
+            val excludeWriteOnly =
+                ModelCodeGenOptionType.EXCLUDE_WRITE_ONLY in MutableSettings.modelOptions ||
+                    direction == ModelDirection.RESPONSE
+            return Settings(
+                markReadWriteOnlyOptional = !excludeReadOnly && !excludeWriteOnly,
+                excludeReadOnly = excludeReadOnly,
+                excludeWriteOnly = excludeWriteOnly,
+                direction = direction,
+            )
+        }
 
         internal fun Schema.topLevelProperties(
             settings: Settings,
@@ -180,6 +186,7 @@ sealed class PropertyInfo {
                                     oasKey = oasKey,
                                     schema = property.value,
                                     isInherited = settings.markAsInherited,
+                                    direction = settings.direction,
                                     parentSchema = this,
                                     enclosingSchema = enclosingSchema,
                                     hasUniqueItems = property.value.isUniqueItems,
@@ -199,6 +206,7 @@ sealed class PropertyInfo {
                                     oasKey = oasKey,
                                     schema = property.value,
                                     isInherited = settings.markAsInherited,
+                                    direction = settings.direction,
                                     parentSchema = this,
                                     enclosingSchema = enclosingSchema,
                                     hasUniqueItems = property.value.isUniqueItems,
@@ -219,6 +227,7 @@ sealed class PropertyInfo {
                                         oasKey = oasKey,
                                         schema = property.value,
                                         isInherited = settings.markAsInherited,
+                                        direction = settings.direction,
                                         parentSchema = this,
                                     )
                                 } else if (property.value.isInlinedObjectDefinition() ||
@@ -238,6 +247,7 @@ sealed class PropertyInfo {
                                         oasKey = oasKey,
                                         schema = property.value,
                                         isInherited = settings.markAsInherited,
+                                        direction = settings.direction,
                                         parentSchema = this,
                                         enclosingSchema = enclosingSchema,
                                     )
@@ -255,6 +265,7 @@ sealed class PropertyInfo {
                                         oasKey = oasKey,
                                         schema = property.value,
                                         isInherited = settings.markAsInherited,
+                                        direction = settings.direction,
                                         parentSchema = this,
                                         enclosingSchema = enclosingSchema,
                                     )
@@ -272,6 +283,7 @@ sealed class PropertyInfo {
                                         oasKey = oasKey,
                                         schema = property.value,
                                         isInherited = settings.markAsInherited,
+                                        direction = settings.direction,
                                         parentSchema = this,
                                     )
                                 }
@@ -290,6 +302,7 @@ sealed class PropertyInfo {
                                     oasKey = oasKey,
                                     schema = property.value,
                                     isInherited = settings.markAsInherited,
+                                    direction = settings.direction,
                                     isPolymorphicDiscriminator = isDiscriminatorProperty(api, property),
                                     maybeDiscriminator =
                                         enclosingSchema?.let {
@@ -303,7 +316,7 @@ sealed class PropertyInfo {
             return if (hasAdditionalProperties()) {
                 mainProperties
                     .plus(
-                        AdditionalProperties(additionalPropertiesSchema, settings.markAsInherited, this),
+                        AdditionalProperties(additionalPropertiesSchema, settings.markAsInherited, this, settings.direction),
                     )
             } else {
                 mainProperties
@@ -337,9 +350,10 @@ sealed class PropertyInfo {
         val isPolymorphicDiscriminator: Boolean,
         val maybeDiscriminator: Map<String, DiscriminatorKey>?,
         val enclosingSchema: Schema? = null,
+        val direction: ModelDirection? = null,
     ) : PropertyInfo() {
         override val typeInfo: KotlinTypeInfo =
-            KotlinTypeInfo.from(schema, oasKey, enclosingSchema)
+            KotlinTypeInfo.from(schema, oasKey, enclosingSchema, direction = direction)
         val pattern: String? = schema.safeField(Schema::pattern)
         val maxLength: Int? = schema.safeField(Schema::maxLength)
         val minLength: Int? = schema.safeField(Schema::minLength)
@@ -375,13 +389,14 @@ sealed class PropertyInfo {
         val parentSchema: Schema,
         val enclosingSchema: Schema?,
         val hasUniqueItems: Boolean,
+        val direction: ModelDirection? = null,
     ) : PropertyInfo(),
         CollectionValidation {
         override val typeInfo: KotlinTypeInfo =
             if (isInherited) {
-                KotlinTypeInfo.from(schema, oasKey, parentSchema.takeIf { isInlined() })
+                KotlinTypeInfo.from(schema, oasKey, parentSchema.takeIf { isInlined() }, direction = direction)
             } else {
-                KotlinTypeInfo.from(schema, oasKey, enclosingSchema.takeIf { isInlined() })
+                KotlinTypeInfo.from(schema, oasKey, enclosingSchema.takeIf { isInlined() }, direction = direction)
             }
         override val minItems: Int? = schema.minItems
         override val maxItems: Int? = schema.maxItems
@@ -404,8 +419,9 @@ sealed class PropertyInfo {
         override val schema: Schema,
         override val isInherited: Boolean,
         val parentSchema: Schema,
+        val direction: ModelDirection? = null,
     ) : PropertyInfo() {
-        override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, oasKey)
+        override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, oasKey, direction = direction)
     }
 
     data class ObjectRefField(
@@ -415,8 +431,9 @@ sealed class PropertyInfo {
         override val schema: Schema,
         override val isInherited: Boolean,
         val parentSchema: Schema,
+        val direction: ModelDirection? = null,
     ) : PropertyInfo() {
-        override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, oasKey)
+        override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, oasKey, direction = direction)
     }
 
     /**
@@ -433,12 +450,13 @@ sealed class PropertyInfo {
         override val isInherited: Boolean,
         val parentSchema: Schema,
         val enclosingSchema: Schema?,
+        val direction: ModelDirection? = null,
     ) : PropertyInfo() {
         override val typeInfo: KotlinTypeInfo =
             if (isInherited) {
-                KotlinTypeInfo.from(schema, oasKey, parentSchema)
+                KotlinTypeInfo.from(schema, oasKey, parentSchema, direction = direction)
             } else {
-                KotlinTypeInfo.from(schema, oasKey, enclosingSchema)
+                KotlinTypeInfo.from(schema, oasKey, enclosingSchema, direction = direction)
             }
     }
 
@@ -450,12 +468,13 @@ sealed class PropertyInfo {
         override val isInherited: Boolean,
         val parentSchema: Schema,
         val enclosingSchema: Schema?,
+        val direction: ModelDirection? = null,
     ) : PropertyInfo() {
         override val typeInfo: KotlinTypeInfo =
             if (isInherited) {
-                KotlinTypeInfo.from(schema, oasKey, parentSchema)
+                KotlinTypeInfo.from(schema, oasKey, parentSchema, direction = direction)
             } else {
-                KotlinTypeInfo.from(schema, oasKey, enclosingSchema)
+                KotlinTypeInfo.from(schema, oasKey, enclosingSchema, direction = direction)
             }
     }
 
@@ -463,10 +482,11 @@ sealed class PropertyInfo {
         override val schema: Schema,
         override val isInherited: Boolean,
         val parentSchema: Schema,
+        val direction: ModelDirection? = null,
     ) : PropertyInfo() {
         override val name: String = "properties"
         override val oasKey: String = "properties"
-        override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, "additionalProperties")
+        override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, "additionalProperties", direction = direction)
         override val isRequired: Boolean = true
     }
 

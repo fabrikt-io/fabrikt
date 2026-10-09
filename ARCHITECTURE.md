@@ -65,3 +65,11 @@ OpenAPI Schema → Type Resolution → Code Generation → Output
 - `ModelNameRegistry.getBySchema()` retrieves the pre-computed name during generation
 - This ensures the interface name matches what's used in `implements` clauses
 
+
+## Directional model generation
+
+`REQUEST_RESPONSE_MODELS` runs the existing model generator once per `ModelDirection`. Each pass owns its direction and external-reference discovery; neither pass changes a process-global direction. Endpoint helpers choose the request or response direction explicitly, and type resolution carries it through aliases, collection elements, property references and model-name lookup.
+
+The model-name registry stores undirected base names and applies the supplied direction only when returning a name. Directional `SchemaInfo` and `PropertyInfo` instances resolve their types with their own direction, so cached types from the source document are never reused as directional types or overwritten by another pass. Property settings carry the same direction through composed and nested models.
+
+Direction is a generation concern, independent of the OpenAPI version and parser representation. Schema interpretation remains behind the OpenAPI facade. These changes do not make other global generator settings or registries safe for concurrent generation.

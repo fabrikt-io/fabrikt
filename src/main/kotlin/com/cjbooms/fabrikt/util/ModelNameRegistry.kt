@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.util
 
 import com.cjbooms.fabrikt.generators.MutableSettings
+import com.cjbooms.fabrikt.model.ModelDirection
 import com.cjbooms.fabrikt.model.SchemaInfo
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
@@ -11,6 +12,8 @@ import com.cjbooms.fabrikt.model.OpenApiSchema as Schema
  * Model name registry to avoid name collisions
  */
 object ModelNameRegistry {
+    private fun String.directionalName(direction: ModelDirection?): String = this + (direction?.suffix ?: "")
+
     private val allocatedNames: MutableSet<String> = mutableSetOf()
     private val tagToName: MutableMap<String, String> = mutableMapOf()
     private val referenceToName: MutableMap<String, String> = mutableMapOf()
@@ -115,16 +118,22 @@ object ModelNameRegistry {
         schema: Schema,
         enclosingSchema: Schema? = null,
         valueSuffix: Boolean = false,
+        direction: ModelDirection? = null,
     ): String {
-        getByReference(schema)?.let { return it }
+        getByReference(schema)?.let { return it.directionalName(direction) }
         return this[resolveTag(schema, enclosingSchema, valueSuffix)]
             .getOrElse { register(schema, enclosingSchema, valueSuffix) }
+            .directionalName(direction)
     }
 
-    fun getOrRegister(schemaInfo: SchemaInfo): String {
-        getByReference(schemaInfo.schema)?.let { return it }
+    fun getOrRegister(
+        schemaInfo: SchemaInfo,
+        direction: ModelDirection? = null,
+    ): String {
+        getByReference(schemaInfo.schema)?.let { return it.directionalName(direction) }
         return this[resolveTag(schemaInfo.schema, schemaInfoName = schemaInfo.name)]
             .getOrElse { register(schemaInfo.schema, schemaInfoName = schemaInfo.name) }
+            .directionalName(direction)
     }
 
     // Names a parameter's $ref'd component property the same way getOrRegister would for that
@@ -132,18 +141,20 @@ object ModelNameRegistry {
     fun getOrRegisterPropertyRef(
         schema: Schema,
         enclosingComponentName: String,
+        direction: ModelDirection? = null,
     ): String {
-        getByReference(schema)?.let { return it }
+        getByReference(schema)?.let { return it.directionalName(direction) }
         val modelClassName =
             enclosingComponentName.toModelClassName() +
                 schema.safeName().toModelClassName() +
                 MutableSettings.modelSuffix
         val tag = resolveTag(schema, modelClassName, qualifiedByEnclosingSchema = true)
-        return this[tag].getOrElse {
-            val suggestion = allocateUniqueName(modelClassName)
-            tagToName[tag] = suggestion
-            suggestion
-        }
+        return this[tag]
+            .getOrElse {
+                val suggestion = allocateUniqueName(modelClassName)
+                tagToName[tag] = suggestion
+                suggestion
+            }.directionalName(direction)
     }
 
     fun preRegisterByReference(
@@ -186,7 +197,10 @@ object ModelNameRegistry {
         inlineSchemaTracking[schema] = modelClassName
     }
 
-    fun getBySchema(schema: Schema): String? = inlineSchemaTracking[schema]
+    fun getBySchema(
+        schema: Schema,
+        direction: ModelDirection? = null,
+    ): String? = inlineSchemaTracking[schema]?.directionalName(direction)
 
     fun clear() {
         allocatedNames.clear()

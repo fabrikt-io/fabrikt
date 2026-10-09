@@ -24,10 +24,10 @@ import com.cjbooms.fabrikt.generators.model.RelativeSchemaHandler.maybeConvertRe
 import com.cjbooms.fabrikt.model.Destinations.modelsPackage
 import com.cjbooms.fabrikt.model.GeneratedType
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.ModelDirection
 import com.cjbooms.fabrikt.model.ModelType
 import com.cjbooms.fabrikt.model.Models
 import com.cjbooms.fabrikt.model.PropertyInfo
-import com.cjbooms.fabrikt.model.PropertyInfo.Companion.HTTP_SETTINGS
 import com.cjbooms.fabrikt.model.PropertyInfo.Companion.topLevelProperties
 import com.cjbooms.fabrikt.model.SchemaInfo
 import com.cjbooms.fabrikt.model.SerializationAnnotations
@@ -80,7 +80,9 @@ import com.cjbooms.fabrikt.model.OpenApiSchema as Schema
 class ModelGenerator(
     private val packages: Packages,
     private val sourceApi: SourceApi,
+    private val direction: ModelDirection? = null,
 ) {
+    private val propertySettings = PropertyInfo.httpSettings(direction)
     private val options = MutableSettings.modelOptions
     private val validationAnnotations: ValidationAnnotations = MutableSettings.validationLibrary.annotations
     private val serializationAnnotations: SerializationAnnotations = MutableSettings.effectiveSerializationAnnotations
@@ -229,6 +231,17 @@ class ModelGenerator(
     private val externalApiSchemas = mutableMapOf<String, MutableSet<String>>()
 
     fun generate(): Models {
+        if (ModelCodeGenOptionType.REQUEST_RESPONSE_MODELS in options) {
+            return Models(
+                ModelDirection.entries.flatMap { direction ->
+                    ModelGenerator(packages, sourceApi, direction).generateModelSet().models
+                },
+            )
+        }
+        return generateModelSet()
+    }
+
+    private fun generateModelSet(): Models {
         val models: MutableSet<TypeSpec> = createModels(sourceApi.openApi3, sourceApi.allSchemas)
         externalApiSchemas.forEach { externalReferences ->
             val externalUrl = URL(externalReferences.key)
@@ -246,6 +259,20 @@ class ModelGenerator(
                 if (models.none { it.name == additionalModel.name }) models.add(additionalModel)
             }
         }
+        if (propertySettings.excludeReadOnly || propertySettings.excludeWriteOnly) {
+            val parameters =
+                sourceApi.openApi3.parameters.values +
+                    sourceApi.openApi3.paths.values.flatMap { path ->
+                        path.parameters + path.operations.values.flatMap { it.parameters }
+                    }
+            parameters.forEach { parameter ->
+                addParameterModel(
+                    models,
+                    parameter.schema,
+                    KotlinTypeInfo.fromParameterSchema(parameter.schema, parameter.name, direction = direction),
+                )
+            }
+        }
         return Models(
             models.map { model ->
                 val existingAnnotationTypes = model.annotations.map { it.typeName }.toSet()
@@ -257,26 +284,53 @@ class ModelGenerator(
         )
     }
 
+    private fun addParameterModel(
+        models: MutableSet<TypeSpec>,
+        schema: Schema,
+        type: KotlinTypeInfo,
+    ) {
+        if (type is KotlinTypeInfo.Array) {
+            addParameterModel(models, schema.itemsSchema, type.parameterizedType)
+            return
+        }
+        if (type is KotlinTypeInfo.Map) {
+            addParameterModel(models, schema.additionalPropertiesSchema, type.parameterizedType)
+            return
+        }
+        val name = type.generatedModelClassName ?: return
+        if (models.any { it.name == name }) return
+        when (type) {
+            is KotlinTypeInfo.Enum -> models.add(buildEnumClass(schema, type))
+            is KotlinTypeInfo.Object, is KotlinTypeInfo.GeneratedTypedAdditionalProperties -> {
+                val properties = schema.topLevelProperties(propertySettings, sourceApi.openApi3, schema)
+                models.add(standardDataClass(name, schema.safeName(), properties, schema, emptyList()))
+                models.addAll(buildInLinedModels(properties, schema, schema.getDocumentUrl()))
+            }
+            else -> Unit
+        }
+    }
+
     private fun createModels(
         api: OpenApi3,
         schemas: List<SchemaInfo>,
     ) = schemas
+        .map { if (direction == null) it else SchemaInfo(it.name, it.schema, direction) }
         .filterNot { it.schema.isSimpleType() }
         .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && it.schema.hasNoDiscriminator() }
         .flatMap { schemaInfo ->
             val properties =
                 schemaInfo.schema.topLevelProperties(
-                    HTTP_SETTINGS,
+                    propertySettings,
                     api,
                     schemaInfo.schema,
                 )
             when {
                 properties.isNotEmpty() ||
                     (
-                        (HTTP_SETTINGS.excludeReadOnly || HTTP_SETTINGS.excludeWriteOnly) &&
+                        (propertySettings.excludeReadOnly || propertySettings.excludeWriteOnly) &&
                             schemaInfo.schema
                                 .topLevelProperties(
-                                    HTTP_SETTINGS.copy(excludeReadOnly = false, excludeWriteOnly = false),
+                                    propertySettings.copy(excludeReadOnly = false, excludeWriteOnly = false),
                                     api,
                                     schemaInfo.schema,
                                 ).isNotEmpty()
@@ -310,7 +364,7 @@ class ModelGenerator(
         properties: Collection<PropertyInfo>,
         allSchemas: List<SchemaInfo>,
     ): TypeSpec {
-        val modelName = ModelNameRegistry.getOrRegister(schemaInfo)
+        val modelName = ModelNameRegistry.getOrRegister(schemaInfo, direction = direction)
         val schemaName = schemaInfo.schema.componentKey()
         return when {
             schemaInfo.schema.isOneOfSuperInterface() ->
@@ -390,7 +444,7 @@ class ModelGenerator(
                                 setOf(
                                     oneOfSuperInterface(
                                         schema = it.schema,
-                                        modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
+                                        modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema, direction = direction),
                                         discriminator = it.schema.discriminator,
                                         allSchemas = sourceApi.allSchemas,
                                         members = it.schema.oneOfSchemas,
@@ -403,13 +457,13 @@ class ModelGenerator(
                             else -> {
                                 val props =
                                     it.schema.topLevelProperties(
-                                        HTTP_SETTINGS,
+                                        propertySettings,
                                         sourceApi.openApi3,
                                         enclosingSchema,
                                     )
                                 val currentModel =
                                     standardDataClass(
-                                        ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
+                                        ModelNameRegistry.getOrRegister(it.schema, enclosingSchema, direction = direction),
                                         it.name,
                                         props,
                                         it.schema,
@@ -430,7 +484,7 @@ class ModelGenerator(
                             setOf(
                                 oneOfSuperInterface(
                                     schema = it.schema,
-                                    modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
+                                    modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema, direction = direction),
                                     discriminator = it.schema.discriminator,
                                     allSchemas = sourceApi.allSchemas,
                                     members = it.schema.oneOfSchemas,
@@ -446,13 +500,14 @@ class ModelGenerator(
 
                     is PropertyInfo.AdditionalProperties ->
                         if (it.schema.isComplexTypedAdditionalProperties("additionalProperties")) {
-                            val props = it.schema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, enclosingSchema)
+                            val props = it.schema.topLevelProperties(propertySettings, sourceApi.openApi3, enclosingSchema)
                             val currentModel =
                                 standardDataClass(
                                     modelName =
                                         ModelNameRegistry.getOrRegister(
                                             it.schema,
                                             valueSuffix = it.schema.isInlinedTypedAdditionalProperties(),
+                                            direction = direction,
                                         ),
                                     schemaName = it.name,
                                     properties = props,
@@ -471,7 +526,7 @@ class ModelGenerator(
                             setOf(
                                 oneOfSuperInterface(
                                     schema = it.schema,
-                                    modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
+                                    modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema, direction = direction),
                                     discriminator = it.schema.discriminator,
                                     allSchemas = sourceApi.allSchemas,
                                     members = it.schema.oneOfSchemas,
@@ -495,7 +550,7 @@ class ModelGenerator(
                             setOf(
                                 oneOfSuperInterface(
                                     schema = it.schema,
-                                    modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema),
+                                    modelName = ModelNameRegistry.getOrRegister(it.schema, enclosingSchema, direction = direction),
                                     discriminator = it.schema.discriminator,
                                     allSchemas = sourceApi.allSchemas,
                                     members = it.schema.oneOfSchemas,
@@ -521,7 +576,7 @@ class ModelGenerator(
                 items.isInlinedObjectDefinition() || items.isInlinedObjectDefinitionUnderTopLevelArrayDefinition() ->
                     items
                         .topLevelProperties(
-                            HTTP_SETTINGS,
+                            propertySettings,
                             sourceApi.openApi3,
                             enclosingSchema,
                         ).let { props ->
@@ -531,7 +586,7 @@ class ModelGenerator(
                                 apiDocUrl = apiDocUrl,
                             ) +
                                 standardDataClass(
-                                    modelName = ModelNameRegistry.getOrRegister(schema, enclosingSchema),
+                                    modelName = ModelNameRegistry.getOrRegister(schema, enclosingSchema, direction = direction),
                                     schemaName = schemaName,
                                     properties = props,
                                     schema = schema,
@@ -543,7 +598,7 @@ class ModelGenerator(
                     setOf(
                         buildEnumClass(
                             items,
-                            KotlinTypeInfo.from(items, "items", enclosingSchema) as KotlinTypeInfo.Enum,
+                            KotlinTypeInfo.from(items, "items", enclosingSchema, direction = direction) as KotlinTypeInfo.Enum,
                         ),
                     )
 
@@ -551,7 +606,7 @@ class ModelGenerator(
                     setOf(
                         oneOfSuperInterface(
                             schema = items,
-                            modelName = ModelNameRegistry.getOrRegister(schema, enclosingSchema),
+                            modelName = ModelNameRegistry.getOrRegister(schema, enclosingSchema, direction = direction),
                             discriminator = items.discriminator,
                             allSchemas = sourceApi.allSchemas,
                             members = items.oneOfSchemas,
@@ -707,10 +762,15 @@ class ModelGenerator(
         val schema = mapField.schema.additionalPropertiesSchema
         if (!schema.isComplexTypedAdditionalProperties("additionalProperties")) return emptyList()
 
-        val props = schema.topLevelProperties(HTTP_SETTINGS, sourceApi.openApi3, enclosingSchema)
+        val props = schema.topLevelProperties(propertySettings, sourceApi.openApi3, enclosingSchema)
         val currentModel =
             standardDataClass(
-                modelName = ModelNameRegistry.getOrRegister(schema, valueSuffix = schema.isInlinedTypedAdditionalProperties()),
+                modelName =
+                    ModelNameRegistry.getOrRegister(
+                        schema,
+                        valueSuffix = schema.isInlinedTypedAdditionalProperties(),
+                        direction = direction,
+                    ),
                 schemaName = schema.safeName(),
                 properties = props,
                 schema = schema,
@@ -744,7 +804,9 @@ class ModelGenerator(
                 .addMicronautReflectionAnnotation()
                 .addCompanionObject()
         for (oneOfInterface in oneOfInterfaces) {
-            val interfaceName = ModelNameRegistry.getBySchema(oneOfInterface) ?: ModelNameRegistry.getOrRegister(oneOfInterface)
+            val interfaceName =
+                ModelNameRegistry.getBySchema(oneOfInterface, direction = direction)
+                    ?: ModelNameRegistry.getOrRegister(oneOfInterface, direction = direction)
 
             classBuilder
                 .addSuperinterface(generatedType(packages.base, interfaceName))
@@ -840,20 +902,22 @@ class ModelGenerator(
                 mappings.mapValues { (_, schema) ->
                     toModelType(
                         packages.base,
-                        KotlinTypeInfo.from(schema.schema, schema.name),
+                        KotlinTypeInfo.from(schema.schema, schema.name, direction = direction),
                     )
                 }
             serializationAnnotations.addPolymorphicSubTypesAnnotation(interfaceBuilder, kotlinMappings)
         } else if (isSubTypeDeductionEnabled) {
             val subTypeNames =
                 members.map { member ->
-                    toModelType(packages.base, KotlinTypeInfo.from(member, member.safeName()))
+                    toModelType(packages.base, KotlinTypeInfo.from(member, member.safeName(), direction = direction))
                 }
             serializationAnnotations.addPolymorphicSubTypeDeductionAnnotation(interfaceBuilder, subTypeNames)
         }
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {
-            val interfaceName = ModelNameRegistry.getBySchema(oneOfSuperInterface) ?: ModelNameRegistry.getOrRegister(oneOfSuperInterface)
+            val interfaceName =
+                ModelNameRegistry.getBySchema(oneOfSuperInterface, direction = direction)
+                    ?: ModelNameRegistry.getOrRegister(oneOfSuperInterface, direction = direction)
 
             interfaceBuilder.addSuperinterface(generatedType(packages.base, interfaceName))
         }
@@ -972,7 +1036,9 @@ class ModelGenerator(
         this.modifiers.remove(KModifier.DATA)
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {
-            val interfaceName = ModelNameRegistry.getBySchema(oneOfSuperInterface) ?: ModelNameRegistry.getOrRegister(oneOfSuperInterface)
+            val interfaceName =
+                ModelNameRegistry.getBySchema(oneOfSuperInterface, direction = direction)
+                    ?: ModelNameRegistry.getOrRegister(oneOfSuperInterface, direction = direction)
 
             this.addSuperinterface(generatedType(packages.base, interfaceName))
         }
@@ -981,7 +1047,7 @@ class ModelGenerator(
             allSchemas
                 .filter { model ->
                     model.schema.allOfSchemas.any { allOfRef ->
-                        ModelNameRegistry.getOrRegister(allOfRef) == modelName &&
+                        ModelNameRegistry.getOrRegister(allOfRef, direction = direction) == modelName &&
                             (
                                 allOfRef.discriminator == discriminator ||
                                     allOfRef.allOfSchemas.any { it.discriminator == discriminator }
@@ -1048,12 +1114,14 @@ class ModelGenerator(
             .superclass(
                 toModelType(
                     packages.base,
-                    KotlinTypeInfo.from(superType.schema, superType.name),
+                    KotlinTypeInfo.from(superType.schema, superType.name, direction = direction),
                 ),
             )
 
         for (oneOfSuperInterface in oneOfSuperInterfaces) {
-            val interfaceName = ModelNameRegistry.getBySchema(oneOfSuperInterface) ?: ModelNameRegistry.getOrRegister(oneOfSuperInterface)
+            val interfaceName =
+                ModelNameRegistry.getBySchema(oneOfSuperInterface, direction = direction)
+                    ?: ModelNameRegistry.getOrRegister(oneOfSuperInterface, direction = direction)
             this.addSuperinterface(generatedType(packages.base, interfaceName))
         }
 
@@ -1146,7 +1214,7 @@ class ModelGenerator(
                 it.key to
                     toModelType(
                         packages.base,
-                        KotlinTypeInfo.from(schemaInfo.schema, schemaInfo.name),
+                        KotlinTypeInfo.from(schemaInfo.schema, schemaInfo.name, direction = direction),
                     )
             }.toMap()
 

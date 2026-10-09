@@ -11,6 +11,7 @@ import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.OpenApiSchema
 import com.cjbooms.fabrikt.model.PathParam
+import com.cjbooms.fabrikt.model.PropertyInfo
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.util.GroupingStrategy
@@ -65,7 +66,7 @@ object GeneratorUtils {
             val modelType =
                 toModelType(
                     basePackage = basePackage,
-                    typeInfo = KotlinTypeInfo.from(it),
+                    typeInfo = KotlinTypeInfo.fromRequest(it),
                     isNullable = !this.isRequired,
                 )
             ParameterSpec
@@ -84,7 +85,7 @@ object GeneratorUtils {
                 this.name.toKCodeName(),
                 toModelType(
                     basePackage = basePackage,
-                    typeInfo = KotlinTypeInfo.from(this.schema),
+                    typeInfo = KotlinTypeInfo.fromRequest(this.schema),
                     isNullable = !this.isRequired && this.schema.default == null,
                 ),
             ).build()
@@ -267,11 +268,12 @@ object GeneratorUtils {
         extraParameters: List<IncomingParameter>,
         validationAnnotations: ValidationAnnotations? = null,
     ): List<IncomingParameter> {
+        val requestSettings = PropertyInfo.httpSettings(KotlinTypeInfo.requestDirection())
         val bodies =
             if (hasMultipartRequestBody()) {
                 // For multipart requests, create individual parameters for each part
                 requestBody.getMultipartSchema()?.let { multipartSchema ->
-                    multipartSchema.properties.map { (partName, partSchema) ->
+                    multipartSchema.properties.filterNot { (_, schema) -> requestSettings.excludes(schema) }.map { (partName, partSchema) ->
                         val isBinaryFile =
                             (partSchema.format == "binary" && partSchema.type == "string") ||
                                 (
@@ -279,7 +281,7 @@ object GeneratorUtils {
                                         partSchema.itemsSchema.format == "binary" &&
                                         partSchema.itemsSchema.type == "string"
                                 )
-                        val partTypeInfo = KotlinTypeInfo.from(partSchema)
+                        val partTypeInfo = KotlinTypeInfo.fromRequest(partSchema)
                         val type =
                             toModelType(
                                 basePackage,
@@ -311,7 +313,7 @@ object GeneratorUtils {
                 // Regular body parameters (non-multipart)
                 requestBody.contentMediaTypes.values
                     .map {
-                        val bodyTypeInfo = KotlinTypeInfo.from(it.schema)
+                        val bodyTypeInfo = KotlinTypeInfo.fromRequest(it.schema)
                         BodyParameter(
                             oasName =
                                 it.schema
@@ -349,7 +351,7 @@ object GeneratorUtils {
                         it.description,
                         toModelType(
                             basePackage,
-                            KotlinTypeInfo.fromParameterSchema(it.schema, ""),
+                            KotlinTypeInfo.fromRequestParameterSchema(it.schema, ""),
                             isNullable(it),
                             validationAnnotations,
                         ),
