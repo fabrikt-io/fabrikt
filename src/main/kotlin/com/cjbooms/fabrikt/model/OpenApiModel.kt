@@ -122,6 +122,8 @@ class OpenApi3Document(
     internal val kaizen: OpenApi3,
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
 ) {
+    private val compositionRelationships by lazy { SchemaCompositionRelationships(schemas.values) }
+
     val schemas: Map<String, OpenApiSchema>
         get() = kaizen.schemas?.mapValues { OpenApiSchema(it.value, schemaSemanticsAt) } ?: emptyMap()
     val paths: Map<String, OpenApiPath>
@@ -138,6 +140,9 @@ class OpenApi3Document(
     val securitySchemes: Map<String, OpenApiSecurityScheme>
         get() = kaizen.securitySchemes?.mapValues { OpenApiSecurityScheme(it.value) } ?: emptyMap()
     val parsedJson: JsonNode? get() = Overlay.of(kaizen).parsedJson
+
+    /** Named components included directly or transitively through allOf, excluding the schema itself. */
+    fun allOfComponentSchemas(schema: OpenApiSchema): List<OpenApiSchema> = compositionRelationships.allOfComponents(schema)
 
     override fun equals(other: Any?): Boolean = other is OpenApi3Document && kaizen == other.kaizen
 

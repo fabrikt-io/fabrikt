@@ -38,6 +38,12 @@ OpenAPI Schema → Type Resolution → Code Generation → Output
   - Adds properties to classes
   - Applies annotations based on `PolymorphyType`
 
+### Schema Composition Relationships
+
+`OpenApi3Document.allOfComponentSchemas(schema)` returns named components from the same document included directly or transitively through `allOf`, excluding the schema itself. Components are identified and deduplicated by their resolved JSON references, so distinct schemas with identical content remain distinct. The query follows nested composition and terminates on cycles; matching property names, properties, array items, and `oneOf`/`anyOf` alternatives do not establish an `allOf` relationship. Composed `allOf`/`oneOf` normalization exposes these relationships on its generated concrete alternatives, rather than on the union itself.
+
+This query records schema inclusion only. It does not establish Kotlin property compatibility or cause models to implement interfaces; those generation decisions must also account for property types, nullability, and request/response filtering.
+
 ### Annotations
 - **`JacksonAnnotations.kt`** / **`JacksonMetadata.kt`**
   - `@JsonProperty`, `@JsonSubTypes`, etc.
