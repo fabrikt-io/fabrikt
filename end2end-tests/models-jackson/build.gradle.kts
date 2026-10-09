@@ -86,6 +86,12 @@ tasks {
         "com.example.openenum",
         listOf("--http-model-opts", "FAULT_TOLERANT_OPEN_ENUMS")
     )
+    val generateCompositionUnionsCodeTask = createGenerateCodeTask(
+        "generateCompositionUnionsCode",
+        "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionUnions/api.yaml",
+        "com.example.compositionunions",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS", "--validation-library", "jakarta_validation", "--serialization-library", "jackson")
+    )
     val generateCompositionCodeTask = createGenerateCodeTask(
         "generateCompositionCode",
         "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionContracts/api.yaml",
@@ -119,6 +125,7 @@ tasks {
         dependsOn(generateOneOfMarkerInterfaceCodeTask)
         dependsOn(generateOpenEnumCodeTask)
         dependsOn(generateCompositionCodeTask)
+        dependsOn(generateCompositionUnionsCodeTask)
         dependsOn(generateValidationCodeTask)
         dependsOn(generateValidationStringOverrideCodeTask)
     }
