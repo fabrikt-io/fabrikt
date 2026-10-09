@@ -14,7 +14,6 @@ import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
 import com.cjbooms.fabrikt.util.Linter
 import com.cjbooms.fabrikt.util.ModelNameRegistry
-import com.cjbooms.fabrikt.util.ResourceHelper.readFolder
 import com.cjbooms.fabrikt.util.ResourceHelper.readTextResource
 import com.squareup.kotlinpoet.FileSpec
 import org.assertj.core.api.Assertions.assertThat
@@ -24,7 +23,6 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.ValueSource
-import java.nio.file.Path
 import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -197,14 +195,10 @@ class SpringHttpInterfaceGeneratorTest {
                 Packages("examples.fileComment"),
                 api,
             )
-        val expectedFiles = readFolder(Path.of("src/test/resources/examples/fileComment/client/spring"))
-
         val clientFiles = generator.generate(emptySet()).files
 
         clientFiles.forEach { file ->
-            val key = "${file.name}.kt"
-            val content = file.toString()
-            assertThat(content).isEqualTo(expectedFiles[key])
+            assertThatGenerated(file.toString()).isEqualTo("/examples/fileComment/client/spring/${file.name}.kt")
         }
     }
 

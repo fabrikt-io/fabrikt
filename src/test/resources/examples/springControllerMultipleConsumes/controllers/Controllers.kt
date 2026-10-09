@@ -31,9 +31,6 @@ public interface InternalUploadController {
     )
     public fun post(
         @RequestBody @Valid body: ByteArray?,
-        @RequestHeader(
-            value = "Content-Type",
-            required = true,
-        ) contentType: String,
+        @RequestHeader(value = "Content-Type", required = true) contentType: String,
     ): ResponseEntity<UploadResponse>
 }

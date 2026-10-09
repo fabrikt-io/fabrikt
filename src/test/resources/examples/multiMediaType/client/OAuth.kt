@@ -9,9 +9,9 @@ import okhttp3.Route
 
 public class OAuth2(
   public val accessToken: () -> String,
-) : Authenticator, Interceptor {
-  override fun authenticate(route: Route?, response: Response): Request =
-      response.request.newBuilder()
+) : Authenticator,
+    Interceptor {
+  override fun authenticate(route: Route?, response: Response): Request = response.request.newBuilder()
               .header("Authorization", "Bearer ${accessToken().trim()}")
               .build()
 

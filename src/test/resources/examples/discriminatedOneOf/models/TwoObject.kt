@@ -9,4 +9,6 @@ public data class TwoObject(
   @get:NotNull
   @param:JsonProperty("type")
   public val type: String = "content_block_location",
-) : SomeObjInlinedArray, SomeObjInlinedObject, SomeObjInlinedObjectNoMappings
+) : SomeObjInlinedArray,
+    SomeObjInlinedObject,
+    SomeObjInlinedObjectNoMappings

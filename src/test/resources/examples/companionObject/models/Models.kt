@@ -110,14 +110,7 @@ public data class Error(
     property = "petType",
     visible = true,
 )
-@JsonSubTypes(
-    JsonSubTypes.Type(value = Cat::class, name = "Cat"),
-    JsonSubTypes.Type(
-        value =
-            Dog::class,
-        name = "Dog",
-    ),
-)
+@JsonSubTypes(JsonSubTypes.Type(value = Cat::class, name = "Cat"), JsonSubTypes.Type(value = Dog::class, name = "Dog"))
 public sealed class Pet(
     public open val id: Long,
     public open val name: String,

@@ -49,11 +49,7 @@ public interface PathParamsController {
         public fun Route.pathParamsRoutes(controller: PathParamsController) {
             `get`("/path-params/{primitiveParam}/{formatParam}/{enumParam}") {
                 val primitiveParam = call.parameters.getTypedOrFail<kotlin.String>("primitiveParam")
-                val formatParam =
-                    call.parameters.getTypedOrFail<java.util.UUID>(
-                        "formatParam",
-                        call.application.conversionService,
-                    )
+                val formatParam = call.parameters.getTypedOrFail<java.util.UUID>("formatParam", call.application.conversionService)
                 val enumParam =
                     call.parameters.getTypedOrFail<examples.pathParameters.models.PathParamWithEnum>(
                         "enumParam",
@@ -80,12 +76,7 @@ public interface PathParamsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -107,12 +98,7 @@ public interface PathParamsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -122,9 +108,7 @@ public interface PathParamsController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 

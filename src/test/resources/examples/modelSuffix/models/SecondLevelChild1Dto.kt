@@ -30,6 +30,6 @@ public data class SecondLevelChild1Dto(
   @get:JsonProperty("firstLevelDiscriminator")
   @get:NotNull
   @param:JsonProperty("firstLevelDiscriminator")
-  override val firstLevelDiscriminator: FirstLevelDiscriminatorDto =
-      FirstLevelDiscriminatorDto.SECOND_LEVEL_CHILD1,
+  override val firstLevelDiscriminator:
+      FirstLevelDiscriminatorDto = FirstLevelDiscriminatorDto.SECOND_LEVEL_CHILD1,
 ) : FirstLevelChildDto(rootField1, rootField2, firstLevelField1, firstLevelField2)

@@ -64,12 +64,7 @@ public interface RequiredController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -91,12 +86,7 @@ public interface RequiredController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -106,9 +96,7 @@ public interface RequiredController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 
@@ -155,12 +143,7 @@ public interface ProhibitedController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -182,12 +165,7 @@ public interface ProhibitedController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -197,9 +175,7 @@ public interface ProhibitedController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 
@@ -248,12 +224,7 @@ public interface OptionalController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -275,12 +246,7 @@ public interface OptionalController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -290,9 +256,7 @@ public interface OptionalController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 
@@ -339,12 +303,7 @@ public interface NoneController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -366,12 +325,7 @@ public interface NoneController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -381,9 +335,7 @@ public interface NoneController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 
@@ -432,12 +384,7 @@ public interface DefaultController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -459,12 +406,7 @@ public interface DefaultController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -474,9 +416,7 @@ public interface DefaultController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 

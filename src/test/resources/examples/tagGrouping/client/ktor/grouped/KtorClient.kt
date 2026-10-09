@@ -33,14 +33,12 @@ public class PetClient(
      * 	 @param limit
      *
      * Returns:
-     * 	[NetworkResult.Success] with [kotlin.collections.List<examples.tagGrouping.models.Pet>] if the
-     * request was successful.
+     * 	[NetworkResult.Success] with [kotlin.collections.List<examples.tagGrouping.models.Pet>] if the request was successful.
      * 	[NetworkResult.Failure] with a [NetworkError] if the request failed.
      */
     public suspend fun listPets(
         limit: Int? = null,
-        apiConfiguration: ApiConfiguration =
-            ApiConfiguration(),
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<List<Pet>> {
         val basePath = apiConfiguration.basePath.trimEnd('/')
         val url =
@@ -167,8 +165,7 @@ public class PetClient(
      */
     public suspend fun getPetById(
         petId: UUID,
-        apiConfiguration: ApiConfiguration =
-            ApiConfiguration(),
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Pet> {
         val basePath = apiConfiguration.basePath.trimEnd('/')
         val url = basePath + """/pets/$petId"""
@@ -226,8 +223,7 @@ public class PetClient(
      */
     public suspend fun deletePet(
         petId: UUID,
-        apiConfiguration: ApiConfiguration =
-            ApiConfiguration(),
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
         val basePath = apiConfiguration.basePath.trimEnd('/')
         val url = basePath + """/pets/$petId"""
@@ -282,8 +278,7 @@ public class OwnerClient(
      *
      *
      * Returns:
-     * 	[NetworkResult.Success] with [kotlin.collections.List<examples.tagGrouping.models.Owner>] if
-     * the request was successful.
+     * 	[NetworkResult.Success] with [kotlin.collections.List<examples.tagGrouping.models.Owner>] if the request was successful.
      * 	[NetworkResult.Failure] with a [NetworkError] if the request failed.
      */
     public suspend fun listOwners(apiConfiguration: ApiConfiguration = ApiConfiguration()): NetworkResult<List<Owner>> {
@@ -343,8 +338,7 @@ public class OwnerClient(
      */
     public suspend fun createOwner(
         owner: Owner,
-        apiConfiguration: ApiConfiguration =
-            ApiConfiguration(),
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
         val basePath = apiConfiguration.basePath.trimEnd('/')
         val url = basePath + """/owners"""
@@ -399,14 +393,12 @@ public class OwnerClient(
      * 	 @param ownerId
      *
      * Returns:
-     * 	[NetworkResult.Success] with [kotlin.collections.List<examples.tagGrouping.models.Pet>] if the
-     * request was successful.
+     * 	[NetworkResult.Success] with [kotlin.collections.List<examples.tagGrouping.models.Pet>] if the request was successful.
      * 	[NetworkResult.Failure] with a [NetworkError] if the request failed.
      */
     public suspend fun listPetsByOwner(
         ownerId: UUID,
-        apiConfiguration: ApiConfiguration =
-            ApiConfiguration(),
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<List<Pet>> {
         val basePath = apiConfiguration.basePath.trimEnd('/')
         val url = basePath + """/owners/$ownerId/pets"""
@@ -461,8 +453,7 @@ public class VehicleClient(
      *
      *
      * Returns:
-     * 	[NetworkResult.Success] with [kotlin.collections.List<examples.tagGrouping.models.Vehicle>] if
-     * the request was successful.
+     * 	[NetworkResult.Success] with [kotlin.collections.List<examples.tagGrouping.models.Vehicle>] if the request was successful.
      * 	[NetworkResult.Failure] with a [NetworkError] if the request failed.
      */
     public suspend fun listVehicles(apiConfiguration: ApiConfiguration = ApiConfiguration()): NetworkResult<List<Vehicle>> {
@@ -522,8 +513,7 @@ public class VehicleClient(
      */
     public suspend fun createVehicle(
         vehicle: Vehicle,
-        apiConfiguration: ApiConfiguration =
-            ApiConfiguration(),
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
         val basePath = apiConfiguration.basePath.trimEnd('/')
         val url = basePath + """/vehicles"""

@@ -69,8 +69,7 @@ public interface ExampleController {
                 controller.getById(pathB, queryB, call)
             }
             post("/example") {
-                val querySomeObject =
-                    call.request.queryParameters.getTypedOrFail<kotlin.String>("someObject")
+                val querySomeObject = call.request.queryParameters.getTypedOrFail<kotlin.String>("someObject")
                 val bodySomeObject = call.receive<SomeObject>()
                 controller.post(querySomeObject, bodySomeObject, call)
             }
@@ -93,12 +92,7 @@ public interface ExampleController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -120,12 +114,7 @@ public interface ExampleController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -135,9 +124,7 @@ public interface ExampleController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 

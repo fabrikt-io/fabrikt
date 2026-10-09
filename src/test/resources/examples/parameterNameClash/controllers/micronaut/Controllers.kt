@@ -27,8 +27,7 @@ public interface ExampleController {
     @Get(uri = "/example/{b}")
     public fun getById(
         @PathVariable(value = "pathB") pathB: String,
-        @QueryValue(value = "queryB")
-        queryB: String,
+        @QueryValue(value = "queryB") queryB: String,
     ): HttpResponse<Unit>
 
     /**
@@ -41,7 +40,6 @@ public interface ExampleController {
     @Consumes(value = ["application/json"])
     public fun post(
         @Body @Valid bodySomeObject: SomeObject?,
-        @QueryValue(value = "querySomeObject")
-        querySomeObject: String,
+        @QueryValue(value = "querySomeObject") querySomeObject: String,
     ): HttpResponse<Unit>
 }

@@ -163,10 +163,7 @@ public class ApiUploadMultipleClient(
         files?.forEachIndexed { index, fileData ->
             multipartBuilder.addFormDataPart("files", fileData.filename, fileData.requestBody)
         }
-        multipartBuilder.addFormDataPart(
-            "commonMetadata",
-            objectMapper.writeValueAsString(commonMetadata),
-        )
+        multipartBuilder.addFormDataPart("commonMetadata", objectMapper.writeValueAsString(commonMetadata))
         description?.let {
             multipartBuilder.addFormDataPart("description", description.toString())
         }

@@ -10,10 +10,7 @@ import kotlin.collections.List
   property = "some_enum",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = DiscriminatedChild1::class, name =
-    "obj_one_only"),JsonSubTypes.Type(value = DiscriminatedChild2::class, name =
-    "obj_two_first"),JsonSubTypes.Type(value = DiscriminatedChild2::class, name =
-    "obj_two_second"),JsonSubTypes.Type(value = DiscriminatedChild3::class, name = "obj_three"))
+@JsonSubTypes(JsonSubTypes.Type(value = DiscriminatedChild1::class, name = "obj_one_only"),JsonSubTypes.Type(value = DiscriminatedChild2::class, name = "obj_two_first"),JsonSubTypes.Type(value = DiscriminatedChild2::class, name = "obj_two_second"),JsonSubTypes.Type(value = DiscriminatedChild3::class, name = "obj_three"))
 public sealed class ChildDefinition(
   public open val inlineObj: ChildDefinitionInlineObj? = null,
   public open val inlineArray: List<ChildDefinitionInlineArray>? = null,

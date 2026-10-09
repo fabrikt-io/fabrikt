@@ -9,7 +9,5 @@ import com.fasterxml.jackson.`annotation`.JsonTypeInfo
   property = "kind",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = PromotionEffectDiscriminatedBuyXGetY::class, name =
-    "buyXGetY"),JsonSubTypes.Type(value = PromotionEffectDiscriminatedAutomaticDiscount::class, name
-    = "automaticDiscount"))
+@JsonSubTypes(JsonSubTypes.Type(value = PromotionEffectDiscriminatedBuyXGetY::class, name = "buyXGetY"),JsonSubTypes.Type(value = PromotionEffectDiscriminatedAutomaticDiscount::class, name = "automaticDiscount"))
 public sealed interface PromotionEffectDiscriminatedAdditionalData

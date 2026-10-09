@@ -15,8 +15,7 @@ public interface ProtectedClient {
     @RequestLine("GET /protected")
     public fun getProtected(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     )
 
     public fun getProtectedWithBearerToken(
@@ -24,14 +23,9 @@ public interface ProtectedClient {
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ) {
-        val bearerToken =
-            listOf("BearerAuth").firstNotNullOfOrNull { scheme ->
-                bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() }
-            }
+        val bearerToken = listOf("BearerAuth").firstNotNullOfOrNull { scheme -> bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() } }
         checkNotNull(bearerToken) { "A Bearer token is required for this operation" }
-        val bearerHeaders =
-            bearerToken?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val bearerHeaders = bearerToken?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getProtected(
             additionalHeaders = bearerHeaders,
             additionalQueryParameters = additionalQueryParameters,
@@ -47,8 +41,7 @@ public interface AnonymousClient {
     @RequestLine("GET /anonymous")
     public fun getAnonymous(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     )
 }
 
@@ -60,8 +53,7 @@ public interface OptionalClient {
     @RequestLine("GET /optional")
     public fun getOptional(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     )
 
     public fun getOptionalWithBearerToken(
@@ -69,13 +61,8 @@ public interface OptionalClient {
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ) {
-        val bearerToken =
-            listOf("BearerAuth").firstNotNullOfOrNull { scheme ->
-                bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() }
-            }
-        val bearerHeaders =
-            bearerToken?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val bearerToken = listOf("BearerAuth").firstNotNullOfOrNull { scheme -> bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() } }
+        val bearerHeaders = bearerToken?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getOptional(
             additionalHeaders = bearerHeaders,
             additionalQueryParameters = additionalQueryParameters,
@@ -91,8 +78,7 @@ public interface CombinedClient {
     @RequestLine("GET /combined")
     public fun getCombined(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     )
 }
 
@@ -112,13 +98,8 @@ public interface AlternativeClient {
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ) {
-        val bearerToken =
-            listOf("BearerAuth").firstNotNullOfOrNull { scheme ->
-                bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() }
-            }
-        val bearerHeaders =
-            bearerToken?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val bearerToken = listOf("BearerAuth").firstNotNullOfOrNull { scheme -> bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() } }
+        val bearerHeaders = bearerToken?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getAlternative(
             additionalHeaders = bearerHeaders,
             additionalQueryParameters = additionalQueryParameters,

@@ -197,14 +197,7 @@ public data class OneOfTwo(
     property = "discriminator",
     visible = true,
 )
-@JsonSubTypes(
-    JsonSubTypes.Type(value = OneOfOne::class, name = "OneOfOne"),
-    JsonSubTypes.Type(
-        value =
-            OneOfTwo::class,
-        name = "OneOfTwo",
-    ),
-)
+@JsonSubTypes(JsonSubTypes.Type(value = OneOfOne::class, name = "OneOfOne"), JsonSubTypes.Type(value = OneOfTwo::class, name = "OneOfTwo"))
 public sealed class ParentOneOf {
     public abstract val discriminator: String
 }

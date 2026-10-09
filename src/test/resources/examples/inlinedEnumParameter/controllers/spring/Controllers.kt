@@ -78,7 +78,6 @@ public interface ItemsSearchController {
     public fun searchItems(
         @RequestParam(value = "categories", required = true) categories: List<Categories>,
         @RequestParam(value = "tags", required = false) tags: List<Tags>?,
-        @RequestParam(value = "nested_filters", required = false)
-        nestedFilters: List<List<NestedFilters>>?,
+        @RequestParam(value = "nested_filters", required = false) nestedFilters: List<List<NestedFilters>>?,
     ): ResponseEntity<List<Item>>
 }

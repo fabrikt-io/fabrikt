@@ -60,13 +60,11 @@ public fun <T> Request.execute(
 }
 
 @Throws(ApiException::class)
-public fun Request.execute(client: OkHttpClient): ApiResponse<ByteArray> =
-    doRequest(client) { responseBody ->
+public fun Request.execute(client: OkHttpClient): ApiResponse<ByteArray> = doRequest(client) { responseBody ->
   responseBody?.deserialize()
 }
 
-private fun <T> Request.doRequest(client: OkHttpClient, bodyReader: (ResponseBody?) -> T?):
-    ApiResponse<T> = client.newCall(this).execute().use { response ->
+private fun <T> Request.doRequest(client: OkHttpClient, bodyReader: (ResponseBody?) -> T?): ApiResponse<T> = client.newCall(this).execute().use { response ->
   when {
     response.isSuccessful ->
       ApiResponse(response.code, response.headers, bodyReader(response.body))
@@ -81,13 +79,11 @@ private fun <T> Request.doRequest(client: OkHttpClient, bodyReader: (ResponseBod
 }
 
 @Suppress("unused")
-public fun String.pathParam(vararg params: Pair<String, Any>): String =
-    params.fold(this) { acc, param ->
+public fun String.pathParam(vararg params: Pair<String, Any>): String = params.fold(this) { acc, param ->
   acc.replace(param.first, param.second.toString())
 }
 
-public fun <T> ResponseBody.deserialize(objectMapper: JsonMapper, typeRef: TypeReference<T>): T? =
-    this.string().isNotBlankOrNull()?.let { objectMapper.readValue(it, typeRef) }
+public fun <T> ResponseBody.deserialize(objectMapper: JsonMapper, typeRef: TypeReference<T>): T? = this.string().isNotBlankOrNull()?.let { objectMapper.readValue(it, typeRef) }
 
 public fun ResponseBody.deserialize(): ByteArray? = this.byteStream().readAllBytes()
 

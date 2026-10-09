@@ -18,6 +18,5 @@ public class ApiConfiguration(
    * @param customHeaders The new custom headers, defaults to the current ones
    * @return A new ApiConfiguration instance
    */
-  public fun copy(basePath: String = this.basePath, customHeaders: Map<String, String> =
-      this.customHeaders): ApiConfiguration = ApiConfiguration(basePath, customHeaders)
+  public fun copy(basePath: String = this.basePath, customHeaders: Map<String, String> = this.customHeaders): ApiConfiguration = ApiConfiguration(basePath, customHeaders)
 }

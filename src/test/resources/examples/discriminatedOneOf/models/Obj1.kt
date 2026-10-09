@@ -13,4 +13,5 @@ public data class Obj1(
   @get:NotNull
   @param:JsonProperty("type")
   public val type: String = "obj1",
-) : Poly1, Poly2
+) : Poly1,
+    Poly2

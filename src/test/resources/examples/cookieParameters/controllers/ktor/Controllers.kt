@@ -22,8 +22,7 @@ import kotlin.Suppress
 public interface CookiesController {
     /**
      * Route is expected to respond with [examples.cookieParameters.models.CookiePreferences].
-     * Use [examples.cookieParameters.controllers.TypedApplicationCall.respondTyped] to send the
-     * response.
+     * Use [examples.cookieParameters.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
      * @param id
      * @param sessionId
@@ -52,26 +51,12 @@ public interface CookiesController {
         public fun Route.cookiesRoutes(controller: CookiesController) {
             `get`("/cookies/{id}") {
                 val id = call.parameters.getTypedOrFail<kotlin.String>("id")
-                val sessionId =
-                    call.request.cookies["sessionId"] ?: throw
-                        MissingRequestParameterException("sessionId")
-                val displayMode =
-                    call.request.cookies["displayMode"] ?: throw
-                        MissingRequestParameterException("displayMode")
-                val features =
-                    call.request.cookies["features"] ?: throw
-                        MissingRequestParameterException("features")
+                val sessionId = call.request.cookies["sessionId"] ?: throw MissingRequestParameterException("sessionId")
+                val displayMode = call.request.cookies["displayMode"] ?: throw MissingRequestParameterException("displayMode")
+                val features = call.request.cookies["features"] ?: throw MissingRequestParameterException("features")
                 val locale = call.request.cookies["locale"]
                 val scopes = call.request.cookies["scopes"]
-                controller.getCookiePreferences(
-                    sessionId,
-                    displayMode,
-                    features,
-                    locale,
-                    scopes,
-                    id,
-                    TypedApplicationCall(call),
-                )
+                controller.getCookiePreferences(sessionId, displayMode, features, locale, scopes, id, TypedApplicationCall(call))
             }
         }
 
@@ -92,12 +77,7 @@ public interface CookiesController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -119,12 +99,7 @@ public interface CookiesController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -134,9 +109,7 @@ public interface CookiesController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 

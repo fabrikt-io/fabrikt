@@ -170,8 +170,7 @@ public class DifferentSuccessAndErrorResponseSchemaClient(
      */
     @Throws(ApiException::class)
     public fun getDifferentSuccessAndErrorResponseSchema(
-        additionalHeaders: Map<String, String> =
-            emptyMap(),
+        additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<SuccessResponse> {
         val httpUrl: HttpUrl =

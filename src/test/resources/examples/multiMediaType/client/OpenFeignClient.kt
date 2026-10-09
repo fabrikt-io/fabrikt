@@ -88,9 +88,7 @@ public interface DifferentSuccessAndErrorResponseSchemaClient {
     @RequestLine("GET /different-success-and-error-response-schema")
     @Headers("Accept: application/json")
     public fun getDifferentSuccessAndErrorResponseSchema(
-        @HeaderMap
-        additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     ): SuccessResponse
 }

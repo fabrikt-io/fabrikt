@@ -50,10 +50,6 @@ public interface ExampleController {
     )
     public fun post(
         @RequestBody @Valid requestBody: PostExampleRequest,
-        @RequestParam(
-            value =
-                "inline_enum.",
-            required = false,
-        ) inlineEnum: InlineEnum?,
+        @RequestParam(value = "inline_enum.", required = false) inlineEnum: InlineEnum?,
     ): ResponseEntity<Unit>
 }

@@ -16,8 +16,7 @@ public interface ProtectedClient {
     @RequestLine("GET /protected")
     public fun getProtected(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     )
 
     public fun getProtectedWithOAuth2Token(
@@ -26,18 +25,11 @@ public interface ProtectedClient {
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ) {
         val oauth2Token =
-            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull {
-                (
-                    scheme,
-                    scopes,
-                ),
-                ->
+            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
                 oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         checkNotNull(oauth2Token) { "An OAuth2 access token is required for this operation" }
-        val oauth2Headers =
-            oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val oauth2Headers = oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getProtected(
             additionalHeaders = oauth2Headers,
             additionalQueryParameters = additionalQueryParameters,
@@ -53,8 +45,7 @@ public interface AnonymousClient {
     @RequestLine("GET /anonymous")
     public fun getAnonymous(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     )
 }
 
@@ -66,8 +57,7 @@ public interface OptionalClient {
     @RequestLine("GET /optional")
     public fun getOptional(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     )
 
     public fun getOptionalWithOAuth2Token(
@@ -76,17 +66,10 @@ public interface OptionalClient {
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ) {
         val oauth2Token =
-            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull {
-                (
-                    scheme,
-                    scopes,
-                ),
-                ->
+            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
                 oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
-        val oauth2Headers =
-            oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val oauth2Headers = oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getOptional(
             additionalHeaders = oauth2Headers,
             additionalQueryParameters = additionalQueryParameters,
@@ -102,8 +85,7 @@ public interface CombinedClient {
     @RequestLine("GET /combined")
     public fun getCombined(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     )
 }
 
@@ -124,17 +106,10 @@ public interface AlternativeClient {
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ) {
         val oauth2Token =
-            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull {
-                (
-                    scheme,
-                    scopes,
-                ),
-                ->
+            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
                 oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
-        val oauth2Headers =
-            oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val oauth2Headers = oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getAlternative(
             additionalHeaders = oauth2Headers,
             additionalQueryParameters = additionalQueryParameters,
@@ -159,20 +134,11 @@ public interface ScopeAlternativesClient {
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ) {
         val oauth2Token =
-            listOf(
-                "OAuth2" to setOf("read:pets"),
-                "OAuth2" to
-                    setOf("write:pets"),
-            ).firstNotNullOfOrNull { (scheme, scopes) ->
-                oauth2TokenProvider(
-                    scheme,
-                    scopes,
-                )?.takeIf { it.isNotBlank() }
+            listOf("OAuth2" to setOf("read:pets"), "OAuth2" to setOf("write:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
+                oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         checkNotNull(oauth2Token) { "An OAuth2 access token is required for this operation" }
-        val oauth2Headers =
-            oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val oauth2Headers = oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getScopeAlternatives(
             additionalHeaders = oauth2Headers,
             additionalQueryParameters = additionalQueryParameters,
@@ -188,8 +154,7 @@ public interface UnscopedClient {
     @RequestLine("GET /unscoped")
     public fun getUnscoped(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     )
 
     public fun getUnscopedWithOAuth2Token(
@@ -202,9 +167,7 @@ public interface UnscopedClient {
                 oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         checkNotNull(oauth2Token) { "An OAuth2 access token is required for this operation" }
-        val oauth2Headers =
-            oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val oauth2Headers = oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getUnscoped(
             additionalHeaders = oauth2Headers,
             additionalQueryParameters = additionalQueryParameters,
@@ -220,8 +183,7 @@ public interface SchemesClient {
     @RequestLine("GET /schemes")
     public fun getSchemes(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     )
 
     public fun getSchemesWithOAuth2Token(
@@ -230,20 +192,11 @@ public interface SchemesClient {
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ) {
         val oauth2Token =
-            listOf(
-                "OAuth2" to setOf("read:pets"),
-                "OtherOAuth2" to
-                    setOf("write:pets"),
-            ).firstNotNullOfOrNull { (scheme, scopes) ->
-                oauth2TokenProvider(
-                    scheme,
-                    scopes,
-                )?.takeIf { it.isNotBlank() }
+            listOf("OAuth2" to setOf("read:pets"), "OtherOAuth2" to setOf("write:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
+                oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         checkNotNull(oauth2Token) { "An OAuth2 access token is required for this operation" }
-        val oauth2Headers =
-            oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val oauth2Headers = oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getSchemes(
             additionalHeaders = oauth2Headers,
             additionalQueryParameters = additionalQueryParameters,

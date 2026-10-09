@@ -114,8 +114,7 @@ public interface DifferentInlineController {
         consumes = ["application/json"],
     )
     public fun differentInline(
-        @RequestBody @Valid
-        requestBody: DifferentInlineRequestApplicationJson,
+        @RequestBody @Valid requestBody: DifferentInlineRequestApplicationJson,
     ): ResponseEntity<Unit>
 
     /**

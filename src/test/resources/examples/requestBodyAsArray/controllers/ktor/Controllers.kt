@@ -28,8 +28,7 @@ public interface BooksBatchController {
      * Submit a batch of books to be added to the library catalog.
      *
      * Route is expected to respond with [examples.requestBodyAsArray.models.BooksResponse].
-     * Use [examples.requestBodyAsArray.controllers.TypedApplicationCall.respondTyped] to send the
-     * response.
+     * Use [examples.requestBodyAsArray.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
      * @param requestBody A list of books to be added to the catalog.
      * @param call Decorated ApplicationCall with additional typed respond methods
@@ -69,12 +68,7 @@ public interface BooksBatchController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -96,12 +90,7 @@ public interface BooksBatchController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -111,9 +100,7 @@ public interface BooksBatchController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 

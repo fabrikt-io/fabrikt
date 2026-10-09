@@ -10,9 +10,7 @@ import kotlin.String
   property = "shared",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = PolymorphicTypeTwoA::class, name =
-    "PolymorphicTypeTwoA"),JsonSubTypes.Type(value = PolymorphicTypeTwoB::class, name =
-    "PolymorphicTypeTwoB"))
+@JsonSubTypes(JsonSubTypes.Type(value = PolymorphicTypeTwoA::class, name = "PolymorphicTypeTwoA"),JsonSubTypes.Type(value = PolymorphicTypeTwoB::class, name = "PolymorphicTypeTwoB"))
 public sealed class PolymorphicSuperTypeTwo() {
   public abstract val shared: String
 }

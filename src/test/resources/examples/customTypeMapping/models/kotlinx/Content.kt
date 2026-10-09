@@ -20,6 +20,6 @@ public data class Content(
   public val ids: List<@Serializable(with = DurationAsIsoStringSerializer::class) Duration>,
   @SerialName("durations")
   @get:NotNull
-  public val durations: Map<String, @Serializable(with = DurationAsIsoStringSerializer::class)
-      Duration?>,
+  public val durations:
+      Map<String, @Serializable(with = DurationAsIsoStringSerializer::class) Duration?>,
 )

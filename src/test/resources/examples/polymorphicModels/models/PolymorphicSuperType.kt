@@ -11,9 +11,7 @@ import kotlin.collections.List
   property = "generation",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = PolymorphicTypeOne::class, name =
-    "PolymorphicTypeOne"),JsonSubTypes.Type(value = PolymorphicTypeTwo::class, name =
-    "polymorphic_type_two"))
+@JsonSubTypes(JsonSubTypes.Type(value = PolymorphicTypeOne::class, name = "PolymorphicTypeOne"),JsonSubTypes.Type(value = PolymorphicTypeTwo::class, name = "polymorphic_type_two"))
 public sealed class PolymorphicSuperType(
   public open val firstName: String,
   public open val lastName: String,

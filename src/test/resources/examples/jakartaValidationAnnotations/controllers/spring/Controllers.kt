@@ -32,8 +32,7 @@ public interface MaximumTestController {
     )
     public fun getById(
         @Min(0) @Max(4_294_967_295) @PathVariable(value = "pathId", required = false) pathId: Long?,
-        @Min(0) @Max(4_294_967_295) @RequestHeader(value = "headerid", required = false)
-        headerid: Long?,
+        @Min(0) @Max(4_294_967_295) @RequestHeader(value = "headerid", required = false) headerid: Long?,
         @Min(0) @Max(4_294_967_295) @RequestParam(value = "queryid", required = false) queryid: Long?,
     ): ResponseEntity<Unit>
 }
@@ -78,11 +77,8 @@ public interface MinMaxTestController {
         method = [RequestMethod.GET],
     )
     public fun getById(
-        @Min(-4_294_967_295) @Max(4_294_967_296) @PathVariable(value = "pathId", required = false)
-        pathId: Long?,
-        @Min(-4_294_967_295) @Max(4_294_967_296) @RequestHeader(value = "headerid", required = false)
-        headerid: Long?,
-        @Min(-4_294_967_295) @Max(4_294_967_296) @RequestParam(value = "queryid", required = false)
-        queryid: Long?,
+        @Min(-4_294_967_295) @Max(4_294_967_296) @PathVariable(value = "pathId", required = false) pathId: Long?,
+        @Min(-4_294_967_295) @Max(4_294_967_296) @RequestHeader(value = "headerid", required = false) headerid: Long?,
+        @Min(-4_294_967_295) @Max(4_294_967_296) @RequestParam(value = "queryid", required = false) queryid: Long?,
     ): ResponseEntity<Unit>
 }

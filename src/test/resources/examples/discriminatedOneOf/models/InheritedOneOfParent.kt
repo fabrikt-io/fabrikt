@@ -10,8 +10,7 @@ import kotlin.String
   property = "actionType",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = InheritedOneOfChildOne::class, name =
-    "CHILD_ONE"),JsonSubTypes.Type(value = InheritedOneOfChildTwo::class, name = "CHILD_TWO"))
+@JsonSubTypes(JsonSubTypes.Type(value = InheritedOneOfChildOne::class, name = "CHILD_ONE"),JsonSubTypes.Type(value = InheritedOneOfChildTwo::class, name = "CHILD_TWO"))
 public sealed class InheritedOneOfParent(
   public open val effect: InheritedOneOfParentEffect? = null,
 ) {

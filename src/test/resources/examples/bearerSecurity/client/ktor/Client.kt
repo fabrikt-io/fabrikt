@@ -73,18 +73,11 @@ public class ProtectedClient(
         bearerTokenProvider: (String) -> String?,
         apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
-        val bearerToken =
-            listOf("BearerAuth").firstNotNullOfOrNull { scheme ->
-                bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() }
-            }
+        val bearerToken = listOf("BearerAuth").firstNotNullOfOrNull { scheme -> bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() } }
         checkNotNull(bearerToken) { "A Bearer token is required for this operation" }
         val bearerHeaders =
-            bearerToken?.let {
-                apiConfiguration.copy(
-                    customHeaders =
-                        apiConfiguration.customHeaders + ("Authorization" to "Bearer $it"),
-                )
-            } ?: apiConfiguration
+            bearerToken?.let { apiConfiguration.copy(customHeaders = apiConfiguration.customHeaders + ("Authorization" to "Bearer $it")) }
+                ?: apiConfiguration
         return getProtected(
             apiConfiguration = bearerHeaders,
         )
@@ -204,17 +197,10 @@ public class OptionalClient(
         bearerTokenProvider: (String) -> String?,
         apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
-        val bearerToken =
-            listOf("BearerAuth").firstNotNullOfOrNull { scheme ->
-                bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() }
-            }
+        val bearerToken = listOf("BearerAuth").firstNotNullOfOrNull { scheme -> bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() } }
         val bearerHeaders =
-            bearerToken?.let {
-                apiConfiguration.copy(
-                    customHeaders =
-                        apiConfiguration.customHeaders + ("Authorization" to "Bearer $it"),
-                )
-            } ?: apiConfiguration
+            bearerToken?.let { apiConfiguration.copy(customHeaders = apiConfiguration.customHeaders + ("Authorization" to "Bearer $it")) }
+                ?: apiConfiguration
         return getOptional(
             apiConfiguration = bearerHeaders,
         )
@@ -334,17 +320,10 @@ public class AlternativeClient(
         bearerTokenProvider: (String) -> String?,
         apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
-        val bearerToken =
-            listOf("BearerAuth").firstNotNullOfOrNull { scheme ->
-                bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() }
-            }
+        val bearerToken = listOf("BearerAuth").firstNotNullOfOrNull { scheme -> bearerTokenProvider(scheme)?.takeIf { it.isNotBlank() } }
         val bearerHeaders =
-            bearerToken?.let {
-                apiConfiguration.copy(
-                    customHeaders =
-                        apiConfiguration.customHeaders + ("Authorization" to "Bearer $it"),
-                )
-            } ?: apiConfiguration
+            bearerToken?.let { apiConfiguration.copy(customHeaders = apiConfiguration.customHeaders + ("Authorization" to "Bearer $it")) }
+                ?: apiConfiguration
         return getAlternative(
             apiConfiguration = bearerHeaders,
         )

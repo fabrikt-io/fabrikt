@@ -42,8 +42,7 @@ public data class NormalizedNameConflation(
   @SerialName("a_b_c")
   public val a_b_c: String? = null,
   /**
-   * Description of control_case - this should get normalized because it conflicts with no other
-   * property
+   * Description of control_case - this should get normalized because it conflicts with no other property
    */
   @SerialName("control_case")
   public val controlCase: String? = null,

@@ -28,8 +28,7 @@ public class PetsClient(
      *
      *
      * Returns:
-     * 	[NetworkResult.Success] with [kotlin.collections.List<com.example.models.Pet>] if the request
-     * was successful.
+     * 	[NetworkResult.Success] with [kotlin.collections.List<com.example.models.Pet>] if the request was successful.
      * 	[NetworkResult.Failure] with a [NetworkError] if the request failed.
      */
     public suspend fun listPets(apiConfiguration: ApiConfiguration = ApiConfiguration()): NetworkResult<List<Pet>> {

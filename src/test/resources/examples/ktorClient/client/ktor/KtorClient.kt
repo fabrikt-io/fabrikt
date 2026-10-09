@@ -36,8 +36,7 @@ public class ItemsClient(
      * 	 @param priceLimit Maximum price of items to return
      *
      * Returns:
-     * 	[NetworkResult.Success] with [kotlin.collections.List<examples.ktorClient.models.Item>] if the
-     * request was successful.
+     * 	[NetworkResult.Success] with [kotlin.collections.List<examples.ktorClient.models.Item>] if the request was successful.
      * 	[NetworkResult.Failure] with a [NetworkError] if the request failed.
      */
     public suspend fun getItems(
@@ -264,8 +263,7 @@ public class CatalogsSearchClient(
      * 	 @param xTracingID Unique identifier for the tracing
      *
      * Returns:
-     * 	[NetworkResult.Success] with [kotlin.collections.List<examples.ktorClient.models.Item>] if the
-     * request was successful.
+     * 	[NetworkResult.Success] with [kotlin.collections.List<examples.ktorClient.models.Item>] if the request was successful.
      * 	[NetworkResult.Failure] with a [NetworkError] if the request failed.
      */
     public suspend fun searchCatalogItems(

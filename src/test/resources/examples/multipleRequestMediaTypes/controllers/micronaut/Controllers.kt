@@ -57,10 +57,7 @@ public interface DistinctController {
     @Consumes(value = ["text/json"])
     public fun createDetailsTextJson(
         @Body @Valid countRequest: CountRequest,
-        @CookieValue(
-            value =
-                "session",
-        ) session: String?,
+        @CookieValue(value = "session") session: String?,
     ): HttpResponse<Unit>
 }
 

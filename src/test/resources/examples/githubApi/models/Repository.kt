@@ -63,8 +63,7 @@ public data class Repository(
   @get:NotNull
   public val status: RepositoryStatus,
   /**
-   * Server generated value which is used as a version for the resource. This value is to be used in
-   * conjunction with If-Match headers for optimistic locking purposes
+   * Server generated value which is used as a version for the resource. This value is to be used in conjunction with If-Match headers for optimistic locking purposes
    */
   @param:JsonProperty("etag")
   @get:JsonProperty("etag")

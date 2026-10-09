@@ -9,6 +9,5 @@ import com.fasterxml.jackson.`annotation`.JsonTypeInfo
   property = "actionType",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = ChildActionA::class, name =
-    "CHILD_A"),JsonSubTypes.Type(value = ChildActionB::class, name = "CHILD_B"))
+@JsonSubTypes(JsonSubTypes.Type(value = ChildActionA::class, name = "CHILD_A"),JsonSubTypes.Type(value = ChildActionB::class, name = "CHILD_B"))
 public sealed interface ChildActionsAll
