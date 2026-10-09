@@ -43,6 +43,7 @@ class ModelGeneratorTest {
     private fun testCases(): Stream<String> =
         Stream.of(
             "allOfParentOrder",
+            "sharedCompositionContracts",
             "namedOneOfDeduction",
             "composedOneOf",
             "additionalModelAnnotations",
@@ -108,6 +109,9 @@ class ModelGeneratorTest {
     @MethodSource("testCases")
     fun `correct models are generated for different OpenApi Specifications`(testCaseName: String) {
         print("Testcase: $testCaseName")
+        if (testCaseName == "sharedCompositionContracts") {
+            MutableSettings.addOption(ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS)
+        }
         MutableSettings.addOption(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS)
         if (testCaseName == "instantDateTime") {
             MutableSettings.addOption(CodeGenTypeOverride.DATETIME_AS_INSTANT)

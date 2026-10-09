@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 val generationDir = "$buildDir/generated"
 val nullableGenerationDir = "$buildDir/generated-nullable"
+val compositionGenerationDir = "$buildDir/generated-composition"
 val apiFile = "${rootProject.projectDir}/src/test/resources/examples/okHttpClient/api.yaml"
 val nullableApiFile = "${rootProject.projectDir}/src/test/resources/examples/customExtensions/api.yaml"
 
@@ -10,6 +11,7 @@ sourceSets {
         java.srcDirs(
             "$generationDir/src/main/kotlin",
             "$nullableGenerationDir/src/main/kotlin",
+            "$compositionGenerationDir/src/main/kotlin",
         )
     }
     test { java.srcDirs("$generationDir/src/test/kotlin") }
@@ -39,6 +41,23 @@ dependencies {
 }
 
 tasks {
+    val generateCompositionCode by creating(JavaExec::class) {
+        val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionContracts/api.yaml"
+        inputs.files(spec)
+        outputs.dir(compositionGenerationDir)
+        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        mainClass.set("io.fabrikt.cli.CodeGen")
+        args = listOf(
+            "--output-directory", compositionGenerationDir,
+            "--base-package", "com.example.composition",
+            "--api-file", spec,
+            "--targets", "http_models",
+            "--serialization-library", "jackson_3",
+            "--validation-library", "jakarta_validation",
+            "--http-model-opts", "SHARED_COMPOSITION_CONTRACTS",
+        )
+        dependsOn(":shadowJar")
+    }
     val generateCode by creating(JavaExec::class) {
         inputs.files(apiFile)
         outputs.dir(generationDir)
@@ -78,6 +97,7 @@ tasks {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         dependsOn(generateCode)
         dependsOn(generateNullableCode)
+        dependsOn(generateCompositionCode)
     }
 
     withType<Test> {
