@@ -175,6 +175,10 @@ sealed class KotlinTypeInfo(
                 OasType.Date -> {
                     if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.DATE_AS_STRING)) {
                         Text
+                    } else if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.DATE_AS_LOCALDATE)) {
+                        Date
+                    } else if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.DATE_AS_KOTLINXLOCALDATE)) {
+                        KotlinxLocalDate
                     } else if (MutableSettings.serializationLibrary == KOTLINX_SERIALIZATION) {
                         KotlinxLocalDate
                     } else {

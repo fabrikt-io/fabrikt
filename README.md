@@ -346,17 +346,22 @@ Usage: <main class> [options]
 |                                         | CHOOSE ANY OF: |
 |                                         |   `DATETIME_AS_INSTANT` - Use `Instant` as the datetime type. Defaults to `OffsetDateTime` |
 |                                         |   `DATETIME_AS_LOCALDATETIME` - Use `LocalDateTime` as the datetime type. Defaults to `OffsetDateTime` |
-|                                         |   `DATETIME_AS_OFFSETDATETIME` - Use `OffsetDateTime` as the datetime type |
+|                                         |   `DATETIME_AS_OFFSETDATETIME` - Use `OffsetDateTime` as the datetime type. Default for Jackson |
 |                                         |   `BYTE_AS_STRING` - Ignore string format `byte` and use `String` as the type |
+|                                         |   `BYTE_AS_BYTEARRAY` - Use `ByteArray` as the byte type. Default |
 |                                         |   `BINARY_AS_STRING` - Ignore string format `binary` and use `String` as the type |
-|                                         |   `BINARY_AS_BYTEARRAY` - Use `ByteArray` as the binary type |
+|                                         |   `BINARY_AS_BYTEARRAY` - Use `ByteArray` as the binary type. Default |
 |                                         |   `URI_AS_STRING` - Ignore string format `uri` and use `String` as the type |
-|                                         |   `URI_AS_URI` - Use `java.net.URI` as the uri type |
+|                                         |   `URI_AS_URI` - Use `java.net.URI` as the uri type. Default |
 |                                         |   `UUID_AS_STRING` - Ignore string format `uuid` and use `String` as the type |
+|                                         |   `UUID_AS_UUID` - Use `java.util.UUID` as the uuid type. Default |
 |                                         |   `DATE_AS_STRING` - Ignore string format `date` and use `String` as the type |
+|                                         |   `DATE_AS_LOCALDATE` - Use `java.time.LocalDate` as the date type. Default for Jackson |
+|                                         |   `DATE_AS_KOTLINXLOCALDATE` - Use `kotlinx.datetime.LocalDate` as the date type. Default for kotlinx.serialization |
 |                                         |   `DATETIME_AS_STRING` - Ignore string format `date-time` and use `String` as the type |
 |                                         |   `BYTEARRAY_AS_INPUTSTREAM` - Use `InputStream` as ByteArray type. Defaults to `ByteArray` |
 |                                         |   `ANY_AS_JSONELEMENT` - Use `kotlinx.serialization.json.JsonElement` for untyped (any) schemas and `JsonObject` for untyped objects. Requires the KOTLINX_SERIALIZATION serialization library. Defaults to `Any` |
+|                                         |   `ANY_AS_ANY` - Use `Any` as the untyped (any) type. Default |
 |   `--validation-library`                | Specify which validation library to use for annotations in generated model classes. Default: JAKARTA_VALIDATION |
 |                                         | CHOOSE ONE OF: |
 |                                         |   `JAVAX_VALIDATION` - Use `javax.validation` annotations in generated model classes |

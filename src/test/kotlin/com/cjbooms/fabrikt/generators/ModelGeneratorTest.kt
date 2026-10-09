@@ -115,6 +115,15 @@ class ModelGeneratorTest {
         if (testCaseName == "instantDateTime") {
             MutableSettings.addOption(CodeGenTypeOverride.DATETIME_AS_INSTANT)
         }
+        if (testCaseName == "primitiveTypes") {
+            // Explicitly select the default types; the goldens must remain unchanged.
+            MutableSettings.addOption(CodeGenTypeOverride.BYTE_AS_BYTEARRAY)
+            MutableSettings.addOption(CodeGenTypeOverride.BINARY_AS_BYTEARRAY)
+            MutableSettings.addOption(CodeGenTypeOverride.UUID_AS_UUID)
+            MutableSettings.addOption(CodeGenTypeOverride.URI_AS_URI)
+            MutableSettings.addOption(CodeGenTypeOverride.DATE_AS_LOCALDATE)
+            MutableSettings.addOption(CodeGenTypeOverride.ANY_AS_ANY)
+        }
         if (testCaseName == "mapExamplesNonNullValues") {
             MutableSettings.addOption(ModelCodeGenOptionType.NON_NULL_MAP_VALUES)
         }

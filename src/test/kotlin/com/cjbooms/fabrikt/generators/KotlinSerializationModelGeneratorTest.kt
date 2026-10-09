@@ -64,6 +64,15 @@ class KotlinSerializationModelGeneratorTest {
         if (testCaseName == "openEnum") {
             MutableSettings.addOption(ModelCodeGenOptionType.FAULT_TOLERANT_OPEN_ENUMS)
         }
+        if (testCaseName == "primitiveTypes") {
+            // Explicitly select the default types; the goldens must remain unchanged.
+            MutableSettings.addOption(CodeGenTypeOverride.BYTE_AS_BYTEARRAY)
+            MutableSettings.addOption(CodeGenTypeOverride.BINARY_AS_BYTEARRAY)
+            MutableSettings.addOption(CodeGenTypeOverride.UUID_AS_UUID)
+            MutableSettings.addOption(CodeGenTypeOverride.URI_AS_URI)
+            MutableSettings.addOption(CodeGenTypeOverride.DATE_AS_KOTLINXLOCALDATE)
+            MutableSettings.addOption(CodeGenTypeOverride.ANY_AS_ANY)
+        }
         if (testCaseName == "customTypeMapping") {
             MutableSettings.updateSettings(
                 genTypes = setOf(CodeGenerationType.HTTP_MODELS),
