@@ -5,6 +5,7 @@ import com.cjbooms.fabrikt.model.Destinations.modelsPackage
 import com.cjbooms.fabrikt.model.OpenApi3Document
 import com.cjbooms.fabrikt.model.OpenApiSchema
 import com.cjbooms.fabrikt.util.ModelNameRegistry
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName
@@ -28,8 +29,14 @@ internal class SharedCompositionContractGenerator(
         val schemas = document.schemas.values.distinctBy { it.jsonReference }
         val ancestors =
             schemas
-                .flatMap(document::allOfComponentSchemas)
-                .distinctBy { it.jsonReference }
+                .flatMap { schema ->
+                    document.allOfComponentSchemas(schema) +
+                        if (schema.isOneOfSuperInterface()) {
+                            schema.oneOfSchemas.filter { alternative -> schemas.any { it.jsonReference == alternative.jsonReference } }
+                        } else {
+                            emptyList()
+                        }
+                }.distinctBy { it.jsonReference }
         ancestors.forEach { ancestor ->
             val baseModel = primaryModels[ancestor.jsonReference] ?: return@forEach
             if (baseModel.kind != TypeSpec.Kind.CLASS) return@forEach
@@ -43,6 +50,7 @@ internal class SharedCompositionContractGenerator(
                     .addProperties(properties.values.map { PropertySpec.builder(it.name, it.type.withoutTypeAnnotations()).build() })
                     .build(),
             )
+            val compatibleMembers = mutableSetOf<String>()
             schemas.filter { includes(it, ancestor) }.forEach member@{ schema ->
                 val model = primaryModels[schema.jsonReference] ?: return@member
                 if (model.kind != TypeSpec.Kind.CLASS) return@member
@@ -61,6 +69,11 @@ internal class SharedCompositionContractGenerator(
                 }
                 interfacesByModel.getOrPut(checkNotNull(model.name), ::mutableListOf).add(contractType)
                 overriddenProperties.getOrPut(checkNotNull(model.name), ::mutableSetOf).addAll(properties.keys)
+                compatibleMembers.add(schema.jsonReference)
+            }
+            schemas.filter { it.isOneOfSuperInterface() && exposesContract(it, compatibleMembers) }.forEach union@{ union ->
+                val model = primaryModels[union.jsonReference] ?: return@union
+                interfacesByModel.getOrPut(checkNotNull(model.name), ::mutableListOf).add(contractType)
             }
         }
         return models
@@ -95,6 +108,17 @@ internal class SharedCompositionContractGenerator(
     ): Boolean =
         schema.jsonReference == ancestor.jsonReference ||
             document.allOfComponentSchemas(schema).any { it.jsonReference == ancestor.jsonReference }
+
+    private fun exposesContract(
+        schema: OpenApiSchema,
+        compatibleMembers: Set<String>,
+        visited: Set<String> = emptySet(),
+    ): Boolean {
+        if (schema.jsonReference in compatibleMembers) return true
+        if (schema.jsonReference in visited || !schema.isOneOfSuperInterface()) return false
+        if (primaryModels[schema.jsonReference]?.kind != TypeSpec.Kind.INTERFACE) return false
+        return schema.oneOfSchemas.all { exposesContract(it, compatibleMembers, visited + schema.jsonReference) }
+    }
 
     private fun effectiveProperties(
         model: TypeSpec,

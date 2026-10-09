@@ -49,4 +49,29 @@ Membership follows resolved schema references, rather than matching field names.
 
 Contract properties use the Kotlin types that Fabrikt actually generates. A model whose generated properties cannot implement the contract safely is omitted from that contract with a warning; its existing properties remain unchanged. Contract names use the model name plus `Composite`, and Fabrikt disambiguates collisions using its existing model name allocation.
 
-The initial implementation covers named object schemas and local direct or transitive `allOf` references. Integration with typed `oneOf` unions, external references, and filtered property projections follows in the remaining parts of #747.
+## Typed unions
+
+With typed `oneOf` generation enabled, contract checks follow the concrete variant. If `Mixed = oneOf[B, C, Other]`, and only B and C include A through `allOf`, Mixed does not extend `AComposite`. Deserializing Mixed into B or C produces an object that passes `is AComposite`; deserializing Other does not, even if Other declares a matching `id` field.
+
+```kotlin
+val values: List<Mixed> = obtainValues()
+val ids = values.filterIsInstance<AComposite>().map { it.id }
+```
+
+When every generated alternative safely exposes A's contract, the union itself extends it:
+
+```kotlin
+sealed interface Shared : AComposite
+
+fun process(value: Shared) {
+    println(value.id)
+}
+```
+
+The same guarantee applies to supported `allOf`/`oneOf` combinations: each generated composed alternative includes the referenced object, so its union can expose that object's contract. A property mismatch on any alternative prevents the union from promising the contract. Named object alternatives can also expose their own contracts through direct `oneOf` references.
+
+Existing discriminator mappings, Jackson subtype deduction, and Kotlinx polymorphic serialization remain responsible for selecting the concrete model. Shared interfaces carry neither subtype mappings nor their own serializers. They do not add runtime checks enforcing `oneOf` exclusivity, and unions generated as an untyped fallback cannot provide typed variant guarantees.
+
+Kotlinx retains its existing discriminator configuration requirements. If a concrete property has the same serialized name as its class discriminator, use its supported array polymorphism configuration (`Json { useArrayPolymorphism = true }`) for polymorphic serialization; enabling contracts does not resolve that existing collision.
+
+External references and filtered property projections follow in the remaining parts of [#747](https://github.com/fabrikt-io/fabrikt/issues/747).

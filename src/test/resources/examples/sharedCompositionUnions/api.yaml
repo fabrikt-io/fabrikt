@@ -1,0 +1,91 @@
+openapi: 3.0.4
+info:
+  title: Shared composition contracts in unions
+  version: '1'
+paths: {}
+components:
+  schemas:
+    A:
+      type: object
+      required: [id]
+      properties:
+        id: {type: string, minLength: 2}
+    B:
+      allOf:
+        - $ref: '#/components/schemas/A'
+        - type: object
+          required: [kind, label]
+          properties:
+            kind: {type: string, enum: [b]}
+            label: {type: string}
+    C:
+      allOf:
+        - $ref: '#/components/schemas/A'
+        - type: object
+          required: [kind, count]
+          properties:
+            kind: {type: string, enum: [c]}
+            count: {type: integer, format: int32}
+    Other:
+      type: object
+      required: [id, kind, message]
+      properties:
+        id: {type: string}
+        kind: {type: string, enum: [other]}
+        message: {type: string}
+    Mixed:
+      oneOf:
+        - $ref: '#/components/schemas/B'
+        - $ref: '#/components/schemas/C'
+        - $ref: '#/components/schemas/Other'
+      discriminator:
+        propertyName: kind
+        mapping:
+          b: '#/components/schemas/B'
+          c: '#/components/schemas/C'
+          other: '#/components/schemas/Other'
+    Shared:
+      oneOf:
+        - $ref: '#/components/schemas/B'
+        - $ref: '#/components/schemas/C'
+      discriminator:
+        propertyName: kind
+        mapping:
+          b: '#/components/schemas/B'
+          c: '#/components/schemas/C'
+    DeductionB:
+      allOf:
+        - $ref: '#/components/schemas/A'
+        - type: object
+          required: [b]
+          properties:
+            b: {type: string}
+    DeductionC:
+      allOf:
+        - $ref: '#/components/schemas/A'
+        - type: object
+          required: [c]
+          properties:
+            c: {type: integer, format: int32}
+    DeductionChoice:
+      oneOf:
+        - $ref: '#/components/schemas/DeductionB'
+        - $ref: '#/components/schemas/DeductionC'
+      x-jackson-subtype-deduction: true
+    X:
+      type: object
+      required: [x]
+      properties:
+        x: {type: string}
+    Y:
+      type: object
+      required: [y]
+      properties:
+        y: {type: integer, format: int32}
+    Combined:
+      allOf:
+        - $ref: '#/components/schemas/A'
+        - oneOf:
+            - $ref: '#/components/schemas/X'
+            - $ref: '#/components/schemas/Y'
+          x-jackson-subtype-deduction: true
