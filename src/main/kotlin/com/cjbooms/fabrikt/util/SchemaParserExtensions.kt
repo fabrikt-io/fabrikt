@@ -17,6 +17,7 @@ enum class GroupingStrategy {
 }
 
 object SchemaParserExtensions {
+    private val componentSchemaPath = Regex("/components/schemas/[^/]+")
     private val invalidNames =
         listOf(
             "anyOf",
@@ -47,7 +48,9 @@ object SchemaParserExtensions {
 
     private fun Schema.sourceDocumentUrl(): String? = documentUrl
 
-    private fun Schema.isSourceDocumentRoot(): Boolean = jsonPathFromRoot.isEmpty()
+    fun Schema.isSourceDocumentRoot(): Boolean = jsonPathFromRoot.isEmpty()
+
+    fun Schema.isNamedComponent(): Boolean = componentSchemaPath.matches(jsonReference.substringAfter('#', ""))
 
     private fun Schema.sourceDocumentName(): String? =
         sourceDocumentUrl()

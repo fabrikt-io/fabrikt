@@ -35,6 +35,7 @@ import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
+import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.componentKey
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.findOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getDiscriminatorForInlinedObjectUnderAllOf
@@ -49,12 +50,14 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedTypedAdditionalProperties
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isNamedComponent
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOpenEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isPolymorphicSubType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isPolymorphicSuperType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleType
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSourceDocumentRoot
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeyForSchemaName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeys
@@ -71,7 +74,10 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 import java.io.Serializable
 import java.net.MalformedURLException
+import java.net.URI
+import java.net.URISyntaxException
 import java.net.URL
+import java.util.AbstractMap
 import java.util.logging.Logger
 import com.cjbooms.fabrikt.model.OpenApi3Document as OpenApi3
 import com.cjbooms.fabrikt.model.OpenApiDiscriminator as Discriminator
@@ -228,33 +234,114 @@ class ModelGenerator(
 
     private val externalApiSchemas = mutableMapOf<String, MutableSet<String>>()
     private val primaryModels = linkedMapOf<String, TypeSpec>()
+    private val compositionSchemas = linkedMapOf<String, Schema>()
+    private val externalCompositionRoots = linkedMapOf<String, MutableSet<String>>()
 
     fun generate(): Models {
+        registerCompositionSchemas(sourceApi.openApi3, sourceApi.baseUri.toString())
         val models: MutableSet<TypeSpec> = createModels(sourceApi.openApi3, sourceApi.allSchemas)
-        externalApiSchemas.forEach { externalReferences ->
+
+        fun addExternalModels(externalReferences: Map.Entry<String, MutableSet<String>>) {
             val externalUrl = URL(externalReferences.key)
-            val api =
+            val parsed =
                 OpenApiDocumentParser
                     .parse(externalUrl.readText(), externalUrl.toURI())
                     .asOpenApi3Document()
-                    .let { document -> maybeConvertRelativeSchemaFile(externalReferences.key, document) }
+            val api = maybeConvertRelativeSchemaFile(externalReferences.key, parsed)
+            registerCompositionSchemas(api, externalReferences.key)
             val schemas =
                 api.schemas.entries
                     .map { (key, schema) -> SchemaInfo(key, schema) }
                     .filterByExternalRefResolutionMode(externalReferences)
             val externalModels = createModels(api, schemas)
+            if (parsed.schemas.isEmpty() && api.schemas.size == 1) {
+                val wrapped = api.schemas.values.single()
+                primaryModels[wrapped.jsonReference]?.let { model ->
+                    externalCompositionRoots[externalReferences.key].orEmpty().forEach { reference -> primaryModels[reference] = model }
+                }
+            }
             externalModels.forEach { additionalModel ->
                 if (models.none { it.name == additionalModel.name }) models.add(additionalModel)
             }
         }
+        if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) {
+            val processed = mutableMapOf<String, MutableSet<String>>()
+            while (true) {
+                val next =
+                    externalApiSchemas.entries.firstOrNull { entry ->
+                        entry.key !in processed || entry.value.any { it !in processed.getValue(entry.key) }
+                    } ?: break
+                val requested = AbstractMap.SimpleEntry(next.key, next.value.toMutableSet())
+                addExternalModels(requested)
+                processed.getOrPut(next.key, ::mutableSetOf).addAll(requested.value)
+            }
+        } else {
+            externalApiSchemas.forEach(::addExternalModels)
+        }
+        val composedModels =
+            if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) {
+                SharedCompositionContractGenerator(packages, compositionSchemas.values, primaryModels).apply(models)
+            } else {
+                models
+            }
         return Models(
-            models.map { model ->
+            composedModels.map { model ->
                 val existingAnnotationTypes = model.annotations.map { it.typeName }.toSet()
                 val annotationsToAdd = additionalModelAnnotations.filterNot { it.typeName in existingAnnotationTypes }
                 val annotatedModel =
                     if (annotationsToAdd.isEmpty()) model else model.toBuilder().addAnnotations(annotationsToAdd).build()
                 ModelType(annotatedModel, packages.base)
             },
+        )
+    }
+
+    private fun registerCompositionSchemas(
+        api: OpenApi3,
+        documentUrl: String,
+    ) {
+        if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS !in options) return
+        compositionSchemas.putAll(api.schemas.values.associateBy { it.jsonReference })
+        val pending = ArrayDeque(api.schemas.values)
+        val visited = mutableSetOf<String>()
+        while (pending.isNotEmpty()) {
+            val schema = pending.removeFirst()
+            if (!schema.isPresent || !visited.add(schema.jsonReference)) continue
+            val resolvedDocument =
+                try {
+                    URI(schema.jsonReference.substringBefore('#')).normalize()
+                } catch (_: URISyntaxException) {
+                    warnUnresolvedCompositionDocument(schema)
+                    continue
+                }
+            if (resolvedDocument != URI(documentUrl).normalize() && (schema.isNamedComponent() || schema.isSourceDocumentRoot())) {
+                val target =
+                    try {
+                        resolvedDocument.toURL()
+                    } catch (_: MalformedURLException) {
+                        warnUnresolvedCompositionDocument(schema)
+                        continue
+                    }
+                val name =
+                    if (schema.isSourceDocumentRoot()) {
+                        compositionSchemas[schema.jsonReference] = schema
+                        externalCompositionRoots.getOrPut(target.toExternalForm(), ::mutableSetOf).add(schema.jsonReference)
+                        target.file
+                            .substringAfterLast('/')
+                            .substringBeforeLast('.')
+                            .toModelClassName()
+                    } else {
+                        schema.componentKey()
+                    }
+                externalApiSchemas.getOrPut(target.toExternalForm(), ::mutableSetOf).add(name)
+            }
+            pending.addAll(schema.allOfSchemas + schema.oneOfSchemas)
+        }
+    }
+
+    private fun warnUnresolvedCompositionDocument(schema: Schema) {
+        logger.warning(
+            "Skipping the external shared contract for '${schema.jsonReference}': its document could not be resolved. " +
+                "Use a resolvable file or HTTP(S) reference for this schema.",
         )
     }
 
@@ -307,13 +394,6 @@ class ModelGenerator(
                 }
             }
         }.toMutableSet()
-        .let { models ->
-            if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) {
-                SharedCompositionContractGenerator(packages, api, primaryModels).apply(models)
-            } else {
-                models
-            }
-        }
 
     private fun buildPrimaryModel(
         api: OpenApi3,
