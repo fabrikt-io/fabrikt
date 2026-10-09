@@ -13,4 +13,5 @@ public data class PolymorphicTypeTwoB(
   @get:NotNull
   @param:JsonProperty("shared")
   override val shared: String = "PolymorphicTypeTwoB",
-) : PolymorphicSuperTypeTwo(), ContainsOneOfPolymorphicTypesManyOneOf
+) : PolymorphicSuperTypeTwo(),
+    ContainsOneOfPolymorphicTypesManyOneOf
