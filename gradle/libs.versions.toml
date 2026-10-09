@@ -1,22 +1,22 @@
 [versions]
 # Core / Kotlin
-kotlinpoet = "1.14.2"
-kotlinx-datetime = "0.7.1"
+kotlinpoet = "2.4.0"
+kotlinx-datetime = "0.8.0"
 kotlinx-datetime-legacy = "0.6.2"
-kotlinx-serialization = "1.9.0"
+kotlinx-serialization = "1.11.0"
 
 # Jackson / Serialization
-jackson = "2.21.6"
+jackson = "2.22.3"
 jackson3 = "3.2.2"
 jackson-databind-nullable = "0.2.10"
 
 # OpenAPI
-kaizen-openapi-parser = "4.1.0"
+kaizen-openapi-parser = "4.2.0"
 jsonoverlay = "4.0.4"
 
 # Code generation
-jcommander = "1.82"
-flogger = "0.7.4"
+jcommander = "3.0"
+flogger = "0.9"
 
 # Ktor
 ktor = "3.0.1"
@@ -71,7 +71,7 @@ kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom" }
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test" }
 
-jcommander = { module = "com.beust:jcommander", version.ref = "jcommander" }
+jcommander = { module = "org.jcommander:jcommander", version.ref = "jcommander" }
 openapi-parser = { module = "io.fabrikt:kaizen-openapi-parser", version.ref = "kaizen-openapi-parser" }
 jsonoverlay = { module = "com.reprezen.jsonoverlay:jsonoverlay", version.ref = "jsonoverlay" }
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }

@@ -2,7 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "2.2.10"
+    id("org.jetbrains.kotlin.jvm") version "2.4.21"
     id("com.gradleup.shadow") version "8.3.9"
     id("org.jetbrains.dokka") version "1.8.10"
     id("com.palantir.git-version") version "3.0.0"
@@ -77,6 +77,13 @@ dependencies {
     testImplementation(libs.ktlint.rule.engine.core)
     testImplementation(libs.ktlint.rule.engine)
     testImplementation(libs.ktlint.ruleset.standard)
+
+    constraints {
+        testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable") {
+            version { strictly("2.3.20") }
+            because("Ktlint 1.7.1 cannot initialize its formatter with Kotlin 2.4's compiler internals")
+        }
+    }
 }
 
 val generatedVersionResources = layout.buildDirectory.dir("generated/fabrikt-version")
