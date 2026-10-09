@@ -60,7 +60,7 @@ class OkHttpClientGeneratorTest {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.CLIENT),
             clientTarget = ClientCodeGenTargetType.OK_HTTP,
-            modelOptions = setOf(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS, ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF),
+            modelOptions = setOf(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS),
             typeOverrides = setOf(CodeGenTypeOverride.BYTEARRAY_AS_INPUTSTREAM),
             serializationLibrary = serializationLibrary,
         )

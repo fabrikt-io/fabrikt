@@ -252,9 +252,9 @@ object SchemaParserExtensions {
                         .any { it.endsWith("/$name") }
             }
 
-    fun Schema.findOneOfSuperInterface(allSchemas: List<Schema>): Set<Schema> {
+    fun Schema.findOneOfSuperInterface(allSchemas: List<Schema>): List<Schema> {
         if (!isSealedInterfacesForOneOfEnabled()) {
-            return emptySet()
+            return emptyList()
         }
 
         // Check top-level oneOf schemas
@@ -314,7 +314,7 @@ object SchemaParserExtensions {
                     }
                 }
 
-        return (topLevelInterfaces + inlineInterfaces + topLevelArrayInterfaces).toSet()
+        return (topLevelInterfaces + inlineInterfaces + topLevelArrayInterfaces).distinctBy { it.jsonReference }
     }
 
     fun Schema.getKeyIfSingleDiscriminatorValue(

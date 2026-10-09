@@ -1,9 +1,10 @@
 package examples.okHttpClient.client
 
-import examples.okHttpClient.models.Content
 import examples.okHttpClient.models.EnumQueryParam
 import examples.okHttpClient.models.FirstModel
+import examples.okHttpClient.models.PostBody
 import examples.okHttpClient.models.QueryResult
+import examples.okHttpClient.models.Responses
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -79,12 +80,12 @@ public class ExamplePath1Client(
     /**
      * POST example path 1
      *
-     * @param content
+     * @param postBody
      * @param explodeListQueryParam
      */
     @Throws(ApiException::class)
     public fun postExamplePath1(
-        content: Content,
+        postBody: PostBody,
         explodeListQueryParam: List<String>? = null,
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
@@ -106,7 +107,7 @@ public class ExamplePath1Client(
                 .Builder()
                 .url(httpUrl)
                 .headers(httpHeaders)
-                .post(objectMapper.writeValueAsString(content).toRequestBody("application/json".toMediaType()))
+                .post(objectMapper.writeValueAsString(postBody).toRequestBody("application/json".toMediaType()))
                 .build()
 
         return request.execute(okHttpClient, objectMapper, jacksonTypeRef())
@@ -135,7 +136,7 @@ public class ExamplePath2Client(
         ifNoneMatch: String? = null,
         additionalHeaders: Map<String, String> = emptyMap(),
         additionalQueryParameters: Map<String, String> = emptyMap(),
-    ): ApiResponse<Content> {
+    ): ApiResponse<Responses> {
         val httpUrl: HttpUrl =
             "$baseUrl/example-path-2/{path_param}"
                 .pathParam("{path_param}" to pathParam)
