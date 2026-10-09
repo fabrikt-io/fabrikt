@@ -151,9 +151,12 @@ enum class CodeGenTypeOverride(
 ) {
     DATETIME_AS_INSTANT("Use `Instant` as the datetime type. Defaults to `OffsetDateTime`"),
     DATETIME_AS_LOCALDATETIME("Use `LocalDateTime` as the datetime type. Defaults to `OffsetDateTime`"),
+    DATETIME_AS_OFFSETDATETIME("Use `OffsetDateTime` as the datetime type"),
     BYTE_AS_STRING("Ignore string format `byte` and use `String` as the type"),
     BINARY_AS_STRING("Ignore string format `binary` and use `String` as the type"),
+    BINARY_AS_BYTEARRAY("Use `ByteArray` as the binary type"),
     URI_AS_STRING("Ignore string format `uri` and use `String` as the type"),
+    URI_AS_URI("Use `java.net.URI` as the uri type"),
     UUID_AS_STRING("Ignore string format `uuid` and use `String` as the type"),
     DATE_AS_STRING("Ignore string format `date` and use `String` as the type"),
     DATETIME_AS_STRING("Ignore string format `date-time` and use `String` as the type"),
@@ -227,7 +230,9 @@ enum class SerializationLibrary(
     val description: String,
     val serializationAnnotations: SerializationAnnotations,
 ) {
+    @Deprecated("Use JACKSON_2 instead")
     JACKSON("Use Jackson 2 for serialization and deserialization", JacksonAnnotations),
+    JACKSON_2("Use Jackson 2 for serialization and deserialization", JacksonAnnotations),
     JACKSON_3("Use Jackson 3 for serialization and deserialization", JacksonAnnotations),
     KOTLINX_SERIALIZATION(
         "Use kotlinx.serialization for serialization and deserialization",
@@ -236,7 +241,7 @@ enum class SerializationLibrary(
     ;
 
     val isJackson: Boolean
-        get() = this == JACKSON || this == JACKSON_3
+        get() = this != KOTLINX_SERIALIZATION
 
     override fun toString() = "`${super.toString()}` - $description"
 

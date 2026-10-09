@@ -17,8 +17,10 @@ import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.model.GenerationMetadata
 import com.cjbooms.fabrikt.model.MicronautSerdeAnnotations
 import com.cjbooms.fabrikt.model.SerializationAnnotations
+import java.util.logging.Logger
 
 object MutableSettings {
+    private val logger = Logger.getGlobal()
     var generationMetadata: GenerationMetadata = GenerationMetadata()
         private set
     var generationTypes: Set<CodeGenerationType> = mutableSetOf()
@@ -110,6 +112,7 @@ object MutableSettings {
         this.clientTarget = clientTarget
         this.openfeignClientName = openfeignClientName
         this.typeOverrides = typeOverrides
+        warnOnConflictingTypeOverrides()
         this.customTypeMappings = customTypeMappings
         this.validationLibrary = validationLibrary
         this.externalRefResolutionMode = externalRefResolutionMode
@@ -126,6 +129,7 @@ object MutableSettings {
 
     fun addOption(override: CodeGenTypeOverride) {
         typeOverrides += override
+        warnOnConflictingTypeOverrides()
     }
 
     fun addOption(mode: JacksonNullabilityMode) {
@@ -133,4 +137,31 @@ object MutableSettings {
     }
 
     fun isSealedInterfacesForOneOfEnabled(): Boolean = ModelCodeGenOptionType.DISABLE_SEALED_INTERFACES_FOR_ONE_OF !in modelOptions
+
+    private fun warnOnConflictingTypeOverrides() {
+        val families =
+            listOf(
+                setOf(
+                    CodeGenTypeOverride.DATETIME_AS_STRING,
+                    CodeGenTypeOverride.DATETIME_AS_INSTANT,
+                    CodeGenTypeOverride.DATETIME_AS_LOCALDATETIME,
+                    CodeGenTypeOverride.DATETIME_AS_OFFSETDATETIME,
+                ),
+                setOf(
+                    CodeGenTypeOverride.BINARY_AS_STRING,
+                    CodeGenTypeOverride.BINARY_AS_BYTEARRAY,
+                    CodeGenTypeOverride.BYTEARRAY_AS_INPUTSTREAM,
+                ),
+                setOf(
+                    CodeGenTypeOverride.URI_AS_STRING,
+                    CodeGenTypeOverride.URI_AS_URI,
+                ),
+            )
+        families.forEach { family ->
+            val present = family.filter { it in typeOverrides }.map { it.name }.sorted()
+            if (present.size > 1) {
+                logger.warning("Conflicting --type-overrides: ${present.joinToString(", ")}; using fixed precedence.")
+            }
+        }
+    }
 }

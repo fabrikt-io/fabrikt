@@ -189,6 +189,8 @@ sealed class KotlinTypeInfo(
                         Instant
                     } else if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.DATETIME_AS_LOCALDATETIME)) {
                         LocalDateTime
+                    } else if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.DATETIME_AS_OFFSETDATETIME)) {
+                        DateTime
                     } else if (MutableSettings.serializationLibrary == KOTLINX_SERIALIZATION) {
                         if (MutableSettings.instantLibrary == InstantLibrary.KOTLINX_INSTANT) {
                             KotlinxInstant
@@ -215,6 +217,8 @@ sealed class KotlinTypeInfo(
                 OasType.Uri -> {
                     if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.URI_AS_STRING)) {
                         Text
+                    } else if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.URI_AS_URI)) {
+                        Uri
                     } else {
                         Uri
                     }
@@ -231,6 +235,8 @@ sealed class KotlinTypeInfo(
                 OasType.Binary -> {
                     if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.BINARY_AS_STRING)) {
                         Text
+                    } else if (MutableSettings.typeOverrides.contains(CodeGenTypeOverride.BINARY_AS_BYTEARRAY)) {
+                        ByteArray
                     } else {
                         getOverridableByteArray()
                     }
