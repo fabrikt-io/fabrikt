@@ -40,7 +40,7 @@ class BearerSecurityGeneratorTest {
             clientTarget = target,
             clientOptions = setOf(ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION),
             serializationLibrary =
-                if (target == ClientCodeGenTargetType.KTOR) SerializationLibrary.KOTLINX_SERIALIZATION else SerializationLibrary.JACKSON,
+                if (target == ClientCodeGenTargetType.KTOR) SerializationLibrary.KOTLINX_SERIALIZATION else SerializationLibrary.JACKSON_2,
         )
         val generated = generator(target, api).generate(setOf(ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION))
         assertThatGenerated(generated.clients.toSingleFile())

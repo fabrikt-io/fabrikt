@@ -332,6 +332,7 @@ Usage: <main class> [options]
 |   `--serialization-library`             | Specify which serialization library to use for annotations in generated model classes. Default: JACKSON_3 |
 |                                         | CHOOSE ONE OF: |
 |                                         |   `JACKSON` - Use Jackson 2 for serialization and deserialization |
+|                                         |   `JACKSON_2` - Use Jackson 2 for serialization and deserialization |
 |                                         |   `JACKSON_3` - Use Jackson 3 for serialization and deserialization |
 |                                         |   `KOTLINX_SERIALIZATION` - Use kotlinx.serialization for serialization and deserialization |
 |   `--src-path`                          | Allows the path for generated source files to be overridden. Defaults to `src/main/kotlin` |
@@ -345,9 +346,12 @@ Usage: <main class> [options]
 |                                         | CHOOSE ANY OF: |
 |                                         |   `DATETIME_AS_INSTANT` - Use `Instant` as the datetime type. Defaults to `OffsetDateTime` |
 |                                         |   `DATETIME_AS_LOCALDATETIME` - Use `LocalDateTime` as the datetime type. Defaults to `OffsetDateTime` |
+|                                         |   `DATETIME_AS_OFFSETDATETIME` - Use `OffsetDateTime` as the datetime type |
 |                                         |   `BYTE_AS_STRING` - Ignore string format `byte` and use `String` as the type |
 |                                         |   `BINARY_AS_STRING` - Ignore string format `binary` and use `String` as the type |
+|                                         |   `BINARY_AS_BYTEARRAY` - Use `ByteArray` as the binary type |
 |                                         |   `URI_AS_STRING` - Ignore string format `uri` and use `String` as the type |
+|                                         |   `URI_AS_URI` - Use `java.net.URI` as the uri type |
 |                                         |   `UUID_AS_STRING` - Ignore string format `uuid` and use `String` as the type |
 |                                         |   `DATE_AS_STRING` - Ignore string format `date` and use `String` as the type |
 |                                         |   `DATETIME_AS_STRING` - Ignore string format `date-time` and use `String` as the type |

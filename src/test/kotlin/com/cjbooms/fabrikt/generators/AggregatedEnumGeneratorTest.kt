@@ -46,10 +46,11 @@ class AggregatedEnumGeneratorTest {
 
     companion object {
         @JvmStatic
+        @Suppress("DEPRECATION")
         fun versionsAndLibraries(): Stream<Arguments> =
             listOf("3.0.4", "3.1.2", "3.2.0")
                 .flatMap { version ->
-                    SerializationLibrary.entries.map { Arguments.of(version, it) }
+                    SerializationLibrary.entries.filterNot { it == SerializationLibrary.JACKSON }.map { Arguments.of(version, it) }
                 }.stream()
     }
 }

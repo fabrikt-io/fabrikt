@@ -81,7 +81,7 @@ class OAuth2SecurityGeneratorTest {
             clientTarget = target,
             clientOptions = setOf(ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION),
             serializationLibrary =
-                if (target == ClientCodeGenTargetType.KTOR) SerializationLibrary.KOTLINX_SERIALIZATION else SerializationLibrary.JACKSON,
+                if (target == ClientCodeGenTargetType.KTOR) SerializationLibrary.KOTLINX_SERIALIZATION else SerializationLibrary.JACKSON_2,
         )
         val generated = generator(target, api).generate(setOf(ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION))
         assertThatGenerated(generated.clients.toSingleFile())

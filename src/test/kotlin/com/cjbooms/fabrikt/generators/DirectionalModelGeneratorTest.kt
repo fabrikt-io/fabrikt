@@ -28,6 +28,7 @@ class DirectionalModelGeneratorTest {
 
     @ParameterizedTest
     @ValueSource(strings = ["3.0.3", "3.1.2", "3.2.0"])
+    @Suppress("DEPRECATION")
     fun `generates directional model graphs`(version: String) {
         val modes =
             mapOf(
@@ -35,7 +36,7 @@ class DirectionalModelGeneratorTest {
                 "response" to setOf(EXCLUDE_WRITE_ONLY),
                 "both" to setOf(EXCLUDE_READ_ONLY, EXCLUDE_WRITE_ONLY),
             )
-        SerializationLibrary.entries.forEach { library ->
+        SerializationLibrary.entries.filterNot { it == SerializationLibrary.JACKSON }.forEach { library ->
             modes.forEach { (mode, options) ->
                 val files = generate(version, library, options)
                 files.forEach { (name, code) ->

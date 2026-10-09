@@ -44,6 +44,15 @@ class Jackson3GeneratorTest {
     }
 
     @Test
+    @Suppress("DEPRECATION")
+    fun `JACKSON_2 and the JACKSON alias resolve through the CLI value`() {
+        assertThat(SerializationLibraryOptionConverter().convert("jackson_2"))
+            .isEqualTo(SerializationLibrary.JACKSON_2)
+        assertThat(SerializationLibraryOptionConverter().convert("jackson"))
+            .isEqualTo(SerializationLibrary.JACKSON)
+    }
+
+    @Test
     fun `Jackson 3 models keep using the shared Jackson annotations`() {
         val models = ModelGenerator(packages, sourceApi()).generate().toSingleFile()
 
