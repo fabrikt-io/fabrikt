@@ -1,0 +1,3 @@
+package examples.oneOfPolymorphicModels.models
+
+public sealed interface ContainsOneOfPolymorphicTypesOneOneOf

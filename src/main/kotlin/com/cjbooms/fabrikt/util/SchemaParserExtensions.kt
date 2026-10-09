@@ -437,7 +437,10 @@ object SchemaParserExtensions {
 
     private fun Schema.commonAllOfSuperType(): Schema? =
         oneOfSchemas.firstOrNull()?.allOfSchemas?.firstOrNull { candidate ->
-            candidate.hasDiscriminator() && oneOfSchemas.all { candidate in it.allOfSchemas }
+            candidate.hasDiscriminator() &&
+                oneOfSchemas.all { member ->
+                    member.allOfSchemas.any { it.jsonReference == candidate.jsonReference }
+                }
         }
 
     fun Schema.isOneOfResolvingToAnyType(): Boolean {
