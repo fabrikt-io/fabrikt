@@ -56,18 +56,11 @@ public class ProtectedClient(
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<Unit> {
         val oauth2Token =
-            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull {
-                (
-                    scheme,
-                    scopes,
-                ),
-                ->
+            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
                 oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         checkNotNull(oauth2Token) { "An OAuth2 access token is required for this operation" }
-        val oauth2Headers =
-            oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val oauth2Headers = oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getProtected(
             additionalHeaders = oauth2Headers,
             additionalQueryParameters = additionalQueryParameters,
@@ -154,17 +147,10 @@ public class OptionalClient(
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<Unit> {
         val oauth2Token =
-            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull {
-                (
-                    scheme,
-                    scopes,
-                ),
-                ->
+            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
                 oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
-        val oauth2Headers =
-            oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val oauth2Headers = oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getOptional(
             additionalHeaders = oauth2Headers,
             additionalQueryParameters = additionalQueryParameters,
@@ -251,17 +237,10 @@ public class AlternativeClient(
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<Unit> {
         val oauth2Token =
-            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull {
-                (
-                    scheme,
-                    scopes,
-                ),
-                ->
+            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
                 oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
-        val oauth2Headers =
-            oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val oauth2Headers = oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getAlternative(
             additionalHeaders = oauth2Headers,
             additionalQueryParameters = additionalQueryParameters,
@@ -311,20 +290,11 @@ public class ScopeAlternativesClient(
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<Unit> {
         val oauth2Token =
-            listOf(
-                "OAuth2" to setOf("read:pets"),
-                "OAuth2" to
-                    setOf("write:pets"),
-            ).firstNotNullOfOrNull { (scheme, scopes) ->
-                oauth2TokenProvider(
-                    scheme,
-                    scopes,
-                )?.takeIf { it.isNotBlank() }
+            listOf("OAuth2" to setOf("read:pets"), "OAuth2" to setOf("write:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
+                oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         checkNotNull(oauth2Token) { "An OAuth2 access token is required for this operation" }
-        val oauth2Headers =
-            oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val oauth2Headers = oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getScopeAlternatives(
             additionalHeaders = oauth2Headers,
             additionalQueryParameters = additionalQueryParameters,
@@ -378,9 +348,7 @@ public class UnscopedClient(
                 oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         checkNotNull(oauth2Token) { "An OAuth2 access token is required for this operation" }
-        val oauth2Headers =
-            oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val oauth2Headers = oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getUnscoped(
             additionalHeaders = oauth2Headers,
             additionalQueryParameters = additionalQueryParameters,
@@ -430,20 +398,11 @@ public class SchemesClient(
         additionalQueryParameters: Map<String, String> = emptyMap(),
     ): ApiResponse<Unit> {
         val oauth2Token =
-            listOf(
-                "OAuth2" to setOf("read:pets"),
-                "OtherOAuth2" to
-                    setOf("write:pets"),
-            ).firstNotNullOfOrNull { (scheme, scopes) ->
-                oauth2TokenProvider(
-                    scheme,
-                    scopes,
-                )?.takeIf { it.isNotBlank() }
+            listOf("OAuth2" to setOf("read:pets"), "OtherOAuth2" to setOf("write:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
+                oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         checkNotNull(oauth2Token) { "An OAuth2 access token is required for this operation" }
-        val oauth2Headers =
-            oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") }
-                ?: additionalHeaders
+        val oauth2Headers = oauth2Token?.let { additionalHeaders + ("Authorization" to "Bearer $it") } ?: additionalHeaders
         return getSchemes(
             additionalHeaders = oauth2Headers,
             additionalQueryParameters = additionalQueryParameters,

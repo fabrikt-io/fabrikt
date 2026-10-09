@@ -18,12 +18,12 @@ public data class Container(
   public val aggregationOfMany: ContainerAggregationOfMany? = null,
   @param:JsonProperty("arrayWithAllOfAggregationOfMany")
   @get:JsonProperty("arrayWithAllOfAggregationOfMany")
-  public val arrayWithAllOfAggregationOfMany: List<@Valid ContainerArrayWithAllOfAggregationOfMany>?
-      = null,
+  public val arrayWithAllOfAggregationOfMany:
+      List<@Valid ContainerArrayWithAllOfAggregationOfMany>? = null,
   @param:JsonProperty("arrayWithAnyOfAggregationOfMany")
   @get:JsonProperty("arrayWithAnyOfAggregationOfMany")
-  public val arrayWithAnyOfAggregationOfMany: List<@Valid ContainerArrayWithAnyOfAggregationOfMany>?
-      = null,
+  public val arrayWithAnyOfAggregationOfMany:
+      List<@Valid ContainerArrayWithAnyOfAggregationOfMany>? = null,
   @param:JsonProperty("arrayWithOneOf")
   @get:JsonProperty("arrayWithOneOf")
   public val arrayWithOneOf: List<Any>? = null,

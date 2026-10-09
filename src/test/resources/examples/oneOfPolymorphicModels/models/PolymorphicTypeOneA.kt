@@ -12,4 +12,5 @@ public data class PolymorphicTypeOneA(
   @get:NotNull
   @param:JsonProperty("shared")
   override val shared: String = "PolymorphicTypeOneA",
-) : PolymorphicSuperTypeOne(), ContainsOneOfPolymorphicTypesOneOneOf
+) : PolymorphicSuperTypeOne(),
+    ContainsOneOfPolymorphicTypesOneOneOf

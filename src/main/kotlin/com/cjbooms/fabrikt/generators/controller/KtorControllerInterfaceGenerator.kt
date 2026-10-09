@@ -99,11 +99,12 @@ class KtorControllerInterfaceGenerator(
                             } else {
                                 routeFunBuilder.addCode(routeCode)
                             }
+                            val description = (operation.summary ?: operation.description).orEmpty().trimEnd()
                             routeFunBuilder.addKdoc(
-                                "- %L %L %L\n",
+                                "- %L %L%L\n",
                                 verb.toUpperCase(),
                                 path.key,
-                                (operation.summary ?: operation.description).orEmpty(),
+                                if (description.isEmpty()) "" else " $description",
                             )
 
                             // generate controller interface function
@@ -373,9 +374,9 @@ class KtorControllerInterfaceGenerator(
             kDoc.add("Use [%M] to send the response.\n\n", MemberName("io.ktor.server.response", "respond", isExtension = true))
         } else {
             kDoc.add(
-                "Route is expected to respond with [%L].\nUse [%M] to send the response.\n\n",
+                "Route is expected to respond with [%L].\nUse [%L] to send the response.\n\n",
                 toSuccessResponseType.toString(),
-                MemberName(ClassName(packages.controllers, TYPED_APPLICATION_CALL_CLASS_NAME), "respondTyped"),
+                "${packages.controllers}.$TYPED_APPLICATION_CALL_CLASS_NAME.respondTyped",
             )
         }
 
@@ -432,8 +433,8 @@ class KtorControllerInterfaceGenerator(
                             "Decorator for Ktor's ApplicationCall that provides type safe variants of the [%M] functions.\n\n",
                             MemberName("io.ktor.server.response", "respond", isExtension = true),
                         ).add(
-                            "It can be used as a drop-in replacement for [%M].\n\n",
-                            MemberName("io.ktor.server.application", "ApplicationCall"),
+                            "It can be used as a drop-in replacement for [%L].\n\n",
+                            "io.ktor.server.application.ApplicationCall",
                         ).add("@param R The type of the response body\n\n")
                         .build(),
                 ).addFunction(

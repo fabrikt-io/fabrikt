@@ -77,8 +77,7 @@ public interface OwnerClient {
     @Headers("Accept: application/json")
     public fun listOwners(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     ): List<Owner>
 
     /**
@@ -116,8 +115,7 @@ public interface VehicleClient {
     @Headers("Accept: application/json")
     public fun listVehicles(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     ): List<Vehicle>
 
     /**

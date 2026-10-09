@@ -225,8 +225,7 @@ public class InlineClient(
      */
     public suspend fun inlineDetails(
         body: InlineDetailsRequest,
-        apiConfiguration: ApiConfiguration =
-            ApiConfiguration(),
+        apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
         val basePath = apiConfiguration.basePath.trimEnd('/')
         val url = basePath + """/inline"""

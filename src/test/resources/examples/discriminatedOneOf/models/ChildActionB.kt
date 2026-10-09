@@ -12,4 +12,5 @@ public data class ChildActionB(
   @get:NotNull
   @param:JsonProperty("actionType")
   override val actionType: ParentActionActionType = ParentActionActionType.CHILD_B,
-) : ParentAction(), ChildActionsAll
+) : ParentAction(),
+    ChildActionsAll

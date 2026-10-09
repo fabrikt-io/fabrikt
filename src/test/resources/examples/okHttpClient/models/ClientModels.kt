@@ -22,16 +22,8 @@ import kotlin.collections.Map
     visible = true,
 )
 @JsonSubTypes(
-    JsonSubTypes.Type(
-        value = FirstModel::class,
-        name =
-            "first_model",
-    ),
-    JsonSubTypes.Type(
-        value = SecondModel::class,
-        name =
-            "second_model",
-    ),
+    JsonSubTypes.Type(value = FirstModel::class, name = "first_model"),
+    JsonSubTypes.Type(value = SecondModel::class, name = "second_model"),
     JsonSubTypes.Type(value = ThirdModel::class, name = "third_model"),
 )
 public sealed class Content(
@@ -205,16 +197,8 @@ public data class JsonEncodedHeader(
     visible = true,
 )
 @JsonSubTypes(
-    JsonSubTypes.Type(
-        value = FirstModel::class,
-        name =
-            "FirstModel",
-    ),
-    JsonSubTypes.Type(
-        value = SecondModel::class,
-        name =
-            "SecondModel",
-    ),
+    JsonSubTypes.Type(value = FirstModel::class, name = "FirstModel"),
+    JsonSubTypes.Type(value = SecondModel::class, name = "SecondModel"),
     JsonSubTypes.Type(value = ThirdModel::class, name = "ThirdModel"),
 )
 public sealed interface PostBody
@@ -234,16 +218,8 @@ public data class QueryResult(
     visible = true,
 )
 @JsonSubTypes(
-    JsonSubTypes.Type(
-        value = FirstModel::class,
-        name =
-            "FirstModel",
-    ),
-    JsonSubTypes.Type(
-        value = SecondModel::class,
-        name =
-            "SecondModel",
-    ),
+    JsonSubTypes.Type(value = FirstModel::class, name = "FirstModel"),
+    JsonSubTypes.Type(value = SecondModel::class, name = "SecondModel"),
     JsonSubTypes.Type(value = ThirdModel::class, name = "ThirdModel"),
 )
 public sealed interface Responses

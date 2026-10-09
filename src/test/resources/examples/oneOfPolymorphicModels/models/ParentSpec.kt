@@ -9,8 +9,7 @@ import com.fasterxml.jackson.`annotation`.JsonTypeInfo
   property = "type",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = ChildTypeA::class, name =
-    "CHILD_TYPE_A"),JsonSubTypes.Type(value = ChildTypeB::class, name = "CHILD_TYPE_B"))
+@JsonSubTypes(JsonSubTypes.Type(value = ChildTypeA::class, name = "CHILD_TYPE_A"),JsonSubTypes.Type(value = ChildTypeB::class, name = "CHILD_TYPE_B"))
 public sealed class ParentSpec() {
   /**
    * Shows which child type is being returned

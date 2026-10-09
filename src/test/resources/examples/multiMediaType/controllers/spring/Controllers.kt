@@ -27,17 +27,12 @@ public interface ExamplePath1Controller {
      */
     @RequestMapping(
         value = ["/example-path-1"],
-        produces = [
-            "application/vnd.custom.media+xml", "application/vnd.custom.media+json",
-            "application/problem+json",
-        ],
+        produces = ["application/vnd.custom.media+xml", "application/vnd.custom.media+json", "application/problem+json"],
         method = [RequestMethod.GET],
     )
     public fun `get`(
-        @RequestParam(value = "explode_list_query_param", required = false)
-        explodeListQueryParam: List<String>?,
-        @RequestParam(value = "query_param2", required = false)
-        queryParam2: Int?,
+        @RequestParam(value = "explode_list_query_param", required = false) explodeListQueryParam: List<String>?,
+        @RequestParam(value = "query_param2", required = false) queryParam2: Int?,
     ): ResponseEntity<QueryResult>
 }
 
@@ -58,8 +53,7 @@ public interface ExamplePath2Controller {
         method = [RequestMethod.GET],
     )
     public fun `get`(
-        @RequestParam(value = "explode_list_query_param", required = false)
-        explodeListQueryParam: List<String>?,
+        @RequestParam(value = "explode_list_query_param", required = false) explodeListQueryParam: List<String>?,
         @RequestParam(value = "query_param2", required = false) queryParam2: Int?,
         @RequestHeader(value = "Accept", required = false) accept: String?,
     ): ResponseEntity<QueryResult>

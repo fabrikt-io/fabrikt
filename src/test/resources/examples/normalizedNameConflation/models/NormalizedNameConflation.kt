@@ -47,8 +47,7 @@ public data class NormalizedNameConflation(
   @get:JsonProperty("a_b_c")
   public val a_b_c: String? = null,
   /**
-   * Description of control_case - this should get normalized because it conflicts with no other
-   * property
+   * Description of control_case - this should get normalized because it conflicts with no other property
    */
   @param:JsonProperty("control_case")
   @get:JsonProperty("control_case")

@@ -71,29 +71,17 @@ public class ProtectedClient(
     }
 
     public suspend fun getProtectedWithOAuth2Token(
-        oauth2TokenProvider: (
-            String,
-            Set<String>,
-        ) -> String?,
+        oauth2TokenProvider: (String, Set<String>) -> String?,
         apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
         val oauth2Token =
-            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull {
-                (
-                    scheme,
-                    scopes,
-                ),
-                ->
+            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
                 oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         checkNotNull(oauth2Token) { "An OAuth2 access token is required for this operation" }
         val oauth2Headers =
-            oauth2Token?.let {
-                apiConfiguration.copy(
-                    customHeaders =
-                        apiConfiguration.customHeaders + ("Authorization" to "Bearer $it"),
-                )
-            } ?: apiConfiguration
+            oauth2Token?.let { apiConfiguration.copy(customHeaders = apiConfiguration.customHeaders + ("Authorization" to "Bearer $it")) }
+                ?: apiConfiguration
         return getProtected(
             apiConfiguration = oauth2Headers,
         )
@@ -210,28 +198,16 @@ public class OptionalClient(
     }
 
     public suspend fun getOptionalWithOAuth2Token(
-        oauth2TokenProvider: (
-            String,
-            Set<String>,
-        ) -> String?,
+        oauth2TokenProvider: (String, Set<String>) -> String?,
         apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
         val oauth2Token =
-            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull {
-                (
-                    scheme,
-                    scopes,
-                ),
-                ->
+            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
                 oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         val oauth2Headers =
-            oauth2Token?.let {
-                apiConfiguration.copy(
-                    customHeaders =
-                        apiConfiguration.customHeaders + ("Authorization" to "Bearer $it"),
-                )
-            } ?: apiConfiguration
+            oauth2Token?.let { apiConfiguration.copy(customHeaders = apiConfiguration.customHeaders + ("Authorization" to "Bearer $it")) }
+                ?: apiConfiguration
         return getOptional(
             apiConfiguration = oauth2Headers,
         )
@@ -348,28 +324,16 @@ public class AlternativeClient(
     }
 
     public suspend fun getAlternativeWithOAuth2Token(
-        oauth2TokenProvider: (
-            String,
-            Set<String>,
-        ) -> String?,
+        oauth2TokenProvider: (String, Set<String>) -> String?,
         apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
         val oauth2Token =
-            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull {
-                (
-                    scheme,
-                    scopes,
-                ),
-                ->
+            listOf("OAuth2" to setOf("read:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
                 oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         val oauth2Headers =
-            oauth2Token?.let {
-                apiConfiguration.copy(
-                    customHeaders =
-                        apiConfiguration.customHeaders + ("Authorization" to "Bearer $it"),
-                )
-            } ?: apiConfiguration
+            oauth2Token?.let { apiConfiguration.copy(customHeaders = apiConfiguration.customHeaders + ("Authorization" to "Bearer $it")) }
+                ?: apiConfiguration
         return getAlternative(
             apiConfiguration = oauth2Headers,
         )
@@ -431,31 +395,17 @@ public class ScopeAlternativesClient(
     }
 
     public suspend fun getScopeAlternativesWithOAuth2Token(
-        oauth2TokenProvider: (
-            String,
-            Set<String>,
-        ) -> String?,
+        oauth2TokenProvider: (String, Set<String>) -> String?,
         apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
         val oauth2Token =
-            listOf(
-                "OAuth2" to setOf("read:pets"),
-                "OAuth2" to
-                    setOf("write:pets"),
-            ).firstNotNullOfOrNull { (scheme, scopes) ->
-                oauth2TokenProvider(
-                    scheme,
-                    scopes,
-                )?.takeIf { it.isNotBlank() }
+            listOf("OAuth2" to setOf("read:pets"), "OAuth2" to setOf("write:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
+                oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         checkNotNull(oauth2Token) { "An OAuth2 access token is required for this operation" }
         val oauth2Headers =
-            oauth2Token?.let {
-                apiConfiguration.copy(
-                    customHeaders =
-                        apiConfiguration.customHeaders + ("Authorization" to "Bearer $it"),
-                )
-            } ?: apiConfiguration
+            oauth2Token?.let { apiConfiguration.copy(customHeaders = apiConfiguration.customHeaders + ("Authorization" to "Bearer $it")) }
+                ?: apiConfiguration
         return getScopeAlternatives(
             apiConfiguration = oauth2Headers,
         )
@@ -517,10 +467,7 @@ public class UnscopedClient(
     }
 
     public suspend fun getUnscopedWithOAuth2Token(
-        oauth2TokenProvider: (
-            String,
-            Set<String>,
-        ) -> String?,
+        oauth2TokenProvider: (String, Set<String>) -> String?,
         apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
         val oauth2Token =
@@ -529,12 +476,8 @@ public class UnscopedClient(
             }
         checkNotNull(oauth2Token) { "An OAuth2 access token is required for this operation" }
         val oauth2Headers =
-            oauth2Token?.let {
-                apiConfiguration.copy(
-                    customHeaders =
-                        apiConfiguration.customHeaders + ("Authorization" to "Bearer $it"),
-                )
-            } ?: apiConfiguration
+            oauth2Token?.let { apiConfiguration.copy(customHeaders = apiConfiguration.customHeaders + ("Authorization" to "Bearer $it")) }
+                ?: apiConfiguration
         return getUnscoped(
             apiConfiguration = oauth2Headers,
         )
@@ -596,31 +539,17 @@ public class SchemesClient(
     }
 
     public suspend fun getSchemesWithOAuth2Token(
-        oauth2TokenProvider: (
-            String,
-            Set<String>,
-        ) -> String?,
+        oauth2TokenProvider: (String, Set<String>) -> String?,
         apiConfiguration: ApiConfiguration = ApiConfiguration(),
     ): NetworkResult<Unit> {
         val oauth2Token =
-            listOf(
-                "OAuth2" to setOf("read:pets"),
-                "OtherOAuth2" to
-                    setOf("write:pets"),
-            ).firstNotNullOfOrNull { (scheme, scopes) ->
-                oauth2TokenProvider(
-                    scheme,
-                    scopes,
-                )?.takeIf { it.isNotBlank() }
+            listOf("OAuth2" to setOf("read:pets"), "OtherOAuth2" to setOf("write:pets")).firstNotNullOfOrNull { (scheme, scopes) ->
+                oauth2TokenProvider(scheme, scopes)?.takeIf { it.isNotBlank() }
             }
         checkNotNull(oauth2Token) { "An OAuth2 access token is required for this operation" }
         val oauth2Headers =
-            oauth2Token?.let {
-                apiConfiguration.copy(
-                    customHeaders =
-                        apiConfiguration.customHeaders + ("Authorization" to "Bearer $it"),
-                )
-            } ?: apiConfiguration
+            oauth2Token?.let { apiConfiguration.copy(customHeaders = apiConfiguration.customHeaders + ("Authorization" to "Bearer $it")) }
+                ?: apiConfiguration
         return getSchemes(
             apiConfiguration = oauth2Headers,
         )

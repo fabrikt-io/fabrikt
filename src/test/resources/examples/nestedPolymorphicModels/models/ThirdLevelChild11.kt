@@ -40,6 +40,6 @@ public data class ThirdLevelChild11(
   @get:JsonProperty("secondLevelDiscriminator")
   @get:NotNull
   @param:JsonProperty("secondLevelDiscriminator")
-  override val secondLevelDiscriminator: SecondLevelDiscriminator =
-      SecondLevelDiscriminator.THIRD_LEVEL_CHILD1,
+  override val secondLevelDiscriminator:
+      SecondLevelDiscriminator = SecondLevelDiscriminator.THIRD_LEVEL_CHILD1,
 ) : SecondLevelChild1(rootField1, rootField2, firstLevelField1, firstLevelField2, metadata)

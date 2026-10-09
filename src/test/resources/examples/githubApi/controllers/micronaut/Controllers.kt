@@ -54,16 +54,12 @@ public interface ContributorsController {
     /**
      * Page through all the Contributor resources matching the query filters
      *
-     * @param limit Upper bound for number of results to be returned from query api. A default limit
-     * will be applied if this is not present
+     * @param limit Upper bound for number of results to be returned from query api. A default limit will be applied if this is not present
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
      * @param includeInactive A query parameter to request both active and inactive entities
-     * @param cursor An encoded value which represents a point in the data from where pagination will
-     * commence. The pagination direction (either forward or backward) will also be encoded within the
-     * cursor value. The cursor value will always be generated server side
+     * @param cursor An encoded value which represents a point in the data from where pagination will commence. The pagination direction (either forward or backward) will also be encoded within the cursor value. The cursor value will always be generated server side
      *
      */
     @Get(uri = "/contributors")
@@ -79,16 +75,9 @@ public interface ContributorsController {
      * Create a new Contributor
      *
      * @param contributor
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      *
      */
     @Post(uri = "/contributors")
@@ -103,15 +92,11 @@ public interface ContributorsController {
      * Get a Contributor by ID
      *
      * @param id The unique id for the resource
-     * @param status Changes the behavior of GET | HEAD based on the value of the status property.
-     * Will return a 404 if the status property does not match the query parameter."
+     * @param status Changes the behavior of GET | HEAD based on the value of the status property. Will return a 404 if the status property does not match the query parameter."
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to
-     * only operate on the resource if it does not match any of the provided entity-tags. If the provided
-     * entity-tag is `*`, it is required that the resource does not exist at all.
+     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to only operate on the resource if it does not match any of the provided entity-tags. If the provided entity-tag is `*`, it is required that the resource does not exist at all.
      *
      */
     @Get(uri = "/contributors/{id}")
@@ -128,21 +113,11 @@ public interface ContributorsController {
      *
      * @param contributor
      * @param id The unique id for the resource
-     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only
-     * operate on the resource that matches at least one of the provided entity-tags. This allows clients
-     * express a precondition that prevent the method from being applied if there have been any changes
-     * to the resource.
+     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only operate on the resource that matches at least one of the provided entity-tags. This allows clients express a precondition that prevent the method from being applied if there have been any changes to the resource.
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      *
      */
     @Put(uri = "/contributors/{id}")
@@ -161,16 +136,12 @@ public interface OrganisationsController {
     /**
      * Page through all the Organisation resources matching the query filters
      *
-     * @param limit Upper bound for number of results to be returned from query api. A default limit
-     * will be applied if this is not present
+     * @param limit Upper bound for number of results to be returned from query api. A default limit will be applied if this is not present
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
      * @param includeInactive A query parameter to request both active and inactive entities
-     * @param cursor An encoded value which represents a point in the data from where pagination will
-     * commence. The pagination direction (either forward or backward) will also be encoded within the
-     * cursor value. The cursor value will always be generated server side
+     * @param cursor An encoded value which represents a point in the data from where pagination will commence. The pagination direction (either forward or backward) will also be encoded within the cursor value. The cursor value will always be generated server side
      *
      */
     @Get(uri = "/organisations")
@@ -186,16 +157,9 @@ public interface OrganisationsController {
      * Create a new Organisation
      *
      * @param organisation
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      *
      */
     @Post(uri = "/organisations")
@@ -210,15 +174,11 @@ public interface OrganisationsController {
      * Get a Organisation by ID
      *
      * @param id The unique id for the resource
-     * @param status Changes the behavior of GET | HEAD based on the value of the status property.
-     * Will return a 404 if the status property does not match the query parameter."
+     * @param status Changes the behavior of GET | HEAD based on the value of the status property. Will return a 404 if the status property does not match the query parameter."
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to
-     * only operate on the resource if it does not match any of the provided entity-tags. If the provided
-     * entity-tag is `*`, it is required that the resource does not exist at all.
+     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to only operate on the resource if it does not match any of the provided entity-tags. If the provided entity-tag is `*`, it is required that the resource does not exist at all.
      *
      */
     @Get(uri = "/organisations/{id}")
@@ -235,21 +195,11 @@ public interface OrganisationsController {
      *
      * @param organisation
      * @param id The unique id for the resource
-     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only
-     * operate on the resource that matches at least one of the provided entity-tags. This allows clients
-     * express a precondition that prevent the method from being applied if there have been any changes
-     * to the resource.
+     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only operate on the resource that matches at least one of the provided entity-tags. This allows clients express a precondition that prevent the method from being applied if there have been any changes to the resource.
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      *
      */
     @Put(uri = "/organisations/{id}")
@@ -266,20 +216,15 @@ public interface OrganisationsController {
 @Controller
 public interface OrganisationsContributorsController {
     /**
-     * Page through all the Contributor resources for this parent Organisation matching the query
-     * filters
+     * Page through all the Contributor resources for this parent Organisation matching the query filters
      *
      * @param parentId The unique id for the parent resource
-     * @param limit Upper bound for number of results to be returned from query api. A default limit
-     * will be applied if this is not present
+     * @param limit Upper bound for number of results to be returned from query api. A default limit will be applied if this is not present
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
      * @param includeInactive A query parameter to request both active and inactive entities
-     * @param cursor An encoded value which represents a point in the data from where pagination will
-     * commence. The pagination direction (either forward or backward) will also be encoded within the
-     * cursor value. The cursor value will always be generated server side
+     * @param cursor An encoded value which represents a point in the data from where pagination will commence. The pagination direction (either forward or backward) will also be encoded within the cursor value. The cursor value will always be generated server side
      *
      */
     @Get(uri = "/organisations/{parent-id}/contributors")
@@ -297,12 +242,9 @@ public interface OrganisationsContributorsController {
      *
      * @param parentId The unique id for the parent resource
      * @param id The unique id for the resource
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to
-     * only operate on the resource if it does not match any of the provided entity-tags. If the provided
-     * entity-tag is `*`, it is required that the resource does not exist at all.
+     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to only operate on the resource if it does not match any of the provided entity-tags. If the provided entity-tag is `*`, it is required that the resource does not exist at all.
      *
      */
     @Get(uri = "/organisations/{parent-id}/contributors/{id}")
@@ -319,21 +261,11 @@ public interface OrganisationsContributorsController {
      *
      * @param parentId The unique id for the parent resource
      * @param id The unique id for the resource
-     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only
-     * operate on the resource that matches at least one of the provided entity-tags. This allows clients
-     * express a precondition that prevent the method from being applied if there have been any changes
-     * to the resource.
+     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only operate on the resource that matches at least one of the provided entity-tags. This allows clients express a precondition that prevent the method from being applied if there have been any changes to the resource.
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      *
      */
     @Put(uri = "/organisations/{parent-id}/contributors/{id}")
@@ -350,8 +282,7 @@ public interface OrganisationsContributorsController {
      *
      * @param parentId The unique id for the parent resource
      * @param id The unique id for the resource
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
      */
     @Delete(uri = "/organisations/{parent-id}/contributors/{id}")
@@ -367,20 +298,16 @@ public interface RepositoriesController {
     /**
      * Page through all the Repository resources matching the query filters
      *
-     * @param limit Upper bound for number of results to be returned from query api. A default limit
-     * will be applied if this is not present
+     * @param limit Upper bound for number of results to be returned from query api. A default limit will be applied if this is not present
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
      * @param slug Filters resources by the [slug] property. Accepts comma-delimited values
      *
      * @param name Filters resources by the [name] property. Accepts comma-delimited values
      *
      * @param includeInactive A query parameter to request both active and inactive entities
-     * @param cursor An encoded value which represents a point in the data from where pagination will
-     * commence. The pagination direction (either forward or backward) will also be encoded within the
-     * cursor value. The cursor value will always be generated server side
+     * @param cursor An encoded value which represents a point in the data from where pagination will commence. The pagination direction (either forward or backward) will also be encoded within the cursor value. The cursor value will always be generated server side
      *
      */
     @Get(uri = "/repositories")
@@ -398,16 +325,9 @@ public interface RepositoriesController {
      * Create a new Repository
      *
      * @param repository
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      *
      */
     @Post(uri = "/repositories")
@@ -422,15 +342,11 @@ public interface RepositoriesController {
      * Get a Repository by ID
      *
      * @param id The unique id for the resource
-     * @param status Changes the behavior of GET | HEAD based on the value of the status property.
-     * Will return a 404 if the status property does not match the query parameter."
+     * @param status Changes the behavior of GET | HEAD based on the value of the status property. Will return a 404 if the status property does not match the query parameter."
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to
-     * only operate on the resource if it does not match any of the provided entity-tags. If the provided
-     * entity-tag is `*`, it is required that the resource does not exist at all.
+     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to only operate on the resource if it does not match any of the provided entity-tags. If the provided entity-tag is `*`, it is required that the resource does not exist at all.
      *
      */
     @Get(uri = "/repositories/{id}")
@@ -447,21 +363,11 @@ public interface RepositoriesController {
      *
      * @param repository
      * @param id The unique id for the resource
-     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only
-     * operate on the resource that matches at least one of the provided entity-tags. This allows clients
-     * express a precondition that prevent the method from being applied if there have been any changes
-     * to the resource.
+     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only operate on the resource that matches at least one of the provided entity-tags. This allows clients express a precondition that prevent the method from being applied if there have been any changes to the resource.
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      *
      */
     @Put(uri = "/repositories/{id}")
@@ -478,20 +384,15 @@ public interface RepositoriesController {
 @Controller
 public interface RepositoriesPullRequestsController {
     /**
-     * Page through all the PullRequest resources for this parent Repository matching the query
-     * filters
+     * Page through all the PullRequest resources for this parent Repository matching the query filters
      *
      * @param parentId The unique id for the parent resource
-     * @param limit Upper bound for number of results to be returned from query api. A default limit
-     * will be applied if this is not present
+     * @param limit Upper bound for number of results to be returned from query api. A default limit will be applied if this is not present
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
      * @param includeInactive A query parameter to request both active and inactive entities
-     * @param cursor An encoded value which represents a point in the data from where pagination will
-     * commence. The pagination direction (either forward or backward) will also be encoded within the
-     * cursor value. The cursor value will always be generated server side
+     * @param cursor An encoded value which represents a point in the data from where pagination will commence. The pagination direction (either forward or backward) will also be encoded within the cursor value. The cursor value will always be generated server side
      *
      */
     @Get(uri = "/repositories/{parent-id}/pull-requests")
@@ -509,16 +410,9 @@ public interface RepositoriesPullRequestsController {
      *
      * @param pullRequest
      * @param parentId The unique id for the parent resource
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      *
      */
     @Post(uri = "/repositories/{parent-id}/pull-requests")
@@ -535,12 +429,9 @@ public interface RepositoriesPullRequestsController {
      *
      * @param parentId The unique id for the parent resource
      * @param id The unique id for the resource
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to
-     * only operate on the resource if it does not match any of the provided entity-tags. If the provided
-     * entity-tag is `*`, it is required that the resource does not exist at all.
+     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to only operate on the resource if it does not match any of the provided entity-tags. If the provided entity-tag is `*`, it is required that the resource does not exist at all.
      *
      */
     @Get(uri = "/repositories/{parent-id}/pull-requests/{id}")
@@ -558,21 +449,11 @@ public interface RepositoriesPullRequestsController {
      * @param pullRequest
      * @param parentId The unique id for the parent resource
      * @param id The unique id for the resource
-     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only
-     * operate on the resource that matches at least one of the provided entity-tags. This allows clients
-     * express a precondition that prevent the method from being applied if there have been any changes
-     * to the resource.
+     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only operate on the resource that matches at least one of the provided entity-tags. This allows clients express a precondition that prevent the method from being applied if there have been any changes to the resource.
      *
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      *
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      *
      */
     @Put(uri = "/repositories/{parent-id}/pull-requests/{id}")

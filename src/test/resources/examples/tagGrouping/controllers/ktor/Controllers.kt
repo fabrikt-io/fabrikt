@@ -104,19 +104,11 @@ public interface PetController {
                 controller.createPet(pet, call)
             }
             `get`("/pets/{petId}") {
-                val petId =
-                    call.parameters.getTypedOrFail<java.util.UUID>(
-                        "petId",
-                        call.application.conversionService,
-                    )
+                val petId = call.parameters.getTypedOrFail<java.util.UUID>("petId", call.application.conversionService)
                 controller.getPetById(petId, TypedApplicationCall(call))
             }
             delete("/pets/{petId}") {
-                val petId =
-                    call.parameters.getTypedOrFail<java.util.UUID>(
-                        "petId",
-                        call.application.conversionService,
-                    )
+                val petId = call.parameters.getTypedOrFail<java.util.UUID>("petId", call.application.conversionService)
                 controller.deletePet(petId, call)
             }
         }
@@ -138,12 +130,7 @@ public interface PetController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -165,12 +152,7 @@ public interface PetController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -180,9 +162,7 @@ public interface PetController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 
@@ -242,11 +222,7 @@ public interface OwnerController {
                 controller.createOwner(owner, call)
             }
             `get`("/owners/{ownerId}/pets") {
-                val ownerId =
-                    call.parameters.getTypedOrFail<java.util.UUID>(
-                        "ownerId",
-                        call.application.conversionService,
-                    )
+                val ownerId = call.parameters.getTypedOrFail<java.util.UUID>("ownerId", call.application.conversionService)
                 controller.listPetsByOwner(ownerId, TypedApplicationCall(call))
             }
         }
@@ -268,12 +244,7 @@ public interface OwnerController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -295,12 +266,7 @@ public interface OwnerController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -310,9 +276,7 @@ public interface OwnerController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 
@@ -320,8 +284,7 @@ public interface VehicleController {
     /**
      * List all vehicles (tagged vehicle, alphabetically first verb=get wins)
      *
-     * Route is expected to respond with
-     * [kotlin.collections.List<examples.tagGrouping.models.Vehicle>].
+     * Route is expected to respond with [kotlin.collections.List<examples.tagGrouping.models.Vehicle>].
      * Use [examples.tagGrouping.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
      * @param call Decorated ApplicationCall with additional typed respond methods
@@ -347,8 +310,7 @@ public interface VehicleController {
          * Mounts all routes for the Vehicle resource
          *
          * - GET /vehicles List all vehicles (tagged vehicle, alphabetically first verb=get wins)
-         * - POST /vehicles Create a vehicle (tagged owner, but post > get alphabetically so owner tag
-         * does NOT win)
+         * - POST /vehicles Create a vehicle (tagged owner, but post > get alphabetically so owner tag does NOT win)
          */
         public fun Route.vehicleRoutes(controller: VehicleController) {
             `get`("/vehicles") {
@@ -377,12 +339,7 @@ public interface VehicleController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -404,12 +361,7 @@ public interface VehicleController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -419,9 +371,7 @@ public interface VehicleController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 

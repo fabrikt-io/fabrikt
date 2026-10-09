@@ -14,9 +14,7 @@ import kotlin.String
   property = "secondLevelDiscriminator",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = ThirdLevelChild11::class, name =
-    "thirdLevelChild1"),JsonSubTypes.Type(value = ThirdLevelChild12::class, name =
-    "thirdLevelChild2"))
+@JsonSubTypes(JsonSubTypes.Type(value = ThirdLevelChild11::class, name = "thirdLevelChild1"),JsonSubTypes.Type(value = ThirdLevelChild12::class, name = "thirdLevelChild2"))
 public sealed class SecondLevelChild1(
   @param:JsonProperty("rootField1")
   @get:JsonProperty("rootField1")
@@ -36,8 +34,8 @@ public sealed class SecondLevelChild1(
   @get:JsonProperty("firstLevelDiscriminator")
   @get:NotNull
   @param:JsonProperty("firstLevelDiscriminator")
-  override val firstLevelDiscriminator: FirstLevelDiscriminator =
-      FirstLevelDiscriminator.SECOND_LEVEL_CHILD1,
+  override val firstLevelDiscriminator:
+      FirstLevelDiscriminator = FirstLevelDiscriminator.SECOND_LEVEL_CHILD1,
 ) : FirstLevelChild(rootField1, rootField2, firstLevelField1, firstLevelField2) {
   public abstract val secondLevelDiscriminator: SecondLevelDiscriminator
 }

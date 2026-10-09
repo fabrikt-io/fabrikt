@@ -25,7 +25,6 @@ public class ApiConfiguration(
      */
     public fun copy(
         basePath: String = this.basePath,
-        customHeaders: Map<String, String> =
-            this.customHeaders,
+        customHeaders: Map<String, String> = this.customHeaders,
     ): ApiConfiguration = ApiConfiguration(basePath, customHeaders)
 }

@@ -51,16 +51,14 @@ public interface PetsController {
      * Throws:
      *   ParameterConversionException - when conversion from String to R fails
      */
-    private inline fun <reified R : Any> Parameters.getTyped(name: String,
-        conversionService: ConversionService = DefaultConversionService): R? {
+    private inline fun <reified R : Any> Parameters.getTyped(name: String, conversionService: ConversionService = DefaultConversionService): R? {
       val values = getAll(name) ?: return null
       val typeInfo = typeInfo<R>()
       return try {
           @Suppress("UNCHECKED_CAST")
           conversionService.fromValues(values, typeInfo) as R
       } catch (cause: Exception) {
-          throw ParameterConversionException(name, typeInfo.type.simpleName ?:
-          typeInfo.type.toString(), cause)
+          throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
       }
     }
 
@@ -72,16 +70,14 @@ public interface PetsController {
      *   MissingRequestParameterException - when parameter is missing
      *   ParameterConversionException - when conversion from String to R fails
      */
-    private inline fun <reified R : Any> Parameters.getTypedOrFail(name: String,
-        conversionService: ConversionService = DefaultConversionService): R {
+    private inline fun <reified R : Any> Parameters.getTypedOrFail(name: String, conversionService: ConversionService = DefaultConversionService): R {
       val values = getAll(name) ?: throw MissingRequestParameterException(name)
       val typeInfo = typeInfo<R>()
       return try {
           @Suppress("UNCHECKED_CAST")
           conversionService.fromValues(values, typeInfo) as R
       } catch (cause: Exception) {
-          throw ParameterConversionException(name, typeInfo.type.simpleName ?:
-          typeInfo.type.toString(), cause)
+          throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
       }
     }
 
@@ -91,7 +87,6 @@ public interface PetsController {
      * Throws:
      *   BadRequestException - when the name is not present
      */
-    private fun Headers.getOrFail(name: String): String = this[name] ?: throw
-        BadRequestException("Header " + name + " is required")
+    private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
   }
 }

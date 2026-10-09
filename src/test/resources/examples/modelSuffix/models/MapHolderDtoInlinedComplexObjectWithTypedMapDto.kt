@@ -17,8 +17,8 @@ public data class MapHolderDtoInlinedComplexObjectWithTypedMapDto(
   @get:JsonProperty("code")
   public val code: Int? = null,
   @get:JsonIgnore
-  public val properties: MutableMap<String, InlinedComplexObjectWithTypedMapValueDto?> =
-      mutableMapOf(),
+  public val properties:
+      MutableMap<String, InlinedComplexObjectWithTypedMapValueDto?> = mutableMapOf(),
 ) {
   @JsonAnyGetter
   public fun `get`(): Map<String, InlinedComplexObjectWithTypedMapValueDto?> = properties

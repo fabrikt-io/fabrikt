@@ -12,4 +12,6 @@ public data class OneObject(
   @get:NotNull
   @param:JsonProperty("type")
   public val type: String = "char_location",
-) : SomeObjInlinedArray, SomeObjInlinedObject, SomeObjInlinedObjectNoMappings
+) : SomeObjInlinedArray,
+    SomeObjInlinedObject,
+    SomeObjInlinedObjectNoMappings

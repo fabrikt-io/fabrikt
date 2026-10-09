@@ -82,12 +82,7 @@ public interface InternalEventsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -109,12 +104,7 @@ public interface InternalEventsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -124,9 +114,7 @@ public interface InternalEventsController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 
@@ -137,14 +125,10 @@ public interface ContributorsController {
      * Route is expected to respond with [examples.githubApi.models.ContributorQueryResult].
      * Use [examples.githubApi.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
-     * @param limit Upper bound for number of results to be returned from query api. A default limit
-     * will be applied if this is not present
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param limit Upper bound for number of results to be returned from query api. A default limit will be applied if this is not present
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      * @param includeInactive A query parameter to request both active and inactive entities
-     * @param cursor An encoded value which represents a point in the data from where pagination will
-     * commence. The pagination direction (either forward or backward) will also be encoded within the
-     * cursor value. The cursor value will always be generated server side
+     * @param cursor An encoded value which represents a point in the data from where pagination will commence. The pagination direction (either forward or backward) will also be encoded within the cursor value. The cursor value will always be generated server side
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
     public suspend fun searchContributors(
@@ -162,15 +146,8 @@ public interface ContributorsController {
      * Use [respond] to send the response.
      *
      * @param contributor
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      * @param call The Ktor application call
      */
     public suspend fun createContributor(
@@ -187,13 +164,9 @@ public interface ContributorsController {
      * Use [examples.githubApi.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
      * @param id The unique id for the resource
-     * @param status Changes the behavior of GET | HEAD based on the value of the status property.
-     * Will return a 404 if the status property does not match the query parameter."
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to
-     * only operate on the resource if it does not match any of the provided entity-tags. If the provided
-     * entity-tag is `*`, it is required that the resource does not exist at all.
+     * @param status Changes the behavior of GET | HEAD based on the value of the status property. Will return a 404 if the status property does not match the query parameter."
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to only operate on the resource if it does not match any of the provided entity-tags. If the provided entity-tag is `*`, it is required that the resource does not exist at all.
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
     public suspend fun getContributor(
@@ -212,19 +185,9 @@ public interface ContributorsController {
      *
      * @param contributor
      * @param id The unique id for the resource
-     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only
-     * operate on the resource that matches at least one of the provided entity-tags. This allows clients
-     * express a precondition that prevent the method from being applied if there have been any changes
-     * to the resource.
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only operate on the resource that matches at least one of the provided entity-tags. This allows clients express a precondition that prevent the method from being applied if there have been any changes to the resource.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      * @param call The Ktor application call
      */
     public suspend fun putById(
@@ -249,16 +212,9 @@ public interface ContributorsController {
             `get`("/contributors") {
                 val xFlowId = call.request.headers["X-Flow-Id"]
                 val limit = call.request.queryParameters.getTyped<kotlin.Int>("limit")
-                val includeInactive =
-                    call.request.queryParameters.getTyped<kotlin.Boolean>("include_inactive")
+                val includeInactive = call.request.queryParameters.getTyped<kotlin.Boolean>("include_inactive")
                 val cursor = call.request.queryParameters.getTyped<kotlin.String>("cursor")
-                controller.searchContributors(
-                    xFlowId,
-                    limit,
-                    includeInactive,
-                    cursor,
-                    TypedApplicationCall(call),
-                )
+                controller.searchContributors(xFlowId, limit, includeInactive, cursor, TypedApplicationCall(call))
             }
             post("/contributors") {
                 val xFlowId = call.request.headers["X-Flow-Id"]
@@ -304,12 +260,7 @@ public interface ContributorsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -331,12 +282,7 @@ public interface ContributorsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -346,9 +292,7 @@ public interface ContributorsController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 
@@ -359,14 +303,10 @@ public interface OrganisationsController {
      * Route is expected to respond with [examples.githubApi.models.OrganisationQueryResult].
      * Use [examples.githubApi.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
-     * @param limit Upper bound for number of results to be returned from query api. A default limit
-     * will be applied if this is not present
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param limit Upper bound for number of results to be returned from query api. A default limit will be applied if this is not present
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      * @param includeInactive A query parameter to request both active and inactive entities
-     * @param cursor An encoded value which represents a point in the data from where pagination will
-     * commence. The pagination direction (either forward or backward) will also be encoded within the
-     * cursor value. The cursor value will always be generated server side
+     * @param cursor An encoded value which represents a point in the data from where pagination will commence. The pagination direction (either forward or backward) will also be encoded within the cursor value. The cursor value will always be generated server side
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
     public suspend fun `get`(
@@ -384,15 +324,8 @@ public interface OrganisationsController {
      * Use [respond] to send the response.
      *
      * @param organisation
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      * @param call The Ktor application call
      */
     public suspend fun post(
@@ -409,13 +342,9 @@ public interface OrganisationsController {
      * Use [examples.githubApi.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
      * @param id The unique id for the resource
-     * @param status Changes the behavior of GET | HEAD based on the value of the status property.
-     * Will return a 404 if the status property does not match the query parameter."
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to
-     * only operate on the resource if it does not match any of the provided entity-tags. If the provided
-     * entity-tag is `*`, it is required that the resource does not exist at all.
+     * @param status Changes the behavior of GET | HEAD based on the value of the status property. Will return a 404 if the status property does not match the query parameter."
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to only operate on the resource if it does not match any of the provided entity-tags. If the provided entity-tag is `*`, it is required that the resource does not exist at all.
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
     public suspend fun getById(
@@ -434,19 +363,9 @@ public interface OrganisationsController {
      *
      * @param organisation
      * @param id The unique id for the resource
-     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only
-     * operate on the resource that matches at least one of the provided entity-tags. This allows clients
-     * express a precondition that prevent the method from being applied if there have been any changes
-     * to the resource.
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only operate on the resource that matches at least one of the provided entity-tags. This allows clients express a precondition that prevent the method from being applied if there have been any changes to the resource.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      * @param call The Ktor application call
      */
     public suspend fun putById(
@@ -471,8 +390,7 @@ public interface OrganisationsController {
             `get`("/organisations") {
                 val xFlowId = call.request.headers["X-Flow-Id"]
                 val limit = call.request.queryParameters.getTyped<kotlin.Int>("limit")
-                val includeInactive =
-                    call.request.queryParameters.getTyped<kotlin.Boolean>("include_inactive")
+                val includeInactive = call.request.queryParameters.getTyped<kotlin.Boolean>("include_inactive")
                 val cursor = call.request.queryParameters.getTyped<kotlin.String>("cursor")
                 controller.get(xFlowId, limit, includeInactive, cursor, TypedApplicationCall(call))
             }
@@ -520,12 +438,7 @@ public interface OrganisationsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -547,12 +460,7 @@ public interface OrganisationsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -562,29 +470,22 @@ public interface OrganisationsController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 
 public interface OrganisationsContributorsController {
     /**
-     * Page through all the Contributor resources for this parent Organisation matching the query
-     * filters
+     * Page through all the Contributor resources for this parent Organisation matching the query filters
      *
      * Route is expected to respond with [examples.githubApi.models.ContributorQueryResult].
      * Use [examples.githubApi.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
      * @param parentId The unique id for the parent resource
-     * @param limit Upper bound for number of results to be returned from query api. A default limit
-     * will be applied if this is not present
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param limit Upper bound for number of results to be returned from query api. A default limit will be applied if this is not present
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      * @param includeInactive A query parameter to request both active and inactive entities
-     * @param cursor An encoded value which represents a point in the data from where pagination will
-     * commence. The pagination direction (either forward or backward) will also be encoded within the
-     * cursor value. The cursor value will always be generated server side
+     * @param cursor An encoded value which represents a point in the data from where pagination will commence. The pagination direction (either forward or backward) will also be encoded within the cursor value. The cursor value will always be generated server side
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
     public suspend fun `get`(
@@ -604,11 +505,8 @@ public interface OrganisationsContributorsController {
      *
      * @param parentId The unique id for the parent resource
      * @param id The unique id for the resource
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to
-     * only operate on the resource if it does not match any of the provided entity-tags. If the provided
-     * entity-tag is `*`, it is required that the resource does not exist at all.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to only operate on the resource if it does not match any of the provided entity-tags. If the provided entity-tag is `*`, it is required that the resource does not exist at all.
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
     public suspend fun getById(
@@ -627,19 +525,9 @@ public interface OrganisationsContributorsController {
      *
      * @param parentId The unique id for the parent resource
      * @param id The unique id for the resource
-     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only
-     * operate on the resource that matches at least one of the provided entity-tags. This allows clients
-     * express a precondition that prevent the method from being applied if there have been any changes
-     * to the resource.
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only operate on the resource that matches at least one of the provided entity-tags. This allows clients express a precondition that prevent the method from being applied if there have been any changes to the resource.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      * @param call The Ktor application call
      */
     public suspend fun putById(
@@ -659,8 +547,7 @@ public interface OrganisationsContributorsController {
      *
      * @param parentId The unique id for the parent resource
      * @param id The unique id for the resource
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      * @param call The Ktor application call
      */
     public suspend fun deleteById(
@@ -674,31 +561,19 @@ public interface OrganisationsContributorsController {
         /**
          * Mounts all routes for the OrganisationsContributors resource
          *
-         * - GET /organisations/{parent-id}/contributors Page through all the Contributor resources for
-         * this parent Organisation matching the query filters
-         * - GET /organisations/{parent-id}/contributors/{id} Get a Contributor for this Organisation by
-         * ID
-         * - PUT /organisations/{parent-id}/contributors/{id} Add an existing Contributor to this
-         * Organisation
-         * - DELETE /organisations/{parent-id}/contributors/{id} Remove Contributor from this
-         * Organisation. Does not delete the underlying Contributor.
+         * - GET /organisations/{parent-id}/contributors Page through all the Contributor resources for this parent Organisation matching the query filters
+         * - GET /organisations/{parent-id}/contributors/{id} Get a Contributor for this Organisation by ID
+         * - PUT /organisations/{parent-id}/contributors/{id} Add an existing Contributor to this Organisation
+         * - DELETE /organisations/{parent-id}/contributors/{id} Remove Contributor from this Organisation. Does not delete the underlying Contributor.
          */
         public fun Route.organisationsContributorsRoutes(controller: OrganisationsContributorsController) {
             `get`("/organisations/{parent-id}/contributors") {
                 val parentId = call.parameters.getTypedOrFail<kotlin.String>("parent-id")
                 val xFlowId = call.request.headers["X-Flow-Id"]
                 val limit = call.request.queryParameters.getTyped<kotlin.Int>("limit")
-                val includeInactive =
-                    call.request.queryParameters.getTyped<kotlin.Boolean>("include_inactive")
+                val includeInactive = call.request.queryParameters.getTyped<kotlin.Boolean>("include_inactive")
                 val cursor = call.request.queryParameters.getTyped<kotlin.String>("cursor")
-                controller.get(
-                    xFlowId,
-                    parentId,
-                    limit,
-                    includeInactive,
-                    cursor,
-                    TypedApplicationCall(call),
-                )
+                controller.get(xFlowId, parentId, limit, includeInactive, cursor, TypedApplicationCall(call))
             }
             `get`("/organisations/{parent-id}/contributors/{id}") {
                 val parentId = call.parameters.getTypedOrFail<kotlin.String>("parent-id")
@@ -740,12 +615,7 @@ public interface OrganisationsContributorsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -767,12 +637,7 @@ public interface OrganisationsContributorsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -782,9 +647,7 @@ public interface OrganisationsContributorsController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 
@@ -795,16 +658,12 @@ public interface RepositoriesController {
      * Route is expected to respond with [examples.githubApi.models.RepositoryQueryResult].
      * Use [examples.githubApi.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
-     * @param limit Upper bound for number of results to be returned from query api. A default limit
-     * will be applied if this is not present
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param limit Upper bound for number of results to be returned from query api. A default limit will be applied if this is not present
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      * @param slug Filters resources by the [slug] property. Accepts comma-delimited values
      * @param name Filters resources by the [name] property. Accepts comma-delimited values
      * @param includeInactive A query parameter to request both active and inactive entities
-     * @param cursor An encoded value which represents a point in the data from where pagination will
-     * commence. The pagination direction (either forward or backward) will also be encoded within the
-     * cursor value. The cursor value will always be generated server side
+     * @param cursor An encoded value which represents a point in the data from where pagination will commence. The pagination direction (either forward or backward) will also be encoded within the cursor value. The cursor value will always be generated server side
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
     public suspend fun `get`(
@@ -824,15 +683,8 @@ public interface RepositoriesController {
      * Use [respond] to send the response.
      *
      * @param repository
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      * @param call The Ktor application call
      */
     public suspend fun post(
@@ -849,13 +701,9 @@ public interface RepositoriesController {
      * Use [examples.githubApi.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
      * @param id The unique id for the resource
-     * @param status Changes the behavior of GET | HEAD based on the value of the status property.
-     * Will return a 404 if the status property does not match the query parameter."
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to
-     * only operate on the resource if it does not match any of the provided entity-tags. If the provided
-     * entity-tag is `*`, it is required that the resource does not exist at all.
+     * @param status Changes the behavior of GET | HEAD based on the value of the status property. Will return a 404 if the status property does not match the query parameter."
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to only operate on the resource if it does not match any of the provided entity-tags. If the provided entity-tag is `*`, it is required that the resource does not exist at all.
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
     public suspend fun getById(
@@ -874,19 +722,9 @@ public interface RepositoriesController {
      *
      * @param repository
      * @param id The unique id for the resource
-     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only
-     * operate on the resource that matches at least one of the provided entity-tags. This allows clients
-     * express a precondition that prevent the method from being applied if there have been any changes
-     * to the resource.
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only operate on the resource that matches at least one of the provided entity-tags. This allows clients express a precondition that prevent the method from being applied if there have been any changes to the resource.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      * @param call The Ktor application call
      */
     public suspend fun putById(
@@ -911,22 +749,11 @@ public interface RepositoriesController {
             `get`("/repositories") {
                 val xFlowId = call.request.headers["X-Flow-Id"]
                 val limit = call.request.queryParameters.getTyped<kotlin.Int>("limit")
-                val slug =
-                    call.request.queryParameters.getTyped<kotlin.collections.List<kotlin.String>>("slug")
-                val name =
-                    call.request.queryParameters.getTyped<kotlin.collections.List<kotlin.String>>("name")
-                val includeInactive =
-                    call.request.queryParameters.getTyped<kotlin.Boolean>("include_inactive")
+                val slug = call.request.queryParameters.getTyped<kotlin.collections.List<kotlin.String>>("slug")
+                val name = call.request.queryParameters.getTyped<kotlin.collections.List<kotlin.String>>("name")
+                val includeInactive = call.request.queryParameters.getTyped<kotlin.Boolean>("include_inactive")
                 val cursor = call.request.queryParameters.getTyped<kotlin.String>("cursor")
-                controller.get(
-                    xFlowId,
-                    limit,
-                    slug,
-                    name,
-                    includeInactive,
-                    cursor,
-                    TypedApplicationCall(call),
-                )
+                controller.get(xFlowId, limit, slug, name, includeInactive, cursor, TypedApplicationCall(call))
             }
             post("/repositories") {
                 val xFlowId = call.request.headers["X-Flow-Id"]
@@ -972,12 +799,7 @@ public interface RepositoriesController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -999,12 +821,7 @@ public interface RepositoriesController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -1014,29 +831,22 @@ public interface RepositoriesController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 
 public interface RepositoriesPullRequestsController {
     /**
-     * Page through all the PullRequest resources for this parent Repository matching the query
-     * filters
+     * Page through all the PullRequest resources for this parent Repository matching the query filters
      *
      * Route is expected to respond with [examples.githubApi.models.PullRequestQueryResult].
      * Use [examples.githubApi.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
      * @param parentId The unique id for the parent resource
-     * @param limit Upper bound for number of results to be returned from query api. A default limit
-     * will be applied if this is not present
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
+     * @param limit Upper bound for number of results to be returned from query api. A default limit will be applied if this is not present
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
      * @param includeInactive A query parameter to request both active and inactive entities
-     * @param cursor An encoded value which represents a point in the data from where pagination will
-     * commence. The pagination direction (either forward or backward) will also be encoded within the
-     * cursor value. The cursor value will always be generated server side
+     * @param cursor An encoded value which represents a point in the data from where pagination will commence. The pagination direction (either forward or backward) will also be encoded within the cursor value. The cursor value will always be generated server side
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
     public suspend fun `get`(
@@ -1056,15 +866,8 @@ public interface RepositoriesPullRequestsController {
      *
      * @param pullRequest
      * @param parentId The unique id for the parent resource
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      * @param call The Ktor application call
      */
     public suspend fun post(
@@ -1083,11 +886,8 @@ public interface RepositoriesPullRequestsController {
      *
      * @param parentId The unique id for the parent resource
      * @param id The unique id for the resource
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to
-     * only operate on the resource if it does not match any of the provided entity-tags. If the provided
-     * entity-tag is `*`, it is required that the resource does not exist at all.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param ifNoneMatch The RFC7232 If-None-Match header field in a request requires the server to only operate on the resource if it does not match any of the provided entity-tags. If the provided entity-tag is `*`, it is required that the resource does not exist at all.
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
     public suspend fun getById(
@@ -1107,19 +907,9 @@ public interface RepositoriesPullRequestsController {
      * @param pullRequest
      * @param parentId The unique id for the parent resource
      * @param id The unique id for the resource
-     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only
-     * operate on the resource that matches at least one of the provided entity-tags. This allows clients
-     * express a precondition that prevent the method from being applied if there have been any changes
-     * to the resource.
-     * @param xFlowId A custom header that will be passed onto any further requests and can be used
-     * for diagnosing.
-     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry
-     * requests without accidentally performing the same operation twice. This is useful in cases such as
-     * network failures. This Id should remain the same for a given operation, so that the server can use
-     * it to recognise subsequent retries of the same request. Clients should be careful in using this
-     * key as subsequent requests with the same key return the same result. How the key is generated is
-     * up to the client, but it is suggested to use UUID (v4), or any other random string with enough
-     * entropy to avoid collisions.
+     * @param ifMatch The RFC7232 If-Match header field in a request requires the server to only operate on the resource that matches at least one of the provided entity-tags. This allows clients express a precondition that prevent the method from being applied if there have been any changes to the resource.
+     * @param xFlowId A custom header that will be passed onto any further requests and can be used for diagnosing.
+     * @param idempotencyKey This unique identifier can be used to allow for clients to safely retry requests without accidentally performing the same operation twice. This is useful in cases such as network failures. This Id should remain the same for a given operation, so that the server can use it to recognise subsequent retries of the same request. Clients should be careful in using this key as subsequent requests with the same key return the same result. How the key is generated is up to the client, but it is suggested to use UUID (v4), or any other random string with enough entropy to avoid collisions.
      * @param call The Ktor application call
      */
     public suspend fun putById(
@@ -1136,31 +926,19 @@ public interface RepositoriesPullRequestsController {
         /**
          * Mounts all routes for the RepositoriesPullRequests resource
          *
-         * - GET /repositories/{parent-id}/pull-requests Page through all the PullRequest resources for
-         * this parent Repository matching the query filters
-         * - POST /repositories/{parent-id}/pull-requests Create a new PullRequest for this parent
-         * Repository
-         * - GET /repositories/{parent-id}/pull-requests/{id} Get a PullRequest for this Repository by
-         * ID
-         * - PUT /repositories/{parent-id}/pull-requests/{id} Update the PullRequest owned by this
-         * Repository
+         * - GET /repositories/{parent-id}/pull-requests Page through all the PullRequest resources for this parent Repository matching the query filters
+         * - POST /repositories/{parent-id}/pull-requests Create a new PullRequest for this parent Repository
+         * - GET /repositories/{parent-id}/pull-requests/{id} Get a PullRequest for this Repository by ID
+         * - PUT /repositories/{parent-id}/pull-requests/{id} Update the PullRequest owned by this Repository
          */
         public fun Route.repositoriesPullRequestsRoutes(controller: RepositoriesPullRequestsController) {
             `get`("/repositories/{parent-id}/pull-requests") {
                 val parentId = call.parameters.getTypedOrFail<kotlin.String>("parent-id")
                 val xFlowId = call.request.headers["X-Flow-Id"]
                 val limit = call.request.queryParameters.getTyped<kotlin.Int>("limit")
-                val includeInactive =
-                    call.request.queryParameters.getTyped<kotlin.Boolean>("include_inactive")
+                val includeInactive = call.request.queryParameters.getTyped<kotlin.Boolean>("include_inactive")
                 val cursor = call.request.queryParameters.getTyped<kotlin.String>("cursor")
-                controller.get(
-                    xFlowId,
-                    parentId,
-                    limit,
-                    includeInactive,
-                    cursor,
-                    TypedApplicationCall(call),
-                )
+                controller.get(xFlowId, parentId, limit, includeInactive, cursor, TypedApplicationCall(call))
             }
             post("/repositories/{parent-id}/pull-requests") {
                 val parentId = call.parameters.getTypedOrFail<kotlin.String>("parent-id")
@@ -1204,12 +982,7 @@ public interface RepositoriesPullRequestsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -1231,12 +1004,7 @@ public interface RepositoriesPullRequestsController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -1246,9 +1014,7 @@ public interface RepositoriesPullRequestsController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
 

@@ -24,7 +24,6 @@ public interface PetsClient {
     @Headers("Accept: application/json")
     public fun listPets(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     ): List<Pet>
 }
