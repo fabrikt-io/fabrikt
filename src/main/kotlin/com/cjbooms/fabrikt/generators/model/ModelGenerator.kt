@@ -303,7 +303,7 @@ class ModelGenerator(
             is KotlinTypeInfo.Enum -> models.add(buildEnumClass(schema, type))
             is KotlinTypeInfo.Object, is KotlinTypeInfo.GeneratedTypedAdditionalProperties -> {
                 val properties = schema.topLevelProperties(propertySettings, sourceApi.openApi3, schema)
-                models.add(standardDataClass(name, schema.safeName(), properties, schema, emptySet()))
+                models.add(standardDataClass(name, schema.safeName(), properties, schema, emptyList()))
                 models.addAll(buildInLinedModels(properties, schema, schema.getDocumentUrl()))
             }
             else -> Unit

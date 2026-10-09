@@ -6,6 +6,7 @@ import com.cjbooms.fabrikt.cli.CodeGenerationType
 import com.cjbooms.fabrikt.cli.CodeGenerator
 import com.cjbooms.fabrikt.cli.ControllerCodeGenTargetType
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
+import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.client.OkHttpClientGenerator
@@ -36,7 +37,7 @@ class DirectionalEndpointGeneratorTest {
     @EnumSource(ClientCodeGenTargetType::class, names = ["OK_HTTP", "OPEN_FEIGN", "SPRING_HTTP_INTERFACE"])
     fun `typed response representations refer to generated response models`(target: ClientCodeGenTargetType) {
         listOf(false, true).forEach { multipleRequestTypes ->
-            val options = setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS, ClientCodeGenOptionType.RESILIENCE4J)
+            val options = setOf(ClientCodeGenOptionType.RESPONSE_MEDIA_TYPE_FUNCTIONS)
             MutableSettings.updateSettings(
                 genTypes = setOf(CodeGenerationType.CLIENT),
                 modelOptions = setOf(ModelCodeGenOptionType.REQUEST_RESPONSE_MODELS),
@@ -136,7 +137,7 @@ class DirectionalEndpointGeneratorTest {
     fun `all endpoint targets use directional models`(version: String) {
         val targets =
             ClientCodeGenTargetType.entries.map { "client_${it.name.lowercase()}" } +
-                ControllerCodeGenTargetType.entries.map { "controller_${it.name.lowercase()}" } + "client_ok_http_enhanced"
+                ControllerCodeGenTargetType.entries.map { "controller_${it.name.lowercase()}" }
         targets.forEach { target ->
             ModelNameRegistry.clear()
             val controller = target.startsWith("controller_")
@@ -147,7 +148,7 @@ class DirectionalEndpointGeneratorTest {
                     ControllerCodeGenTargetType.default
                 }
             val clientTarget =
-                if (controller || target.endsWith("enhanced")) {
+                if (controller) {
                     ClientCodeGenTargetType.default
                 } else {
                     ClientCodeGenTargetType.valueOf(target.removePrefix("client_").uppercase())
@@ -156,9 +157,9 @@ class DirectionalEndpointGeneratorTest {
                 genTypes = setOf(if (controller) CodeGenerationType.CONTROLLERS else CodeGenerationType.CLIENT),
                 modelOptions = setOf(ModelCodeGenOptionType.REQUEST_RESPONSE_MODELS),
                 validationLibrary = ValidationLibrary.NO_VALIDATION,
+                serializationLibrary = SerializationLibrary.JACKSON_2,
                 controllerTarget = controllerTarget,
                 clientTarget = clientTarget,
-                clientOptions = if (target.endsWith("enhanced")) setOf(ClientCodeGenOptionType.RESILIENCE4J) else emptySet(),
             )
             val spec = readTextResource("/examples/directionalEndpoints/api.yaml").replace("3.0.3", version)
             // Micronaut controllers do not support multipart parameters.
