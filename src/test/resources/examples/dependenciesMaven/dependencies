@@ -1,0 +1,18 @@
+<dependency>
+  <groupId>jakarta.validation</groupId>
+  <artifactId>jakarta.validation-api</artifactId>
+  <version>3.1.1</version>
+  <scope>compile</scope>
+</dependency>
+<dependency>
+  <groupId>tools.jackson.core</groupId>
+  <artifactId>jackson-databind</artifactId>
+  <version>3.2.2</version>
+  <scope>compile</scope>
+</dependency>
+<dependency>
+  <groupId>tools.jackson.module</groupId>
+  <artifactId>jackson-module-kotlin</artifactId>
+  <version>3.2.2</version>
+  <scope>compile</scope>
+</dependency>

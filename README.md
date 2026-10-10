@@ -366,6 +366,12 @@ Usage: <main class> [options]
 |                                         |   `JAVAX_VALIDATION` - Use `javax.validation` annotations in generated model classes |
 |                                         |   `JAKARTA_VALIDATION` - Use `jakarta.validation` annotations in generated model classes (default) |
 |                                         |   `NO_VALIDATION` - Use no validation annotations in generated model classes |
+|   `dependencies-generation-mode`        | Configure generation of file containing dependencies of the generated source code. Default: NONE   |
+|                                         | CHOOSE ONE OF: |
+|                                         | `NONE` - Default, no extra dependencies file generated |
+|                                         | `GRADLE_NOTATION` - Dependencies file is generated with gradle notation (expected to be placed inside dependencies {} block in build.gradle(.kts) |
+|                                         | `MAVEN_NOTATION` - Dependencies file is generated with maven notation (expected to be placed inside <dependencies></dependencies> tags in pom.xml) |
+
 
 ## Original Motivation
 
