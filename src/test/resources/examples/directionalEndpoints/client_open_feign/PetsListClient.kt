@@ -19,7 +19,6 @@ public interface PetsListClient {
     @Headers("Accept: application/json")
     public fun getPets(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     ): List<PetResponse>
 }

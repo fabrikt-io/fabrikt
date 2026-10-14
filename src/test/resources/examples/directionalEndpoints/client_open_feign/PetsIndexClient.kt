@@ -18,7 +18,6 @@ public interface PetsIndexClient {
     @Headers("Accept: application/json")
     public fun getPetIndex(
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
-        @QueryMap
-        additionalQueryParameters: Map<String, String> = emptyMap(),
+        @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     ): Map<String, PetResponse?>
 }

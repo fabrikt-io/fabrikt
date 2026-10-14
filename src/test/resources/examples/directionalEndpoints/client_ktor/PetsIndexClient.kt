@@ -22,8 +22,7 @@ public class PetsIndexClient(
     /**
      *
      * Returns:
-     * 	[NetworkResult.Success] with [kotlin.collections.Map<kotlin.String,
-     * examples.directionalEndpoints.models.PetResponse?>] if the request was successful.
+     * 	[NetworkResult.Success] with [kotlin.collections.Map<kotlin.String, examples.directionalEndpoints.models.PetResponse?>] if the request was successful.
      * 	[NetworkResult.Failure] with a [NetworkError] if the request failed.
      */
     public suspend fun getPetIndex(apiConfiguration: ApiConfiguration = ApiConfiguration()): NetworkResult<Map<String, PetResponse?>> {

@@ -35,11 +35,8 @@ public interface FoosBarsController {
     public fun listBars(
         @PathVariable(value = "foo_id", required = true) fooId: FooId,
         @RequestParam(value = "other_foo_id", required = false) otherFooId: FooId?,
-        @Size(min = 1, max = 16) @RequestParam(value = "reference", required = false)
-        reference: String?,
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) @RequestParam(
-            value = "created_after",
-            required = false,
-        ) createdAfter: OffsetDateTime?,
+        @Size(min = 1, max = 16) @RequestParam(value = "reference", required = false) reference: String?,
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) @RequestParam(value = "created_after", required = false) createdAfter:
+            OffsetDateTime?,
     ): ResponseEntity<Bar>
 }

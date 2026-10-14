@@ -22,7 +22,6 @@ public interface PetsListClient {
     )
     public fun getPets(
         @RequestHeader additionalHeaders: Map<String, Any> = emptyMap(),
-        @RequestParam
-        additionalQueryParameters: Map<String, Any> = emptyMap(),
+        @RequestParam additionalQueryParameters: Map<String, Any> = emptyMap(),
     ): List<PetResponse>
 }

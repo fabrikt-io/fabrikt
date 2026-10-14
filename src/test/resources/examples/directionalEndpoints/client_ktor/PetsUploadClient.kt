@@ -21,8 +21,7 @@ public class PetsUploadClient(
      * Parameters:
      *
      * Returns:
-     * 	[NetworkResult.Success] with [examples.directionalEndpoints.models.PetResponse] if the request
-     * was successful.
+     * 	[NetworkResult.Success] with [examples.directionalEndpoints.models.PetResponse] if the request was successful.
      * 	[NetworkResult.Failure] with a [NetworkError] if the request failed.
      */
     public suspend fun uploadPet(apiConfiguration: ApiConfiguration = ApiConfiguration()): NetworkResult<PetResponse> {

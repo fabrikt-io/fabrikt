@@ -147,22 +147,22 @@ class DependenciesResolverTest {
                     SerializationLibrary.JACKSON ->
                         listOf(
                             "COMPILE jakarta.validation:jakarta.validation-api:3.1.1",
-                            "COMPILE com.fasterxml.jackson.core:jackson-core:2.21.6",
-                            "COMPILE com.fasterxml.jackson.core:jackson-databind:2.21.6",
-                            "COMPILE com.fasterxml.jackson.module:jackson-module-kotlin:2.21.6",
+                            "COMPILE com.fasterxml.jackson.core:jackson-core:2.22.3",
+                            "COMPILE com.fasterxml.jackson.core:jackson-databind:2.22.3",
+                            "COMPILE com.fasterxml.jackson.module:jackson-module-kotlin:2.22.3",
                         )
                     SerializationLibrary.JACKSON_2 ->
                         listOf(
                             "COMPILE jakarta.validation:jakarta.validation-api:3.1.1",
-                            "COMPILE com.fasterxml.jackson.core:jackson-core:2.21.6",
-                            "COMPILE com.fasterxml.jackson.core:jackson-databind:2.21.6",
-                            "COMPILE com.fasterxml.jackson.module:jackson-module-kotlin:2.21.6",
+                            "COMPILE com.fasterxml.jackson.core:jackson-core:2.22.3",
+                            "COMPILE com.fasterxml.jackson.core:jackson-databind:2.22.3",
+                            "COMPILE com.fasterxml.jackson.module:jackson-module-kotlin:2.22.3",
                         )
                     SerializationLibrary.JACKSON_3 -> defaultDependencies()
                     SerializationLibrary.KOTLINX_SERIALIZATION ->
                         listOf(
                             "COMPILE jakarta.validation:jakarta.validation-api:3.1.1",
-                            "COMPILE org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0",
+                            "COMPILE org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0",
                         )
                 },
             )
@@ -180,7 +180,7 @@ class DependenciesResolverTest {
                 when (library) {
                     InstantLibrary.KOTLINX_INSTANT ->
                         defaultDependencies() +
-                            "COMPILE org.jetbrains.kotlinx:kotlinx-datetime:0.7.1"
+                            "COMPILE org.jetbrains.kotlinx:kotlinx-datetime:0.8.0"
                     InstantLibrary.KOTLIN_TIME_INSTANT -> defaultDependencies()
                 },
             )

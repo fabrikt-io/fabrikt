@@ -18,10 +18,8 @@ import kotlin.collections.Map
 
 public interface PetsIndexController {
     /**
-     * Route is expected to respond with [kotlin.collections.Map<kotlin.String,
-     * examples.directionalEndpoints.models.PetResponse?>].
-     * Use [examples.directionalEndpoints.controllers.TypedApplicationCall.respondTyped] to send the
-     * response.
+     * Route is expected to respond with [kotlin.collections.Map<kotlin.String, examples.directionalEndpoints.models.PetResponse?>].
+     * Use [examples.directionalEndpoints.controllers.TypedApplicationCall.respondTyped] to send the response.
      *
      * @param call Decorated ApplicationCall with additional typed respond methods
      */
@@ -56,12 +54,7 @@ public interface PetsIndexController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -83,12 +76,7 @@ public interface PetsIndexController {
                 @Suppress("UNCHECKED_CAST")
                 conversionService.fromValues(values, typeInfo) as R
             } catch (cause: Exception) {
-                throw ParameterConversionException(
-                    name,
-                    typeInfo.type.simpleName
-                        ?: typeInfo.type.toString(),
-                    cause,
-                )
+                throw ParameterConversionException(name, typeInfo.type.simpleName ?: typeInfo.type.toString(), cause)
             }
         }
 
@@ -98,8 +86,6 @@ public interface PetsIndexController {
          * Throws:
          *   BadRequestException - when the name is not present
          */
-        private fun Headers.getOrFail(name: String): String =
-            this[name] ?: throw
-                BadRequestException("Header " + name + " is required")
+        private fun Headers.getOrFail(name: String): String = this[name] ?: throw BadRequestException("Header " + name + " is required")
     }
 }
