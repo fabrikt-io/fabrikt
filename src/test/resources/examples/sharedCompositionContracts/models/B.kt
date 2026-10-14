@@ -18,4 +18,5 @@ public data class B(
   @get:JsonProperty("label")
   @get:NotNull
   override val label: String,
-) : ACompositeExtra, BComposite
+) : ACompositeExtra,
+    BComposite

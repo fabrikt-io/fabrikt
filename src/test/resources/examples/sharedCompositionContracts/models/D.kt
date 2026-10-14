@@ -22,4 +22,5 @@ public data class D(
   @param:JsonProperty("count")
   @get:JsonProperty("count")
   public val count: Int? = null,
-) : ACompositeExtra, BComposite
+) : ACompositeExtra,
+    BComposite
