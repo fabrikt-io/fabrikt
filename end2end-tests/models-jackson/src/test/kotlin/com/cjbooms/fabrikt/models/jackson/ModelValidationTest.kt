@@ -18,6 +18,8 @@ import com.example.validation.models.StringValue
 import com.example.validation.models.TypedMapValue
 import com.example.validation.models.UuidValue
 import com.example.validation.models.ValueValue
+import com.example.validationcustomtypes.models.CustomStringValue
+import com.example.validationcustomtypes.models.CustomTypeValue
 import jakarta.validation.Validation
 import jakarta.validation.ValidatorFactory
 import jakarta.validation.constraints.DecimalMax
@@ -31,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.math.BigDecimal
+import java.util.Currency
 import java.util.UUID
 import java.util.logging.Handler
 import java.util.logging.Level
@@ -152,6 +155,38 @@ class ModelValidationTest {
     fun `UUID as string enforces its pattern`() {
         assertViolation(
             model = UuidStringValue(value = "123E4567-E89B-12D3-A456-426614174000"),
+            propertyPath = "value",
+            constraint = Pattern::class,
+        )
+    }
+
+    @Test
+    fun `custom mapped type with string constraints validates without exceptions`() {
+        val model = CustomTypeValue(value = EUR, values = listOf(EUR))
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `list of custom mapped type enforces maximum size`() {
+        assertViolation(
+            model = CustomTypeValue(value = EUR, values = listOf(EUR, USD, GBP)),
+            propertyPath = "values",
+            constraint = Size::class,
+        )
+    }
+
+    @Test
+    fun `custom mapped String accepts a valid value`() {
+        val model = CustomStringValue(value = "ready")
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `custom mapped String enforces its pattern`() {
+        assertViolation(
+            model = CustomStringValue(value = "READY"),
             propertyPath = "value",
             constraint = Pattern::class,
         )
@@ -384,5 +419,11 @@ class ModelValidationTest {
         val violation = violations.single()
         assertThat(violation.propertyPath.toString()).isEqualTo(propertyPath)
         assertThat(violation.constraintDescriptor.annotation.annotationClass).isEqualTo(constraint)
+    }
+
+    private companion object {
+        val EUR: Currency = Currency.getInstance("EUR")
+        val USD: Currency = Currency.getInstance("USD")
+        val GBP: Currency = Currency.getInstance("GBP")
     }
 }

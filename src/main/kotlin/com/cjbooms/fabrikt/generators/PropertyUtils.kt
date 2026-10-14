@@ -332,7 +332,7 @@ object PropertyUtils {
         if (!info.isNullable(classSettings)) maybeAddAnnotation(validationAnnotations.nonNullAnnotation)
         when (info) {
             is PropertyInfo.Field -> {
-                if (info.typeInfo !is KotlinTypeInfo.Enum && info.typeInfo != KotlinTypeInfo.Uuid) {
+                if (info.typeInfo.acceptsStringConstraints()) {
                     info.pattern?.let { maybeAddAnnotation(validationAnnotations.regexPattern(it)) }
 
                     val (min, max) = Pair(info.minLength, info.maxLength)
@@ -384,6 +384,13 @@ object PropertyUtils {
             }
         }
     }
+
+    private fun KotlinTypeInfo.acceptsStringConstraints(): Boolean =
+        when (this) {
+            is KotlinTypeInfo.Enum, KotlinTypeInfo.Uuid -> false
+            is KotlinTypeInfo.Custom -> isCharSequence
+            else -> true
+        }
 
     private fun PropertySpec.Builder.maybeAddAnnotation(annotationSpec: AnnotationSpec?) =
         if (annotationSpec != null) addAnnotation(annotationSpec) else this

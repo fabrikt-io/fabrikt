@@ -22,7 +22,9 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isUnsupportedComplexInlinedDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleAggregatedAliasSchema
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleAggregatedEnumAliasSchema
+import com.squareup.kotlinpoet.CHAR_SEQUENCE
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.STRING
 import java.math.BigDecimal
 import java.net.URI
 import java.time.LocalDate
@@ -83,7 +85,10 @@ sealed class KotlinTypeInfo(
     data class Custom(
         val className: ClassName,
         val kotlinxSerializer: ClassName?,
-    ) : KotlinTypeInfo(Any::class)
+    ) : KotlinTypeInfo(Any::class) {
+        val isCharSequence: kotlin.Boolean
+            get() = className == STRING || className == CHAR_SEQUENCE
+    }
 
     data class Object(
         val simpleClassName: String,

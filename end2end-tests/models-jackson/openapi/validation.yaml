@@ -135,6 +135,28 @@ components:
           minLength: 36
           maxLength: 36
           pattern: '^[0-9a-f-]+$'
+    CustomTypeValue:
+      type: object
+      required: [value, values]
+      properties:
+        value:
+          $ref: '#/components/schemas/CurrencyCode'
+        values:
+          type: array
+          minItems: 1
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/CurrencyCode'
+    CustomStringValue:
+      type: object
+      required: [value]
+      properties:
+        value:
+          type: string
+          format: slug
+          minLength: 2
+          maxLength: 5
+          pattern: '^[a-z]+$'
     Status:
       type: string
       enum: [ready, busy]
@@ -144,3 +166,9 @@ components:
       minLength: 2
       maxLength: 5
       pattern: '^[a-z]+$'
+    CurrencyCode:
+      type: string
+      format: iso-4217
+      minLength: 3
+      maxLength: 3
+      pattern: '^[A-Z]{3}$'

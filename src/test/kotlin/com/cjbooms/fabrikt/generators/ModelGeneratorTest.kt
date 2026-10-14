@@ -3,6 +3,7 @@ package com.cjbooms.fabrikt.generators
 import com.beust.jcommander.ParameterException
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
 import com.cjbooms.fabrikt.cli.CodeGenerationType
+import com.cjbooms.fabrikt.cli.CustomTypeMapping
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.OutputOptionType
@@ -71,6 +72,7 @@ class ModelGeneratorTest {
             "nestedPolymorphicModels",
             "requiredReadOnly",
             "validationAnnotations",
+            "customTypeMappingValidation",
             "wildCardTypes",
             "singleAllOf",
             "inlinedAggregatedObjects",
@@ -146,6 +148,16 @@ class ModelGeneratorTest {
         }
         if (testCaseName == "optionalVsRequired" || testCaseName == "openapi310") {
             MutableSettings.addOption(JacksonNullabilityMode.STRICT)
+        }
+        if (testCaseName == "customTypeMappingValidation") {
+            MutableSettings.updateSettings(
+                genTypes = setOf(CodeGenerationType.HTTP_MODELS),
+                customTypeMappings =
+                    listOf(
+                        CustomTypeMapping.parse("string:merchant-id=examples.customTypeMappingValidation.MerchantId"),
+                        CustomTypeMapping.parse("string:slug=kotlin.String"),
+                    ),
+            )
         }
         val basePackage = "examples.${testCaseName.replace("/", ".")}"
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!

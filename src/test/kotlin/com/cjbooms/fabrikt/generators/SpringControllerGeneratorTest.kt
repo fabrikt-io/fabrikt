@@ -3,6 +3,7 @@ package com.cjbooms.fabrikt.generators
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
 import com.cjbooms.fabrikt.cli.CodeGenerationType
 import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
+import com.cjbooms.fabrikt.cli.CustomTypeMapping
 import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
@@ -58,6 +59,7 @@ class SpringControllerGeneratorTest {
             "responsesSchema",
             "multipartUpload",
             "validationAnnotations",
+            "customTypeMappingValidation",
             "cookieParameters",
         )
 
@@ -84,6 +86,16 @@ class SpringControllerGeneratorTest {
 
         if (testCaseName == "modelSuffix") {
             MutableSettings.updateSettings(modelSuffix = "Dto")
+        }
+        if (testCaseName == "customTypeMappingValidation") {
+            MutableSettings.updateSettings(
+                genTypes = setOf(CodeGenerationType.CONTROLLERS),
+                customTypeMappings =
+                    listOf(
+                        CustomTypeMapping.parse("string:merchant-id=examples.customTypeMappingValidation.MerchantId"),
+                        CustomTypeMapping.parse("string:slug=kotlin.String"),
+                    ),
+            )
         }
 
         val options = if (testCaseName == "tagGrouping") setOf(ControllerCodeGenOptionType.GROUP_BY_TAG) else emptySet()

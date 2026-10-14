@@ -101,6 +101,17 @@ tasks {
         listOf("--validation-library", "jakarta_validation", "--type-overrides", "UUID_AS_STRING")
     )
 
+    val generateValidationCustomTypeCodeTask = createGenerateCodeTask(
+        "generateValidationCustomTypeCode",
+        "$projectDir/openapi/validation.yaml",
+        "com.example.validationcustomtypes",
+        listOf(
+            "--validation-library", "jakarta_validation",
+            "--custom-type-mapping", "string:iso-4217=java.util.Currency",
+            "--custom-type-mapping", "string:slug=kotlin.String"
+        )
+    )
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         // Generated models place cascading `@Valid` on container type arguments (e.g. `List<@Valid Foo>`).
@@ -114,6 +125,7 @@ tasks {
         dependsOn(generateOpenEnumCodeTask)
         dependsOn(generateValidationCodeTask)
         dependsOn(generateValidationStringOverrideCodeTask)
+        dependsOn(generateValidationCustomTypeCodeTask)
     }
 
     withType<Test> {
