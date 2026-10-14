@@ -1,26 +1,27 @@
-package examples.customTypeMappingValidation.models
+package examples.stringConstraints.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import examples.customTypeMappingValidation.MerchantId
+import examples.stringConstraints.FooId
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
+import java.time.OffsetDateTime
 import kotlin.String
 import kotlin.collections.List
 
-public data class Order(
-  @param:JsonProperty("merchant_id")
-  @get:JsonProperty("merchant_id")
+public data class Bar(
+  @param:JsonProperty("foo_id")
+  @get:JsonProperty("foo_id")
   @get:NotNull
-  public val merchantId: MerchantId,
-  @param:JsonProperty("merchant_ids")
-  @get:JsonProperty("merchant_ids")
+  public val fooId: FooId,
+  @param:JsonProperty("foo_ids")
+  @get:JsonProperty("foo_ids")
   @get:NotNull
   @get:Size(
     min = 1,
     max = 3,
   )
-  public val merchantIds: List<MerchantId>,
+  public val fooIds: List<FooId>,
   @param:JsonProperty("reference")
   @get:JsonProperty("reference")
   @get:NotNull
@@ -30,9 +31,7 @@ public data class Order(
     max = 16,
   )
   public val reference: String,
-  @param:JsonProperty("slug")
-  @get:JsonProperty("slug")
-  @get:Pattern(regexp = "^[a-z0-9-]+${'$'}")
-  @get:Size(max = 32)
-  public val slug: String? = null,
+  @param:JsonProperty("created_at")
+  @get:JsonProperty("created_at")
+  public val createdAt: OffsetDateTime? = null,
 )

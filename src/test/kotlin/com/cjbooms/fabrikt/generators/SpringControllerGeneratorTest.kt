@@ -59,7 +59,7 @@ class SpringControllerGeneratorTest {
             "responsesSchema",
             "multipartUpload",
             "validationAnnotations",
-            "customTypeMappingValidation",
+            "stringConstraints",
             "cookieParameters",
         )
 
@@ -87,14 +87,10 @@ class SpringControllerGeneratorTest {
         if (testCaseName == "modelSuffix") {
             MutableSettings.updateSettings(modelSuffix = "Dto")
         }
-        if (testCaseName == "customTypeMappingValidation") {
+        if (testCaseName == "stringConstraints") {
             MutableSettings.updateSettings(
                 genTypes = setOf(CodeGenerationType.CONTROLLERS),
-                customTypeMappings =
-                    listOf(
-                        CustomTypeMapping.parse("string:merchant-id=examples.customTypeMappingValidation.MerchantId"),
-                        CustomTypeMapping.parse("string:slug=kotlin.String"),
-                    ),
+                customTypeMappings = listOf(CustomTypeMapping.parse("string:foo-id=examples.stringConstraints.FooId")),
             )
         }
 

@@ -1,22 +1,22 @@
 openapi: 3.0.3
 info:
-  title: Custom type mapping validation example
+  title: String constraints on non-String types
   version: 1.0.0
 paths:
-  /merchants/{merchant_id}/orders:
+  /foos/{foo_id}/bars:
     get:
-      operationId: listOrders
+      operationId: listBars
       parameters:
-        - name: merchant_id
+        - name: foo_id
           in: path
           required: true
           schema:
-            $ref: '#/components/schemas/MerchantId'
-        - name: referrer_id
+            $ref: '#/components/schemas/FooId'
+        - name: other_foo_id
           in: query
           required: false
           schema:
-            $ref: '#/components/schemas/MerchantId'
+            $ref: '#/components/schemas/FooId'
         - name: reference
           in: query
           required: false
@@ -24,50 +24,50 @@ paths:
             type: string
             minLength: 1
             maxLength: 16
-        - name: slug
+        - name: created_after
           in: query
           required: false
           schema:
-            $ref: '#/components/schemas/Slug'
+            type: string
+            format: date-time
+            maxLength: 32
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Order'
+                $ref: '#/components/schemas/Bar'
 components:
   schemas:
-    Order:
+    Bar:
       type: object
       required:
-        - merchant_id
-        - merchant_ids
+        - foo_id
+        - foo_ids
         - reference
       properties:
-        merchant_id:
-          $ref: '#/components/schemas/MerchantId'
-        merchant_ids:
+        foo_id:
+          $ref: '#/components/schemas/FooId'
+        foo_ids:
           type: array
           minItems: 1
           maxItems: 3
           items:
-            $ref: '#/components/schemas/MerchantId'
+            $ref: '#/components/schemas/FooId'
         reference:
           type: string
           minLength: 1
           maxLength: 16
           pattern: '^[A-Z0-9-]+$'
-        slug:
-          $ref: '#/components/schemas/Slug'
-    MerchantId:
+        created_at:
+          type: string
+          format: date-time
+          maxLength: 32
+          pattern: '^\d{4}-\d{2}-\d{2}T.+$'
+    FooId:
       type: string
-      format: merchant-id
+      format: foo-id
       minLength: 30
       maxLength: 30
-      pattern: '^mer_[0-9a-z]{26}$'
-    Slug:
-      type: string
-      format: slug
-      maxLength: 32
-      pattern: '^[a-z0-9-]+$'
+      pattern: '^foo_[0-9a-z]{26}$'

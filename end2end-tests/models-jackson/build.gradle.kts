@@ -98,18 +98,18 @@ tasks {
         "generateValidationStringOverrideCode",
         "$projectDir/openapi/validation.yaml",
         "com.example.validationstrings",
-        listOf("--validation-library", "jakarta_validation", "--type-overrides", "UUID_AS_STRING")
+        listOf(
+            "--validation-library", "jakarta_validation",
+            "--type-overrides", "UUID_AS_STRING",
+            "--type-overrides", "DATETIME_AS_STRING"
+        )
     )
 
     val generateValidationCustomTypeCodeTask = createGenerateCodeTask(
         "generateValidationCustomTypeCode",
         "$projectDir/openapi/validation.yaml",
         "com.example.validationcustomtypes",
-        listOf(
-            "--validation-library", "jakarta_validation",
-            "--custom-type-mapping", "string:iso-4217=java.util.Currency",
-            "--custom-type-mapping", "string:slug=kotlin.String"
-        )
+        listOf("--validation-library", "jakarta_validation", "--custom-type-mapping", "string:iso-4217=java.util.Currency")
     )
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

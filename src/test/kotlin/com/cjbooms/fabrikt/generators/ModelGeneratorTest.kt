@@ -72,7 +72,7 @@ class ModelGeneratorTest {
             "nestedPolymorphicModels",
             "requiredReadOnly",
             "validationAnnotations",
-            "customTypeMappingValidation",
+            "stringConstraints",
             "wildCardTypes",
             "singleAllOf",
             "inlinedAggregatedObjects",
@@ -149,14 +149,10 @@ class ModelGeneratorTest {
         if (testCaseName == "optionalVsRequired" || testCaseName == "openapi310") {
             MutableSettings.addOption(JacksonNullabilityMode.STRICT)
         }
-        if (testCaseName == "customTypeMappingValidation") {
+        if (testCaseName == "stringConstraints") {
             MutableSettings.updateSettings(
                 genTypes = setOf(CodeGenerationType.HTTP_MODELS),
-                customTypeMappings =
-                    listOf(
-                        CustomTypeMapping.parse("string:merchant-id=examples.customTypeMappingValidation.MerchantId"),
-                        CustomTypeMapping.parse("string:slug=kotlin.String"),
-                    ),
+                customTypeMappings = listOf(CustomTypeMapping.parse("string:foo-id=examples.stringConstraints.FooId")),
             )
         }
         val basePackage = "examples.${testCaseName.replace("/", ".")}"

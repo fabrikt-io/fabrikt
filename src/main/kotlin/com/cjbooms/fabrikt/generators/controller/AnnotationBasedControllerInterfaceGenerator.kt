@@ -66,9 +66,8 @@ abstract class AnnotationBasedControllerInterfaceGenerator(
     fun ParameterSpec.Builder.addValidationAnnotations(parameter: RequestParameter): ParameterSpec.Builder {
         if (parameter.minimum != null) this.maybeAddAnnotation(validationAnnotations.min(parameter.minimum.toLong()))
         if (parameter.maximum != null) this.maybeAddAnnotation(validationAnnotations.max(parameter.maximum.toLong()))
-        val typeInfo = parameter.typeInfo
-        val acceptsLengthConstraint = typeInfo !is KotlinTypeInfo.Custom || typeInfo.isCharSequence
-        if (acceptsLengthConstraint && (parameter.minLength != null || parameter.maxLength != null)) {
+        val hasLengthBounds = parameter.minLength != null || parameter.maxLength != null
+        if (parameter.typeInfo == KotlinTypeInfo.Text && hasLengthBounds) {
             this.maybeAddAnnotation(
                 (validationAnnotations.size(parameter.minLength?.toInt(), parameter.maxLength?.toInt())),
             )

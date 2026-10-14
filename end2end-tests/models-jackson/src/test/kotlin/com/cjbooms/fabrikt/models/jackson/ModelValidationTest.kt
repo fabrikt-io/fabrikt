@@ -3,6 +3,7 @@ package com.cjbooms.fabrikt.models.jackson
 import com.example.validation.models.AllOfEnumValue
 import com.example.validation.models.AnyOfEnumValue
 import com.example.validation.models.ConstrainedEnum
+import com.example.validation.models.DateTimeValue
 import com.example.validation.models.DecimalValue
 import com.example.validation.models.DirectEnumValue
 import com.example.validation.models.InlineEnumValue
@@ -18,7 +19,6 @@ import com.example.validation.models.StringValue
 import com.example.validation.models.TypedMapValue
 import com.example.validation.models.UuidValue
 import com.example.validation.models.ValueValue
-import com.example.validationcustomtypes.models.CustomStringValue
 import com.example.validationcustomtypes.models.CustomTypeValue
 import jakarta.validation.Validation
 import jakarta.validation.ValidatorFactory
@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.math.BigDecimal
+import java.time.OffsetDateTime
 import java.util.Currency
 import java.util.UUID
 import java.util.logging.Handler
@@ -40,6 +41,7 @@ import java.util.logging.Level
 import java.util.logging.LogRecord
 import java.util.logging.Logger
 import kotlin.reflect.KClass
+import com.example.validationstrings.models.DateTimeValue as DateTimeStringValue
 import com.example.validationstrings.models.UuidValue as UuidStringValue
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -177,16 +179,23 @@ class ModelValidationTest {
     }
 
     @Test
-    fun `custom mapped String accepts a valid value`() {
-        val model = CustomStringValue(value = "ready")
+    fun `date-time with string constraints validates without exceptions`() {
+        val model = DateTimeValue(value = OffsetDateTime.parse("2026-01-01T00:00:00Z"))
 
         assertThat(factory.validator.validate(model)).isEmpty()
     }
 
     @Test
-    fun `custom mapped String enforces its pattern`() {
+    fun `date-time as string accepts a valid value`() {
+        val model = DateTimeStringValue(value = "2026-01-01T00:00:00Z")
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `date-time as string enforces its pattern`() {
         assertViolation(
-            model = CustomStringValue(value = "READY"),
+            model = DateTimeStringValue(value = "01/01/2026"),
             propertyPath = "value",
             constraint = Pattern::class,
         )

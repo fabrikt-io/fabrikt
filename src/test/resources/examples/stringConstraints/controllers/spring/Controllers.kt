@@ -1,7 +1,8 @@
-package examples.customTypeMappingValidation.controllers
+package examples.stringConstraints.controllers
 
-import examples.customTypeMappingValidation.MerchantId
-import examples.customTypeMappingValidation.models.Order
+import examples.stringConstraints.FooId
+import examples.stringConstraints.models.Bar
+import org.springframework.format.`annotation`.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
@@ -10,31 +11,35 @@ import org.springframework.web.bind.`annotation`.PathVariable
 import org.springframework.web.bind.`annotation`.RequestMapping
 import org.springframework.web.bind.`annotation`.RequestMethod
 import org.springframework.web.bind.`annotation`.RequestParam
+import java.time.OffsetDateTime
 import javax.validation.constraints.Size
 import kotlin.String
 
 @Controller
 @Validated
 @RequestMapping("")
-public interface MerchantsOrdersController {
+public interface FoosBarsController {
     /**
      *
      *
-     * @param merchantId
-     * @param referrerId
+     * @param fooId
+     * @param otherFooId
      * @param reference
-     * @param slug
+     * @param createdAfter
      */
     @RequestMapping(
-        value = ["/merchants/{merchant_id}/orders"],
+        value = ["/foos/{foo_id}/bars"],
         produces = ["application/json"],
         method = [RequestMethod.GET],
     )
-    public fun listOrders(
-        @PathVariable(value = "merchant_id", required = true) merchantId: MerchantId,
-        @RequestParam(value = "referrer_id", required = false) referrerId: MerchantId?,
+    public fun listBars(
+        @PathVariable(value = "foo_id", required = true) fooId: FooId,
+        @RequestParam(value = "other_foo_id", required = false) otherFooId: FooId?,
         @Size(min = 1, max = 16) @RequestParam(value = "reference", required = false)
         reference: String?,
-        @Size(max = 32) @RequestParam(value = "slug", required = false) slug: String?,
-    ): ResponseEntity<Order>
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) @RequestParam(
+            value = "created_after",
+            required = false,
+        ) createdAfter: OffsetDateTime?,
+    ): ResponseEntity<Bar>
 }
