@@ -1,0 +1,39 @@
+openapi: 3.0.4
+info: {title: Custom-mapped composition contracts, version: '1'}
+paths: {}
+components:
+  schemas:
+    A:
+      type: object
+      format: custom-record
+      required: [id, details]
+      properties:
+        id: {type: string, minLength: 1}
+        details:
+          $ref: '#/components/schemas/Details'
+        serverValue: {type: string, readOnly: true}
+        secret: {type: string, writeOnly: true}
+    B:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/A'
+        - type: object
+          properties:
+            label: {type: string}
+    Other:
+      type: object
+      properties:
+        id: {type: string}
+    Details:
+      type: object
+      required: [value]
+      properties:
+        value: {type: integer, minimum: 1}
+    Unrelated:
+      type: object
+      format: custom-record
+      properties:
+        unused:
+          type: object
+          properties:
+            ignored: {type: string}

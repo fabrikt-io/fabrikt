@@ -80,6 +80,14 @@ Resolved references keep the identity of their source schema across documents. T
 
 External loading retains the configured reference resolution mode. Enabling contracts additionally discovers explicitly composed ancestors needed to express their contracts; unrelated external definitions do not gain membership.
 
+## Custom type mappings
+
+Fabrikt does not modify externally supplied classes selected through custom type mappings or automatically make them implement composition contracts. If A is generated and has an `AComposite` contract, an externally supplied class can implement that interface in its own source, provided its Kotlin properties satisfy the contract. Its instances then support the same `is AComposite`, `as? AComposite` and `filterIsInstance<AComposite>()` checks as generated implementations.
+
+If A itself is replaced by a custom object mapping, its explicit composition relationships still produce `AComposite`. The contract uses A's schema with the same property types, nullability and filtering as generated models; Fabrikt emits the interface and any supporting inline models, while leaving the mapped concrete class to its owner. Contract naming follows the schema's model name, including configured suffixes, rather than the external class name. Unrelated custom mappings do not acquire contracts merely because they exist.
+
+This option neither inspects external class implementations nor guarantees contract membership for custom-mapped union alternatives. Even when the external class implements a contract manually, Fabrikt does not assume that fact when deciding whether an entire generated union can expose the contract.
+
 ## Property compatibility and projections
 
 The contract follows the actual generated Kotlin property set, including nullability, model suffixes and read/write filtering. `EXCLUDE_READ_ONLY` excludes those properties from the contract as well as the concrete model; `EXCLUDE_WRITE_ONLY` does the same for write-only properties. Generate the corresponding projection in its intended package. This does not introduce simultaneous request/response models; integration with that separate option remains an integration point when it is available.

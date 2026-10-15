@@ -29,6 +29,7 @@ import com.cjbooms.fabrikt.model.ModelType
 import com.cjbooms.fabrikt.model.Models
 import com.cjbooms.fabrikt.model.PropertyInfo
 import com.cjbooms.fabrikt.model.PropertyInfo.Companion.topLevelProperties
+import com.cjbooms.fabrikt.model.SchemaCompositionRelationships
 import com.cjbooms.fabrikt.model.SchemaInfo
 import com.cjbooms.fabrikt.model.SerializationAnnotations
 import com.cjbooms.fabrikt.model.SourceApi
@@ -236,6 +237,8 @@ class ModelGenerator(
 
     private val externalApiSchemas = mutableMapOf<String, MutableSet<String>>()
     private val primaryModels = linkedMapOf<String, TypeSpec>()
+    private val mappedCompositionSchemas = linkedMapOf<String, Pair<OpenApi3, SchemaInfo>>()
+    private val mappedContractModels = linkedMapOf<String, TypeSpec>()
     private val compositionSchemas = linkedMapOf<String, Schema>()
     private val externalCompositionRoots = linkedMapOf<String, MutableSet<String>>()
 
@@ -272,6 +275,12 @@ class ModelGenerator(
                 primaryModels[wrapped.jsonReference]?.let { model ->
                     externalCompositionRoots[externalReferences.key].orEmpty().forEach { reference -> primaryModels[reference] = model }
                 }
+                mappedCompositionSchemas[wrapped.jsonReference]?.let { mapped ->
+                    externalCompositionRoots[externalReferences.key].orEmpty().forEach { reference ->
+                        mappedCompositionSchemas[reference] =
+                            mapped
+                    }
+                }
             }
             externalModels.forEach { additionalModel ->
                 if (models.none { it.name == additionalModel.name }) models.add(additionalModel)
@@ -294,6 +303,7 @@ class ModelGenerator(
         if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) {
             val processed = mutableMapOf<String, MutableSet<String>>()
             while (true) {
+                addMappedCompositionContracts(models)
                 val next =
                     externalApiSchemas.entries.firstOrNull { entry ->
                         entry.key !in processed || entry.value.any { it !in processed.getValue(entry.key) }
@@ -307,7 +317,7 @@ class ModelGenerator(
         }
         val composedModels =
             if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) {
-                SharedCompositionContractGenerator(packages, compositionSchemas.values, primaryModels).apply(models)
+                SharedCompositionContractGenerator(packages, compositionSchemas.values, primaryModels, mappedContractModels).apply(models)
             } else {
                 models
             }
@@ -404,7 +414,12 @@ class ModelGenerator(
     ) = schemas
         .map { if (direction == null) it else SchemaInfo(it.name, it.schema, direction) }
         .filterNot { it.schema.isSimpleType() }
-        .filterNot { it.typeInfo is KotlinTypeInfo.Custom }
+        .onEach { schemaInfo ->
+            val custom = schemaInfo.typeInfo as? KotlinTypeInfo.Custom
+            if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options && custom?.isObject == true) {
+                mappedCompositionSchemas[schemaInfo.schema.jsonReference] = api to schemaInfo
+            }
+        }.filterNot { it.typeInfo is KotlinTypeInfo.Custom }
         .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && it.schema.hasNoDiscriminator() }
         .flatMap { schemaInfo ->
             val properties =
@@ -449,6 +464,23 @@ class ModelGenerator(
                 }
             }
         }.toMutableSet()
+
+    private fun addMappedCompositionContracts(models: MutableSet<TypeSpec>) {
+        SchemaCompositionRelationships(compositionSchemas.values).contractComponents().forEach { ancestor ->
+            if (ancestor.jsonReference in mappedContractModels) return@forEach
+            val (api, schemaInfo) = mappedCompositionSchemas[ancestor.jsonReference] ?: return@forEach
+            val properties = ancestor.topLevelProperties(propertySettings, api, ancestor)
+            mappedContractModels[ancestor.jsonReference] =
+                standardDataClass(
+                    ModelNameRegistry.getOrRegister(schemaInfo, direction = direction),
+                    schemaInfo.schema.componentKey(),
+                    properties,
+                    ancestor,
+                    emptyList(),
+                )
+            models.addAll(buildInLinedModels(properties, ancestor, ancestor.getDocumentUrl()))
+        }
+    }
 
     private fun buildPrimaryModel(
         api: OpenApi3,

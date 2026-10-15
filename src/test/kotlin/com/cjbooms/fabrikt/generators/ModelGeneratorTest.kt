@@ -50,6 +50,7 @@ class ModelGeneratorTest {
             "sharedCompositionRefinements",
             "sharedCompositionRequestProjection",
             "sharedCompositionResponseProjection",
+            "sharedCompositionMappedContracts",
             "namedOneOfDeduction",
             "composedOneOf",
             "additionalModelAnnotations",
@@ -175,6 +176,13 @@ class ModelGeneratorTest {
             MutableSettings.updateSettings(
                 genTypes = setOf(CodeGenerationType.HTTP_MODELS),
                 customTypeMappings = listOf(CustomTypeMapping.parse("object:money=examples.customObjectMapping.Money")),
+            )
+        }
+        if (testCaseName == "sharedCompositionMappedContracts") {
+            MutableSettings.updateSettings(
+                genTypes = setOf(CodeGenerationType.HTTP_MODELS),
+                modelOptions = setOf(ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS),
+                customTypeMappings = listOf(CustomTypeMapping.parse("object:custom-record=external.CustomRecord")),
             )
         }
         val basePackage = "examples.${testCaseName.replace("/", ".")}"

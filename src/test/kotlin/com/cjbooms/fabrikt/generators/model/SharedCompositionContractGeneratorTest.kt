@@ -92,6 +92,30 @@ class SharedCompositionContractGeneratorTest {
     }
 
     @Test
+    fun `mapped contract sources do not establish membership for external classes or their unions`() {
+        val document = SourceApi(unionSpec.replace("'#/components/schemas/D'", "'#/components/schemas/A'")).openApi3
+        val mappedA = TypeSpec.classBuilder("A").addProperty(PropertySpec.builder("id", STRING).build()).build()
+        val b = TypeSpec.classBuilder("B").addProperty(PropertySpec.builder("id", STRING).build()).build()
+        val union = TypeSpec.interfaceBuilder("Safe").addModifiers(KModifier.SEALED).build()
+        val models =
+            SharedCompositionContractGenerator(
+                Packages("example"),
+                document.schemas.values,
+                mapOf(document.schemas.getValue("B").jsonReference to b, document.schemas.getValue("Safe").jsonReference to union),
+                mapOf(document.schemas.getValue("A").jsonReference to mappedA),
+            ).apply(mutableSetOf(b, union))
+
+        assertThat(models.map { it.name }).contains("AComposite", "B").doesNotContain("A")
+        assertThat(
+            models
+                .single { it.name == "B" }
+                .superinterfaces.keys
+                .map { it.toString() },
+        ).contains("example.models.AComposite")
+        assertThat(models.single { it.name == "Safe" }.superinterfaces).isEmpty()
+    }
+
+    @Test
     fun `a non-null generated property can implement a nullable contract without changing its type`() {
         val document = SourceApi(spec).openApi3
         val a = TypeSpec.classBuilder("A").addProperty(PropertySpec.builder("id", STRING.copy(nullable = true)).build()).build()
