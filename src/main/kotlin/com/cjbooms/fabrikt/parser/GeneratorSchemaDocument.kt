@@ -27,6 +27,7 @@ internal class GeneratorSchemaDocument(
             declaredType =
                 nonNullTypes.singleOrNull()?.takeIf { it is SourceSchemaType.Recognised }?.value,
             isNullable = if (SourceSchemaType.NULL in declaredTypes) true else null,
+            binaryMultipartPatterns = BinaryMultipartPatternQuery.query(schema, ::resolve),
         )
     }
 
