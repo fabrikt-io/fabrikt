@@ -54,7 +54,6 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
-import com.squareup.kotlinpoet.joinToCode
 import java.nio.file.Path
 import java.util.Locale.getDefault
 
@@ -479,17 +478,7 @@ data class SimpleClientOperationStatement(
 
         BinaryMultipartParts.forOperation(operation, parameters, warn = true)?.let { parts ->
             this.add("\n%N.forEach { (partName, fileData) ->", parts.parameterName)
-            this.add(
-                "\nrequire(partName.isNotEmpty() && partName.all { it in %S }) { %S }",
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-",
-                "Dynamic multipart names must contain only ASCII letters, digits, '.', '_' or '-'",
-            )
-            if (parts.fixedNames.isNotEmpty()) {
-                val fixedNames = parts.fixedNames.map { CodeBlock.of("%S", it) }.joinToCode(", ")
-                this.add("\nrequire(partName !in setOf(%L)) { %S }", fixedNames, "Dynamic multipart name conflicts with a fixed property")
-            }
-            val matches = parts.patterns.map { CodeBlock.of("Regex(%S).containsMatchIn(partName)", it) }.joinToCode(" || ")
-            this.add("\nrequire(%L) { %S }", matches, "Dynamic multipart name does not match patternProperties")
+            this.add("\n%L", parts.validateName("partName"))
             this.add("\nmultipartBuilder.addFormDataPart(partName, fileData.filename, fileData.requestBody)")
             this.add("\n}")
         }
