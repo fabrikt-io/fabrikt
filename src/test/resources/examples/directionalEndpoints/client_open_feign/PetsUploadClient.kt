@@ -4,6 +4,7 @@ import examples.directionalEndpoints.models.PetRequest
 import examples.directionalEndpoints.models.PetResponse
 import feign.HeaderMap
 import feign.Headers
+import feign.Param
 import feign.QueryMap
 import feign.RequestLine
 import kotlin.String
@@ -18,11 +19,15 @@ public interface PetsUploadClient {
      * @param pet
      * @param token
      */
+    @FeignJsonParts("pet")
     @RequestLine("POST /pets/upload")
-    @Headers("Accept: application/json")
+    @Headers(
+        "Content-Type: multipart/form-data",
+        "Accept: application/json",
+    )
     public fun uploadPet(
-        pet: PetRequest,
-        token: String,
+        @Param("pet") pet: PetRequest,
+        @Param("token") token: String,
         @HeaderMap additionalHeaders: Map<String, String> = emptyMap(),
         @QueryMap additionalQueryParameters: Map<String, String> = emptyMap(),
     ): PetResponse
