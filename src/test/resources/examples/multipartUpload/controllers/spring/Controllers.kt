@@ -1,6 +1,7 @@
 package examples.multipartUpload.controllers
 
 import examples.multipartUpload.models.FileMetadata
+import examples.multipartUpload.models.JsonPayload
 import examples.multipartUpload.models.SimpleUploadResult
 import examples.multipartUpload.models.UploadResult
 import org.springframework.http.HttpStatus
@@ -15,7 +16,34 @@ import org.springframework.web.multipart.MultipartFile
 import javax.validation.Valid
 import kotlin.Double
 import kotlin.String
+import kotlin.Unit
 import kotlin.collections.List
+
+@Controller
+@Validated
+@RequestMapping("")
+public interface JsonController {
+    /**
+     *
+     *
+     * @param request
+     * @param details
+     * @param optionalRequest
+     * @param template
+     */
+    @RequestMapping(
+        value = ["/json"],
+        produces = [],
+        method = [RequestMethod.POST],
+        consumes = ["multipart/form-data"],
+    )
+    public fun uploadJson(
+        @RequestPart(value = "request", required = true) @Valid request: JsonPayload,
+        @RequestPart(value = "details", required = false) @Valid details: JsonPayload?,
+        @RequestPart(value = "optionalRequest", required = false) @Valid optionalRequest: JsonPayload?,
+        @RequestPart(value = "template", required = true) @Valid template: MultipartFile,
+    ): ResponseEntity<Unit>
+}
 
 @Controller
 @Validated

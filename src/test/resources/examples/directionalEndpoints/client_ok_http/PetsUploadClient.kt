@@ -7,10 +7,12 @@ import examples.directionalEndpoints.models.PetResponse
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.MultipartBody.Builder
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.Map
@@ -50,7 +52,7 @@ public class PetsUploadClient(
             MultipartBody
                 .Builder()
                 .setType(MultipartBody.FORM)
-        multipartBuilder.addFormDataPart("pet", objectMapper.writeValueAsString(pet))
+        multipartBuilder.addFormDataPart("pet", null, objectMapper.writeValueAsString(pet).toRequestBody("application/json".toMediaType()))
         multipartBuilder.addFormDataPart("token", token.toString())
         val multipartBody = multipartBuilder.build()
         val request: Request =
