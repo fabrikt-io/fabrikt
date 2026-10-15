@@ -431,17 +431,7 @@ data class SimpleClientOperationStatement(
                     }
 
                     param.contentType == "application/json" -> {
-                        val declaredContentType =
-                            operation.requestBody.contentMediaTypes.entries
-                                .firstOrNull { it.key.startsWith("multipart/form-data") }
-                                ?.value
-                                ?.encodingContentType(param.partName)
-                        if (declaredContentType != null && declaredContentType != "application/json") {
-                            java.util.logging.Logger.getGlobal().warning(
-                                "OkHttp multipart part '${param.partName}' declares unsupported content type '$declaredContentType'; " +
-                                    "using application/json with the configured object mapper. Set encoding.${param.partName}.contentType to application/json to match.",
-                            )
-                        }
+                        operation.jsonMultipartContentType(param)
                         this.add(
                             "\n    multipartBuilder.addFormDataPart(%S, null, objectMapper.writeValueAsString(%N).%T(%S.%T()))",
                             param.partName,
