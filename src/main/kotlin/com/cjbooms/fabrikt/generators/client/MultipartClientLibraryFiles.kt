@@ -52,7 +52,9 @@ internal object MultipartClientLibraryFiles {
         packages: Packages,
         api: SourceApi,
         srcPath: Path = Destinations.MAIN_KT_SOURCE,
-    ): Collection<GeneratedFile> = library(packages, api, "JsonPart", srcPath)
+    ): Collection<GeneratedFile> =
+        library(packages, api, "JsonPart", srcPath) +
+            if (hasDynamicParts(api)) library(packages, api, "DynamicMultipartArgumentResolver", srcPath) else emptyList()
 
     private fun hasDynamicParts(api: SourceApi): Boolean =
         api.openApi3.paths.values.any { path ->

@@ -1,0 +1,33 @@
+package examples.multipartDynamicClientParts.client
+
+import org.springframework.core.MethodParameter
+import org.springframework.core.io.Resource
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.web.service.invoker.HttpRequestValues
+import org.springframework.web.service.invoker.HttpServiceArgumentResolver
+
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class DynamicMultipartParts(val patterns: Array<String>, val fixedNames: Array<String>)
+
+/** Register on HttpServiceProxyFactory's builder to expand schema-declared binary parts. */
+class DynamicMultipartArgumentResolver : HttpServiceArgumentResolver {
+    override fun resolve(value: Any?, parameter: MethodParameter, requestValues: HttpRequestValues.Builder): Boolean {
+        val declaration = parameter.getParameterAnnotation(DynamicMultipartParts::class.java) ?: return false
+        require(value is Map<*, *>) { "Expected a map of dynamic multipart files" }
+        value.forEach { (name, file) ->
+            require(name is String && name.isNotEmpty() && name.all {
+                it in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-"
+            }) { "Dynamic multipart names must contain only ASCII letters, digits, '.', '_' or '-'" }
+            require(name !in declaration.fixedNames) { "Dynamic multipart name conflicts with a fixed property" }
+            require(declaration.patterns.any { Regex(it).containsMatchIn(name) }) { "Dynamic multipart name does not match patternProperties" }
+            require(file is HttpEntity<*> && file.body is Resource) { "Expected an HttpEntity containing a binary Resource" }
+            require(file.headers[HttpHeaders.CONTENT_DISPOSITION] == null) { "Dynamic multipart Content-Disposition is derived from the map key and Resource filename" }
+            val filename = (file.body as Resource).filename
+            require(filename == null || filename.none { it == '\r' || it == '\n' }) { "Invalid multipart filename" }
+            requestValues.addRequestPart(name, file)
+        }
+        return true
+    }
+}
