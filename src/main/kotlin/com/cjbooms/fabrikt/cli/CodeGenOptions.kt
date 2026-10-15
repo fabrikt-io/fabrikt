@@ -66,6 +66,9 @@ enum class ClientCodeGenOptionType(
     DYNAMIC_BASE_URL(
         "This option makes ApiConfiguration.basePath empty, allowing you to set the base URL at runtime (only for Ktor clients)",
     ),
+    OPENAPI_API_KEY_AUTHENTICATION(
+        "Adds header API-key helpers and complete security alternatives with enabled Bearer and OAuth2 schemes",
+    ),
     OPENAPI_BEARER_AUTHENTICATION(
         "Adds operation-specific Bearer token helpers for OpenAPI HTTP Bearer security schemes",
     ),
