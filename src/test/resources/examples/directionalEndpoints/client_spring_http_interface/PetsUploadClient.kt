@@ -4,6 +4,7 @@ import examples.directionalEndpoints.models.PetRequest
 import examples.directionalEndpoints.models.PetResponse
 import org.springframework.web.bind.`annotation`.RequestHeader
 import org.springframework.web.bind.`annotation`.RequestParam
+import org.springframework.web.bind.`annotation`.RequestPart
 import org.springframework.web.service.`annotation`.HttpExchange
 import kotlin.Any
 import kotlin.String
@@ -25,8 +26,8 @@ public interface PetsUploadClient {
         accept = ["application/json"],
     )
     public fun uploadPet(
-        pet: PetRequest,
-        token: String,
+        @RequestPart(value = "pet", required = true) pet: JsonPart<PetRequest>,
+        @RequestPart(value = "token", required = true) token: String,
         @RequestHeader additionalHeaders: Map<String, Any> = emptyMap(),
         @RequestParam additionalQueryParameters: Map<String, Any> = emptyMap(),
     ): PetResponse

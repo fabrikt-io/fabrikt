@@ -38,6 +38,7 @@ class SpringHttpInterfaceGeneratorTest {
             "tagGrouping",
             "cookieParameters",
             "deprecatedOperations",
+            "multipartClientParts",
         )
 
     @BeforeEach
