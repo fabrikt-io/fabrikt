@@ -36,4 +36,5 @@ public data class CatProfile(
   @get:NotNull
   @get:Size(max = 20)
   override val note: String = "untitled",
-) : ProfileComposite, CatProfileComposite
+) : ProfileComposite,
+    CatProfileComposite

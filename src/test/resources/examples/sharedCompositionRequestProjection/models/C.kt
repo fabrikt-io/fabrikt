@@ -17,4 +17,6 @@ public data class C(
     inclusive = true,
   )
   override val code: Int,
-) : Choice, AComposite, CComposite
+) : Choice,
+    AComposite,
+    CComposite

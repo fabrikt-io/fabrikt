@@ -40,4 +40,5 @@ public data class ExtendedCatProfile(
   @param:JsonProperty("extra")
   @get:JsonProperty("extra")
   public val extra: Boolean? = null,
-) : ProfileComposite, CatProfileComposite
+) : ProfileComposite,
+    CatProfileComposite

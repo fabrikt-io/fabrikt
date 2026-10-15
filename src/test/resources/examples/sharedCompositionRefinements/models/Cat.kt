@@ -20,4 +20,5 @@ public data class Cat(
   @get:NotNull
   @param:JsonProperty("kind")
   override val kind: String = "cat",
-) : Pet(id), PetComposite
+) : Pet(id),
+    PetComposite
