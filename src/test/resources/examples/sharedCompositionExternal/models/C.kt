@@ -24,4 +24,8 @@ public data class C(
   @get:JsonProperty("c")
   @get:NotNull
   override val c: Int,
-) : Mixed, Shared, AComposite, BaseComposite, CComposite
+) : Mixed,
+    Shared,
+    AComposite,
+    BaseComposite,
+    CComposite

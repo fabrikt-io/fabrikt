@@ -20,4 +20,8 @@ public data class B(
   @get:JsonProperty("b")
   @get:NotNull
   override val b: String,
-) : Mixed, Shared, AComposite, BaseComposite, BComposite
+) : Mixed,
+    Shared,
+    AComposite,
+    BaseComposite,
+    BComposite

@@ -20,4 +20,6 @@ public data class E(
   @get:JsonProperty("e")
   @get:NotNull
   override val e: String,
-) : Mixed, AExtraComposite, EComposite
+) : Mixed,
+    AExtraComposite,
+    EComposite

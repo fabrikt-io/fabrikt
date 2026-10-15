@@ -16,4 +16,5 @@ public data class A(
   @get:NotNull
   @get:Size(min = 1)
   override val label: String,
-) : AComposite, BaseComposite
+) : AComposite,
+    BaseComposite

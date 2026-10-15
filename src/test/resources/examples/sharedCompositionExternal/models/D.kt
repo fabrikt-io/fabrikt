@@ -32,4 +32,6 @@ public data class D(
   @get:JsonProperty("d")
   @get:NotNull
   public val d: Boolean,
-) : AComposite, BaseComposite, CComposite
+) : AComposite,
+    BaseComposite,
+    CComposite
