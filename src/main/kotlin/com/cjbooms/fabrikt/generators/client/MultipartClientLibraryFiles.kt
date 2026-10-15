@@ -33,7 +33,20 @@ internal object MultipartClientLibraryFiles {
     fun feign(
         packages: Packages,
         api: SourceApi,
-    ): Collection<GeneratedFile> = library(packages, api, "FeignMultipartEncoder")
+    ): Collection<GeneratedFile> {
+        val dynamic = hasDynamicParts(api)
+        return library(packages, api, "FeignMultipartEncoder", transform = { template ->
+            if (!dynamic) {
+                template
+            } else {
+                template.replace(
+                    "val parts = value as? Map<*, *> ?: throw EncodeException(\"Expected named multipart parts\")",
+                    "val parts = expandBinaryParts(value as? Map<*, *> ?: throw EncodeException(\"Expected named multipart parts\"), " +
+                        "template.methodMetadata()?.method()?.getAnnotation(FeignBinaryParts::class.java))",
+                )
+            }
+        }) + if (dynamic) library(packages, api, "FeignBinaryParts") else emptyList()
+    }
 
     fun spring(
         packages: Packages,
@@ -41,11 +54,19 @@ internal object MultipartClientLibraryFiles {
         srcPath: Path = Destinations.MAIN_KT_SOURCE,
     ): Collection<GeneratedFile> = library(packages, api, "JsonPart", srcPath)
 
+    private fun hasDynamicParts(api: SourceApi): Boolean =
+        api.openApi3.paths.values.any { path ->
+            api.requestOperations(path).any { (_, operation) ->
+                BinaryMultipartParts.forOperation(operation, emptyList()) != null
+            }
+        }
+
     private fun library(
         packages: Packages,
         api: SourceApi,
         name: String,
         srcPath: Path = Destinations.MAIN_KT_SOURCE,
+        transform: (String) -> String = { it },
     ): Collection<GeneratedFile> {
         val hasMultipart =
             api.openApi3.paths.values.any { path ->
@@ -59,7 +80,7 @@ internal object MultipartClientLibraryFiles {
         return listOf(
             SimpleFile(
                 srcPath.resolve(Path.of(packages.client.replace('.', '/'), "$name.kt")),
-                template.replace(
+                transform(template).replace(
                     "package {{package}}",
                     FileSpec
                         .builder(packages.client, name)
