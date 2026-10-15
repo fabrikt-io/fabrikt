@@ -97,7 +97,7 @@ class BinaryMultipartGeneratorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["[", "(?i)font", "\\\\d+", "resource.*", "[A-Z&&B]", "(font|image)", "[^x]"])
+    @ValueSource(strings = ["[", "(?i)font", "\\\\d+", "[A-Z&&B]", "(font|image)", "[^x]"])
     fun `unsupported patterns keep fixed parts and warn`(pattern: String) {
         assertUnsupported(spec.replace("'^resource\\.[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'", "'$pattern'"))
     }
@@ -157,6 +157,13 @@ class BinaryMultipartGeneratorTest {
         val nested = mapper.createObjectNode().put("type", "object").set<ObjectNode>("patternProperties", patterns)
         schema.set<ObjectNode>("allOf", mapper.createArrayNode().add(nested))
         assertUnsupported(mapper.writeValueAsString(root))
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["^resource\\..+$", "resource.*"])
+    fun `common wildcard patterns expose schema aware uploads`(pattern: String) {
+        assertThat(generate(spec.replace("^resource\\.[A-Za-z0-9][A-Za-z0-9._-]{0,127}$", pattern)))
+            .contains("dynamicParts: Map<String, RequestBodyWithFilename>")
     }
 
     private fun assertUnsupported(input: String) {
