@@ -156,6 +156,16 @@ components:
           format: date-time
           maxLength: 25
           pattern: '^\d{4}-\d{2}-\d{2}T.+$'
+    MappedObjectValue:
+      type: object
+      required: [value, values]
+      properties:
+        value:
+          $ref: '#/components/schemas/MappedObject'
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/MappedObject'
     Status:
       type: string
       enum: [ready, busy]
@@ -171,3 +181,11 @@ components:
       minLength: 3
       maxLength: 3
       pattern: '^[A-Z]{3}$'
+    MappedObject:
+      type: object
+      format: mapped-object
+      required: [value]
+      properties:
+        value:
+          type: string
+          minLength: 2

@@ -11,6 +11,7 @@ import com.example.validation.models.InlineEnumValueValue
 import com.example.validation.models.IntegerValue
 import com.example.validation.models.ListValue
 import com.example.validation.models.MapValue
+import com.example.validation.models.MappedObject
 import com.example.validation.models.NestedListValue
 import com.example.validation.models.NestedSetValue
 import com.example.validation.models.NestedValue
@@ -20,6 +21,7 @@ import com.example.validation.models.TypedMapValue
 import com.example.validation.models.UuidValue
 import com.example.validation.models.ValueValue
 import com.example.validationcustomtypes.models.CustomTypeValue
+import com.example.validationcustomtypes.models.MappedObjectValue
 import jakarta.validation.Validation
 import jakarta.validation.ValidatorFactory
 import jakarta.validation.constraints.DecimalMax
@@ -174,6 +176,24 @@ class ModelValidationTest {
         assertViolation(
             model = CustomTypeValue(value = EUR, values = listOf(EUR, USD, GBP)),
             propertyPath = "values",
+            constraint = Size::class,
+        )
+    }
+
+    @Test
+    fun `custom mapped object cascades validation`() {
+        assertViolation(
+            model = MappedObjectValue(value = MappedObject(value = "a"), values = listOf(MappedObject(value = "ab"))),
+            propertyPath = "value.value",
+            constraint = Size::class,
+        )
+    }
+
+    @Test
+    fun `list of custom mapped object cascades validation to elements`() {
+        assertViolation(
+            model = MappedObjectValue(value = MappedObject(value = "ab"), values = listOf(MappedObject(value = "a"))),
+            propertyPath = "values[0].value",
             constraint = Size::class,
         )
     }

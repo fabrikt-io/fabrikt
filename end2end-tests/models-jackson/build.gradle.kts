@@ -115,7 +115,11 @@ tasks {
         "generateValidationCustomTypeCode",
         "$projectDir/openapi/validation.yaml",
         "com.example.validationcustomtypes",
-        listOf("--validation-library", "jakarta_validation", "--custom-type-mapping", "string:iso-4217=java.util.Currency")
+        listOf(
+            "--validation-library", "jakarta_validation",
+            "--custom-type-mapping", "string:iso-4217=java.util.Currency",
+            "--custom-type-mapping", "object:mapped-object=com.example.validation.models.MappedObject"
+        )
     )
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

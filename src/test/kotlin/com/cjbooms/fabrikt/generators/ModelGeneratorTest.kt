@@ -74,6 +74,7 @@ class ModelGeneratorTest {
             "requiredReadOnly",
             "validationAnnotations",
             "stringConstraints",
+            "customObjectMapping",
             "wildCardTypes",
             "singleAllOf",
             "inlinedAggregatedObjects",
@@ -157,6 +158,12 @@ class ModelGeneratorTest {
             MutableSettings.updateSettings(
                 genTypes = setOf(CodeGenerationType.HTTP_MODELS),
                 customTypeMappings = listOf(CustomTypeMapping.parse("string:foo-id=examples.stringConstraints.FooId")),
+            )
+        }
+        if (testCaseName == "customObjectMapping") {
+            MutableSettings.updateSettings(
+                genTypes = setOf(CodeGenerationType.HTTP_MODELS),
+                customTypeMappings = listOf(CustomTypeMapping.parse("object:money=examples.customObjectMapping.Money")),
             )
         }
         val basePackage = "examples.${testCaseName.replace("/", ".")}"

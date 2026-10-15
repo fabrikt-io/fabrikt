@@ -84,6 +84,7 @@ sealed class KotlinTypeInfo(
     data class Custom(
         val className: ClassName,
         val kotlinxSerializer: ClassName?,
+        val isObject: kotlin.Boolean,
     ) : KotlinTypeInfo(Any::class)
 
     data class Object(
@@ -125,6 +126,7 @@ sealed class KotlinTypeInfo(
         get() =
             when (this) {
                 is Array, is Object, is Map, is GeneratedTypedAdditionalProperties -> true
+                is Custom -> isObject
                 else -> false
             }
 
@@ -170,7 +172,7 @@ sealed class KotlinTypeInfo(
                 .find {
                     it.openApiType.equals(schema.type, ignoreCase = true) &&
                         it.format.equals(schema.format, ignoreCase = true)
-                }?.let { return Custom(it.kotlinType, it.kotlinxSerializer) }
+                }?.let { return Custom(it.kotlinType, it.kotlinxSerializer, it.openApiType.equals("object", ignoreCase = true)) }
             if (schema.hasMultipleNonNullTypes) {
                 val fallbackType =
                     if (MutableSettings.serializationLibrary == KOTLINX_SERIALIZATION) {

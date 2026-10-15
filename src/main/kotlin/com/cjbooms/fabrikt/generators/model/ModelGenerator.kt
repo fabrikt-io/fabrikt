@@ -317,6 +317,7 @@ class ModelGenerator(
     ) = schemas
         .map { if (direction == null) it else SchemaInfo(it.name, it.schema, direction) }
         .filterNot { it.schema.isSimpleType() }
+        .filterNot { it.typeInfo is KotlinTypeInfo.Custom }
         .filterNot { it.schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && it.schema.hasNoDiscriminator() }
         .flatMap { schemaInfo ->
             val properties =

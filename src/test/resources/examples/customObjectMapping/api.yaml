@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: Object schemas mapped to existing types
+  version: 1.0.0
+paths:
+  /orders:
+    post:
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Money'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+components:
+  schemas:
+    Order:
+      type: object
+      required:
+        - total
+        - line_totals
+      properties:
+        total:
+          $ref: '#/components/schemas/Money'
+        line_totals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Money'
+    Money:
+      type: object
+      format: money
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: string
+        currency:
+          type: string

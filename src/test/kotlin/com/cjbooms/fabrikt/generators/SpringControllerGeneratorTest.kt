@@ -60,6 +60,7 @@ class SpringControllerGeneratorTest {
             "multipartUpload",
             "validationAnnotations",
             "stringConstraints",
+            "customObjectMapping",
             "cookieParameters",
         )
 
@@ -91,6 +92,12 @@ class SpringControllerGeneratorTest {
             MutableSettings.updateSettings(
                 genTypes = setOf(CodeGenerationType.CONTROLLERS),
                 customTypeMappings = listOf(CustomTypeMapping.parse("string:foo-id=examples.stringConstraints.FooId")),
+            )
+        }
+        if (testCaseName == "customObjectMapping") {
+            MutableSettings.updateSettings(
+                genTypes = setOf(CodeGenerationType.CONTROLLERS),
+                customTypeMappings = listOf(CustomTypeMapping.parse("object:money=examples.customObjectMapping.Money")),
             )
         }
 
