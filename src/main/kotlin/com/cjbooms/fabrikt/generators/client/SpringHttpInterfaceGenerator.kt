@@ -47,6 +47,7 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.buildCodeBlock
+import com.squareup.kotlinpoet.joinToCode
 
 class SpringHttpInterfaceGenerator(
     private val packages: Packages,
@@ -236,7 +237,32 @@ class SpringHttpInterfaceGenerator(
                     ).addAnnotation(SpringHttpInterfaceAnnotations.requestParamBuilder().build())
                     .defaultValue("emptyMap()")
                     .build(),
-            ).returns(returnType)
+            ).apply {
+                BinaryMultipartParts.forOperation(operation, parameters, warn = true)?.let { parts ->
+                    val file =
+                        ClassName("org.springframework.http", "HttpEntity")
+                            .parameterizedBy(
+                                com.squareup.kotlinpoet.WildcardTypeName
+                                    .producerOf(ClassName("org.springframework.core.io", "Resource")),
+                            )
+                    addParameter(
+                        ParameterSpec
+                            .builder(parts.parameterName, TypeFactory.createMapOfStringToNonNullType(file))
+                            .defaultValue("emptyMap()")
+                            .addAnnotation(
+                                AnnotationSpec
+                                    .builder(ClassName(packages.client, "DynamicMultipartParts"))
+                                    .addMember("patterns = [%L]", parts.patterns.map { CodeBlock.of("%S", it) }.joinToCode(", "))
+                                    .addMember("fixedNames = [%L]", parts.fixedNames.map { CodeBlock.of("%S", it) }.joinToCode(", "))
+                                    .build(),
+                            ).build(),
+                    )
+                    addKdoc(
+                        "\n@param %N Binary uploads keyed by declared patternProperties names; register DynamicMultipartArgumentResolver on the proxy builder.\n",
+                        parts.parameterName,
+                    )
+                }
+            }.returns(returnType)
             .build()
 
     private fun FunSpec.Builder.addHttpExchangeAnnotation(
