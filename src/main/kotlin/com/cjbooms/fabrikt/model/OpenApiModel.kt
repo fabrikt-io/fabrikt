@@ -20,6 +20,12 @@ data class SchemaSemantics(
     val hasMultipleNonNullTypes: Boolean = false,
     val declaredType: String? = null,
     val isNullable: Boolean? = null,
+    val binaryMultipartPatterns: BinaryMultipartPatterns? = null,
+)
+
+data class BinaryMultipartPatterns(
+    val patterns: List<String>,
+    val unsupportedReason: String? = null,
 )
 
 /**
@@ -45,7 +51,10 @@ data class SchemaSemantics(
 class OpenApiSchema(
     internal val kaizen: Schema,
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
+    private val sourceLocation: String? = null,
 ) {
+    val binaryMultipartPatterns: BinaryMultipartPatterns?
+        get() = schemaSemanticsAt(sourceLocation ?: jsonPathFromRoot).binaryMultipartPatterns
     val name: String? get() = kaizen.name
     val type: String?
         get() =
@@ -262,7 +271,8 @@ class OpenApiMediaType(
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
     private val schemaOverride: OpenApiSchema? = null,
 ) {
-    val schema: OpenApiSchema get() = schemaOverride ?: OpenApiSchema(kaizen.schema, schemaSemanticsAt)
+    val schema: OpenApiSchema
+        get() = schemaOverride ?: OpenApiSchema(kaizen.schema, schemaSemanticsAt, "${Overlay.of(kaizen).pathFromRoot}/schema")
 
     fun encodingContentType(partName: String): String? = kaizen.getEncodingProperty(partName)?.contentType
 
