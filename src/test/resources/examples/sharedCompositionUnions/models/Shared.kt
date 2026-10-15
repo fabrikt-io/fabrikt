@@ -9,6 +9,5 @@ import com.fasterxml.jackson.`annotation`.JsonTypeInfo
   property = "kind",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = B::class, name = "b"),JsonSubTypes.Type(value = C::class,
-    name = "c"))
+@JsonSubTypes(JsonSubTypes.Type(value = B::class, name = "b"),JsonSubTypes.Type(value = C::class, name = "c"))
 public sealed interface Shared : AComposite

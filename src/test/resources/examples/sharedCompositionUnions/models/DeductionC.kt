@@ -19,4 +19,6 @@ public data class DeductionC(
   @get:JsonProperty("c")
   @get:NotNull
   override val c: Int,
-) : DeductionChoice, AComposite, DeductionCComposite
+) : DeductionChoice,
+    AComposite,
+    DeductionCComposite

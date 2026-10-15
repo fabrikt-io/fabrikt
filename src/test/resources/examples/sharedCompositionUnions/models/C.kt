@@ -23,4 +23,7 @@ public data class C(
   @get:JsonProperty("count")
   @get:NotNull
   override val count: Int,
-) : Mixed, Shared, AComposite, CComposite
+) : Mixed,
+    Shared,
+    AComposite,
+    CComposite

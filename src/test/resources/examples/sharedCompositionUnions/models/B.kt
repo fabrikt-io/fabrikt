@@ -19,4 +19,7 @@ public data class B(
   @get:JsonProperty("label")
   @get:NotNull
   override val label: String,
-) : Mixed, Shared, AComposite, BComposite
+) : Mixed,
+    Shared,
+    AComposite,
+    BComposite

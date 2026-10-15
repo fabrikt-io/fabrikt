@@ -15,4 +15,7 @@ public data class CombinedX(
   @get:JsonProperty("x")
   @get:NotNull
   override val x: String,
-) : Combined, AComposite, CombinedXComposite, XComposite
+) : Combined,
+    AComposite,
+    CombinedXComposite,
+    XComposite

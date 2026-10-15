@@ -19,4 +19,7 @@ public data class CombinedY(
   @get:JsonProperty("y")
   @get:NotNull
   override val y: Int,
-) : Combined, AComposite, CombinedYComposite, YComposite
+) : Combined,
+    AComposite,
+    CombinedYComposite,
+    YComposite
