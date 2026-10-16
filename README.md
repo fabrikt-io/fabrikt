@@ -249,6 +249,26 @@ Use a supported `oneOf` schema when a concrete polymorphic Kotlin model is neede
 
 Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared interfaces for compatible models that explicitly include a named object through `allOf`. See [Shared composition contracts](SHARED_COMPOSITION_CONTRACTS.md) for examples and current scope.
 
+## Multipart clients
+
+For `OK_HTTP`, `OPEN_FEIGN` and `SPRING_HTTP_INTERFACE`, `multipart/form-data` JSON object and array parts are sent as `application/json`, including when this is inferred from the schema rather than explicitly declared in `encoding`. Optional null parts are omitted; binary arrays are sent as repeated parts with the original property name. JSON parts do not receive a filename. Unsupported JSON-part encodings, such as `application/xml`, produce a warning and fall back to JSON; this does not add XML serialization or general support for multipart `encoding` options.
+
+### OkHttp
+
+JSON parts use the client instance's configured Jackson mapper. File arguments use the generated `RequestBodyWithFilename`, retaining the caller's body, content type and filename.
+
+### OpenFeign
+
+Multipart methods use native Feign `@Param` bindings and require the generated `FeignMultipartEncoder`. Register it on the Feign builder with your existing encoder and JSON serializer, for example `FeignMultipartEncoder(JacksonEncoder(mapper), mapper::writeValueAsBytes)` for Jackson 2. For Jackson 3, pass your Jackson 3 serializer and the encoder you use for ordinary requests. The multipart encoder delegates ordinary requests unchanged and serializes immutable Kotlin JSON models directly; a plain form encoder is insufficient. It buffers each multipart request in memory and requires no dependency beyond Feign core and the caller's existing JSON serializer.
+
+JSON arguments retain their generated model types. File arguments use `FeignMultipartFile(bytes, filename, contentType)`; binary arrays use `List<FeignMultipartFile>`. This changes the signatures of previously unsupported multipart methods. The generated interfaces use Feign's native contract; adding `@FeignClient` does not switch those bindings to Spring Cloud's contract.
+
+### Spring HTTP Interface
+
+Parts use `@RequestPart` with their original names and requiredness. Wrap JSON arguments in the generated `JsonPart(model)` or `JsonPart(listOfModels)`, which fixes their content type to JSON and preserves an array as one JSON part. File arguments use Spring's `Resource`, with a filename supplied by the resource; binary arrays use `List<Resource>`. These replace the previously unbound multipart parameters and therefore change their Kotlin signatures.
+
+Configure a multipart-capable message converter, such as `AllEncompassingFormHttpMessageConverter`, with the selected Jackson generation's JSON part converter. A standalone JSON converter cannot serialize the complete multipart request. For a `ByteArrayResource`, override `getFilename()` to supply the upload filename. The synchronous `RestClient` adapter is supported; reactive adapter behavior must be verified separately.
+
 ## Configuration Options
 
 This section documents the available CLI parameters for controlling what gets generated. This documentation is generated using: `./gradlew printCodeGenUsage`
@@ -561,6 +581,28 @@ Nested containers keep `@Valid` on the innermost element only (e.g.
 > Kotlin only writes type-argument annotations into bytecode when compiled with
 > `-Xemit-jvm-type-annotations`. Enable that flag in consumer projects so Hibernate Validator
 > can see the cascading `@Valid` at runtime.
+
+### Dynamic binary multipart uploads
+
+For multipart object schemas with fixed `properties` and homogeneous binary `patternProperties`, `OK_HTTP`, `OPEN_FEIGN` and `SPRING_HTTP_INTERFACE` append an optional `dynamicParts` map after the existing header and query arguments. Its default is `emptyMap()`. A collision with a fixed property or existing Kotlin argument name adds underscores to the parameter name. No generation option is required. Specifications without supported dynamic patterns retain their existing output.
+
+| Client | Map value type | Configuration |
+| --- | --- | --- |
+| `OK_HTTP` | `RequestBodyWithFilename` | Existing OkHttp client setup |
+| `OPEN_FEIGN` | `FeignMultipartFile` | Register the generated `FeignMultipartEncoder` as described under Multipart clients |
+| `SPRING_HTTP_INTERFACE` | `HttpEntity<out Resource>` | Register the generated `DynamicMultipartArgumentResolver` on `HttpServiceProxyFactory` with `.customArgumentResolver(DynamicMultipartArgumentResolver())` |
+
+Feign's generated metadata tells the encoder which map to expand; the map is not serialized as one form field. Spring's custom resolver adds one request part per map entry while retaining the existing fixed `@RequestPart` bindings. Register the Spring resolver even when the map is empty. The synchronous `RestClient` adapter is supported, including Spring 6.1 with Jackson 2; reactive adapters require separate verification. Bearer/OAuth helpers and Feign's cookie wrapper forward the map, header map and query map.
+
+Supply each upload's exact part name as its map key. Provide bytes, filename and media type through the target's file type. For Spring, the resource supplies the filename and the `HttpEntity` headers can supply `Content-Type`; framework defaults apply when it is absent. Dynamic Spring entities must contain a non-null `Resource`, must not override `Content-Disposition`, and filenames must not contain CR/LF, so caller metadata cannot replace the validated wire name. Fabrikt does not convert payload bytes or derive wire encoding from `format: binary`. The map can be empty. Duplicate keys supplied when constructing a map follow Kotlin map semantics (the last value wins).
+
+Before transport, each dynamic name must match at least one declared pattern and contain only ASCII letters, digits, `.`, `_`, and `-`. Empty names and names of any fixed schema property are rejected, including optional, absent or request-excluded properties. Invalid input raises `IllegalArgumentException` before HTTP execution (Feign may wrap it in `EncodeException`). Patterns use substring matching, as JSON Schema requires; use `^` and `$` to constrain the complete name. Multiple and overlapping patterns are supported when every pattern has the same unconstrained, non-null `type: string, format: binary` value shape. Matching several such patterns adds no further value constraints.
+
+Supported regex syntax is a bounded subset shared with the JVM engine, not full ECMA-262 support: ASCII letter/digit/underscore/hyphen literals, escaped dots or hyphens, wildcard dots, positive ASCII character classes/ranges, optional outer `^`/`$` anchors, and greedy `?`, `*`, `+`, `{n}`, `{n,}` or `{n,m}` quantifiers. This includes `^resource\..+$`, `resource.*` and bounded suffix patterns such as `^resource\.[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`. Groups, alternation, shorthand classes, flags, negated classes and other syntax are unsupported. The ASCII transport-name restriction also applies when a supported pattern permits a wider name.
+
+Nonbinary pattern values or value constraints beyond `type` and `format` (such as nullable values, enum, length, content encoding or composition) disable dynamic upload generation for that operation. Additional object constraints (such as `propertyNames`, property counts, dependencies or composition) and non-annotation siblings on schema references also disable it. Inline schemas and direct local schema references are supported; chained and external references are outside this feature's scope. Required names must be fixed properties. A fixed property matching a binary pattern must itself be binary. The generator logs the reason and retains the fixed parts; declare uploads as fixed properties or simplify the schema to the supported subset to enable generation. Descriptive annotations (`title`, `description`, `examples`, `example`, `deprecated`, `externalDocs`, `$comment`) are permitted; plain object and binary value schemas may also have vendor extensions. `additionalProperties: false` is supported because pattern-matched names are covered by `patternProperties`; the map accepts only pattern-matched names even when additional properties are allowed. This feature does not add general pattern-property model support or other client targets.
+
+Regenerating a newly supported patterned operation changes its JVM signature: Java callers must supply the extra map, compiled consumers must be recompiled, and typed callable references may need updating. Existing positional Kotlin calls retain their argument positions and can omit the new default argument. Regenerate the client runtime helpers along with the interface.
 
 ## Contributing
 

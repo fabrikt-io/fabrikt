@@ -1,0 +1,26 @@
+openapi: 3.1.1
+info: {title: dynamic, version: '1'}
+paths:
+  /dynamic:
+    post:
+      operationId: uploadDynamic
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [template]
+              additionalProperties: false
+              properties:
+                template: {type: string, format: binary}
+                resource.fixed: {type: string, format: binary}
+              patternProperties:
+                '^resource\.[A-Za-z0-9][A-Za-z0-9._-]{0,127}$':
+                  type: string
+                  format: binary
+                'font':
+                  type: string
+                  format: binary
+      responses:
+        '204': {description: Synthetic success}

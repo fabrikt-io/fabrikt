@@ -35,6 +35,7 @@ class OpenFeignClientGeneratorTest {
             "parameterNameClash",
             "tagGrouping",
             "cookieParameters",
+            "multipartClientParts",
         )
 
     @BeforeEach

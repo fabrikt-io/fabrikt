@@ -1,0 +1,43 @@
+openapi: 3.1.1
+info: {title: JSON multipart, version: '1'}
+paths:
+  /json:
+    post:
+      operationId: uploadJson
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [request, template]
+              properties:
+                request:
+                  $ref: '#/components/schemas/JsonPayload'
+                details:
+                  $ref: '#/components/schemas/JsonPayload'
+                optionalRequest:
+                  $ref: '#/components/schemas/JsonPayload'
+                template: {type: string, format: binary}
+            encoding:
+              request: {contentType: application/json}
+              optionalRequest: {contentType: application/json}
+      responses:
+        '204': {description: Synthetic success}
+components:
+  schemas:
+    JsonPayload:
+      type: object
+      required: [message, nested]
+      properties:
+        message: {type: string}
+        note: {type: string}
+        nested:
+          $ref: '#/components/schemas/JsonNested'
+    JsonNested:
+      type: object
+      required: [values]
+      properties:
+        values:
+          type: array
+          items: {type: string}

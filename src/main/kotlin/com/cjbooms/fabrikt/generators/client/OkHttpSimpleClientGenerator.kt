@@ -188,7 +188,22 @@ class OkHttpSimpleClientGenerator(
                         TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
                     ).defaultValue("emptyMap()")
                     .build(),
-            ).addCode(statement)
+            ).apply {
+                BinaryMultipartParts.forOperation(operation, parameters)?.let { parts ->
+                    addParameter(
+                        ParameterSpec
+                            .builder(
+                                parts.parameterName,
+                                TypeFactory.createMapOfStringToNonNullType("RequestBodyWithFilename".toClassName(packages.client)),
+                            ).defaultValue("emptyMap()")
+                            .build(),
+                    )
+                    addKdoc(
+                        "\n@param %N Binary uploads keyed by declared patternProperties names; invalid or fixed names throw IllegalArgumentException.\n",
+                        parts.parameterName,
+                    )
+                }
+            }.addCode(statement)
             .returns(returnType)
             .build()
 
@@ -431,10 +446,14 @@ data class SimpleClientOperationStatement(
                     }
 
                     param.contentType == "application/json" -> {
+                        operation.jsonMultipartContentType(param)
                         this.add(
-                            "\n    multipartBuilder.addFormDataPart(%S, objectMapper.writeValueAsString(%N))",
+                            "\n    multipartBuilder.addFormDataPart(%S, null, objectMapper.writeValueAsString(%N).%T(%S.%T()))",
                             param.partName,
                             param.name,
+                            "toRequestBody".toClassName("okhttp3.RequestBody.Companion"),
+                            "application/json",
+                            "toMediaType".toClassName("okhttp3.MediaType.Companion"),
                         )
                     }
 
@@ -449,6 +468,12 @@ data class SimpleClientOperationStatement(
                 if (!param.isRequired) this.add("\n}")
             }
 
+        BinaryMultipartParts.forOperation(operation, parameters, warn = true)?.let { parts ->
+            this.add("\n%N.forEach { (partName, fileData) ->", parts.parameterName)
+            this.add("\n%L", parts.validateName("partName"))
+            this.add("\nmultipartBuilder.addFormDataPart(partName, fileData.filename, fileData.requestBody)")
+            this.add("\n}")
+        }
         this.add("\nval multipartBody = multipartBuilder.build()")
     }
 }

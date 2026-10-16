@@ -5,6 +5,7 @@ import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.GeneratorUtils.addDeprecation
 import com.cjbooms.fabrikt.generators.GeneratorUtils.functionName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaType
+import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipartRequestBody
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKdoc
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.generators.TypeFactory
@@ -31,6 +32,7 @@ import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
@@ -39,14 +41,17 @@ import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.requestOperations
 import com.cjbooms.fabrikt.util.toUpperCase
 import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.buildCodeBlock
+import com.squareup.kotlinpoet.joinToCode
 import java.util.logging.Logger
 
 class OpenFeignInterfaceGenerator(
@@ -146,7 +151,8 @@ class OpenFeignInterfaceGenerator(
         return Clients(clientTypes)
     }
 
-    override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> = emptyList()
+    override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> =
+        MultipartClientLibraryFiles.feign(packages, api)
 
     private fun buildFunctions(
         operation: OpenApiOperation,
@@ -159,6 +165,7 @@ class OpenFeignInterfaceGenerator(
         acceptMediaType: String?,
         extraKdoc: CodeBlock?,
     ): List<FunSpec> {
+        val binaryParts = BinaryMultipartParts.forOperation(operation, parameters, warn = true)
         val cookieParameters =
             parameters
                 .filterIsInstance<RequestParameter>()
@@ -175,6 +182,7 @@ class OpenFeignInterfaceGenerator(
                     returnType,
                     acceptMediaType,
                     extraKdoc,
+                    binaryParts = binaryParts,
                 ),
             )
         }
@@ -205,6 +213,7 @@ class OpenFeignInterfaceGenerator(
                 returnType,
                 acceptMediaType,
                 extraKdoc,
+                binaryParts = binaryParts,
                 hasCookieHeader = true,
                 cookieHeaderParameterName = cookieHeaderParameterName,
             ),
@@ -223,6 +232,7 @@ class OpenFeignInterfaceGenerator(
         extraKdoc: CodeBlock?,
         hasCookieHeader: Boolean = false,
         cookieHeaderParameterName: String = "cookieHeader",
+        binaryParts: BinaryMultipartParts? = null,
     ): FunSpec =
         FunSpec
             .builder(name)
@@ -232,6 +242,16 @@ class OpenFeignInterfaceGenerator(
                 if (!hasCookieHeader) {
                     addKdoc(operation.toKdoc(parameters))
                     extraKdoc?.let { addKdoc(it) }
+                }
+                if (parameters.any { it is MultipartParameter } || binaryParts != null) {
+                    val jsonParts = parameters.filterIsInstance<MultipartParameter>().filter { it.contentType == "application/json" }
+                    jsonParts.forEach { operation.jsonMultipartContentType(it) }
+                    addAnnotation(
+                        AnnotationSpec
+                            .builder(ClassName(packages.client, "FeignJsonParts"))
+                            .apply { jsonParts.forEach { addMember("%S", it.partName) } }
+                            .build(),
+                    )
                 }
             }.addRequestLineAnnotation(resource, verb, parameters)
             .addHeadersAnnotation(operation, parameters, hasCookieHeader, cookieHeaderParameterName, acceptMediaType)
@@ -243,6 +263,10 @@ class OpenFeignInterfaceGenerator(
                         .paramBuilder()
                         .addMember("%S", parameter.name)
                         .build()
+                },
+                multipartParameterToSpecBuilder = { parameter ->
+                    multipartParameterSpec(parameter)
+                        .addAnnotation(OpenFeignAnnotations.paramBuilder().addMember("%S", parameter.partName).build())
                 },
             ).apply {
                 if (hasCookieHeader) {
@@ -274,7 +298,8 @@ class OpenFeignInterfaceGenerator(
                     ).addAnnotation(OpenFeignAnnotations.QUERY_MAP)
                     .defaultValue("emptyMap()")
                     .build(),
-            ).returns(returnType)
+            ).apply { addBinaryParts(binaryParts, annotated = true) }
+            .returns(returnType)
             .build()
 
     private fun buildCookieWrapperFunction(
@@ -294,7 +319,7 @@ class OpenFeignInterfaceGenerator(
             .addKdoc(operation.toKdoc(parameters))
             .apply { extraKdoc?.let { addKdoc(it) } }
             .addSuspendModifier(options)
-            .addIncomingParameters(parameters)
+            .addIncomingParameters(parameters, multipartParameterToSpecBuilder = ::multipartParameterSpec)
             .addParameter(
                 ParameterSpec
                     .builder(
@@ -309,7 +334,8 @@ class OpenFeignInterfaceGenerator(
                         TypeFactory.createMapOfStringToNonNullType(String::class.asTypeName()),
                     ).defaultValue("emptyMap()")
                     .build(),
-            ).returns(returnType)
+            ).apply { addBinaryParts(BinaryMultipartParts.forOperation(operation, parameters), annotated = false) }
+            .returns(returnType)
             .addCode(
                 buildCodeBlock {
                     add("return %N(\n", requestFunctionName)
@@ -322,10 +348,53 @@ class OpenFeignInterfaceGenerator(
                     add(",\n")
                     add("%N = %N,\n", ADDITIONAL_HEADERS_PARAMETER_NAME, ADDITIONAL_HEADERS_PARAMETER_NAME)
                     add("%N = %N,\n", ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME, ADDITIONAL_QUERY_PARAMETERS_PARAMETER_NAME)
+                    BinaryMultipartParts.forOperation(operation, parameters)?.let {
+                        add("%N = %N,\n", it.parameterName, it.parameterName)
+                    }
                     unindent()
                     add(")\n")
                 },
             ).build()
+
+    private fun FunSpec.Builder.addBinaryParts(
+        parts: BinaryMultipartParts?,
+        annotated: Boolean,
+    ) {
+        if (parts == null) return
+        val parameter =
+            ParameterSpec
+                .builder(
+                    parts.parameterName,
+                    TypeFactory.createMapOfStringToNonNullType(ClassName(packages.client, "FeignMultipartFile")),
+                ).defaultValue("emptyMap()")
+        if (annotated) {
+            parameter.addAnnotation(OpenFeignAnnotations.paramBuilder().addMember("%S", parts.parameterName).build())
+            addAnnotation(
+                AnnotationSpec
+                    .builder(ClassName(packages.client, "FeignBinaryParts"))
+                    .addMember("parameter = %S", parts.parameterName)
+                    .addMember("patterns = [%L]", parts.patterns.map { CodeBlock.of("%S", it) }.joinToCode(", "))
+                    .addMember("fixedNames = [%L]", parts.fixedNames.map { CodeBlock.of("%S", it) }.joinToCode(", "))
+                    .build(),
+            )
+        }
+        addParameter(parameter.build())
+        addKdoc(
+            "\n@param %N Binary uploads keyed by declared patternProperties names; invalid or fixed names fail before transport.\n",
+            parts.parameterName,
+        )
+    }
+
+    private fun multipartParameterSpec(parameter: MultipartParameter): ParameterSpec.Builder {
+        val file = ClassName(packages.client, "FeignMultipartFile")
+        val type =
+            when {
+                parameter.isBinaryFile && parameter.schema.type == "array" -> List::class.asTypeName().parameterizedBy(file)
+                parameter.isBinaryFile -> file
+                else -> parameter.type
+            }
+        return ParameterSpec.builder(parameter.name, type.copy(nullable = !parameter.isRequired))
+    }
 
     private fun com.squareup.kotlinpoet.CodeBlock.Builder.addCookieHeaderValue(parameters: List<RequestParameter>) {
         add("buildList {\n")
@@ -521,7 +590,9 @@ class OpenFeignInterfaceGenerator(
                     parameter.name == ClientGeneratorUtils.ACCEPT_HEADER_NAME
             }
             if (hasCookieHeader) headersValueParts.add("Cookie: {$cookieHeaderParameterName}")
-            if (operation.hasDistinctRequestRepresentations) {
+            if (operation.hasMultipartRequestBody()) {
+                headersValueParts.add("Content-Type: multipart/form-data")
+            } else if (operation.hasDistinctRequestRepresentations) {
                 headersValueParts.add("Content-Type: ${operation.requestBody.contentMediaTypes.keys.first()}")
             }
             // Add default accept header
