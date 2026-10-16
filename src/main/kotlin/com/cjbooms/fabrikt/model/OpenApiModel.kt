@@ -306,6 +306,10 @@ class OpenApiSecurityScheme(
 
     val scheme: String? get() = kaizen.scheme
 
+    val name: String? get() = kaizen.name
+
+    val location: String? get() = kaizen.`in`
+
     override fun equals(other: Any?): Boolean = other is OpenApiSecurityScheme && kaizen == other.kaizen
 
     override fun hashCode(): Int = kaizen.hashCode()

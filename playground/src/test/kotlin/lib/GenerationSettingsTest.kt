@@ -21,6 +21,14 @@ import org.junit.jupiter.api.Test
 
 class GenerationSettingsTest {
     @Test
+    fun headerApiKeyClientOption() {
+        val option = ClientCodeGenOptionType.OPENAPI_API_KEY_AUTHENTICATION
+        val settings = Parameters.build { append("clientOptions", option.name) }.receiveGenerationSettings()
+        assertEquals(setOf(option), settings.clientOptions)
+        assertTrue(settings.toQueryParams().contains("clientOptions=${option.name}"))
+    }
+
+    @Test
     fun oauth2ClientOption() {
         val option = com.cjbooms.fabrikt.cli.ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION
         val settings = Parameters.build { append("clientOptions", option.name) }.receiveGenerationSettings()

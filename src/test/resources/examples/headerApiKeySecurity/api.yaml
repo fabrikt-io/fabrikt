@@ -1,0 +1,87 @@
+openapi: 3.0.4
+info:
+  title: Header API key security
+  version: '1.0'
+security:
+  - Key: []
+paths:
+  /documents:
+    get:
+      operationId: getDocuments
+      security:
+        - Key: []
+        - OAuth: [read:documents]
+      responses:
+        '204': { description: OK }
+    post:
+      operationId: createDocument
+      security:
+        - Key: []
+          OAuth: [write:documents]
+      responses:
+        '204': { description: OK }
+    put:
+      operationId: replaceDocument
+      responses:
+        '204': { description: OK }
+    delete:
+      operationId: deleteDocument
+      security: []
+      responses:
+        '204': { description: OK }
+    patch:
+      operationId: updateDocument
+      security:
+        - Key: []
+          OAuth: [write:documents]
+        - OtherKey: []
+          OAuth: [admin:documents]
+      responses:
+        '204': { description: OK }
+  /optional:
+    get:
+      operationId: getOptional
+      security:
+        - {}
+        - Key: []
+      responses:
+        '204': { description: OK }
+  /multiple:
+    get:
+      operationId: getMultiple
+      security:
+        - Key: []
+          OtherKey: []
+          OAuth: []
+      responses:
+        '204': { description: OK }
+  /bearer:
+    get:
+      operationId: getBearer
+      security:
+        - Key: []
+          Bearer: []
+      responses:
+        '204': { description: OK }
+components:
+  securitySchemes:
+    Key:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    OtherKey:
+      type: apiKey
+      in: header
+      name: X-Other-Key
+    OAuth:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://example.invalid/token
+          scopes:
+            read:documents: Read documents
+            write:documents: Write documents
+            admin:documents: Administer documents
+    Bearer:
+      type: http
+      scheme: bearer

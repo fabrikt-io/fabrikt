@@ -74,7 +74,7 @@ The library currently has support for generating:
   * **Micronaut** HTTP annotated controller interfaces
   * **Ktor server** routes and controller interfaces
 
-Client generators offer opt-in HTTP Bearer and OAuth2 access-token helpers through `--http-client-opts OPENAPI_BEARER_AUTHENTICATION` and `OPENAPI_OAUTH2_AUTHENTICATION`. See [Client authentication](CLIENT_AUTHENTICATION.md) for token providers, operation scopes, security alternatives and examples.
+Client generators offer opt-in header API-key, HTTP Bearer and OAuth2 helpers through `--http-client-opts OPENAPI_API_KEY_AUTHENTICATION`, `OPENAPI_BEARER_AUTHENTICATION` and `OPENAPI_OAUTH2_AUTHENTICATION`. See [Client authentication](CLIENT_AUTHENTICATION.md) for credential providers, operation scopes, security alternatives and examples.
 
 ## Examples
 
@@ -263,6 +263,11 @@ Usage: <main class> [options]
 |   `--auth`                              | Authorization header(s) sent when fetching a remote --api-file, --api-fragment, or remote `$ref`. Repeatable, format 'Name: value'. Value may contain `${ENV_VAR}` placeholders, name an env var, or contain !cmd (at start or after whitespace) to run a shell command and substitute its trimmed stdout (e.g. --auth "Authorization: Bearer !generate-fresh-auth-token"). |
 | * `--base-package`                      | The base package which all code will be generated under. |
 |   `--custom-type-mapping`               | Map an OpenAPI type and format to a Kotlin type. Use type:format=KotlinFqcn and optionally add ;kotlinx=SerializerFqcn for kotlinx.serialization. |
+|   `--dependencies-generation-mode`      | Configure generation of file containing dependencies of the generated source code. Default: NONE |
+|                                         | CHOOSE ONE OF: |
+|                                         |   `NONE` - No extra (dependencies) file is generated. |
+|                                         |   `GRADLE_NOTATION` - Dependencies file is generated with gradle notation (expected to be placed inside dependencies {} block in build.gradle(.kts) |
+|                                         |   `MAVEN_NOTATION` - Dependencies file is generated with maven notation (expected to be placed inside <dependencies></dependencies> tags in pom.xml) |
 |   `--external-ref-resolution`           | Specify to which degree referenced schemas from external files are included in model generation. Default: TARGETED |
 |                                         | CHOOSE ONE OF: |
 |                                         |   `TARGETED` - Generate models only for directly referenced schemas in external API files. |
@@ -276,6 +281,7 @@ Usage: <main class> [options]
 |                                         |   `OKHTTP_NON_NULL_RESPONSE_PAYLOADS` - This option makes ApiResponse.data non-null. Responses declared with a body must return one: a missing body, or one that deserializes to null, throws ApiException. An operation that declares both a body response and an empty success response (e.g. 200 and 204) throws on the empty success. Binary responses return an empty ByteArray for an empty body (only for OkHttp clients) |
 |                                         |   `RESPONSE_MEDIA_TYPE_FUNCTIONS` - This option adds, for each operation whose success responses declare a different JSON schema per media type, one function per media type. The function always sends that media type as the Accept header and returns that schema's type instead of JsonNode. Its name is the operation's function name plus the media subtype, e.g. getItemsVndCustomJson for application/vnd.custom+json (only for OkHttp, OpenFeign and Spring HTTP Interface clients) |
 |                                         |   `DYNAMIC_BASE_URL` - This option makes ApiConfiguration.basePath empty, allowing you to set the base URL at runtime (only for Ktor clients) |
+|                                         |   `OPENAPI_API_KEY_AUTHENTICATION` - Adds header API-key helpers and complete security alternatives with enabled Bearer and OAuth2 schemes |
 |                                         |   `OPENAPI_BEARER_AUTHENTICATION` - Adds operation-specific Bearer token helpers for OpenAPI HTTP Bearer security schemes |
 |                                         |   `OPENAPI_OAUTH2_AUTHENTICATION` - Adds operation-specific OAuth2 access-token helpers that pass required scopes to a caller-provided token provider |
 |   `--http-client-target`                | Optionally select the target client that you want to be generated. Defaults to OK_HTTP |
@@ -372,11 +378,6 @@ Usage: <main class> [options]
 |                                         |   `JAVAX_VALIDATION` - Use `javax.validation` annotations in generated model classes |
 |                                         |   `JAKARTA_VALIDATION` - Use `jakarta.validation` annotations in generated model classes (default) |
 |                                         |   `NO_VALIDATION` - Use no validation annotations in generated model classes |
-|   `dependencies-generation-mode`        | Configure generation of file containing dependencies of the generated source code. Default: NONE   |
-|                                         | CHOOSE ONE OF: |
-|                                         | `NONE` - Default, no extra dependencies file generated |
-|                                         | `GRADLE_NOTATION` - Dependencies file is generated with gradle notation (expected to be placed inside dependencies {} block in build.gradle(.kts) |
-|                                         | `MAVEN_NOTATION` - Dependencies file is generated with maven notation (expected to be placed inside <dependencies></dependencies> tags in pom.xml) |
 
 
 ## Original Motivation

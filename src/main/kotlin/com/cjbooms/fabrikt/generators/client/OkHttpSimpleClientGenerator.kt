@@ -75,14 +75,16 @@ class OkHttpSimpleClientGenerator(
                         .flatMap { (resource, path) ->
                             api.requestOperations(path).flatMap { (verb, operation) ->
                                 val parameters = deriveClientParameters(path, operation, packages.base)
+                                val headerPlans = ClientHeaderApiKeySecurity(api.openApi3).forOperation(operation, options)
                                 val securityPlan =
-                                    if (ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
+                                    if (headerPlans == null && ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
                                         bearerSecurity.forOperation(operation)
                                     } else {
                                         null
                                     }
                                 val oauth2Plan =
-                                    if (ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION in
+                                    if (headerPlans == null &&
+                                        ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION in
                                         options
                                     ) {
                                         oauth2Security.forOperation(operation)
@@ -134,7 +136,13 @@ class OkHttpSimpleClientGenerator(
                                     listOf(
                                         listOf(baseFunction),
                                     ) + mediaTypeFunctions.map { listOf(it) }
-                                ).map { it.withBearerTokenWrapper(securityPlan).withOAuth2TokenWrapper(oauth2Plan) }
+                                ).map {
+                                    if (headerPlans != null) {
+                                        it.withHeaderSecurityWrappers(headerPlans)
+                                    } else {
+                                        it.withBearerTokenWrapper(securityPlan).withOAuth2TokenWrapper(oauth2Plan)
+                                    }
+                                }
                             }
                         }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 
