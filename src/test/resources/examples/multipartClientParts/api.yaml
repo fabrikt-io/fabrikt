@@ -1,0 +1,47 @@
+openapi: 3.1.1
+info: {title: Multipart client parts, version: '1'}
+paths:
+  /upload:
+    post:
+      operationId: upload
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [request, template]
+              properties:
+                request:
+                  $ref: '#/components/schemas/Payload'
+                optionalRequest:
+                  $ref: '#/components/schemas/Payload'
+                json-items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Payload'
+                template: {type: string, format: binary}
+                other-files:
+                  type: array
+                  items: {type: string, format: binary}
+                label: {type: string}
+            encoding:
+              request: {contentType: application/json}
+      responses:
+        '204': {description: Synthetic success}
+components:
+  schemas:
+    Payload:
+      type: object
+      required: [message, nested]
+      properties:
+        message: {type: string}
+        nested:
+          $ref: '#/components/schemas/Nested'
+    Nested:
+      type: object
+      required: [values]
+      properties:
+        values:
+          type: array
+          items: {type: string}

@@ -264,6 +264,8 @@ class OpenApiMediaType(
 ) {
     val schema: OpenApiSchema get() = schemaOverride ?: OpenApiSchema(kaizen.schema, schemaSemanticsAt)
 
+    fun encodingContentType(partName: String): String? = kaizen.getEncodingProperty(partName)?.contentType
+
     fun withSchema(schema: OpenApiSchema): OpenApiMediaType = OpenApiMediaType(kaizen, schemaSemanticsAt, schema)
 
     override fun equals(other: Any?): Boolean = other is OpenApiMediaType && kaizen == other.kaizen

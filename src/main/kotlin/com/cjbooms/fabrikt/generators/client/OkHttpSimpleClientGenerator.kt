@@ -431,10 +431,14 @@ data class SimpleClientOperationStatement(
                     }
 
                     param.contentType == "application/json" -> {
+                        operation.jsonMultipartContentType(param)
                         this.add(
-                            "\n    multipartBuilder.addFormDataPart(%S, objectMapper.writeValueAsString(%N))",
+                            "\n    multipartBuilder.addFormDataPart(%S, null, objectMapper.writeValueAsString(%N).%T(%S.%T()))",
                             param.partName,
                             param.name,
+                            "toRequestBody".toClassName("okhttp3.RequestBody.Companion"),
+                            "application/json",
+                            "toMediaType".toClassName("okhttp3.MediaType.Companion"),
                         )
                     }
 

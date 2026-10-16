@@ -249,6 +249,26 @@ Use a supported `oneOf` schema when a concrete polymorphic Kotlin model is neede
 
 Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared interfaces for compatible models that explicitly include a named object through `allOf`. See [Shared composition contracts](SHARED_COMPOSITION_CONTRACTS.md) for examples and current scope.
 
+## Multipart clients
+
+For `OK_HTTP`, `OPEN_FEIGN` and `SPRING_HTTP_INTERFACE`, `multipart/form-data` JSON object and array parts are sent as `application/json`, including when this is inferred from the schema rather than explicitly declared in `encoding`. Optional null parts are omitted; binary arrays are sent as repeated parts with the original property name. JSON parts do not receive a filename. Unsupported JSON-part encodings, such as `application/xml`, produce a warning and fall back to JSON; this does not add XML serialization or general support for multipart `encoding` options.
+
+### OkHttp
+
+JSON parts use the client instance's configured Jackson mapper. File arguments use the generated `RequestBodyWithFilename`, retaining the caller's body, content type and filename.
+
+### OpenFeign
+
+Multipart methods use native Feign `@Param` bindings and require the generated `FeignMultipartEncoder`. Register it on the Feign builder with your existing encoder and JSON serializer, for example `FeignMultipartEncoder(JacksonEncoder(mapper), mapper::writeValueAsBytes)` for Jackson 2. For Jackson 3, pass your Jackson 3 serializer and the encoder you use for ordinary requests. The multipart encoder delegates ordinary requests unchanged and serializes immutable Kotlin JSON models directly; a plain form encoder is insufficient. It buffers each multipart request in memory and requires no dependency beyond Feign core and the caller's existing JSON serializer.
+
+JSON arguments retain their generated model types. File arguments use `FeignMultipartFile(bytes, filename, contentType)`; binary arrays use `List<FeignMultipartFile>`. This changes the signatures of previously unsupported multipart methods. The generated interfaces use Feign's native contract; adding `@FeignClient` does not switch those bindings to Spring Cloud's contract.
+
+### Spring HTTP Interface
+
+Parts use `@RequestPart` with their original names and requiredness. Wrap JSON arguments in the generated `JsonPart(model)` or `JsonPart(listOfModels)`, which fixes their content type to JSON and preserves an array as one JSON part. File arguments use Spring's `Resource`, with a filename supplied by the resource; binary arrays use `List<Resource>`. These replace the previously unbound multipart parameters and therefore change their Kotlin signatures.
+
+Configure a multipart-capable message converter, such as `AllEncompassingFormHttpMessageConverter`, with the selected Jackson generation's JSON part converter. A standalone JSON converter cannot serialize the complete multipart request. For a `ByteArrayResource`, override `getFilename()` to supply the upload filename. The synchronous `RestClient` adapter is supported; reactive adapter behavior must be verified separately.
+
 ## Configuration Options
 
 This section documents the available CLI parameters for controlling what gets generated. This documentation is generated using: `./gradlew printCodeGenUsage`

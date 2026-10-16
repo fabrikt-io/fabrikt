@@ -37,10 +37,12 @@ import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.requestOperations
 import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
@@ -196,6 +198,28 @@ class SpringHttpInterfaceGenerator(
                         .requestBodyBuilder()
                         .build()
                 },
+                multipartParameterToSpecBuilder = { parameter ->
+                    val resource = ClassName("org.springframework.core.io", "Resource")
+                    val type =
+                        when {
+                            parameter.isBinaryFile && parameter.schema.type == "array" -> List::class.asTypeName().parameterizedBy(resource)
+                            parameter.isBinaryFile -> resource
+                            parameter.contentType == "application/json" -> {
+                                operation.jsonMultipartContentType(parameter)
+                                ClassName(packages.client, "JsonPart").parameterizedBy(parameter.type.copy(nullable = false))
+                            }
+                            else -> parameter.type
+                        }
+                    ParameterSpec
+                        .builder(parameter.name, type.copy(nullable = !parameter.isRequired))
+                        .addAnnotation(
+                            SpringHttpInterfaceAnnotations
+                                .requestPartBuilder()
+                                .addMember("value = %S", parameter.partName)
+                                .addMember("required = %L", parameter.isRequired)
+                                .build(),
+                        )
+                },
             ).addParameter(
                 ParameterSpec
                     .builder(
@@ -339,5 +363,6 @@ class SpringHttpInterfaceGenerator(
                 .filter { it.parameterLocation is PathParam }
     }
 
-    override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> = setOf()
+    override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> =
+        MultipartClientLibraryFiles.spring(packages, api, srcPath)
 }
