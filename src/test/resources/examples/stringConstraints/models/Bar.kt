@@ -25,7 +25,7 @@ public data class Bar(
   @param:JsonProperty("reference")
   @get:JsonProperty("reference")
   @get:NotNull
-  @get:Pattern(regexp = "^[A-Z0-9-]+${'$'}")
+  @get:Pattern(regexp = "[\\s\\S]*(?:^[A-Z0-9-]+${'$'})[\\s\\S]*")
   @get:Size(
     min = 1,
     max = 16,

@@ -35,7 +35,7 @@ paths:
   /patterns:
     get:
       operationId: getPatterns
-      summary: Accepts string parameters constrained by unanchored and anchored patterns
+      summary: Accepts string parameters with the same patterns as PatternValues
       parameters:
         - name: unanchored
           in: query
@@ -63,3 +63,13 @@ components:
           type: integer
         filter:
           type: string
+    PatternValues:
+      type: object
+      required: [unanchored, anchored]
+      properties:
+        unanchored:
+          type: string
+          pattern: '[a-zA-Z]'
+        anchored:
+          type: string
+          pattern: '^[0-9]+$'

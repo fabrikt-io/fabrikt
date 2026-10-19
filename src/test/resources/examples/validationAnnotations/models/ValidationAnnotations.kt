@@ -14,7 +14,7 @@ public data class ValidationAnnotations(
   @param:JsonProperty("user_name")
   @get:JsonProperty("user_name")
   @get:NotNull
-  @get:Pattern(regexp = "[a-zA-Z]")
+  @get:Pattern(regexp = "[\\s\\S]*(?:[a-zA-Z])[\\s\\S]*")
   public val userName: String,
   @param:JsonProperty(
     "age",

@@ -104,7 +104,7 @@ abstract class PackageValidationAnnotations(
     override fun regexPattern(pattern: String) =
         AnnotationSpec
             .builder(patternClass)
-            .addMember("regexp = %S", pattern)
+            .addMember("regexp = %S", matchAnywhere(pattern))
             .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
             .build()
 

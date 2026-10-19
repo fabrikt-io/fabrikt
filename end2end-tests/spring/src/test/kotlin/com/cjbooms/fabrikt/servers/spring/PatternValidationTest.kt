@@ -1,6 +1,8 @@
 package com.cjbooms.fabrikt.servers.spring
 
 import com.example.controllers.PatternsController
+import com.example.models.PatternValues
+import jakarta.validation.ConstraintViolation
 import jakarta.validation.Validation
 import jakarta.validation.ValidatorFactory
 import org.assertj.core.api.Assertions.assertThat
@@ -16,10 +18,11 @@ import org.springframework.http.ResponseEntity
  * Runtime coverage for https://github.com/fabrikt-io/fabrikt/issues/783 with Hibernate Validator.
  *
  * An OpenAPI `pattern` matches anywhere in the value unless it is anchored, while `@Pattern` is checked against the
- * whole value. The generated `@Pattern` on a controller parameter must accept the same values as the schema.
+ * whole value. The generated `@Pattern` on a controller parameter and on a model property must accept the same values
+ * as the schema.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class SpringParameterPatternTest {
+class PatternValidationTest {
     private lateinit var factory: ValidatorFactory
 
     private val controller =
@@ -48,32 +51,46 @@ class SpringParameterPatternTest {
     @ParameterizedTest
     @ValueSource(strings = ["A", "Alice", "123A456"])
     fun `unanchored pattern accepts a match anywhere in the value`(value: String) {
-        assertThat(violations(unanchored = value)).isEmpty()
+        assertThat(parameterViolations(unanchored = value)).isEmpty()
+        assertThat(propertyViolations(unanchored = value)).isEmpty()
     }
 
     @ParameterizedTest
     @ValueSource(strings = ["123", ""])
     fun `unanchored pattern rejects a value without a match`(value: String) {
-        assertThat(violations(unanchored = value)).containsExactly("getPatterns.unanchored")
+        assertThat(parameterViolations(unanchored = value)).containsExactly("unanchored")
+        assertThat(propertyViolations(unanchored = value)).containsExactly("unanchored")
     }
 
     @ParameterizedTest
     @ValueSource(strings = ["1", "123"])
     fun `anchored pattern accepts a whole value match`(value: String) {
-        assertThat(violations(anchored = value)).isEmpty()
+        assertThat(parameterViolations(anchored = value)).isEmpty()
+        assertThat(propertyViolations(anchored = value)).isEmpty()
     }
 
     @ParameterizedTest
     @ValueSource(strings = ["A123", "123A", "123A456", ""])
     fun `anchored pattern rejects a partial match`(value: String) {
-        assertThat(violations(anchored = value)).containsExactly("getPatterns.anchored")
+        assertThat(parameterViolations(anchored = value)).containsExactly("anchored")
+        assertThat(propertyViolations(anchored = value)).containsExactly("anchored")
     }
 
-    private fun violations(
+    private fun parameterViolations(
         unanchored: String = "A",
         anchored: String = "1",
     ): List<String> =
         factory.validator.forExecutables()
             .validateParameters(controller, getPatterns, arrayOf(unanchored, anchored))
-            .map { it.propertyPath.toString() }
+            .map { it.leafName() }
+
+    private fun propertyViolations(
+        unanchored: String = "A",
+        anchored: String = "1",
+    ): List<String> =
+        factory.validator
+            .validate(PatternValues(unanchored = unanchored, anchored = anchored))
+            .map { it.leafName() }
+
+    private fun ConstraintViolation<*>.leafName(): String = propertyPath.last().name
 }
