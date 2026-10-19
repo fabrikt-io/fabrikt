@@ -265,10 +265,15 @@ class ModelGenerator(
                     .asOpenApi3Document()
             val api = maybeConvertRelativeSchemaFile(externalReferences.key, parsed)
             registerCompositionSchemas(api, externalReferences.key)
+            val requiredSchemas =
+                AbstractMap.SimpleEntry(
+                    externalReferences.key,
+                    api.schemaNamesWithPolymorphicSubtypes(externalReferences.value).toMutableSet(),
+                )
             val schemas =
                 api.schemas.entries
                     .map { (key, schema) -> SchemaInfo(key, schema) }
-                    .filterByExternalRefResolutionMode(externalReferences)
+                    .filterByExternalRefResolutionMode(requiredSchemas)
             val externalModels = createModels(api, schemas)
             if (parsed.schemas.isEmpty() && api.schemas.size == 1) {
                 val wrapped = api.schemas.values.single()
@@ -300,20 +305,16 @@ class ModelGenerator(
                 )
             }
         }
-        if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) {
-            val processed = mutableMapOf<String, MutableSet<String>>()
-            while (true) {
-                addMappedCompositionContracts(models)
-                val next =
-                    externalApiSchemas.entries.firstOrNull { entry ->
-                        entry.key !in processed || entry.value.any { it !in processed.getValue(entry.key) }
-                    } ?: break
-                val requested = AbstractMap.SimpleEntry(next.key, next.value.toMutableSet())
-                addExternalModels(requested)
-                processed.getOrPut(next.key, ::mutableSetOf).addAll(requested.value)
-            }
-        } else {
-            externalApiSchemas.forEach(::addExternalModels)
+        val processed = mutableMapOf<String, MutableSet<String>>()
+        while (true) {
+            if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) addMappedCompositionContracts(models)
+            val next =
+                externalApiSchemas.entries.firstOrNull { entry ->
+                    entry.key !in processed || entry.value.any { it !in processed.getValue(entry.key) }
+                } ?: break
+            val requested = AbstractMap.SimpleEntry(next.key, next.value.toMutableSet())
+            addExternalModels(requested)
+            processed.getOrPut(next.key, ::mutableSetOf).addAll(requested.value)
         }
         val composedModels =
             if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) {

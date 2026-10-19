@@ -1,0 +1,12 @@
+openapi: 3.0.0
+paths: {}
+info:
+  title: ""
+  version: ""
+components:
+  schemas:
+    Wrapper:
+      type: object
+      properties:
+        polymorph:
+          $ref: 'external-models.yaml#/components/schemas/PolymorphicEnumDiscriminator'

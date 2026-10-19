@@ -66,6 +66,7 @@ class ModelGeneratorTest {
             "enumPolymorphicDiscriminator",
             "externalReferences/targeted",
             "externalReferences/relativeSchemaDocument",
+            "externalPolymorphicDiscriminator",
             "faultTolerantEnums",
             "githubApi",
             "inLinedObject",
