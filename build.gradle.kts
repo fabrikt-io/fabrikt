@@ -252,6 +252,10 @@ tasks.named("compileKotlin") {
     dependsOn(generateVersionCatalogSourceCode)
 }
 
+tasks.named("sourcesJar") {
+    dependsOn(generateVersionCatalogSourceCode)
+}
+
 tasks.matching { it.name.startsWith("runKtlint") }.configureEach {
     dependsOn(generateVersionCatalogSourceCode)
 }
