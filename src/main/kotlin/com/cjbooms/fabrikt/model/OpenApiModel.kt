@@ -121,6 +121,7 @@ class OpenApiSchema(
 class OpenApi3Document(
     internal val kaizen: OpenApi3,
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
+    private val includePolymorphicSubtypes: (Set<String>) -> Set<String> = { it },
 ) {
     private val compositionRelationships by lazy { SchemaCompositionRelationships(schemas.values) }
 
@@ -143,6 +144,8 @@ class OpenApi3Document(
 
     /** Named components included directly or transitively through allOf, excluding the schema itself. */
     fun allOfComponentSchemas(schema: OpenApiSchema): List<OpenApiSchema> = compositionRelationships.allOfComponents(schema)
+
+    fun schemaNamesWithPolymorphicSubtypes(schemaNames: Set<String>): Set<String> = includePolymorphicSubtypes(schemaNames)
 
     override fun equals(other: Any?): Boolean = other is OpenApi3Document && kaizen == other.kaizen
 
