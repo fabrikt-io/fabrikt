@@ -15,7 +15,7 @@ interface ValidationAnnotations {
 
     fun max(value: Long): AnnotationSpec?
 
-    fun pattern(regexp: String): AnnotationSpec?
+    fun pattern(pattern: String): AnnotationSpec?
 
     fun regexPattern(pattern: String): AnnotationSpec?
 
@@ -95,10 +95,10 @@ abstract class PackageValidationAnnotations(
         return specBuilder.build()
     }
 
-    override fun pattern(regexp: String) =
+    override fun pattern(pattern: String) =
         AnnotationSpec
             .builder(patternClass)
-            .addMember("regexp = %S", regexp)
+            .addMember("regexp = %S", matchAnywhere(pattern))
             .build()
 
     override fun regexPattern(pattern: String) =
@@ -149,6 +149,14 @@ abstract class PackageValidationAnnotations(
         }
 }
 
+/**
+ * An OpenAPI `pattern` is not implicitly anchored: a value is valid if the expression matches anywhere in it.
+ * `@Pattern` is checked with `Matcher.matches()`, which needs the whole value to match, so allow any text around it.
+ * `[\s\S]` keeps the meaning of `.` inside the pattern, and explicit `^`/`$` anchors still apply to the whole value.
+ * Known limit: Java's `$` also matches before a final line terminator, so `^a$` accepts `a\n`.
+ */
+private fun matchAnywhere(pattern: String) = "[\\s\\S]*(?:$pattern)[\\s\\S]*"
+
 object JavaxValidationAnnotations : PackageValidationAnnotations("javax.validation")
 
 object JakartaAnnotations : PackageValidationAnnotations("jakarta.validation")
@@ -169,7 +177,7 @@ object NoValidationAnnotations : ValidationAnnotations {
         max: Int?,
     ): AnnotationSpec? = null
 
-    override fun pattern(regexp: String): AnnotationSpec? = null
+    override fun pattern(pattern: String): AnnotationSpec? = null
 
     override fun regexPattern(pattern: String): AnnotationSpec? = null
 

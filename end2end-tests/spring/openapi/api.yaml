@@ -32,6 +32,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ParameterEcho"
+  /patterns:
+    get:
+      operationId: getPatterns
+      summary: Accepts string parameters constrained by unanchored and anchored patterns
+      parameters:
+        - name: unanchored
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '[a-zA-Z]'
+        - name: anchored
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]+$'
+      responses:
+        "204":
+          description: No Content
 components:
   schemas:
     ParameterEcho:

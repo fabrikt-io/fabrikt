@@ -32,6 +32,7 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.bundles.junit)
     testImplementation(libs.assertj.core)
+    testImplementation(libs.hibernate.validator)
     testImplementation("org.springframework.boot:spring-boot-starter-test:$springBootVersion")
 }
 

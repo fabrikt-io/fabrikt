@@ -33,7 +33,7 @@ public interface ExamplePath1Controller {
         method = [RequestMethod.GET],
     )
     public fun `get`(
-        @Pattern(regexp = "[a-zA-Z]") @RequestParam(value = "user_name", required = true) userName: String,
+        @Pattern(regexp = "[\\s\\S]*(?:[a-zA-Z])[\\s\\S]*") @RequestParam(value = "user_name", required = true) userName: String,
         @RequestParam(value = "friends", required = true) friends: List<String>,
         @Min(0) @Max(100) @RequestParam(value = "age", required = false) age: Int?,
         @Size(min = 20, max = 200) @RequestParam(value = "bio", required = false) bio: String?,
