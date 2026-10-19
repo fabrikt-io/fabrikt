@@ -335,7 +335,7 @@ enum class InstantLibrary(
 enum class ExternalReferencesResolutionMode(
     val description: String,
 ) {
-    TARGETED("Generate models only for directly referenced schemas in external API files."),
+    TARGETED("Generate referenced schemas and their polymorphic subtypes from external API files."),
     AGGRESSIVE("Referencing any schema in an external API file triggers generation of every external schema in that file."),
     ;
 

@@ -44,6 +44,8 @@ OpenAPI Schema → Type Resolution → Code Generation → Output
 
 This query records schema inclusion only. It does not establish Kotlin property compatibility or cause models to implement interfaces; those generation decisions must also account for property types, nullability, and request/response filtering.
 
+Targeted external model selection asks `OpenApi3Document.schemaNamesWithPolymorphicSubtypes()` for the named descendants required by a discriminator-bearing schema. The facade delegates this query to `SourceSchemaPolymorphism`, which follows the source model's resolved reference identities and `allOf` relationships, including aliases and cycles. The generator receives only component names; parser representations remain behind the facade.
+
 ### Annotations
 - **`JacksonAnnotations.kt`** / **`JacksonMetadata.kt`**
   - `@JsonProperty`, `@JsonSubTypes`, etc.

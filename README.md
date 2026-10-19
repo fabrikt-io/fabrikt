@@ -290,7 +290,7 @@ Usage: <main class> [options]
 |                                         |   `MAVEN_NOTATION` - Dependencies file is generated with maven notation (expected to be placed inside <dependencies></dependencies> tags in pom.xml) |
 |   `--external-ref-resolution`           | Specify to which degree referenced schemas from external files are included in model generation. Default: TARGETED |
 |                                         | CHOOSE ONE OF: |
-|                                         |   `TARGETED` - Generate models only for directly referenced schemas in external API files. |
+|                                         |   `TARGETED` - Generate referenced schemas and their polymorphic subtypes from external API files. |
 |                                         |   `AGGRESSIVE` - Referencing any schema in an external API file triggers generation of every external schema in that file. |
 |   `--http-client-opts`                  | Select the options for the http client code that you want to be generated. |
 |                                         | CHOOSE ANY OF: |
