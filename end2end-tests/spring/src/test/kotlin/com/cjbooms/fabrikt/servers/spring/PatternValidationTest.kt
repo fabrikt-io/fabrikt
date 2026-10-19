@@ -30,11 +30,17 @@ class PatternValidationTest {
             override fun getPatterns(
                 unanchored: String,
                 anchored: String,
+                literal: String,
             ): ResponseEntity<Unit> = ResponseEntity.noContent().build()
         }
 
     private val getPatterns =
-        PatternsController::class.java.getMethod("getPatterns", String::class.java, String::class.java)
+        PatternsController::class.java.getMethod(
+            "getPatterns",
+            String::class.java,
+            String::class.java,
+            String::class.java,
+        )
 
     @BeforeAll
     fun openValidator() {
@@ -76,20 +82,43 @@ class PatternValidationTest {
         assertThat(propertyViolations(anchored = value)).containsExactly("anchored")
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = ["123\n", "123\r\n"])
+    fun `anchored pattern rejects a trailing line terminator`(value: String) {
+        assertThat(parameterViolations(anchored = value)).containsExactly("anchored")
+        assertThat(propertyViolations(anchored = value)).containsExactly("anchored")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["\$1\$", "\$123\$"])
+    fun `escaped and bracketed dollar signs match a literal dollar`(value: String) {
+        assertThat(parameterViolations(literal = value)).isEmpty()
+        assertThat(propertyViolations(literal = value)).isEmpty()
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["123", "\$123", "123\$", "\$123\$\n"])
+    fun `escaped and bracketed dollar signs reject a value without them`(value: String) {
+        assertThat(parameterViolations(literal = value)).containsExactly("literal")
+        assertThat(propertyViolations(literal = value)).containsExactly("literal")
+    }
+
     private fun parameterViolations(
         unanchored: String = "A",
         anchored: String = "1",
+        literal: String = "\$1\$",
     ): List<String> =
         factory.validator.forExecutables()
-            .validateParameters(controller, getPatterns, arrayOf(unanchored, anchored))
+            .validateParameters(controller, getPatterns, arrayOf(unanchored, anchored, literal))
             .map { it.leafName() }
 
     private fun propertyViolations(
         unanchored: String = "A",
         anchored: String = "1",
+        literal: String = "\$1\$",
     ): List<String> =
         factory.validator
-            .validate(PatternValues(unanchored = unanchored, anchored = anchored))
+            .validate(PatternValues(unanchored = unanchored, anchored = anchored, literal = literal))
             .map { it.leafName() }
 
     private fun ConstraintViolation<*>.leafName(): String = propertyPath.last().name

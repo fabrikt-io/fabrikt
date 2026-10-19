@@ -49,6 +49,12 @@ paths:
           schema:
             type: string
             pattern: '^[0-9]+$'
+        - name: literal
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\$[0-9]+[$]$'
       responses:
         "204":
           description: No Content
@@ -65,7 +71,7 @@ components:
           type: string
     PatternValues:
       type: object
-      required: [unanchored, anchored]
+      required: [unanchored, anchored, literal]
       properties:
         unanchored:
           type: string
@@ -73,3 +79,6 @@ components:
         anchored:
           type: string
           pattern: '^[0-9]+$'
+        literal:
+          type: string
+          pattern: '^\$[0-9]+[$]$'

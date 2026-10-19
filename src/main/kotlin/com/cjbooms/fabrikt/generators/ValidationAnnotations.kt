@@ -153,9 +153,15 @@ abstract class PackageValidationAnnotations(
  * An OpenAPI `pattern` is not implicitly anchored: a value is valid if the expression matches anywhere in it.
  * `@Pattern` is checked with `Matcher.matches()`, which needs the whole value to match, so allow any text around it.
  * `[\s\S]` keeps the meaning of `.` inside the pattern, and explicit `^`/`$` anchors still apply to the whole value.
- * Known limit: Java's `$` also matches before a final line terminator, so `^a$` accepts `a\n`.
+ * An ECMA-262 `$` is the end of input, Java's `\z`; Java's `$` also matches before a final line terminator.
+ * Escapes and character classes are copied unchanged, so an escaped or bracketed dollar sign stays literal.
  */
-private fun matchAnywhere(pattern: String) = "[\\s\\S]*(?:$pattern)[\\s\\S]*"
+private fun matchAnywhere(pattern: String): String {
+    val strict = escapeClassOrEndAnchor.replace(pattern) { if (it.value == "$") "\\z" else it.value }
+    return "[\\s\\S]*(?:$strict)[\\s\\S]*"
+}
+
+private val escapeClassOrEndAnchor = Regex("""\\.|\[(?:\\.|[^\\\]])*]|\$""")
 
 object JavaxValidationAnnotations : PackageValidationAnnotations("javax.validation")
 
