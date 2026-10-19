@@ -9,6 +9,7 @@ import org.springframework.web.bind.`annotation`.RequestMethod
 import org.springframework.web.bind.`annotation`.RequestParam
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
+import javax.validation.constraints.Pattern
 import javax.validation.constraints.Size
 import kotlin.Int
 import kotlin.String
@@ -32,7 +33,7 @@ public interface ExamplePath1Controller {
         method = [RequestMethod.GET],
     )
     public fun `get`(
-        @RequestParam(value = "user_name", required = true) userName: String,
+        @Pattern(regexp = "[a-zA-Z]") @RequestParam(value = "user_name", required = true) userName: String,
         @RequestParam(value = "friends", required = true) friends: List<String>,
         @Min(0) @Max(100) @RequestParam(value = "age", required = false) age: Int?,
         @Size(min = 20, max = 200) @RequestParam(value = "bio", required = false) bio: String?,

@@ -15,6 +15,8 @@ interface ValidationAnnotations {
 
     fun max(value: Long): AnnotationSpec?
 
+    fun pattern(regexp: String): AnnotationSpec?
+
     fun regexPattern(pattern: String): AnnotationSpec?
 
     fun lengthRestriction(
@@ -93,6 +95,12 @@ abstract class PackageValidationAnnotations(
         return specBuilder.build()
     }
 
+    override fun pattern(regexp: String) =
+        AnnotationSpec
+            .builder(patternClass)
+            .addMember("regexp = %S", regexp)
+            .build()
+
     override fun regexPattern(pattern: String) =
         AnnotationSpec
             .builder(patternClass)
@@ -160,6 +168,8 @@ object NoValidationAnnotations : ValidationAnnotations {
         min: Int?,
         max: Int?,
     ): AnnotationSpec? = null
+
+    override fun pattern(regexp: String): AnnotationSpec? = null
 
     override fun regexPattern(pattern: String): AnnotationSpec? = null
 

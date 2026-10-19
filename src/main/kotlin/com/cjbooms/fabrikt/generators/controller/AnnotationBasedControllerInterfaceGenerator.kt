@@ -72,6 +72,9 @@ abstract class AnnotationBasedControllerInterfaceGenerator(
                 (validationAnnotations.size(parameter.minLength?.toInt(), parameter.maxLength?.toInt())),
             )
         }
+        if (parameter.typeInfo == KotlinTypeInfo.Text && parameter.pattern != null) {
+            this.maybeAddAnnotation(validationAnnotations.pattern(parameter.pattern))
+        }
         if (parameter.typeInfo.isComplexType && !parameter.typeInfo.isContainer) {
             this.maybeAddAnnotation(validationAnnotations.parameterValid())
         }

@@ -405,6 +405,7 @@ object GeneratorUtils {
                         typeInfo = p.typeInfo,
                         minimum = p.minimum,
                         maximum = p.maximum,
+                        pattern = p.pattern,
                         explode = p.explode,
                         defaultValue = p.defaultValue,
                         isDeprecated = p.isDeprecated,
