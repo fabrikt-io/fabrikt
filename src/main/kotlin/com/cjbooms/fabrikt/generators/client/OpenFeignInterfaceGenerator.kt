@@ -17,6 +17,8 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addSuspendModi
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.hasMultipartOperations
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.jsonMultipartContentType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.modelType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.optionallyParameterizeWithResponseEntity
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.responseMediaTypes
@@ -28,6 +30,7 @@ import com.cjbooms.fabrikt.generators.client.metadata.OpenFeignImports
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
 import com.cjbooms.fabrikt.model.CookieParam
+import com.cjbooms.fabrikt.model.Destinations
 import com.cjbooms.fabrikt.model.GeneratedFile
 import com.cjbooms.fabrikt.model.HeaderParam
 import com.cjbooms.fabrikt.model.IncomingParameter
@@ -37,9 +40,12 @@ import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
+import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.GeneratedAnnotations.addGeneratedAnnotations
 import com.cjbooms.fabrikt.util.requestOperations
 import com.cjbooms.fabrikt.util.toUpperCase
+import com.github.javaparser.utils.CodeGenerationUtils
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -159,7 +165,19 @@ class OpenFeignInterfaceGenerator(
     }
 
     override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> =
-        MultipartClientLibraryFiles.feign(packages, api)
+        if (api.hasMultipartOperations()) {
+            listOf(
+                SimpleFile(
+                    Destinations.MAIN_KT_SOURCE
+                        .resolve(CodeGenerationUtils.packageToPath(packages.base))
+                        .resolve("client")
+                        .resolve("FeignMultipartEncoder.kt"),
+                    OpenFeignClientLibraryFiles.multipartEncoder(packages).addGeneratedAnnotations().toString(),
+                ),
+            )
+        } else {
+            emptyList()
+        }
 
     private fun buildFunctions(
         operation: OpenApiOperation,

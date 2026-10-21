@@ -7,6 +7,7 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getPrimaryContentMediaTypeKey
 import com.cjbooms.fabrikt.generators.GeneratorUtils.getSuccessResponseSchemasByMediaType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasAnySuccessResponseSchemas
+import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipartRequestBody
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipleContentMediaTypes
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasMultipleSuccessResponseSchemas
 import com.cjbooms.fabrikt.generators.GeneratorUtils.hasOnlyJsonSuccessResponses
@@ -31,6 +32,7 @@ import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.groupByPathSegment
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.routeToPathsByFirstTag
 import com.cjbooms.fabrikt.util.capitalized
+import com.cjbooms.fabrikt.util.requestOperations
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
@@ -58,6 +60,25 @@ object ClientGeneratorUtils {
         } else {
             openApi3.groupByPathSegment()
         }
+
+    fun SourceApi.hasMultipartOperations(): Boolean =
+        openApi3.paths.values.any { path -> requestOperations(path).any { (_, operation) -> operation.hasMultipartRequestBody() } }
+
+    internal fun OpenApiOperation.jsonMultipartContentType(parameter: MultipartParameter): String {
+        val declared =
+            requestBody.contentMediaTypes.entries
+                .firstOrNull { it.key.startsWith("multipart/form-data") }
+                ?.value
+                ?.encodingContentType(parameter.partName)
+        if (declared != null && declared != "application/json") {
+            logger.warning(
+                "Multipart part '${parameter.partName}' declares unsupported content type '$declared'; " +
+                    "using application/json with the configured JSON serializer. " +
+                    "Set encoding.${parameter.partName}.contentType to application/json to match.",
+            )
+        }
+        return "application/json"
+    }
 
     /**
      * Gives the Kotlin return type for an API call based on the Content-Types specified in the OpenApiOperation.

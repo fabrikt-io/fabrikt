@@ -15,6 +15,8 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addSuspendModi
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.hasMultipartOperations
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.jsonMultipartContentType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.modelType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.optionallyParameterizeWithResponseEntity
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.responseMediaTypes
@@ -34,8 +36,11 @@ import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
+import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.GeneratedAnnotations.addGeneratedAnnotations
 import com.cjbooms.fabrikt.util.requestOperations
+import com.github.javaparser.utils.CodeGenerationUtils
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -372,5 +377,17 @@ class SpringHttpInterfaceGenerator(
     }
 
     override fun generateLibrary(options: Set<ClientCodeGenOptionType>): Collection<GeneratedFile> =
-        MultipartClientLibraryFiles.spring(packages, api, srcPath)
+        if (api.hasMultipartOperations()) {
+            listOf(
+                SimpleFile(
+                    srcPath
+                        .resolve(CodeGenerationUtils.packageToPath(packages.base))
+                        .resolve("client")
+                        .resolve("JsonPart.kt"),
+                    SpringHttpInterfaceClientLibraryFiles.jsonPart(packages).addGeneratedAnnotations().toString(),
+                ),
+            )
+        } else {
+            emptyList()
+        }
 }

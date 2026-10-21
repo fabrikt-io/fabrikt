@@ -18,6 +18,7 @@ import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.addIncomingPar
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.deriveClientParameters
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.getReturnType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
+import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.jsonMultipartContentType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.modelType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.responseMediaTypes
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.simpleClientName
