@@ -44,6 +44,7 @@ class ModelGeneratorTest {
     private fun testCases(): Stream<String> =
         Stream.of(
             "allOfParentOrder",
+            "redundantHierarchyUnion",
             "sharedCompositionContracts",
             "sharedCompositionUnions",
             "sharedCompositionExternal",

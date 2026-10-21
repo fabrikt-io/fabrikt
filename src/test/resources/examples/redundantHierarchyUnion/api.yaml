@@ -1,0 +1,76 @@
+openapi: 3.0.3
+info:
+  title: Repeated discriminator hierarchy
+  version: '1'
+paths: {}
+components:
+  schemas:
+    Base:
+      type: object
+      required: [kind, id]
+      properties:
+        kind:
+          type: string
+        id:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          nullable: true
+      discriminator:
+        propertyName: kind
+        mapping:
+          first: '#/components/schemas/First'
+          second: '#/components/schemas/Second'
+    First:
+      allOf:
+        - $ref: '#/components/schemas/Base'
+        - type: object
+          properties:
+            enabled:
+              type: boolean
+              nullable: true
+    Second:
+      allOf:
+        - $ref: '#/components/schemas/Base'
+        - type: object
+          properties:
+            enabled:
+              type: boolean
+              nullable: true
+    NamedUnion:
+      oneOf:
+        - $ref: '#/components/schemas/Base'
+        - $ref: '#/components/schemas/First'
+        - $ref: '#/components/schemas/Second'
+    Wrapper:
+      type: object
+      properties:
+        baseFirst:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/Base'
+            - $ref: '#/components/schemas/First'
+            - $ref: '#/components/schemas/Second'
+        baseMiddle:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/First'
+            - $ref: '#/components/schemas/Base'
+            - $ref: '#/components/schemas/Second'
+        baseLast:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/First'
+            - $ref: '#/components/schemas/Second'
+            - $ref: '#/components/schemas/Base'
+        values:
+          type: array
+          items:
+            nullable: true
+            oneOf:
+              - $ref: '#/components/schemas/Base'
+              - $ref: '#/components/schemas/First'
+              - $ref: '#/components/schemas/Second'
+        named:
+          $ref: '#/components/schemas/NamedUnion'

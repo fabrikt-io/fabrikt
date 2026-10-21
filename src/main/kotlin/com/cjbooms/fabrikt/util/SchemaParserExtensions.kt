@@ -434,11 +434,14 @@ object SchemaParserExtensions {
     fun Schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType(): Boolean = commonAllOfSuperType() != null
 
     private fun Schema.commonAllOfSuperType(): Schema? =
-        oneOfSchemas.firstOrNull()?.allOfSchemas?.firstOrNull { candidate ->
-            candidate.hasDiscriminator() &&
-                oneOfSchemas.all { member ->
-                    member.allOfSchemas.any { it.jsonReference == candidate.jsonReference }
-                }
+        oneOfSchemas.firstOrNull()?.let { first ->
+            (listOf(first) + first.allOfSchemas).firstOrNull { candidate ->
+                candidate.hasDiscriminator() &&
+                    oneOfSchemas.all { member ->
+                        member.jsonReference == candidate.jsonReference ||
+                            member.allOfSchemas.any { it.jsonReference == candidate.jsonReference }
+                    }
+            }
         }
 
     fun Schema.isInlinedOneOfSuperInterface() = isOneOfSuperInterface() && isInlinedPropertySchema()
