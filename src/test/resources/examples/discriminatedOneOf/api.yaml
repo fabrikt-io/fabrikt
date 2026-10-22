@@ -489,6 +489,27 @@ components:
           properties:
             extraTwo:
               type: string
+
+    # Same shape as ErrorWrapper above, but the inline oneOf carries a discriminator. The branches
+    # are allOf-composed (they inherit `errorType` from BaseError and declare no `properties`
+    # directly), so safeType() is null and the property classifies as a plain Field rather than
+    # OneOfInlinedField. Regression test: the property type must resolve to the enclosing-schema
+    # prefixed name (ErrorWrapperDiscriminatedError) that ModelGenerator emits for the sealed
+    # interface, not an unqualified, undeclared `Error`.
+    ErrorWrapperDiscriminated:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          discriminator:
+            propertyName: errorType
+            mapping:
+              VALIDATION: '#/components/schemas/ValidationErr'
+              SERVER: '#/components/schemas/ServerErr'
+          oneOf:
+            - $ref: '#/components/schemas/ValidationErr'
+            - $ref: '#/components/schemas/ServerErr'
   responses:
     NarrowedDiscriminatorResponse:
       content:

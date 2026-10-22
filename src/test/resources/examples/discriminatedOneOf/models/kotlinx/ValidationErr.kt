@@ -5,6 +5,7 @@ import kotlin.String
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@SerialName("VALIDATION")
 @Serializable
 public data class ValidationErr(
   @SerialName("message")
@@ -16,4 +17,5 @@ public data class ValidationErr(
   @SerialName("fieldName")
   @get:NotNull
   public val fieldName: String,
-) : ErrorWrapperError
+) : ErrorWrapperError,
+    ErrorWrapperDiscriminatedError

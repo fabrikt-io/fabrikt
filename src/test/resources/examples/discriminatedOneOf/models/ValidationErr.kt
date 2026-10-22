@@ -9,12 +9,13 @@ public data class ValidationErr(
   @get:JsonProperty("message")
   @get:NotNull
   public val message: String,
-  @param:JsonProperty("errorType")
-  @get:JsonProperty("errorType")
-  @get:NotNull
-  public val errorType: BaseErrorErrorType,
   @param:JsonProperty("fieldName")
   @get:JsonProperty("fieldName")
   @get:NotNull
   public val fieldName: String,
-) : ErrorWrapperError
+  @param:JsonProperty("errorType")
+  @get:JsonProperty("errorType")
+  @get:NotNull
+  public val errorType: BaseErrorErrorType = BaseErrorErrorType.VALIDATION,
+) : ErrorWrapperError,
+    ErrorWrapperDiscriminatedError

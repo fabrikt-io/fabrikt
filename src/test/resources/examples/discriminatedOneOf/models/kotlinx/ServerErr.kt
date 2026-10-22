@@ -5,6 +5,7 @@ import kotlin.String
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@SerialName("SERVER")
 @Serializable
 public data class ServerErr(
   @SerialName("message")
@@ -16,4 +17,5 @@ public data class ServerErr(
   @SerialName("stackTrace")
   @get:NotNull
   public val stackTrace: String,
-) : ErrorWrapperError
+) : ErrorWrapperError,
+    ErrorWrapperDiscriminatedError

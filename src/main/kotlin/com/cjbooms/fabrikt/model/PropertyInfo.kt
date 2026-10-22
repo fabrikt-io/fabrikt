@@ -312,7 +312,13 @@ sealed class PropertyInfo {
                                         enclosingSchema?.let {
                                             this.getKeyIfSingleDiscriminatorValue(api, property, it)
                                         },
-                                    enclosingSchema = if (property.value.isInlinedEnumDefinition()) this else null,
+                                    enclosingSchema =
+                                        when {
+                                            property.value.isInlinedEnumDefinition() -> this
+                                            property.value.isInlinedOneOfSuperInterface() ->
+                                                if (settings.markAsInherited) this else enclosingSchema
+                                            else -> null
+                                        },
                                     memberDiscriminatorValues =
                                         if (!isDiscriminatorProperty(api, property)) {
                                             memberSchema.oneOfDiscriminatorValues(api, property)
