@@ -336,7 +336,7 @@ object SchemaParserExtensions {
             discriminator!!
                 .mappingKeys(enclosingSchema)
                 .map {
-                    if (prop.value.isEnumDefinition()) {
+                    if ((prop.value.singleAggregatedEnumAliasSchema() ?: prop.value).isEnumDefinition()) {
                         it.key to PropertyInfo.DiscriminatorKey.EnumKey(it.key, it.value)
                     } else {
                         it.key to PropertyInfo.DiscriminatorKey.StringKey(it.key, it.value)

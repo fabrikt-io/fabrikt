@@ -64,7 +64,8 @@ components:
         - status
       properties:
         status:
-          $ref: '#/components/schemas/Status'
+          allOf:
+            - $ref: '#/components/schemas/Status'
     StateB:
       oneOf:
         - $ref: '#/components/schemas/StateB1'
