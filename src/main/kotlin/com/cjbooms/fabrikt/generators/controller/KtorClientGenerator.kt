@@ -155,9 +155,22 @@ class KtorClientGenerator(
                                         .beginControlFlow("return try")
                                         .addStatement(
                                             "val response = httpClient.%M(url) {",
-                                            MemberName("io.ktor.client.request", verb, isExtension = true),
+                                            MemberName(
+                                                "io.ktor.client.request",
+                                                if (verb ==
+                                                    "query"
+                                                ) {
+                                                    "request"
+                                                } else {
+                                                    verb
+                                                },
+                                                isExtension = true,
+                                            ),
                                         ).indent()
                                         .apply {
+                                            if (verb == "query") {
+                                                addStatement("method = %T(%S)", ClassName("io.ktor.http", "HttpMethod"), "QUERY")
+                                            }
                                             addStatement(
                                                 "%M(\"Accept\", \"application/json\")",
                                                 MemberName("io.ktor.client.request", "header"),

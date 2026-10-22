@@ -363,6 +363,7 @@ data class SimpleClientOperationStatement(
                 "POST" -> this.add("\n.post(multipartBody)")
                 "PATCH" -> this.add("\n.patch(multipartBody)")
                 "DELETE" -> this.add("\n.delete(multipartBody)")
+                "QUERY" -> this.add("\n.method(%S, multipartBody)", "QUERY")
                 else -> throw NotImplementedError("API operation $op is not supported for multipart")
             }
         } else {
@@ -377,6 +378,7 @@ data class SimpleClientOperationStatement(
                 "PUT" -> this.addRequestSerializerStatement("put")
                 "POST" -> this.addRequestSerializerStatement("post")
                 "PATCH" -> this.addRequestSerializerStatement("patch")
+                "QUERY" -> this.addRequestSerializerStatement("method", "QUERY")
                 "HEAD" -> this.add("\n.head()")
                 "GET" -> this.add("\n.get()")
                 "DELETE" ->
@@ -407,19 +409,23 @@ data class SimpleClientOperationStatement(
                 this.add("\nreturn request.execute(okHttpClient, objectMapper, jacksonTypeRef())\n")
         }
 
-    private fun CodeBlock.Builder.addRequestSerializerStatement(verb: String) {
+    private fun CodeBlock.Builder.addRequestSerializerStatement(
+        verb: String,
+        method: String? = null,
+    ) {
         val requestBody = operation.requestBody
         val toRequestBody = "toRequestBody".toClassName("okhttp3.RequestBody.Companion")
+        this.add("\n.%N(", verb)
+        if (method != null) this.add("%S, ", method)
         parameters.filterIsInstance<BodyParameter>().firstOrNull()?.let {
             this.add(
-                "\n.%N(objectMapper.writeValueAsString(%N).%T(%S.%T()))",
-                verb,
+                "objectMapper.writeValueAsString(%N).%T(%S.%T()))",
                 it.name,
                 toRequestBody,
                 requestBody.getPrimaryContentMediaType()?.key,
                 "toMediaType".toClassName("okhttp3.MediaType.Companion"),
             )
-        } ?: this.add("\n.%N(ByteArray(0).%T())", verb, toRequestBody)
+        } ?: this.add("ByteArray(0).%T())", toRequestBody)
     }
 
     private fun CodeBlock.Builder.addMultipartBodyStatement() {

@@ -33,6 +33,11 @@ abstract class AnnotationBasedControllerInterfaceGenerator(
         basePath: String,
     ): TypeSpec.Builder
 
+    protected open fun supportsOperation(
+        verb: String,
+        path: String,
+    ): Boolean = true
+
     fun buildController(
         resourceName: String,
         paths: Collection<OpenApiPath>,
@@ -48,6 +53,7 @@ abstract class AnnotationBasedControllerInterfaceGenerator(
                 api
                     .requestOperations(path)
                     .filter { it.first.toUpperCase() != "HEAD" }
+                    .filter { supportsOperation(it.first, path.pathString) }
                     .map { op ->
                         buildFunction(
                             path,

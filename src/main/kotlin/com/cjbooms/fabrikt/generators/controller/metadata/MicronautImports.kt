@@ -46,6 +46,7 @@ object MicronautImports {
         val DELETE = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "Delete")
         val OPTIONS = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "Options")
         val HEAD = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "Head")
+        val CUSTOM = ClassName(Packages.MICRONAUT_HTTP_ANNOTATION, "CustomHttpMethod")
 
         fun byName(name: String) =
             when (name.toUpperCase()) {
@@ -56,6 +57,7 @@ object MicronautImports {
                 "DELETE" -> DELETE
                 "OPTIONS" -> OPTIONS
                 "HEAD" -> HEAD
+                "QUERY" -> CUSTOM
                 else -> throw IllegalArgumentException(name)
             }
     }
