@@ -106,3 +106,32 @@ components:
           properties:
             some_int:
               type: integer
+
+    Pet:
+      oneOf:
+        - $ref: '#/components/schemas/Dog'
+        - $ref: '#/components/schemas/Cat'
+      discriminator:
+        propertyName: petType
+
+    Dog:
+      type: object
+      required:
+        - petType
+        - bark
+      properties:
+        petType:
+          type: string
+        bark:
+          type: string
+
+    Cat:
+      type: object
+      required:
+        - petType
+        - meow
+      properties:
+        petType:
+          type: string
+        meow:
+          type: string
