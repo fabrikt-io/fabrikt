@@ -10,6 +10,7 @@ import com.squareup.kotlinpoet.TypeSpec
  */
 object MicronautSerdeAnnotations : SerializationAnnotations by JacksonAnnotations {
     private val SERDEABLE = ClassName("io.micronaut.serde.annotation", "Serdeable")
+    override val supportsConstantDiscriminatorProperty = false
 
     override fun addClassAnnotation(typeSpecBuilder: TypeSpec.Builder) = typeSpecBuilder.addAnnotation(SERDEABLE)
 

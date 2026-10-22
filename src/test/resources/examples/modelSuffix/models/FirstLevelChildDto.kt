@@ -25,10 +25,14 @@ public sealed class FirstLevelChildDto(
   override val rootField2: Boolean? = null,
   public open val firstLevelField1: String,
   public open val firstLevelField2: Int? = null,
-  @get:JsonProperty("rootDiscriminator")
-  @get:NotNull
-  @param:JsonProperty("rootDiscriminator")
-  override val rootDiscriminator: RootDiscriminatorDto = RootDiscriminatorDto.FIRST_LEVEL_CHILD,
 ) : RootTypeDto(rootField1, rootField2) {
+  @get:JsonProperty(
+    value = "rootDiscriminator",
+    access = JsonProperty.Access.READ_ONLY,
+  )
+  @get:NotNull
+  override val rootDiscriminator: RootDiscriminatorDto
+    get() = RootDiscriminatorDto.FIRST_LEVEL_CHILD
+
   public abstract val firstLevelDiscriminator: FirstLevelDiscriminatorDto
 }

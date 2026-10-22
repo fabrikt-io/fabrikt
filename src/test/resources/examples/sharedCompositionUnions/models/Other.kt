@@ -13,9 +13,13 @@ public data class Other(
   @get:JsonProperty("message")
   @get:NotNull
   override val message: String,
-  @get:JsonProperty("kind")
-  @get:NotNull
-  @param:JsonProperty("kind")
-  override val kind: OtherKind = OtherKind.OTHER,
 ) : Mixed,
-    OtherComposite
+    OtherComposite {
+  @get:JsonProperty(
+    value = "kind",
+    access = JsonProperty.Access.READ_ONLY,
+  )
+  @get:NotNull
+  override val kind: OtherKind
+    get() = OtherKind.OTHER
+}

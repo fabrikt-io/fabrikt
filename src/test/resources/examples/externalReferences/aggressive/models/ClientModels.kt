@@ -175,21 +175,29 @@ public data class OneOfOne(
     @param:JsonProperty("oneOfOne")
     @get:JsonProperty("oneOfOne")
     public val oneOfOne: String? = null,
-    @get:JsonProperty("discriminator")
+) : ParentOneOf() {
+    @get:JsonProperty(
+        value = "discriminator",
+        access = JsonProperty.Access.READ_ONLY,
+    )
     @get:NotNull
-    @param:JsonProperty("discriminator")
-    override val discriminator: String = "OneOfOne",
-) : ParentOneOf()
+    override val discriminator: String
+        get() = "OneOfOne"
+}
 
 public data class OneOfTwo(
     @param:JsonProperty("oneOfTwo")
     @get:JsonProperty("oneOfTwo")
     public val oneOfTwo: String? = null,
-    @get:JsonProperty("discriminator")
+) : ParentOneOf() {
+    @get:JsonProperty(
+        value = "discriminator",
+        access = JsonProperty.Access.READ_ONLY,
+    )
     @get:NotNull
-    @param:JsonProperty("discriminator")
-    override val discriminator: String = "OneOfTwo",
-) : ParentOneOf()
+    override val discriminator: String
+        get() = "OneOfTwo"
+}
 
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,

@@ -8,8 +8,12 @@ public data class ConcreteImplOne(
   @param:JsonProperty("some_prop")
   @get:JsonProperty("some_prop")
   public val someProp: String? = null,
-  @get:JsonProperty("some_enum")
+) : PolymorphicEnumDiscriminator() {
+  @get:JsonProperty(
+    value = "some_enum",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("some_enum")
-  override val someEnum: EnumDiscriminator = EnumDiscriminator.OBJ_ONE_ONLY,
-) : PolymorphicEnumDiscriminator()
+  override val someEnum: EnumDiscriminator
+    get() = EnumDiscriminator.OBJ_ONE_ONLY
+}

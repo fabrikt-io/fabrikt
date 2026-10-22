@@ -2,6 +2,14 @@
 
 This guide covers breaking changes between Fabrikt major versions. Each section describes what changed and how to keep the previous behaviour.
 
+## v28 → v29
+
+### 1. Single-value discriminators are constant properties
+
+Variants with exactly one discriminator mapping key and at least one other property no longer accept the discriminator as a primary constructor parameter. Jackson models now expose the discriminator as a read-only body property with a constant getter.
+
+Remove discriminator arguments from primary constructor invocations in your code. Discriminator-only variants, kotlinx models, Micronaut models, and multi-key variants remain unchanged.
+
 ## v27 → v28
 
 ### 1. Jackson 3 is the default serialization library

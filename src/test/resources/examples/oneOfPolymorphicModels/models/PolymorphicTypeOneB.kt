@@ -9,9 +9,13 @@ public data class PolymorphicTypeOneB(
   @param:JsonProperty("whateverB")
   @get:JsonProperty("whateverB")
   public val whateverB: Int? = null,
-  @get:JsonProperty("shared")
-  @get:NotNull
-  @param:JsonProperty("shared")
-  override val shared: String = "PolymorphicTypeOneB",
 ) : PolymorphicSuperTypeOne(),
-    ContainsOneOfPolymorphicTypesManyOneOf
+    ContainsOneOfPolymorphicTypesManyOneOf {
+  @get:JsonProperty(
+    value = "shared",
+    access = JsonProperty.Access.READ_ONLY,
+  )
+  @get:NotNull
+  override val shared: String
+    get() = "PolymorphicTypeOneB"
+}

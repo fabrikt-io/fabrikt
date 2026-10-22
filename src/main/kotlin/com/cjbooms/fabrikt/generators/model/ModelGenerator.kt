@@ -11,6 +11,7 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.toKDoc
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toObjectTypeSpec
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.generators.PropertyUtils.addToClass
+import com.cjbooms.fabrikt.generators.PropertyUtils.hasConstantDiscriminator
 import com.cjbooms.fabrikt.generators.PropertyUtils.isNullable
 import com.cjbooms.fabrikt.generators.TypeFactory.createList
 import com.cjbooms.fabrikt.generators.TypeFactory.createMapOfMapsStringToStringAny
@@ -1291,6 +1292,31 @@ class ModelGenerator(
         // so the container element annotation must be suppressed there too.
         val propertyValidationAnnotations =
             validationAnnotations.takeIf { classType.polymorphyType != ClassSettings.PolymorphyType.SUPER }
+        val isMicronaut =
+            options.any {
+                it in
+                    setOf(
+                        ModelCodeGenOptionType.MICRONAUT_SERDEABLE,
+                        ModelCodeGenOptionType.MICRONAUT_INTROSPECTION,
+                        ModelCodeGenOptionType.MICRONAUT_REFLECTION,
+                    )
+            }
+        val constantDiscriminatorAllowed =
+            !isMicronaut &&
+                this.any {
+                    it !is PropertyInfo.AdditionalProperties &&
+                        !it.hasConstantDiscriminator(
+                            toModelType(
+                                packages.base,
+                                it.typeInfo,
+                                it.isNullable(classType),
+                                propertyValidationAnnotations,
+                            ),
+                            schemaName,
+                            classType,
+                            serializationAnnotations,
+                        )
+                }
         this.forEach {
             it.addToClass(
                 schemaName = schemaName,
@@ -1312,7 +1338,25 @@ class ModelGenerator(
                 validationAnnotations = validationAnnotations,
                 serializationAnnotations = serializationAnnotations,
                 jacksonNullabilityMode = jacksonNullabilityMode,
+                constantDiscriminatorAllowed = constantDiscriminatorAllowed,
             )
+        }
+        val hasConstantProperty =
+            this.any {
+                it.hasConstantDiscriminator(
+                    toModelType(
+                        packages.base,
+                        it.typeInfo,
+                        it.isNullable(classType),
+                        propertyValidationAnnotations,
+                    ),
+                    schemaName,
+                    classType,
+                    serializationAnnotations,
+                )
+            }
+        if (constantDiscriminatorAllowed && hasConstantProperty && constructorBuilder.parameters.isEmpty()) {
+            throw IllegalStateException("Constant discriminator emitted without constructor parameters for $schemaName")
         }
         if (constructorBuilder.parameters.isNotEmpty() && classBuilder.modifiers.isEmpty()) {
             classBuilder.addModifiers(

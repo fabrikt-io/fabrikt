@@ -11,6 +11,7 @@ import org.junit.jupiter.api.assertThrows
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import kotlin.reflect.full.primaryConstructor
 
 class SharedCompositionUnionsTest {
     private val mapper = jacksonObjectMapper()
@@ -55,9 +56,10 @@ class SharedCompositionUnionsTest {
     }
 
     @Test
-    fun `composed oneOf variant defaults discriminator in Kotlin constructor but requires it in JSON deserialization`() {
+    fun `composed oneOf variant exposes discriminator as constant property and requires it in JSON deserialization`() {
         val b = B(id = "b-1", label = "L")
         assertThat(b).isInstanceOf(AComposite::class.java)
+        assertThat(B::class.primaryConstructor!!.parameters.map { it.name }).doesNotContain("kind")
 
         val json = mapper.writeValueAsString(b)
         assertThat(json).contains(""""kind":"b"""")

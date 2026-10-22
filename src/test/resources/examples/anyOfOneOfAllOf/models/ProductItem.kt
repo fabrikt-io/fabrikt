@@ -13,8 +13,12 @@ public data class ProductItem(
   @get:JsonProperty("sku")
   @get:NotNull
   public val sku: String,
-  @param:JsonProperty("item_type")
-  @get:JsonProperty("item_type")
+) : ItemReference {
+  @get:JsonProperty(
+    value = "item_type",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  public val itemType: String = "PRODUCT",
-) : ItemReference
+  public val itemType: String
+    get() = "PRODUCT"
+}

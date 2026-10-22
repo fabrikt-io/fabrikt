@@ -15,8 +15,12 @@ public data class ComposedTaggedCombinedComposedTaggedA(
   @get:JsonProperty("a")
   @get:NotNull
   public val a: String,
-  @param:JsonProperty("kind")
-  @get:JsonProperty("kind")
+) : ComposedTaggedCombined {
+  @get:JsonProperty(
+    value = "kind",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  public val kind: ComposedTaggedAKind = ComposedTaggedAKind.A,
-) : ComposedTaggedCombined
+  public val kind: ComposedTaggedAKind
+    get() = ComposedTaggedAKind.A
+}

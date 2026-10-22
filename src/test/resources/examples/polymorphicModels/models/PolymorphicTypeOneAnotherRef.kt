@@ -22,9 +22,13 @@ public data class PolymorphicTypeOneAnotherRef(
   @param:JsonProperty("child_one_name")
   @get:JsonProperty("child_one_name")
   public val childOneName: String? = null,
-  @get:JsonProperty("generation")
-  @get:NotNull
-  @param:JsonProperty("generation")
-  override val generation: String = "PolymorphicTypeOne",
 ) : PolymorphicSuperType(firstName, lastName, pets),
-    PolymorphicType
+    PolymorphicType {
+  @get:JsonProperty(
+    value = "generation",
+    access = JsonProperty.Access.READ_ONLY,
+  )
+  @get:NotNull
+  override val generation: String
+    get() = "PolymorphicTypeOne"
+}

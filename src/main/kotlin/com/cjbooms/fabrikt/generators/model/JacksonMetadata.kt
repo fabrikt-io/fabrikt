@@ -84,6 +84,14 @@ object JacksonMetadata {
             .addMember("%S", name)
             .build()
 
+    fun jacksonReadOnlyPropertyAnnotation(name: String) =
+        AnnotationSpec
+            .builder(JSON_PROPERTY_CLASS)
+            .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
+            .addMember("value = %S", name)
+            .addMember("access = %T.Access.READ_ONLY", JSON_PROPERTY_CLASS)
+            .build()
+
     fun jacksonParameterAnnotation(
         name: String,
         required: Boolean = false,

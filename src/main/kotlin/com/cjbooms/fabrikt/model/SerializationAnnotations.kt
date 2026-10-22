@@ -12,6 +12,12 @@ sealed interface SerializationAnnotations {
     val supportsBackingPropertyForDiscriminator: Boolean
 
     /**
+     * Whether a polymorphic discriminator with exactly one known value may be emitted as a
+     * constant body property instead of a constructor parameter.
+     */
+    val supportsConstantDiscriminatorProperty: Boolean
+
+    /**
      * Whether properties of a polymorphic super type may have backing fields that subtypes
      * override and pass through the superclass constructor
      */
@@ -33,6 +39,11 @@ sealed interface SerializationAnnotations {
         propertySpecBuilder: PropertySpec.Builder,
         oasKey: String,
         kotlinTypeInfo: KotlinTypeInfo,
+    ): PropertySpec.Builder
+
+    fun addConstantDiscriminatorProperty(
+        propertySpecBuilder: PropertySpec.Builder,
+        oasKey: String,
     ): PropertySpec.Builder
 
     fun addParameter(

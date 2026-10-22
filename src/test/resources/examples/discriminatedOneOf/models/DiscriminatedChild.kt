@@ -9,8 +9,12 @@ public data class DiscriminatedChild(
   @get:JsonProperty("message")
   @get:NotNull
   override val message: String,
-  @get:JsonProperty("errorCode")
+) : DiscriminatedBase(message) {
+  @get:JsonProperty(
+    value = "errorCode",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("errorCode")
-  override val errorCode: String = "ERR_ONE",
-) : DiscriminatedBase(message)
+  override val errorCode: String
+    get() = "ERR_ONE"
+}

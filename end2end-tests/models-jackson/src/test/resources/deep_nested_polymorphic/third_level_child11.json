@@ -10,6 +10,6 @@
   },
   "creationDate" : 1,
   "secondLevelDiscriminator" : "thirdLevelChild1",
-  "rootDiscriminator" : "firstLevelChild",
-  "firstLevelDiscriminator" : "secondLevelChild1"
+  "firstLevelDiscriminator" : "secondLevelChild1",
+  "rootDiscriminator" : "firstLevelChild"
 }

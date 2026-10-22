@@ -12,11 +12,15 @@ public data class ChildTypeB(
   @get:JsonProperty("some_int")
   @get:NotNull
   public val someInt: Int,
+) : ParentSpec() {
   /**
    * Shows which child type is being returned
    */
-  @get:JsonProperty("type")
+  @get:JsonProperty(
+    value = "type",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("type")
-  override val type: ParentType = ParentType.CHILD_TYPE_B,
-) : ParentSpec()
+  override val type: ParentType
+    get() = ParentType.CHILD_TYPE_B
+}

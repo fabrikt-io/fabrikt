@@ -31,11 +31,14 @@ public sealed class SecondLevelChild1(
   @get:JsonProperty("firstLevelField2")
   override val firstLevelField2: Int? = null,
   public open val metadata: SecondLevelMetadata,
-  @get:JsonProperty("firstLevelDiscriminator")
-  @get:NotNull
-  @param:JsonProperty("firstLevelDiscriminator")
-  override val firstLevelDiscriminator:
-      FirstLevelDiscriminator = FirstLevelDiscriminator.SECOND_LEVEL_CHILD1,
 ) : FirstLevelChild(rootField1, rootField2, firstLevelField1, firstLevelField2) {
+  @get:JsonProperty(
+    value = "firstLevelDiscriminator",
+    access = JsonProperty.Access.READ_ONLY,
+  )
+  @get:NotNull
+  override val firstLevelDiscriminator: FirstLevelDiscriminator
+    get() = FirstLevelDiscriminator.SECOND_LEVEL_CHILD1
+
   public abstract val secondLevelDiscriminator: SecondLevelDiscriminator
 }

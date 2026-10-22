@@ -13,8 +13,12 @@ public data class OrderChild(
   @get:JsonProperty("id")
   @get:NotNull
   override val id: String,
-  @get:JsonProperty("kind")
+) : OrderX(id) {
+  @get:JsonProperty(
+    value = "kind",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("kind")
-  override val kind: String = "child",
-) : OrderX(id)
+  override val kind: String
+    get() = "child"
+}

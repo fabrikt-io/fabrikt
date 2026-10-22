@@ -16,9 +16,13 @@ public data class Cat(
   @get:NotNull
   @get:Size(min = 1)
   public val name: String,
-  @get:JsonProperty("kind")
-  @get:NotNull
-  @param:JsonProperty("kind")
-  override val kind: String = "cat",
 ) : Pet(id),
-    PetComposite
+    PetComposite {
+  @get:JsonProperty(
+    value = "kind",
+    access = JsonProperty.Access.READ_ONLY,
+  )
+  @get:NotNull
+  override val kind: String
+    get() = "cat"
+}

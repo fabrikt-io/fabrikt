@@ -14,6 +14,7 @@ import com.squareup.kotlinpoet.TypeSpec
 
 object JacksonAnnotations : SerializationAnnotations {
     override val supportsBackingPropertyForDiscriminator = true
+    override val supportsConstantDiscriminatorProperty = true
     override val supportsInheritedBackingProperties = true
     override val supportsAdditionalProperties = true
 
@@ -28,6 +29,11 @@ object JacksonAnnotations : SerializationAnnotations {
         oasKey: String,
         kotlinTypeInfo: KotlinTypeInfo,
     ): PropertySpec.Builder = propertySpecBuilder.addAnnotation(JacksonMetadata.jacksonPropertyAnnotation(oasKey))
+
+    override fun addConstantDiscriminatorProperty(
+        propertySpecBuilder: PropertySpec.Builder,
+        oasKey: String,
+    ): PropertySpec.Builder = propertySpecBuilder.addAnnotation(JacksonMetadata.jacksonReadOnlyPropertyAnnotation(oasKey))
 
     override fun addParameter(
         propertySpecBuilder: PropertySpec.Builder,

@@ -19,11 +19,15 @@ public data class C(
   @get:JsonProperty("count")
   @get:NotNull
   override val count: Int,
-  @param:JsonProperty("kind")
-  @get:JsonProperty("kind")
-  @get:NotNull
-  override val kind: CKind = CKind.C,
 ) : Mixed,
     Shared,
     AComposite,
-    CComposite
+    CComposite {
+  @get:JsonProperty(
+    value = "kind",
+    access = JsonProperty.Access.READ_ONLY,
+  )
+  @get:NotNull
+  override val kind: CKind
+    get() = CKind.C
+}

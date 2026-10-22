@@ -4,6 +4,7 @@ import com.cjbooms.fabrikt.models.jackson.Helpers.mapper
 import com.example.oneof.models.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import kotlin.reflect.full.primaryConstructor
 
 /**
  * Test for nested discriminated oneOf with Jackson serialization/deserialization.
@@ -32,7 +33,7 @@ class NestedOneOfTest {
 
     @Test
     fun `must serialize StateB1 - nested oneOf`() {
-        val obj = StateB1(mode = "mode1", status = Status.B1)
+        val obj = StateB1(mode = "mode1")
         val result = writer.writeValueAsString(obj)
         
         val expected = javaClass.getResource("/nested_oneof/state_b1.json")!!.readText()
@@ -44,7 +45,7 @@ class NestedOneOfTest {
         val jsonString = javaClass.getResource("/nested_oneof/state_b1.json")!!.readText()
         
         val result = objectMapper.readValue(jsonString, State::class.java)
-        assertThat(result).isEqualTo(StateB1(mode = "mode1", status = Status.B1))
+        assertThat(result).isEqualTo(StateB1(mode = "mode1"))
         assertThat(result).isInstanceOf(StateB::class.java)
     }
 
@@ -53,12 +54,12 @@ class NestedOneOfTest {
         val jsonString = javaClass.getResource("/nested_oneof/state_b1.json")!!.readText()
         
         val result = objectMapper.readValue(jsonString, StateB::class.java)
-        assertThat(result).isEqualTo(StateB1(mode = "mode1", status = Status.B1))
+        assertThat(result).isEqualTo(StateB1(mode = "mode1"))
     }
 
     @Test
     fun `must serialize StateB2 - nested oneOf`() {
-        val obj = StateB2(mode = "mode3", status = Status.B2)
+        val obj = StateB2(mode = "mode3")
         val result = writer.writeValueAsString(obj)
         
         val expected = javaClass.getResource("/nested_oneof/state_b2.json")!!.readText()
@@ -70,13 +71,13 @@ class NestedOneOfTest {
         val jsonString = javaClass.getResource("/nested_oneof/state_b2.json")!!.readText()
         
         val result = objectMapper.readValue(jsonString, State::class.java)
-        assertThat(result).isEqualTo(StateB2(mode = "mode3", status = Status.B2))
+        assertThat(result).isEqualTo(StateB2(mode = "mode3"))
         assertThat(result).isInstanceOf(StateB::class.java)
     }
 
     @Test
     fun `must serialize SomeObj with StateB1 - container with nested oneOf`() {
-        val obj = SomeObj(state = StateB1(mode = "mode1", status = Status.B1))
+        val obj = SomeObj(state = StateB1(mode = "mode1"))
         val result = writer.writeValueAsString(obj)
         
         val expected = javaClass.getResource("/nested_oneof/some_obj_with_state_b1.json")!!.readText()
@@ -88,8 +89,17 @@ class NestedOneOfTest {
         val jsonString = javaClass.getResource("/nested_oneof/some_obj_with_state_b1.json")!!.readText()
         
         val result = objectMapper.readValue(jsonString, SomeObj::class.java)
-        assertThat(result.state).isEqualTo(StateB1(mode = "mode1", status = Status.B1))
+        assertThat(result.state).isEqualTo(StateB1(mode = "mode1"))
         assertThat(result.state).isInstanceOf(StateB::class.java)
+    }
+
+    @Test
+    fun `single-value discriminator is a constant property`() {
+        val b1 = StateB1(mode = "mode1")
+        assertThat(b1.status).isEqualTo(Status.B1)
+        assertThat(objectMapper.writeValueAsString(b1)).contains(""""status":"b1"""")
+        assertThat(objectMapper.readValue(objectMapper.writeValueAsString(b1), State::class.java)).isEqualTo(b1)
+        assertThat(StateB1::class.primaryConstructor!!.parameters.map { it.name }).containsExactly("mode")
     }
 
     @Test

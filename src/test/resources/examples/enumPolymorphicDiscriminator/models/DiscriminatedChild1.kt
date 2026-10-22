@@ -20,8 +20,12 @@ public data class DiscriminatedChild1(
   @param:JsonProperty("some_prop")
   @get:JsonProperty("some_prop")
   public val someProp: String? = null,
-  @get:JsonProperty("some_enum")
+) : ChildDefinition(inlineObj, inlineArray, inlineEnum) {
+  @get:JsonProperty(
+    value = "some_enum",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("some_enum")
-  override val someEnum: ChildDiscriminator = ChildDiscriminator.OBJ_ONE_ONLY,
-) : ChildDefinition(inlineObj, inlineArray, inlineEnum)
+  override val someEnum: ChildDiscriminator
+    get() = ChildDiscriminator.OBJ_ONE_ONLY
+}

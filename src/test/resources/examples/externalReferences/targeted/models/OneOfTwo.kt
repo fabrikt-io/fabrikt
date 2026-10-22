@@ -8,8 +8,12 @@ public data class OneOfTwo(
   @param:JsonProperty("oneOfTwo")
   @get:JsonProperty("oneOfTwo")
   public val oneOfTwo: String? = null,
-  @get:JsonProperty("discriminator")
+) : ParentOneOf() {
+  @get:JsonProperty(
+    value = "discriminator",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("discriminator")
-  override val discriminator: String = "OneOfTwo",
-) : ParentOneOf()
+  override val discriminator: String
+    get() = "OneOfTwo"
+}

@@ -8,9 +8,13 @@ public data class ChildActionB(
   @param:JsonProperty("fieldB")
   @get:JsonProperty("fieldB")
   public val fieldB: Int? = null,
-  @get:JsonProperty("actionType")
-  @get:NotNull
-  @param:JsonProperty("actionType")
-  override val actionType: ParentActionActionType = ParentActionActionType.CHILD_B,
 ) : ParentAction(),
-    ChildActionsAll
+    ChildActionsAll {
+  @get:JsonProperty(
+    value = "actionType",
+    access = JsonProperty.Access.READ_ONLY,
+  )
+  @get:NotNull
+  override val actionType: ParentActionActionType
+    get() = ParentActionActionType.CHILD_B
+}

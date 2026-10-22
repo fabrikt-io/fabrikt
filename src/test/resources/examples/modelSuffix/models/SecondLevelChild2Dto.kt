@@ -27,9 +27,12 @@ public data class SecondLevelChild2Dto(
   @get:NotNull
   @get:Valid
   public val metadata: SecondLevelMetadataDto,
-  @get:JsonProperty("firstLevelDiscriminator")
+) : FirstLevelChildDto(rootField1, rootField2, firstLevelField1, firstLevelField2) {
+  @get:JsonProperty(
+    value = "firstLevelDiscriminator",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("firstLevelDiscriminator")
-  override val firstLevelDiscriminator:
-      FirstLevelDiscriminatorDto = FirstLevelDiscriminatorDto.SECOND_LEVEL_CHILD2,
-) : FirstLevelChildDto(rootField1, rootField2, firstLevelField1, firstLevelField2)
+  override val firstLevelDiscriminator: FirstLevelDiscriminatorDto
+    get() = FirstLevelDiscriminatorDto.SECOND_LEVEL_CHILD2
+}

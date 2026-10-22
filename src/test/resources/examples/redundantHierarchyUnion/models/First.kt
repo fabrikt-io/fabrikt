@@ -18,8 +18,12 @@ public data class First(
   @param:JsonProperty("enabled")
   @get:JsonProperty("enabled")
   public val enabled: Boolean? = null,
-  @get:JsonProperty("kind")
+) : Base(id, description) {
+  @get:JsonProperty(
+    value = "kind",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("kind")
-  override val kind: String = "first",
-) : Base(id, description)
+  override val kind: String
+    get() = "first"
+}

@@ -134,17 +134,21 @@ public data class FirstModel(
     @param:JsonProperty("extra_first_attr")
     @get:JsonProperty("extra_first_attr")
     public val extraFirstAttr: List<String>? = null,
-    /**
-     * The model discrimination type
-     */
-    @get:JsonProperty("model_type")
-    @get:NotNull
-    @param:JsonProperty("model_type")
-    override val modelType: ContentModelType = ContentModelType.FIRST_MODEL,
 ) : Content(id, firstAttr, secondAttr, thirdAttr, etag),
     Serializable,
     Responses,
-    PostBody
+    PostBody {
+    /**
+     * The model discrimination type
+     */
+    @get:JsonProperty(
+        value = "model_type",
+        access = JsonProperty.Access.READ_ONLY,
+    )
+    @get:NotNull
+    override val modelType: ContentModelType
+        get() = ContentModelType.FIRST_MODEL
+}
 
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,
@@ -223,17 +227,21 @@ public data class SecondModel(
     @param:JsonProperty("extra_second_attr")
     @get:JsonProperty("extra_second_attr")
     public val extraSecondAttr: Boolean? = null,
-    /**
-     * The model discrimination type
-     */
-    @get:JsonProperty("model_type")
-    @get:NotNull
-    @param:JsonProperty("model_type")
-    override val modelType: ContentModelType = ContentModelType.SECOND_MODEL,
 ) : Content(id, firstAttr, secondAttr, thirdAttr, etag),
     Serializable,
     Responses,
-    PostBody
+    PostBody {
+    /**
+     * The model discrimination type
+     */
+    @get:JsonProperty(
+        value = "model_type",
+        access = JsonProperty.Access.READ_ONLY,
+    )
+    @get:NotNull
+    override val modelType: ContentModelType
+        get() = ContentModelType.SECOND_MODEL
+}
 
 public data class ThirdModel(
     /**
@@ -278,14 +286,18 @@ public data class ThirdModel(
     @param:JsonProperty("extra_second_attr")
     @get:JsonProperty("extra_second_attr")
     public val extraSecondAttr: Int? = null,
-    /**
-     * The model discrimination type
-     */
-    @get:JsonProperty("model_type")
-    @get:NotNull
-    @param:JsonProperty("model_type")
-    override val modelType: ContentModelType = ContentModelType.THIRD_MODEL,
 ) : Content(id, firstAttr, secondAttr, thirdAttr, etag),
     Serializable,
     Responses,
-    PostBody
+    PostBody {
+    /**
+     * The model discrimination type
+     */
+    @get:JsonProperty(
+        value = "model_type",
+        access = JsonProperty.Access.READ_ONLY,
+    )
+    @get:NotNull
+    override val modelType: ContentModelType
+        get() = ContentModelType.THIRD_MODEL
+}

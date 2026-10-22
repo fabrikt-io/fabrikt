@@ -21,6 +21,7 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
      * will conflict with the class discriminator name.
      */
     override val supportsBackingPropertyForDiscriminator = false
+    override val supportsConstantDiscriminatorProperty = false
 
     /**
      * kotlinx serialization includes superclass backing fields in the subclass serial state,
@@ -59,6 +60,11 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
             AnnotationSpec.builder(SerialName::class).addMember("%S", oasKey).build(),
         )
     }
+
+    override fun addConstantDiscriminatorProperty(
+        propertySpecBuilder: PropertySpec.Builder,
+        oasKey: String,
+    ): PropertySpec.Builder = propertySpecBuilder
 
     override fun annotateArrayElementType(
         elementType: TypeName,

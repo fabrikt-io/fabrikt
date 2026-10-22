@@ -13,8 +13,12 @@ public data class InheritedOneOfChildTwo(
   @param:JsonProperty("extraTwo")
   @get:JsonProperty("extraTwo")
   public val extraTwo: String? = null,
-  @get:JsonProperty("actionType")
+) : InheritedOneOfParent(effect) {
+  @get:JsonProperty(
+    value = "actionType",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("actionType")
-  override val actionType: String = "CHILD_TWO",
-) : InheritedOneOfParent(effect)
+  override val actionType: String
+    get() = "CHILD_TWO"
+}

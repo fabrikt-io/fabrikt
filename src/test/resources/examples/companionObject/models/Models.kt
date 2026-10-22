@@ -32,11 +32,15 @@ public data class Cat(
     @param:JsonProperty("age")
     @get:JsonProperty("age")
     public val age: Int? = null,
-    @get:JsonProperty("petType")
-    @get:NotNull
-    @param:JsonProperty("petType")
-    override val petType: String = "Cat",
 ) : Pet(id, name, tag) {
+    @get:JsonProperty(
+        value = "petType",
+        access = JsonProperty.Access.READ_ONLY,
+    )
+    @get:NotNull
+    override val petType: String
+        get() = "Cat"
+
     public companion object
 }
 
@@ -61,11 +65,15 @@ public data class Dog(
     @param:JsonProperty("breed")
     @get:JsonProperty("breed")
     public val breed: DogBreed? = null,
-    @get:JsonProperty("petType")
-    @get:NotNull
-    @param:JsonProperty("petType")
-    override val petType: String = "Dog",
 ) : Pet(id, name, tag) {
+    @get:JsonProperty(
+        value = "petType",
+        access = JsonProperty.Access.READ_ONLY,
+    )
+    @get:NotNull
+    override val petType: String
+        get() = "Dog"
+
     public companion object
 }
 

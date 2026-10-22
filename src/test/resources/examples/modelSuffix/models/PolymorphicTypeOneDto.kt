@@ -16,8 +16,12 @@ public data class PolymorphicTypeOneDto(
   @param:JsonProperty("child_one_name")
   @get:JsonProperty("child_one_name")
   public val childOneName: String? = null,
-  @get:JsonProperty("generation")
+) : PolymorphicSuperTypeDto(firstName, lastName) {
+  @get:JsonProperty(
+    value = "generation",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("generation")
-  override val generation: String = "PolymorphicTypeOne",
-) : PolymorphicSuperTypeDto(firstName, lastName)
+  override val generation: String
+    get() = "PolymorphicTypeOne"
+}

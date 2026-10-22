@@ -15,11 +15,15 @@ public data class B(
   @get:JsonProperty("label")
   @get:NotNull
   override val label: String,
-  @param:JsonProperty("kind")
-  @get:JsonProperty("kind")
-  @get:NotNull
-  override val kind: BKind = BKind.B,
 ) : Mixed,
     Shared,
     AComposite,
-    BComposite
+    BComposite {
+  @get:JsonProperty(
+    value = "kind",
+    access = JsonProperty.Access.READ_ONLY,
+  )
+  @get:NotNull
+  override val kind: BKind
+    get() = BKind.B
+}

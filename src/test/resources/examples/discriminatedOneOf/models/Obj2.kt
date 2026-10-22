@@ -9,8 +9,12 @@ public data class Obj2(
   @get:JsonProperty("id2")
   @get:NotNull
   public val id2: String,
-  @get:JsonProperty("type")
+) : Poly1 {
+  @get:JsonProperty(
+    value = "type",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("type")
-  public val type: String = "obj2",
-) : Poly1
+  public val type: String
+    get() = "obj2"
+}

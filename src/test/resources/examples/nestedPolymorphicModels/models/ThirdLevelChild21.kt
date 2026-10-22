@@ -37,9 +37,12 @@ public data class ThirdLevelChild21(
   @get:JsonProperty("creationDate")
   @get:NotNull
   public val creationDate: Int,
-  @get:JsonProperty("secondLevelDiscriminator")
+) : SecondLevelChild2(rootField1, rootField2, firstLevelField1, firstLevelField2, metadata) {
+  @get:JsonProperty(
+    value = "secondLevelDiscriminator",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("secondLevelDiscriminator")
-  override val secondLevelDiscriminator:
-      SecondLevelDiscriminator = SecondLevelDiscriminator.THIRD_LEVEL_CHILD1,
-) : SecondLevelChild2(rootField1, rootField2, firstLevelField1, firstLevelField2, metadata)
+  override val secondLevelDiscriminator: SecondLevelDiscriminator
+    get() = SecondLevelDiscriminator.THIRD_LEVEL_CHILD1
+}

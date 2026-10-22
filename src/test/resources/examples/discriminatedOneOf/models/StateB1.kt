@@ -9,8 +9,12 @@ public data class StateB1(
   @get:JsonProperty("mode")
   @get:NotNull
   public val mode: String,
-  @get:JsonProperty("status")
+) : StateB {
+  @get:JsonProperty(
+    value = "status",
+    access = JsonProperty.Access.READ_ONLY,
+  )
   @get:NotNull
-  @param:JsonProperty("status")
-  public val status: Status = Status.B1,
-) : StateB
+  public val status: Status
+    get() = Status.B1
+}
