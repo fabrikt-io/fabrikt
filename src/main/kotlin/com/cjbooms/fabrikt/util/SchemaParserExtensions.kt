@@ -321,10 +321,14 @@ object SchemaParserExtensions {
     ): Set<String> =
         findOneOfSuperInterface(api.schemas.values.toList())
             .filter { it.discriminator.propertyName == prop.key }
-            .flatMap { it.discriminator.mappings.entries }
-            .filter { it.value.endsWith("/$name") }
-            .map { it.key }
-            .toSet()
+            .flatMap { union ->
+                val mappings = union.discriminator.mappings
+                if (mappings.isEmpty()) {
+                    listOfNotNull(name)
+                } else {
+                    mappings.filterValues { it.endsWith("/$name") }.keys
+                }
+            }.toSet()
 
     fun Schema.getKeyIfSingleDiscriminatorValue(
         api: OpenApi3,

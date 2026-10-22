@@ -314,7 +314,7 @@ sealed class PropertyInfo {
                                         },
                                     enclosingSchema = if (property.value.isInlinedEnumDefinition()) this else null,
                                     memberDiscriminatorValues =
-                                        if (this != memberSchema && !isDiscriminatorProperty(api, property)) {
+                                        if (!isDiscriminatorProperty(api, property)) {
                                             memberSchema.oneOfDiscriminatorValues(api, property)
                                         } else {
                                             emptySet()
