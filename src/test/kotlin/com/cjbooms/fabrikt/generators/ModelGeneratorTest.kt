@@ -90,6 +90,7 @@ class ModelGeneratorTest {
             "webhook",
             "instantDateTime",
             "discriminatedOneOf",
+            "implicitDiscriminatorDefaults",
             "openapi310",
             "binary",
             "oneOfMarkerInterface",

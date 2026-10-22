@@ -29,3 +29,7 @@ Three generator defects that this change exposed were fixed alongside it, so som
 ### 4. Type-override defaults are now explicit options
 
 The default type overrides can now be selected explicitly (for example `DATETIME_AS_OFFSETDATETIME`, `BINARY_AS_BYTEARRAY`, `URI_AS_URI`, `UUID_AS_UUID`, `ANY_AS_ANY`). No migration is required; pin them explicitly if you want to be insulated from future default changes.
+
+### 5. Implicit discriminator defaults for `oneOf` variants
+
+For Jackson `oneOf` variants without an explicit discriminator mapping, required discriminator parameters now default to the original component schema name, including when the property is inherited through `allOf`. Generated class-name normalization and model suffixes do not change that wire value. Enum parameters receive a default only when their enum contains that value. These parameters move into the defaulted constructor tail; use named arguments when updating positional calls. Kotlinx discriminator-property handling is unchanged.
