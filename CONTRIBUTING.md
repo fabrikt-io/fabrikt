@@ -29,10 +29,11 @@ const val SHOULD_OVERWRITE_EXAMPLES = true
 
 Run the tests — they will rewrite the example files automatically. Then flip the flag back to `false`, run again to confirm everything passes, and commit the updated examples alongside your change. (A test exists specifically to prevent accidentally committing with the flag left on.)
 
-## Pull Request Checklist
+## Pull Requests
 
-- [ ] `./gradlew build` passes
-- [ ] Example files updated and committed if generated output changed
+GitHub fills in [the pull request template](.github/PULL_REQUEST_TEMPLATE.md) when you open a PR. Keep its headings, keep prose under 150 words, and use short active sentences in [ASD-STE100](https://www.asd-ste100.org/) style so descriptions stay easily digestible by reviewers.
+
+Follow convention: reuse or extend existing fixtures in `src/test/resources/examples/` rather than adding new example directories. [AGENTS.md](AGENTS.md#follow-convention-reuse-existing-fixtures) lists the guidance.
 
 ## Reporting Issues
 

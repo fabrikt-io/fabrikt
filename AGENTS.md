@@ -75,20 +75,49 @@ Read ARCHITECTURE.md first — it maps symptoms (wrong type, missing model, miss
 
 README.md and other Markdown docs predate a line-wrapping convention and are mostly hard-wrapped mid-sentence. Soft-wrap prose: never break a line mid-sentence; a sentence (or several) stays on one line until it ends. Do not rewrap existing paragraphs as a side effect of other edits — rewrapping is a dedicated chore. Same rule for PR descriptions, commit messages, GitHub issue bodies, and GitHub comments.
 
+## Writing style
+
+Keep PR descriptions, comments, and issue updates brief and easily digestible by human reviewers. Write in ASD-STE100 Issue 9 Simplified Technical English. Apply these rules:
+
+- Use the active voice. Write "The generator emits X", not "X is emitted".
+- Write one instruction per sentence. Keep procedural sentences to 20 words or fewer and descriptive sentences to 25 words or fewer.
+- Write one topic per paragraph, with the topic sentence first and 6 sentences or fewer.
+- Use one word for one meaning. Use option, class and schema names exactly as they appear in code.
+- Use short, plain words: "use", not "utilize".
+- Cut every sentence that restates the one before it.
+
+When answering a reviewer, put the answer in the first sentence. Never claim a review comment is resolved until you verify the diff.
+
 ## Test style
 
-JUnit 5 + AssertJ. Generator tests parameterize over example directory names (`Stream<String>` in `ModelGeneratorTest.kt`) and assert with `assertThatGenerated(...).isEqualTo(...)` / `areContainedInGenerated(...)`. New behavior = new example directory under `src/test/resources/examples/` plus a parameter entry in the matching test.
+JUnit 5 + AssertJ. Generator tests parameterize over example directory names (`Stream<String>` in `ModelGeneratorTest.kt`) and assert with `assertThatGenerated(...).isEqualTo(...)` / `areContainedInGenerated(...)`.
+
+### Follow convention: reuse existing fixtures
+
+Fabrikt tests follow a golden-file convention: generator tests compare output against committed example models under `src/test/resources/examples/`. These examples serve as living documentation. Follow conventions, and where possible reuse or extend existing fixtures rather than creating new example directories. The latter may be warranted if contributing a new OpenApi pattern, that does not easily fit with an existing fixture.
+
+**Search before writing a spec:** Search YAML specs in `src/test/resources/examples/` for relevant keywords (schema keywords like `discriminator`, option names, or schema definitions). Identify the nearest existing fixtures before adding new schemas.
+
+Follow these conventions when adding or updating tests:
+
+1. **Adjust or extend the nearest existing fixture.** Add only the schemas that differ, or update existing schemas to exercise the behavior. Reference existing schemas with `$ref` instead of redefining them. Existing golden files must stay byte-identical unless changing them is the intended bug fix.
+2. **In-memory unit tests.** Use only when testing isolated generator logic or edge cases where golden files provide no value (for example, uninhabitable schemas). Precedent: `false schema properties use best effort generation` in `ModelGeneratorTest.kt`.
+3. **New parameterized example directory.** Use only for a new OpenAPI pattern that does not fit an existing fixture, a new CLI option, a new generator, or a global setting that no existing fixture configures. Never copy an existing `api.yaml` or duplicate shapes that existing fixtures already cover. Put all permutations of one scenario in one `api.yaml`.
+
+When adding a new example directory, add at most one, explain why in the "Solution" section, and ask first.
+
+Keep fixture specs minimal. Declare only the schemas the behavior needs, and never copy unrelated properties from a reporter's spec. Client and controller tests also assert the models in their own example directories, so check which tests read a directory before you edit it.
 
 ## GitHub hygiene
 
 - Creating issues: use the templates in `.github/ISSUE_TEMPLATE/`; bug reports require a minimal spec fragment and fabrikt version.
-- Reproduce generation bugs with the smallest spec fragment, added as a new example directory (see Golden-file tests).
+- Reproduce generation bugs with the smallest spec fragment, added to or adjusted in the nearest existing fixture (see Follow convention: reuse existing fixtures).
 - PRs: `./gradlew build` must pass; commit updated golden files alongside code changes.
-- PR descriptions: state what behaviour changes and any non-obvious constraint or trade-off. Do not list changed files, added tests, or CI results, or narrate the session that produced them — those are already visible in the diff and status checks.
+- PR descriptions: use the headings of `.github/PULL_REQUEST_TEMPLATE.md` (`## Problem`, `## Solution`) and add no others. Keep prose under 150 words total and follow Writing style. State what behaviour changes, any non-obvious constraint or trade-off, and why any new golden files were necessary. Do not list changed files, added tests, test counts, CI results or commit structure, and do not narrate the session or a roadmap. One sentence of failing-before, passing-after evidence is enough.
 
 ## Boundaries
 
 - Always: run `./gradlew build` before declaring done; review the full golden-file diff before committing regenerated examples.
 - Comments: prefer a readable function/variable name over a comment; write one only when no name can carry the intent (e.g. a non-obvious external contract, a constraint that would otherwise silently regress). When a comment is necessary, keep it terse and describe current functionality — never narrate history, prior attempts, or why an old approach was rejected. This applies to KDoc, inline comments, and test comments alike.
-- Ask first: changes that alter output for existing specs, add dependencies, change `.github/workflows/`, or touch `end2end-tests/` / `playground/` build config.
+- Ask first: changes that alter output for existing specs, add a new example directory, add dependencies, change `.github/workflows/`, or touch `end2end-tests/` / `playground/` build config.
 - Never: commit with `SHOULD_OVERWRITE_EXAMPLES = true`; hand-edit files under `src/test/resources/examples/`; flip the overwrite flag to silence an unexpected failure; commit secrets or signing keys.
