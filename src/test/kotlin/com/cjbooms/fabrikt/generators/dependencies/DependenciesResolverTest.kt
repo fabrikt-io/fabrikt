@@ -46,7 +46,7 @@ class DependenciesResolverTest {
 
             assertThat(dependencies).isEqualTo(
                 defaultDependencies() +
-                    "COMPILE com.squareup.okhttp3:okhttp:4.10.0",
+                    "COMPILE com.squareup.okhttp3:okhttp:5.5.0",
             )
         }
 
@@ -199,7 +199,7 @@ class DependenciesResolverTest {
             assertThat(dependencies).isEqualTo(
                 defaultDependencies() +
                     listOf(
-                        "COMPILE com.squareup.okhttp3:okhttp:4.10.0",
+                        "COMPILE com.squareup.okhttp3:okhttp:5.5.0",
                         "COMPILE org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0",
                         "COMPILE org.springframework:spring-web:6.1.0",
                         "COMPILE org.springframework.cloud:spring-cloud-starter-openfeign:5.0.3",
@@ -219,10 +219,10 @@ class DependenciesResolverTest {
                 when (target) {
                     ClientCodeGenTargetType.OK_HTTP ->
                         defaultDependencies() +
-                            "COMPILE com.squareup.okhttp3:okhttp:4.10.0"
+                            "COMPILE com.squareup.okhttp3:okhttp:5.5.0"
                     ClientCodeGenTargetType.OPEN_FEIGN ->
                         defaultDependencies() +
-                            "COMPILE io.github.openfeign:feign-core:13.3"
+                            "COMPILE io.github.openfeign:feign-core:13.17"
                     ClientCodeGenTargetType.SPRING_HTTP_INTERFACE ->
                         defaultDependencies() +
                             "COMPILE org.springframework:spring-web:6.1.0"

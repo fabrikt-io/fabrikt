@@ -35,8 +35,8 @@ micronaut-serde = "1.5.2"
 quarkus = "3.39.4"
 
 # HTTP clients
-okhttp = "4.10.0"
-feign = "13.3"
+okhttp = "5.5.0"
+feign = "13.17"
 
 # Validation
 # Hibernate Validator 9.1 targets Jakarta Validation 3.1.
