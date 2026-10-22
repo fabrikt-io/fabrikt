@@ -275,6 +275,7 @@ object PropertyUtils {
         serializationAnnotations: SerializationAnnotations,
     ): CodeBlock? {
         if (this !is PropertyInfo.Field ||
+            !isRequired ||
             classSettings.polymorphyType !in listOf(ClassSettings.PolymorphyType.ONE_OF, ClassSettings.PolymorphyType.SUB) ||
             !serializationAnnotations.supportsBackingPropertyForDiscriminator
         ) {

@@ -7,6 +7,7 @@ import com.cjbooms.fabrikt.cli.CustomTypeMapping
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.OutputOptionType
+import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
@@ -808,6 +809,63 @@ class ModelGeneratorTest {
             .contains("The OpenAPI schema for this required property cannot accept any value")
             .doesNotContain("class Never")
             .doesNotContain("optionalImpossible")
+    }
+
+    @Test
+    fun `optional discriminator in composed oneOf remains constructor parameter`() {
+        val spec =
+            """
+            openapi: 3.0.3
+            info:
+              title: Optional composed discriminator
+              version: "1"
+            paths: {}
+            components:
+              schemas:
+                SinkType:
+                  type: string
+                  enum: [Kafka, Nakadi]
+                SinkFields:
+                  type: object
+                  properties:
+                    type:
+                      ${'$'}ref: '#/components/schemas/SinkType'
+                    maxBatchSize:
+                      type: integer
+                      default: 50
+                SinkSpec:
+                  oneOf:
+                    - ${'$'}ref: '#/components/schemas/Kafka'
+                    - ${'$'}ref: '#/components/schemas/Nakadi'
+                  discriminator:
+                    propertyName: type
+                    mapping:
+                      Kafka: '#/components/schemas/Kafka'
+                      Nakadi: '#/components/schemas/Nakadi'
+                Kafka:
+                  allOf:
+                    - ${'$'}ref: '#/components/schemas/SinkFields'
+                    - type: object
+                      required: [kafkaBootstrapServers]
+                      properties:
+                        kafkaBootstrapServers:
+                          type: string
+                Nakadi:
+                  allOf:
+                    - ${'$'}ref: '#/components/schemas/SinkFields'
+                    - type: object
+                      required: [eventType]
+                      properties:
+                        eventType:
+                          type: string
+            """.trimIndent()
+        MutableSettings.updateSettings(
+            modelOptions = setOf(ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS),
+            serializationLibrary = SerializationLibrary.JACKSON_2,
+        )
+        val generated = ModelGenerator(Packages("examples.optionaldiscriminator"), SourceApi(spec)).generate().toSingleFile()
+        assertThat(generated).contains("override val type: SinkType? = null,")
+        assertThat(generated).doesNotContain("get() = SinkType.KAFKA")
     }
 
     private fun Models.toSingleFile(): String {
