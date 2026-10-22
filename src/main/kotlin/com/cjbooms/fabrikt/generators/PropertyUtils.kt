@@ -9,8 +9,10 @@ import com.cjbooms.fabrikt.model.JacksonAnnotations
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.PropertyInfo
 import com.cjbooms.fabrikt.model.SerializationAnnotations
+import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
@@ -239,12 +241,34 @@ object PropertyUtils {
                             }
                         constructorParameter.defaultValue(undefinedDefault)
                     }
+                } else if (this is PropertyInfo.Field) {
+                    memberDiscriminatorDefault(wrappedType.copy(nullable = false), classSettings, serializationAnnotations)
+                        ?.let { constructorParameter.defaultValue(it) }
                 }
                 constructorBuilder.addParameter(constructorParameter.build())
             }
         }
 
         classBuilder.addProperty(property.build())
+    }
+
+    private fun PropertyInfo.Field.memberDiscriminatorDefault(
+        type: TypeName,
+        classSettings: ClassSettings,
+        serializationAnnotations: SerializationAnnotations,
+    ): CodeBlock? {
+        val value = memberDiscriminatorValues.singleOrNull() ?: return null
+        if (classSettings.polymorphyType != ClassSettings.PolymorphyType.ONE_OF ||
+            !serializationAnnotations.supportsBackingPropertyForDiscriminator
+        ) {
+            return null
+        }
+        return when (val info = typeInfo) {
+            is KotlinTypeInfo.Enum ->
+                info.entries.firstOrNull { it == value }?.let { CodeBlock.of("%T.%L", type, it.toEnumName()) }
+            KotlinTypeInfo.Text -> CodeBlock.of("%S", value)
+            else -> null
+        }
     }
 
     private fun PropertyInfo.isDiscriminatorFieldWithSingleKnownValue(

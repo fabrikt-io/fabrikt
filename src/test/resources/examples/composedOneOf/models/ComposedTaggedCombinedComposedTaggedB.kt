@@ -22,5 +22,5 @@ public data class ComposedTaggedCombinedComposedTaggedB(
   @param:JsonProperty("kind")
   @get:JsonProperty("kind")
   @get:NotNull
-  public val kind: ComposedTaggedBKind,
+  public val kind: ComposedTaggedBKind = ComposedTaggedBKind.B,
 ) : ComposedTaggedCombined

@@ -9,12 +9,12 @@ public data class ProductItem(
   @get:JsonProperty("id")
   @get:NotNull
   public val id: String,
-  @param:JsonProperty("item_type")
-  @get:JsonProperty("item_type")
-  @get:NotNull
-  public val itemType: String,
   @param:JsonProperty("sku")
   @get:JsonProperty("sku")
   @get:NotNull
   public val sku: String,
+  @param:JsonProperty("item_type")
+  @get:JsonProperty("item_type")
+  @get:NotNull
+  public val itemType: String = "PRODUCT",
 ) : ItemReference

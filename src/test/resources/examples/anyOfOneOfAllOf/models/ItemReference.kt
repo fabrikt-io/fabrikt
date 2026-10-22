@@ -9,5 +9,5 @@ import com.fasterxml.jackson.`annotation`.JsonTypeInfo
   property = "item_type",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = ProductItem::class, name = "PRODUCT"),JsonSubTypes.Type(value = OutfitItem::class, name = "OUTFIT"))
+@JsonSubTypes(JsonSubTypes.Type(value = ProductItem::class, name = "PRODUCT"),JsonSubTypes.Type(value = OutfitItem::class, name = "OUTFIT"),JsonSubTypes.Type(value = OutfitItem::class, name = "OUTFIT_ALIAS"))
 public sealed interface ItemReference

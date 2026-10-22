@@ -12,10 +12,6 @@ public data class C(
   @get:NotNull
   @get:Size(min = 2)
   override val id: String,
-  @param:JsonProperty("kind")
-  @get:JsonProperty("kind")
-  @get:NotNull
-  override val kind: CKind,
   @param:JsonProperty(
     "count",
     required = true,
@@ -23,6 +19,10 @@ public data class C(
   @get:JsonProperty("count")
   @get:NotNull
   override val count: Int,
+  @param:JsonProperty("kind")
+  @get:JsonProperty("kind")
+  @get:NotNull
+  override val kind: CKind = CKind.C,
 ) : Mixed,
     Shared,
     AComposite,

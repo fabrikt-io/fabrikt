@@ -167,6 +167,7 @@ components:
         mapping:
           PRODUCT: '#/components/schemas/ProductItem'
           OUTFIT: '#/components/schemas/OutfitItem'
+          OUTFIT_ALIAS: '#/components/schemas/OutfitItem'
 
     BaseItem:
       required:

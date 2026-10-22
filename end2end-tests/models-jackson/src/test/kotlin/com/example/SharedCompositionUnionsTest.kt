@@ -1,10 +1,13 @@
 package com.example
 
+import com.example.compositionunions.models.B
 import com.example.compositionunions.models.AComposite
 import com.example.compositionunions.models.Combined
 import com.example.compositionunions.models.DeductionChoice
 import com.example.compositionunions.models.Mixed
 import com.example.compositionunions.models.Shared
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException
+import org.junit.jupiter.api.assertThrows
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -49,5 +52,21 @@ class SharedCompositionUnionsTest {
         assertThat(value.id).isEqualTo("x-1")
         assertThat(value).isInstanceOf(AComposite::class.java)
         assertThat(mapper.readValue(mapper.writeValueAsString(value), Combined::class.java)).isEqualTo(value)
+    }
+
+    @Test
+    fun `composed oneOf variant defaults discriminator in Kotlin constructor but requires it in JSON deserialization`() {
+        val b = B(id = "b-1", label = "L")
+        assertThat(b).isInstanceOf(AComposite::class.java)
+
+        val json = mapper.writeValueAsString(b)
+        assertThat(json).contains(""""kind":"b"""")
+
+        val deserialized = mapper.readValue(json, Mixed::class.java)
+        assertThat(deserialized).isEqualTo(b)
+
+        assertThrows<InvalidTypeIdException> {
+            mapper.readValue("""{"id":"b-1","label":"L"}""", Mixed::class.java)
+        }
     }
 }

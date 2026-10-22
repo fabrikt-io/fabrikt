@@ -11,14 +11,14 @@ public data class B(
   @get:NotNull
   @get:Size(min = 2)
   override val id: String,
-  @param:JsonProperty("kind")
-  @get:JsonProperty("kind")
-  @get:NotNull
-  override val kind: BKind,
   @param:JsonProperty("label")
   @get:JsonProperty("label")
   @get:NotNull
   override val label: String,
+  @param:JsonProperty("kind")
+  @get:JsonProperty("kind")
+  @get:NotNull
+  override val kind: BKind = BKind.B,
 ) : Mixed,
     Shared,
     AComposite,

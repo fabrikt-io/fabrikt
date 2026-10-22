@@ -315,6 +315,17 @@ object SchemaParserExtensions {
         return (topLevelInterfaces + inlineInterfaces + topLevelArrayInterfaces).distinctBy { it.jsonReference }
     }
 
+    fun Schema.oneOfDiscriminatorValues(
+        api: OpenApi3,
+        prop: Map.Entry<String, Schema>,
+    ): Set<String> =
+        findOneOfSuperInterface(api.schemas.values.toList())
+            .filter { it.discriminator.propertyName == prop.key }
+            .flatMap { it.discriminator.mappings.entries }
+            .filter { it.value.endsWith("/$name") }
+            .map { it.key }
+            .toSet()
+
     fun Schema.getKeyIfSingleDiscriminatorValue(
         api: OpenApi3,
         prop: Map.Entry<String, Schema>,

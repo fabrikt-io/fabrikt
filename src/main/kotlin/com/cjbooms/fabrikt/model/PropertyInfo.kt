@@ -20,6 +20,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaLess
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleMapDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSingleAggregatedInlinedObject
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.oneOfDiscriminatorValues
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeType
 import com.cjbooms.fabrikt.model.OpenApi3Document as OpenApi3
@@ -72,6 +73,7 @@ sealed class PropertyInfo {
             api: OpenApi3,
             enclosingSchema: Schema? = null,
             additionalRequiredFields: Collection<String> = emptySet(),
+            memberSchema: Schema = this,
         ): Collection<PropertyInfo> {
             val combinedRequiredFields = this.requiredFields + additionalRequiredFields
 
@@ -90,6 +92,7 @@ sealed class PropertyInfo {
                                     this
                                 },
                             additionalRequiredFields = combinedRequiredFields,
+                            memberSchema = memberSchema,
                         )
                     } +
                     (if (oneOfSchemas.isEmpty()) emptyList() else listOf(OneOfAny(oneOfSchemas.first()))) +
@@ -107,7 +110,7 @@ sealed class PropertyInfo {
                                 },
                         )
                     } +
-                    getInLinedProperties(settings, api, enclosingSchema, combinedRequiredFields)
+                    getInLinedProperties(settings, api, enclosingSchema, combinedRequiredFields, memberSchema)
             return results.distinctBy { it.oasKey }
         }
 
@@ -131,6 +134,7 @@ sealed class PropertyInfo {
             api: OpenApi3,
             enclosingSchema: Schema? = null,
             additionalRequiredFields: Collection<String> = emptySet(),
+            memberSchema: Schema = this,
         ): Collection<PropertyInfo> {
             // Group raw keys by their normalized names to find any groups that would conflict.
             // If there are any conflicts, use the raw keys for that group as names, otherwise
@@ -309,6 +313,12 @@ sealed class PropertyInfo {
                                             this.getKeyIfSingleDiscriminatorValue(api, property, it)
                                         },
                                     enclosingSchema = if (property.value.isInlinedEnumDefinition()) this else null,
+                                    memberDiscriminatorValues =
+                                        if (this != memberSchema && !isDiscriminatorProperty(api, property)) {
+                                            memberSchema.oneOfDiscriminatorValues(api, property)
+                                        } else {
+                                            emptySet()
+                                        },
                                 )
                         }
                     }.filterNotNull()
@@ -351,6 +361,7 @@ sealed class PropertyInfo {
         val maybeDiscriminator: Map<String, DiscriminatorKey>?,
         val enclosingSchema: Schema? = null,
         val direction: ModelDirection? = null,
+        val memberDiscriminatorValues: Set<String> = emptySet(),
     ) : PropertyInfo() {
         override val typeInfo: KotlinTypeInfo =
             KotlinTypeInfo.from(schema, oasKey, enclosingSchema, direction = direction)
