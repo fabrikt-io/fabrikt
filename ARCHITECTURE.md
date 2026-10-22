@@ -12,6 +12,10 @@ OpenAPI Schema → Type Resolution → Code Generation → Output
 
 ## Key Components
 
+### HTTP operation discovery
+
+`OpenApiPath.operations` exposes HTTP operations through the parser facade. It supplements Kaizen's operation list with `QUERY`, parsed as a fragment anchored to the original path's document URL and JSON pointer. Inline schemas therefore keep their source locations and schema-semantics callback, while relative references share the document's reference manager. Generators consume the same `OpenApiOperation` facade for every method.
+
 ### Type Resolution (Determines WHAT type to use)
 - **`KaizenParserExtensions.kt`**
   - `safeName()` - Determines the name/type to use for a schema

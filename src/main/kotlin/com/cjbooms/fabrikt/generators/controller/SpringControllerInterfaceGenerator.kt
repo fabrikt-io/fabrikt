@@ -40,6 +40,7 @@ import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
+import java.util.logging.Logger
 
 class SpringControllerInterfaceGenerator(
     private val packages: Packages,
@@ -67,6 +68,18 @@ class SpringControllerInterfaceGenerator(
         )
 
     override fun generateLibrary(): Collection<ControllerLibraryType> = emptySet()
+
+    override fun supportsOperation(
+        verb: String,
+        path: String,
+    ): Boolean {
+        if (!verb.equals("query", ignoreCase = true)) return true
+        Logger.getGlobal().warning(
+            "Skipping QUERY $path for Spring controllers because the supported stable Spring versions lack RequestMethod.QUERY. " +
+                "Implement this route separately or select the Ktor or Micronaut controller target.",
+        )
+        return false
+    }
 
     override fun controllerBuilder(
         className: String,

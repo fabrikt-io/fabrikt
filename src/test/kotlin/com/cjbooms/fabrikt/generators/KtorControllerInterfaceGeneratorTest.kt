@@ -35,6 +35,7 @@ class KtorControllerInterfaceGeneratorTest {
     @Suppress("unused")
     private fun testCases(): Stream<String> =
         Stream.of(
+            "queryOperation",
             "multipleRequestMediaTypes",
             "githubApi",
             "singleAllOf",

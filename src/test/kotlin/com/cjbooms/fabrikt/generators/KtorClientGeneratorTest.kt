@@ -25,6 +25,7 @@ class KtorClientGeneratorTest {
     @Suppress("unused")
     private fun fullApiTestCases(): Stream<String> =
         Stream.of(
+            "queryOperation",
             "ktorClient",
             "parameterNameClash",
         )
