@@ -40,6 +40,7 @@ class SpringControllerGeneratorTest {
     @Suppress("unused")
     private fun testCases(): Stream<String> =
         Stream.of(
+            "queryOperation",
             "multipleRequestMediaTypes",
             "arrays",
             "boundedModelNameCollisions",

@@ -171,6 +171,7 @@ class MicronautControllerInterfaceGenerator(
             AnnotationSpec
                 .builder(MicronautImports.HttpMethods.byName(verb))
                 .addMember("uri = %S", path)
+                .apply { if (verb.equals("query", ignoreCase = true)) addMember("method = %S", "QUERY") }
                 .build(),
         )
 

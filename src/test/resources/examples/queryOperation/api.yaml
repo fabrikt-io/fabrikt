@@ -1,0 +1,44 @@
+openapi: 3.2.0
+info:
+  title: Query operations
+  version: '1'
+paths:
+  /search:
+    get:
+      operationId: getSearch
+      responses:
+        '200':
+          description: Control operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+    query:
+      operationId: search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+components:
+  schemas:
+    SearchRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+    SearchResult:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string

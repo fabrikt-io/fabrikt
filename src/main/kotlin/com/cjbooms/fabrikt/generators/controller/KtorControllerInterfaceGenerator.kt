@@ -233,12 +233,25 @@ class KtorControllerInterfaceGenerator(
 
         val methodName = getMethodName(operation, verb, path)
 
-        builder
-            .addStatement(
-                "%M(%S) {",
-                MemberName("io.ktor.server.routing", verb),
-                path.key,
-            ).indent()
+        if (verb == "query") {
+            builder
+                .addStatement(
+                    "%M(%S, %T(%S)) {",
+                    MemberName("io.ktor.server.routing", "route"),
+                    path.key,
+                    ClassName("io.ktor.http", "HttpMethod"),
+                    "QUERY",
+                ).indent()
+                .addStatement("handle {")
+                .indent()
+        } else {
+            builder
+                .addStatement(
+                    "%M(%S) {",
+                    MemberName("io.ktor.server.routing", verb),
+                    path.key,
+                ).indent()
+        }
 
         pathParams.forEach { param ->
             val typeName = param.type.copy(nullable = false) // not nullable because we handle that in the queryParameters.get* below
@@ -344,6 +357,8 @@ class KtorControllerInterfaceGenerator(
         builder
             .unindent()
             .addStatement("}")
+
+        if (verb == "query") builder.unindent().addStatement("}")
 
         if (addAuth) {
             builder
