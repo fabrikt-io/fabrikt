@@ -71,6 +71,7 @@ class ModelGeneratorTest {
             "faultTolerantEnums",
             "githubApi",
             "inLinedObject",
+            "customExtensions",
             "mapExamples",
             "mapExamplesNonNullValues",
             "mixingCamelSnakeLispCase",
@@ -163,6 +164,13 @@ class ModelGeneratorTest {
             MutableSettings.addOption(JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL)
         }
         if (testCaseName == "arrays") {
+            MutableSettings.addOption(JacksonNullabilityMode.ENFORCE_REQUIRED_NULLABLE)
+        }
+        if (testCaseName == "customExtensions") {
+            MutableSettings.updateSettings(
+                genTypes = setOf(CodeGenerationType.HTTP_MODELS),
+                validationLibrary = ValidationLibrary.JAVAX_VALIDATION,
+            )
             MutableSettings.addOption(JacksonNullabilityMode.ENFORCE_REQUIRED_NULLABLE)
         }
         if (testCaseName == "optionalVsRequired" || testCaseName == "openapi310") {
