@@ -9,6 +9,7 @@ import org.openapitools.jackson.nullable.JsonNullable
 public data class NullabilityCheck(
   @param:JsonProperty("not-null-no-default-not-required")
   @get:JsonProperty("not-null-no-default-not-required")
+  @get:NotNull
   public val notNullNoDefaultNotRequired: JsonNullable<String> = JsonNullable.undefined(),
   @param:JsonProperty("nullable-no-default-not-required")
   @get:JsonProperty("nullable-no-default-not-required")

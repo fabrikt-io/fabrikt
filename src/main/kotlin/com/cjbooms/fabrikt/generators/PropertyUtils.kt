@@ -318,8 +318,9 @@ object PropertyUtils {
     fun PropertyInfo.isSchemaNullable(classSettings: ClassSettings): Boolean =
         this is PropertyInfo.UninhabitableField || schema.isNullable || classSettings.nullableObjectRefs.contains(oasKey)
 
-    fun PropertyInfo.isNullable(classSettings: ClassSettings) =
-        when (this) {
+    fun PropertyInfo.isNullable(classSettings: ClassSettings): Boolean {
+        if (classSettings.isMergePatchPattern && !isRequired) return isSchemaNullable(classSettings)
+        return when (this) {
             is PropertyInfo.Field -> !isRequired && schema.default == null || isSchemaNullable(classSettings)
             is PropertyInfo.ListField, is PropertyInfo.MapField,
             is PropertyInfo.ObjectRefField, is PropertyInfo.ObjectInlinedField,
@@ -329,6 +330,7 @@ object PropertyUtils {
             is PropertyInfo.UninhabitableField -> true
             else -> !isRequired
         }
+    }
 
     /**
      * Current Open API v3 Spec validation keys:
