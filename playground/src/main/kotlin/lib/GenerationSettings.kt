@@ -8,6 +8,7 @@ import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ControllerCodeGenTargetType
 import com.cjbooms.fabrikt.cli.DependenciesGenerationMode
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
+import com.cjbooms.fabrikt.cli.GeneratedVisibility
 import com.cjbooms.fabrikt.cli.InstantLibrary
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
@@ -39,6 +40,7 @@ data class GenerationSettings(
     val externalRefResolutionMode: ExternalReferencesResolutionMode = ExternalReferencesResolutionMode.default,
     val dependenciesGenerationMode: DependenciesGenerationMode = DependenciesGenerationMode.NONE,
     val outputOptions: Set<OutputOptionType> = emptySet(),
+    val visibility: GeneratedVisibility = GeneratedVisibility.PUBLIC,
     val inputSpec: String,
 ) {
     companion object {
@@ -101,6 +103,8 @@ data class GenerationSettings(
             outputOptions = this.getAll("outputOptions")?.map { OutputOptionType.valueOf(it) }?.toSet()
                 ?: emptySet(),
 
+            visibility = this["visibility"]?.let { GeneratedVisibility.valueOf(it) } ?: GeneratedVisibility.PUBLIC,
+
             inputSpec = this["spec"] ?: "")
     }
 
@@ -127,6 +131,7 @@ data class GenerationSettings(
             .plus(validationLibrary.let { "validationLibrary=${it.name}" })
             .plus(externalRefResolutionMode.let { "externalRefResolutionMode=${it.name}" })
             .plus(outputOptions.map { "outputOptions=${it.name}" })
+            .plus(visibility.takeUnless { it == GeneratedVisibility.PUBLIC }?.let { "visibility=${it.name}" })
             .filterNotNull()
             .joinToString("&")
     }

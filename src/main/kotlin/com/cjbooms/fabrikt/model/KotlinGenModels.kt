@@ -5,6 +5,7 @@ import com.cjbooms.fabrikt.model.Destinations.controllersPackage
 import com.cjbooms.fabrikt.model.Destinations.modelsPackage
 import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
 import com.cjbooms.fabrikt.util.GeneratedAnnotations.addGeneratedAnnotation
+import com.cjbooms.fabrikt.util.GeneratedVisibilityModifiers.withVisibility
 import com.cjbooms.fabrikt.util.NormalisedString.toKotlinParameterName
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
@@ -17,7 +18,7 @@ sealed class GeneratedType(
     spec: TypeSpec,
     val destinationPackage: String,
 ) {
-    val spec: TypeSpec = spec.addGeneratedAnnotation()
+    val spec: TypeSpec = spec.addGeneratedAnnotation().withVisibility()
     val className = ClassName(destinationPackage, spec.name!!)
 }
 

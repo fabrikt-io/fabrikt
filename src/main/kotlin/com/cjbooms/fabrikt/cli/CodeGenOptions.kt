@@ -13,6 +13,11 @@ import com.cjbooms.fabrikt.model.JacksonAnnotations
 import com.cjbooms.fabrikt.model.KotlinxSerializationAnnotations
 import com.cjbooms.fabrikt.model.SerializationAnnotations
 
+enum class GeneratedVisibility {
+    PUBLIC,
+    INTERNAL,
+}
+
 enum class CodeGenerationType(
     val description: String,
 ) {

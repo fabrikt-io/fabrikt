@@ -40,6 +40,7 @@ object CodeGen {
             instantLibrary = codeGenArgs.instantLibrary,
             jacksonNullabilityMode = codeGenArgs.jacksonNullabilityMode,
             outputOptions = codeGenArgs.outputOptions,
+            visibility = codeGenArgs.visibility,
             operationIdTransform = codeGenArgs.operationIdTransform,
         )
 

@@ -43,6 +43,7 @@ import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.GeneratedAnnotations.addGeneratedAnnotations
+import com.cjbooms.fabrikt.util.GeneratedVisibilityModifiers.withVisibility
 import com.cjbooms.fabrikt.util.requestOperations
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.squareup.kotlinpoet.AnnotationSpec
@@ -208,13 +209,28 @@ class OkHttpSimpleClientGenerator(
         return setOf(
             SimpleFile(
                 clientDir.resolve("ApiModels.kt"),
-                OkHttpClientLibraryFiles.apiModels(packages, nonNullDataPayloads).addGeneratedAnnotations().toString(),
+                OkHttpClientLibraryFiles
+                    .apiModels(packages, nonNullDataPayloads)
+                    .addGeneratedAnnotations()
+                    .withVisibility()
+                    .toString(),
             ),
             SimpleFile(
                 clientDir.resolve("HttpUtil.kt"),
-                OkHttpClientLibraryFiles.httpUtil(packages, nonNullDataPayloads).addGeneratedAnnotations().toString(),
+                OkHttpClientLibraryFiles
+                    .httpUtil(packages, nonNullDataPayloads)
+                    .addGeneratedAnnotations()
+                    .withVisibility()
+                    .toString(),
             ),
-            SimpleFile(clientDir.resolve("OAuth.kt"), OkHttpClientLibraryFiles.oAuth(packages).addGeneratedAnnotations().toString()),
+            SimpleFile(
+                clientDir.resolve("OAuth.kt"),
+                OkHttpClientLibraryFiles
+                    .oAuth(packages)
+                    .addGeneratedAnnotations()
+                    .withVisibility()
+                    .toString(),
+            ),
         )
     }
 }

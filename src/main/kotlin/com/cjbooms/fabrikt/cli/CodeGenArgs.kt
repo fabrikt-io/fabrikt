@@ -133,6 +133,13 @@ class CodeGenArgs {
     var outputOptions: Set<OutputOptionType> = emptySet()
 
     @Parameter(
+        names = ["--visibility"],
+        description = "Visibility of generated models, clients, controllers and supporting declarations. Defaults to PUBLIC.",
+        converter = GeneratedVisibilityConverter::class,
+    )
+    var visibility: GeneratedVisibility = GeneratedVisibility.PUBLIC
+
+    @Parameter(
         names = ["--http-controller-opts"],
         description = "Select the options for the controllers that you want to be generated.",
         converter = ControllerCodeGenOptionConverter::class,
@@ -294,6 +301,10 @@ class ModelCodeGenOptionConverter : IStringConverter<ModelCodeGenOptionType> {
 
 class ClientCodeGenOptionConverter : IStringConverter<ClientCodeGenOptionType> {
     override fun convert(value: String): ClientCodeGenOptionType = convertToEnumValue(value)
+}
+
+class GeneratedVisibilityConverter : IStringConverter<GeneratedVisibility> {
+    override fun convert(value: String): GeneratedVisibility = convertToEnumValue(value)
 }
 
 class ClientCodeGenTargetConverter : IStringConverter<ClientCodeGenTargetType> {

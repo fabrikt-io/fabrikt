@@ -398,6 +398,10 @@ Usage: <main class> [options]
 |                                         |   `JAVAX_VALIDATION` - Use `javax.validation` annotations in generated model classes |
 |                                         |   `JAKARTA_VALIDATION` - Use `jakarta.validation` annotations in generated model classes (default) |
 |                                         |   `NO_VALIDATION` - Use no validation annotations in generated model classes |
+|   `--visibility`                        | Visibility of generated models, clients, controllers and supporting declarations. Defaults to PUBLIC. |
+|                                         | CHOOSE ONE OF: |
+|                                         |   PUBLIC |
+|                                         |   INTERNAL |
 
 
 ## Original Motivation
