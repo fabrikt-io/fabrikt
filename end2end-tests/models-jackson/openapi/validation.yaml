@@ -166,6 +166,19 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MappedObject'
+    MergePatchValue:
+      type: object
+      x-json-merge-patch: true
+      properties:
+        value:
+          type: array
+          items:
+            type: string
+        nullableValue:
+          type: array
+          nullable: true
+          items:
+            type: string
     Status:
       type: string
       enum: [ready, busy]

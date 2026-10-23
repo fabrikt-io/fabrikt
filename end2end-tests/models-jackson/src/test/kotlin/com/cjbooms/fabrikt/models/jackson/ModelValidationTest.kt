@@ -12,6 +12,7 @@ import com.example.validation.models.IntegerValue
 import com.example.validation.models.ListValue
 import com.example.validation.models.MapValue
 import com.example.validation.models.MappedObject
+import com.example.validation.models.MergePatchValue
 import com.example.validation.models.NestedListValue
 import com.example.validation.models.NestedSetValue
 import com.example.validation.models.NestedValue
@@ -26,6 +27,7 @@ import jakarta.validation.Validation
 import jakarta.validation.ValidatorFactory
 import jakarta.validation.constraints.DecimalMax
 import jakarta.validation.constraints.DecimalMin
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import org.assertj.core.api.Assertions.assertThat
@@ -34,6 +36,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.openapitools.jackson.nullable.JsonNullable
 import java.math.BigDecimal
 import java.time.OffsetDateTime
 import java.util.Currency
@@ -364,6 +367,27 @@ class ModelValidationTest {
     @Test
     fun `typed map value validation accepts valid children`() {
         val model = TypedMapValue(value = mapOf("first" to ValueValue(text = "ready")))
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
+    fun `merge patch accepts an absent value`() {
+        assertThat(factory.validator.validate(MergePatchValue())).isEmpty()
+    }
+
+    @Test
+    fun `merge patch rejects an explicit null for a non-nullable property`() {
+        assertViolation(
+            model = MergePatchValue(value = JsonNullable.of(null)),
+            propertyPath = "value",
+            constraint = NotNull::class,
+        )
+    }
+
+    @Test
+    fun `merge patch accepts an explicit null for a nullable property`() {
+        val model = MergePatchValue(nullableValue = JsonNullable.of(null))
 
         assertThat(factory.validator.validate(model)).isEmpty()
     }

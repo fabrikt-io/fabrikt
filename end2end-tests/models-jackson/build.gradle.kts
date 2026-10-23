@@ -27,6 +27,7 @@ dependencies {
     implementation(libs.jackson.core)
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.jackson.databind.nullable)
 
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.bundles.junit)
