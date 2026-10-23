@@ -29,6 +29,7 @@ fun generateCodeSynchronized(
         instantLibrary = generationSettings.instantLibrary,
         jacksonNullabilityMode = generationSettings.jacksonNullabilityMode,
         outputOptions = generationSettings.outputOptions,
+        visibility = generationSettings.visibility,
         operationIdTransform = generationSettings.parseOperationIdTransform(),
     )
 

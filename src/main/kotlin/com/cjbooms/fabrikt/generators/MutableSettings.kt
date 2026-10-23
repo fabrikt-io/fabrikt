@@ -8,6 +8,7 @@ import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ControllerCodeGenTargetType
 import com.cjbooms.fabrikt.cli.CustomTypeMapping
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
+import com.cjbooms.fabrikt.cli.GeneratedVisibility
 import com.cjbooms.fabrikt.cli.InstantLibrary
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
@@ -57,6 +58,8 @@ object MutableSettings {
         private set
     var outputOptions: Set<OutputOptionType> = mutableSetOf()
         private set
+    var visibility: GeneratedVisibility = GeneratedVisibility.PUBLIC
+        private set
     var operationIdTransform: Pair<Regex, String>? = null
         private set
 
@@ -100,8 +103,10 @@ object MutableSettings {
         outputOptions: Set<OutputOptionType> = emptySet(),
         operationIdTransform: Pair<Regex, String>? = null,
         generationMetadata: GenerationMetadata = GenerationMetadata(),
+        visibility: GeneratedVisibility = GeneratedVisibility.PUBLIC,
     ) {
         this.generationMetadata = generationMetadata
+        this.visibility = visibility
         this.generationTypes = genTypes
         this.controllerOptions = controllerOptions
         this.controllerTarget = controllerTarget

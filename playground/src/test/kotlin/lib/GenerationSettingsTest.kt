@@ -7,6 +7,7 @@ import com.cjbooms.fabrikt.cli.CodeGenerationType
 import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ControllerCodeGenTargetType
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
+import com.cjbooms.fabrikt.cli.GeneratedVisibility
 import com.cjbooms.fabrikt.cli.InstantLibrary
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
@@ -20,6 +21,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GenerationSettingsTest {
+    @Test
+    fun internalVisibility() {
+        val settings = Parameters.build { append("visibility", "INTERNAL") }.receiveGenerationSettings()
+        assertEquals(GeneratedVisibility.INTERNAL, settings.visibility)
+        assertTrue(settings.toQueryParams().contains("visibility=INTERNAL"))
+    }
+
     @Test
     fun headerApiKeyClientOption() {
         val option = ClientCodeGenOptionType.OPENAPI_API_KEY_AUTHENTICATION

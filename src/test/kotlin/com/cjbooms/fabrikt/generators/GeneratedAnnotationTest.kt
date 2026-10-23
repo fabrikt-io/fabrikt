@@ -5,6 +5,7 @@ import com.cjbooms.fabrikt.cli.CodeGenArgs
 import com.cjbooms.fabrikt.cli.CodeGenerationType
 import com.cjbooms.fabrikt.cli.CodeGenerator
 import com.cjbooms.fabrikt.cli.ControllerCodeGenTargetType
+import com.cjbooms.fabrikt.cli.GeneratedVisibility
 import com.cjbooms.fabrikt.cli.OutputOptionType
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.model.Destinations
@@ -91,6 +92,46 @@ class GeneratedAnnotationTest {
         assertThat(args.outputOptions).containsExactly(OutputOptionType.ADD_GENERATED_ANNOTATION)
         MutableSettings.updateSettings(genTypes = setOf(CodeGenerationType.HTTP_MODELS))
         generate().values.forEach { assertThat(it).doesNotContain("@Generated", "javax.annotation.processing") }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ClientCodeGenTargetType::class)
+    fun `internal clients include internal supporting declarations`(target: ClientCodeGenTargetType) {
+        listOf("generatedAnnotation", "multipartClientParts").forEach { example ->
+            MutableSettings.updateSettings(genTypes = setOf(CodeGenerationType.CLIENT), clientTarget = target)
+            val publicFiles = generate(example)
+            MutableSettings.updateSettings(
+                genTypes = setOf(CodeGenerationType.CLIENT),
+                clientTarget = target,
+                visibility = GeneratedVisibility.INTERNAL,
+            )
+            assertInternalFiles(publicFiles, generate(example))
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ControllerCodeGenTargetType::class)
+    fun `internal controllers do not expose internal models`(target: ControllerCodeGenTargetType) {
+        MutableSettings.updateSettings(genTypes = setOf(CodeGenerationType.CONTROLLERS), controllerTarget = target)
+        val publicFiles = generate()
+        MutableSettings.updateSettings(
+            genTypes = setOf(CodeGenerationType.CONTROLLERS),
+            controllerTarget = target,
+            visibility = GeneratedVisibility.INTERNAL,
+        )
+        assertInternalFiles(publicFiles, generate())
+    }
+
+    private fun assertInternalFiles(
+        publicFiles: Map<String, String>,
+        internalFiles: Map<String, String>,
+    ) {
+        assertThat(internalFiles.keys).isEqualTo(publicFiles.keys)
+        publicFiles.forEach { (name, content) ->
+            assertThat(internalFiles.getValue(name))
+                .describedAs(name)
+                .isEqualTo(content.replace(Regex("(?m)^public "), "internal "))
+        }
     }
 
     private fun assertGoldenFiles(

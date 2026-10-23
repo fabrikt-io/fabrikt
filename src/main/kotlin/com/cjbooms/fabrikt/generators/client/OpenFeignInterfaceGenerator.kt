@@ -43,6 +43,7 @@ import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.GeneratedAnnotations.addGeneratedAnnotations
+import com.cjbooms.fabrikt.util.GeneratedVisibilityModifiers.withVisibility
 import com.cjbooms.fabrikt.util.requestOperations
 import com.cjbooms.fabrikt.util.toUpperCase
 import com.github.javaparser.utils.CodeGenerationUtils
@@ -172,7 +173,11 @@ class OpenFeignInterfaceGenerator(
                         .resolve(CodeGenerationUtils.packageToPath(packages.base))
                         .resolve("client")
                         .resolve("FeignMultipartEncoder.kt"),
-                    OpenFeignClientLibraryFiles.multipartEncoder(packages).addGeneratedAnnotations().toString(),
+                    OpenFeignClientLibraryFiles
+                        .multipartEncoder(packages)
+                        .addGeneratedAnnotations()
+                        .withVisibility()
+                        .toString(),
                 ),
             )
         } else {

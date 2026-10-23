@@ -39,6 +39,7 @@ import com.cjbooms.fabrikt.model.RequestParameter
 import com.cjbooms.fabrikt.model.SimpleFile
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.GeneratedAnnotations.addGeneratedAnnotations
+import com.cjbooms.fabrikt.util.GeneratedVisibilityModifiers.withVisibility
 import com.cjbooms.fabrikt.util.requestOperations
 import com.github.javaparser.utils.CodeGenerationUtils
 import com.squareup.kotlinpoet.AnnotationSpec
@@ -384,7 +385,11 @@ class SpringHttpInterfaceGenerator(
                         .resolve(CodeGenerationUtils.packageToPath(packages.base))
                         .resolve("client")
                         .resolve("JsonPart.kt"),
-                    SpringHttpInterfaceClientLibraryFiles.jsonPart(packages).addGeneratedAnnotations().toString(),
+                    SpringHttpInterfaceClientLibraryFiles
+                        .jsonPart(packages)
+                        .addGeneratedAnnotations()
+                        .withVisibility()
+                        .toString(),
                 ),
             )
         } else {

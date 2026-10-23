@@ -7,6 +7,16 @@ import org.junit.jupiter.api.assertThrows
 
 class CodeGenArgsTest {
     @Test
+    fun `visibility defaults to public and accepts internal`() {
+        assertThat(CodeGenArgs.parse(arrayOf("--base-package", "example")).visibility).isEqualTo(GeneratedVisibility.PUBLIC)
+        assertThat(CodeGenArgs.parse(arrayOf("--base-package", "example", "--visibility", "internal")).visibility)
+            .isEqualTo(GeneratedVisibility.INTERNAL)
+        assertThrows<ParameterException> {
+            CodeGenArgs.parse(arrayOf("--base-package", "example", "--visibility", "private"))
+        }
+    }
+
+    @Test
     fun `accepts repeated model annotations`() {
         val args =
             CodeGenArgs.parse(

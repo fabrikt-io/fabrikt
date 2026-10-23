@@ -8,6 +8,7 @@ import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ControllerCodeGenTargetType
 import com.cjbooms.fabrikt.cli.DependenciesGenerationMode
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
+import com.cjbooms.fabrikt.cli.GeneratedVisibility
 import com.cjbooms.fabrikt.cli.InstantLibrary
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
@@ -97,6 +98,7 @@ fun FlowContent.specForm(settings: GenerationSettings) = div {
         enumSelectBox("dependenciesGenerationMode", DependenciesGenerationMode.values(), settings.dependenciesGenerationMode.name)
 
         div("h3 mt3 mb1") { +"Output Options" }
+            enumSelectBox("visibility", GeneratedVisibility.values(), settings.visibility.name)
             enumCheckboxes("outputOptions", OutputOptionType.values(), settings.outputOptions.map { it.name }.toSet())
         }
 
