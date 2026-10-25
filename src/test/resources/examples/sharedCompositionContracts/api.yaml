@@ -43,3 +43,31 @@ components:
       properties:
         unrelated:
           type: boolean
+    BranchBase:
+      type: object
+      properties:
+        id:
+          type: string
+    BranchFirst:
+      allOf:
+        - $ref: '#/components/schemas/BranchBase'
+        - type: object
+          properties:
+            custom_field:
+              type: string
+    BranchFirstChild:
+      allOf:
+        - $ref: '#/components/schemas/BranchFirst'
+        - type: object
+          properties:
+            nested:
+              type: string
+    BranchSecond:
+      allOf:
+        - $ref: '#/components/schemas/BranchBase'
+        - type: object
+          properties:
+            custom_field:
+              type: string
+            customField:
+              type: string
