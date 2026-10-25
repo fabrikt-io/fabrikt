@@ -1,8 +1,7 @@
 package com.cjbooms.fabrikt.model
 
+import com.cjbooms.fabrikt.parser.OpenApi3ParserAdapter
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import com.reprezen.jsonoverlay.MapOverlay
 import com.reprezen.jsonoverlay.Overlay
 import com.reprezen.kaizen.oasparser.model3.Discriminator
 import com.reprezen.kaizen.oasparser.model3.MediaType
@@ -16,9 +15,6 @@ import com.reprezen.kaizen.oasparser.model3.Schema
 import com.reprezen.kaizen.oasparser.model3.SecurityRequirement
 import com.reprezen.kaizen.oasparser.model3.SecurityScheme
 import com.reprezen.kaizen.oasparser.model3.Server
-import com.reprezen.kaizen.oasparser.ovl3.OperationImpl
-import java.net.URL
-import java.util.logging.Logger
 
 data class SchemaSemantics(
     val isUninhabitable: Boolean = false,
@@ -202,34 +198,7 @@ class OpenApiPath(
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
 ) {
     private val queryOperations: Map<String, OpenApiOperation> by lazy {
-        val pathOverlay = Overlay.of(kaizen)
-        val query = pathOverlay.parsedJson?.get("query")
-        when {
-            query == null -> emptyMap()
-            !query.isObject || !query.path("responses").isObject || query.path("responses").isEmpty -> {
-                Logger.getGlobal().warning(
-                    "Ignoring malformed QUERY $pathString; provide an Operation Object with non-empty responses.",
-                )
-                emptyMap()
-            }
-            else -> {
-                // Parse QUERY as a document fragment so inline schemas retain their original JSON pointers.
-                val manager =
-                    pathOverlay.root
-                        ._getCreatingRef()
-                        .manager
-                        .getManagerFor(URL(pathOverlay.jsonReference.substringBefore('#')))
-                val queryPath = JsonNodeFactory.instance.objectNode().set<JsonNode>("query", query)
-                val operations =
-                    MapOverlay
-                        .getFactory(OperationImpl.factory, "query")
-                        .create(queryPath, null, manager)
-                operations._setCreatingRef(
-                    manager.getReference("${pathOverlay.jsonReference.substringBefore('#')}#${pathOverlay.pathFromRoot}"),
-                )
-                Overlay.get(operations).mapValues { OpenApiOperation(it.value, schemaSemanticsAt) }
-            }
-        }
+        OpenApi3ParserAdapter.parseQueryOperations(kaizen).mapValues { OpenApiOperation(it.value, schemaSemanticsAt) }
     }
 
     val parameters: List<OpenApiParameter>
