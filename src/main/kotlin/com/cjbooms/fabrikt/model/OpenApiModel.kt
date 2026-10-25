@@ -145,6 +145,8 @@ class OpenApi3Document(
     /** Named components included directly or transitively through allOf, excluding the schema itself. */
     fun allOfComponentSchemas(schema: OpenApiSchema): List<OpenApiSchema> = compositionRelationships.allOfComponents(schema)
 
+    internal fun conflictingAllOfPropertyKeys(schema: OpenApiSchema): Set<String> = compositionRelationships.conflictingPropertyKeys(schema)
+
     fun schemaNamesWithPolymorphicSubtypes(schemaNames: Set<String>): Set<String> = includePolymorphicSubtypes(schemaNames)
 
     override fun equals(other: Any?): Boolean = other is OpenApi3Document && kaizen == other.kaizen

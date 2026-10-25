@@ -78,6 +78,9 @@ class SchemaCompositionRelationshipsTest {
         assertThat(document.allOfComponentSchemas(schemas.getValue("Self"))).isEmpty()
         assertThat(document.componentReferences("CycleC"))
             .containsExactlyInAnyOrder(schemas.getValue("CycleB").jsonReference, schemas.getValue("A").jsonReference)
+        listOf("CycleB", "CycleC", "Self").forEach { name ->
+            assertThat(document.conflictingAllOfPropertyKeys(schemas.getValue(name))).isEmpty()
+        }
     }
 
     private fun OpenApi3Document.componentReferences(name: String): List<String> =

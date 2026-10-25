@@ -136,28 +136,14 @@ sealed class PropertyInfo {
             additionalRequiredFields: Collection<String> = emptySet(),
             memberSchema: Schema = this,
         ): Collection<PropertyInfo> {
-            // Group raw keys by their normalized names to find any groups that would conflict.
-            // If there are any conflicts, use the raw keys for that group as names, otherwise
-            // use the normalized name. This prevents conflation when two different OAS property
-            // names convert to the same camel case representation (i.e. `T` and `t`, or
-            // `foo_bar` and `fooBar`)
-            val names =
-                properties.keys
-                    .groupBy { it.camelCase() }
-                    .flatMap { (normalizedName, rawNames) ->
-                        if (rawNames.size > 1) {
-                            rawNames.map { it to it }
-                        } else {
-                            listOf(rawNames.first() to normalizedName)
-                        }
-                    }.toMap()
+            val conflictingKeys = api.conflictingAllOfPropertyKeys(this)
 
             val mainProperties: List<PropertyInfo> =
                 properties
                     .filterNot { (_, schema) -> settings.excludes(schema) }
                     .map { property ->
                         val oasKey = property.key
-                        val name = names[oasKey]!!
+                        val name = if (oasKey in conflictingKeys) oasKey else oasKey.camelCase()
 
                         if (property.value.isUninhabitable) {
                             val required =

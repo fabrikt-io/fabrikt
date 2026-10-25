@@ -28,3 +28,31 @@ components:
         control_case:
           type: string
           description: Description of control_case - this should get normalized because it conflicts with no other property
+    Grandparent:
+      type: object
+      required: ['$type']
+      properties:
+        $type:
+          type: string
+      discriminator:
+        propertyName: $type
+        mapping:
+          parent: '#/components/schemas/Parent'
+          child: '#/components/schemas/Child'
+    Parent:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Grandparent'
+        - type: object
+          properties:
+            type:
+              type: string
+              nullable: true
+    Child:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Parent'
+        - type: object
+          properties:
+            value:
+              type: string
