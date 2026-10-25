@@ -193,7 +193,7 @@ Latest version of the plugin: [![Gradle Plugin Portal Version](https://img.shiel
 ```kotlin
 plugins {
     // find latest version: https://github.com/acanda/fabrikt-gradle-plugin/releases
-    id("ch.acanda.gradle.fabrikt") version "1.45.0"
+    id("ch.acanda.gradle.fabrikt") version "2.0.0"
 }
 
 fabrikt {
