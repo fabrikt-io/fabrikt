@@ -7,46 +7,30 @@ internal class SchemaCompositionRelationships(
     componentSchemas: Collection<OpenApiSchema>,
 ) {
     private val components = componentSchemas.associateBy { it.jsonReference }
-    private val propertyConflicts = mutableMapOf<String, Set<String>>()
-    private val allOfNeighbours by lazy {
-        val neighbours = mutableMapOf<String, MutableSet<OpenApiSchema>>()
-        val visited = mutableSetOf<String>()
-
-        fun connect(schema: OpenApiSchema) {
-            if (!visited.add(schema.jsonReference)) return
-            schema.allOfSchemas.forEach { child ->
-                neighbours.getOrPut(schema.jsonReference, ::linkedSetOf).add(child)
-                neighbours.getOrPut(child.jsonReference, ::linkedSetOf).add(schema)
-                connect(child)
+    private val propertyConflicts by lazy {
+        val conflicts = mutableMapOf<String, MutableSet<String>>()
+        components.values.forEach { member ->
+            val included = listOf(member) + allOfSchemas(member)
+            val keys = propertyCollisions(included)
+            included.forEach { schema ->
+                conflicts.getOrPut(schema.jsonReference, ::linkedSetOf).addAll(keys)
             }
         }
-        components.values.forEach(::connect)
-        neighbours
+        conflicts
     }
 
     fun conflictingPropertyKeys(schema: OpenApiSchema): Set<String> =
-        propertyConflicts.getOrPut(schema.jsonReference) {
-            val family = linkedMapOf<String, OpenApiSchema>()
-            val pending = ArrayDeque(listOf(schema))
-            while (pending.isNotEmpty()) {
-                val member = pending.removeFirst()
-                if (family.putIfAbsent(member.jsonReference, member) != null) continue
-                pending.addAll(allOfNeighbours[member.jsonReference].orEmpty())
-            }
-            val conflicts =
-                family.values
-                    .flatMap { member ->
-                        (listOf(member) + allOfSchemas(member))
-                            .flatMap { it.properties.keys }
-                            .distinct()
-                            .groupBy { it.camelCase() }
-                            .values
-                            .filter { it.size > 1 }
-                            .flatten()
-                    }.toSet()
-            family.keys.forEach { propertyConflicts[it] = conflicts }
-            conflicts
-        }
+        propertyConflicts[schema.jsonReference] ?: propertyCollisions(listOf(schema) + allOfSchemas(schema))
+
+    private fun propertyCollisions(schemas: Collection<OpenApiSchema>): Set<String> =
+        schemas
+            .flatMap { it.properties.keys }
+            .distinct()
+            .groupBy { it.camelCase() }
+            .values
+            .filter { it.size > 1 }
+            .flatten()
+            .toSet()
 
     fun contractComponents(): List<OpenApiSchema> =
         components.values

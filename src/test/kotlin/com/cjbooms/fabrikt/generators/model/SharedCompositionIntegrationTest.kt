@@ -24,7 +24,7 @@ class SharedCompositionIntegrationTest {
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun `composed properties retain distinct names throughout the discriminator hierarchy`(contracts: Boolean) {
+    fun `composed properties retain distinct names across the allOf hierarchy`(contracts: Boolean) {
         MutableSettings.updateSettings(
             modelOptions = if (contracts) setOf(ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS) else emptySet(),
         )
@@ -40,6 +40,27 @@ class SharedCompositionIntegrationTest {
         listOf("Parent", "Child").forEach { name ->
             assertThat(files.getValue(name)).contains("val type: String? = null")
             if (contracts) assertThat(files.getValue(name)).contains("GrandparentComposite", "ParentComposite")
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `sibling collisions leave unrelated composed property names unchanged`(contracts: Boolean) {
+        MutableSettings.updateSettings(
+            modelOptions = if (contracts) setOf(ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS) else emptySet(),
+        )
+        val files =
+            ModelGenerator(
+                Packages("example"),
+                SourceApi(readTextResource("/examples/sharedCompositionContracts/api.yaml")),
+            ).generate().files.associate { it.name to it.toString() }
+
+        listOf("BranchFirst", "BranchFirstChild").forEach { name ->
+            assertThat(files.getValue(name)).contains("val customField: String?").doesNotContain("val custom_field:")
+        }
+        assertThat(files.getValue("BranchSecond")).contains("val custom_field: String?", "val customField: String?")
+        if (contracts) {
+            assertThat(files.getValue("BranchFirstComposite")).contains("val customField: String?").doesNotContain("val custom_field:")
         }
     }
 
