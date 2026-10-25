@@ -6,15 +6,19 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.logging.Logger
+import java.util.logging.SimpleFormatter
+import java.util.logging.StreamHandler
 
 class QueryOperationTest {
     @TempDir
     lateinit var directory: Path
 
     @ParameterizedTest
-    @ValueSource(strings = ["null", "false", "[]", "invalid"])
+    @ValueSource(strings = ["null", "false", "[]", "invalid", "{}", "{responses: {}}", "{responses: []}"])
     fun `malformed QUERY operations do not prevent generation of other operations`(value: String) {
         val spec =
             """
@@ -30,12 +34,23 @@ class QueryOperationTest {
                     '204':
                       description: Empty
             """.trimIndent()
-        val document = OpenApiDocumentParser.parse(spec).asOpenApi3Document()
-        assertThat(
-            document.paths
-                .getValue("/search")
-                .operations.keys,
-        ).containsExactly("get")
+        val messages = ByteArrayOutputStream()
+        val handler = StreamHandler(messages, SimpleFormatter())
+        val logger = Logger.getGlobal()
+        logger.addHandler(handler)
+        try {
+            val document = OpenApiDocumentParser.parse(spec).asOpenApi3Document()
+            assertThat(
+                document.paths
+                    .getValue("/search")
+                    .operations.keys,
+            ).containsExactly("get")
+            handler.flush()
+            assertThat(messages.toString()).contains("Ignoring malformed QUERY /search")
+        } finally {
+            logger.removeHandler(handler)
+            handler.close()
+        }
     }
 
     @Test

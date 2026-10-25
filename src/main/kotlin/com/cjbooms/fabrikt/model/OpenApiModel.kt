@@ -206,9 +206,9 @@ class OpenApiPath(
         val query = pathOverlay.parsedJson?.get("query")
         when {
             query == null -> emptyMap()
-            !query.isObject -> {
+            !query.isObject || !query.path("responses").isObject || query.path("responses").isEmpty -> {
                 Logger.getGlobal().warning(
-                    "Ignoring malformed QUERY $pathString; provide an Operation Object for the path item's query field.",
+                    "Ignoring malformed QUERY $pathString; provide an Operation Object with non-empty responses.",
                 )
                 emptyMap()
             }
