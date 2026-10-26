@@ -7,6 +7,7 @@ import com.cjbooms.fabrikt.generators.model.JacksonMetadata.basePolymorphicType
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.deductionPolymorphicSubTypes
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.deductionPolymorphicType
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata.polymorphicSubTypes
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
@@ -74,6 +75,11 @@ object JacksonAnnotations : SerializationAnnotations {
         enumSpecBuilder: TypeSpec.Builder,
         enumValue: String,
     ) = enumSpecBuilder.addAnnotation(JSON_ENUM_DEFAULT_VALUE)
+
+    override fun addFaultTolerantEnumSerializer(
+        enumSpecBuilder: TypeSpec.Builder,
+        enumType: ClassName,
+    ) = enumSpecBuilder // not applicable — @JsonEnumDefaultValue handles the fallback
 
     override fun annotateArrayElementType(
         elementType: TypeName,

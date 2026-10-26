@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.model
 
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
@@ -77,6 +78,13 @@ sealed interface SerializationAnnotations {
     fun addEnumDefaultAnnotation(
         enumSpecBuilder: TypeSpec.Builder,
         enumValue: String,
+    ): TypeSpec.Builder
+
+    /** Routes deserialization of a fault-tolerant enum through its `fromValue` fallback. No-op for libraries
+     *  where [addEnumDefaultAnnotation] already handles unknown values (e.g. Jackson). */
+    fun addFaultTolerantEnumSerializer(
+        enumSpecBuilder: TypeSpec.Builder,
+        enumType: ClassName,
     ): TypeSpec.Builder
 
     fun annotateArrayElementType(

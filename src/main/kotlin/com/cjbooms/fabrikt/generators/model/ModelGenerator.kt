@@ -871,7 +871,11 @@ class ModelGenerator(
 
         val companion = companionBuilder.build()
 
-        // Only Micronaut Serde needs @Serdeable on enums; Jackson and kotlinx don't annotate enum classes
+        if (isFaultTolerant) {
+            serializationAnnotations.addFaultTolerantEnumSerializer(classBuilder, enumType)
+        }
+
+        // Only Micronaut Serde needs @Serdeable on enums; Jackson and kotlinx don't need it
         if (options.contains(ModelCodeGenOptionType.MICRONAUT_SERDEABLE)) {
             serializationAnnotations.addClassAnnotation(classBuilder)
         }

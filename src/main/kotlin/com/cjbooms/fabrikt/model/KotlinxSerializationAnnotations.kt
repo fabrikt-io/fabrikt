@@ -3,17 +3,27 @@ package com.cjbooms.fabrikt.model
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.MemberName
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.asClassName
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonClassDiscriminator
 
 object KotlinxSerializationAnnotations : SerializationAnnotations {
     private const val DEFAULT_JSON_CLASS_DISCRIMINATOR = "type"
+    private const val FAULT_TOLERANT_ENUM_SERIALIZER_NAME = "Serializer"
 
     /**
      * Polymorphic class discriminators are added as annotations in kotlinx serialization.
@@ -155,5 +165,49 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
     override fun addEnumDefaultAnnotation(
         enumSpecBuilder: TypeSpec.Builder,
         enumValue: String,
-    ) = enumSpecBuilder // not applicable
+    ) = enumSpecBuilder // not applicable — see addFaultTolerantEnumSerializer
+
+    /**
+     * kotlinx has no default enum constant, so the built-in enum serializer throws on unknown values.
+     * A nested serializer delegating to `fromValue` maps them to the UNRECOGNIZED fallback instead.
+     */
+    override fun addFaultTolerantEnumSerializer(
+        enumSpecBuilder: TypeSpec.Builder,
+        enumType: ClassName,
+    ): TypeSpec.Builder {
+        val serializerType = enumType.nestedClass(FAULT_TOLERANT_ENUM_SERIALIZER_NAME)
+        val serializer =
+            TypeSpec
+                .objectBuilder(serializerType)
+                .addSuperinterface(KSerializer::class.asClassName().parameterizedBy(enumType))
+                .addProperty(
+                    PropertySpec
+                        .builder("descriptor", SerialDescriptor::class, KModifier.OVERRIDE)
+                        .initializer(
+                            "%M(%S, %T.STRING)",
+                            MemberName("kotlinx.serialization.descriptors", "PrimitiveSerialDescriptor"),
+                            enumType.canonicalName,
+                            PrimitiveKind::class,
+                        ).build(),
+                ).addFunction(
+                    FunSpec
+                        .builder("serialize")
+                        .addModifiers(KModifier.OVERRIDE)
+                        .addParameter("encoder", Encoder::class)
+                        .addParameter("value", enumType)
+                        .addStatement("encoder.encodeString(value.value)")
+                        .build(),
+                ).addFunction(
+                    FunSpec
+                        .builder("deserialize")
+                        .addModifiers(KModifier.OVERRIDE)
+                        .addParameter("decoder", Decoder::class)
+                        .returns(enumType)
+                        .addStatement("return fromValue(decoder.decodeString())")
+                        .build(),
+                ).build()
+        return enumSpecBuilder
+            .addAnnotation(serializerAnnotation(serializerType))
+            .addType(serializer)
+    }
 }
