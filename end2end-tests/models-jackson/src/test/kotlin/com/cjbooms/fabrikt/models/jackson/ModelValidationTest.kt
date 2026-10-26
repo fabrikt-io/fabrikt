@@ -377,6 +377,13 @@ class ModelValidationTest {
     }
 
     @Test
+    fun `merge patch accepts a present value`() {
+        val model = MergePatchValue(value = JsonNullable.of(listOf("Alice")))
+
+        assertThat(factory.validator.validate(model)).isEmpty()
+    }
+
+    @Test
     fun `merge patch rejects an explicit null for a non-nullable property`() {
         assertViolation(
             model = MergePatchValue(value = JsonNullable.of(null)),
