@@ -32,7 +32,7 @@ components:
               nullable: true
     Second:
       allOf:
-        - $ref: '#/components/schemas/Base'
+        - $ref: '#/components/schemas/First'
         - type: object
           properties:
             enabled:

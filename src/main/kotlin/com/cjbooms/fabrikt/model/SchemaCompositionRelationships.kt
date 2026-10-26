@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.model
 
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.allOfAncestors
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 
 internal class SchemaCompositionRelationships(
@@ -10,7 +11,7 @@ internal class SchemaCompositionRelationships(
     private val propertyConflicts by lazy {
         val conflicts = mutableMapOf<String, MutableSet<String>>()
         components.values.forEach { member ->
-            val included = listOf(member) + allOfSchemas(member)
+            val included = listOf(member) + member.allOfAncestors()
             val keys = propertyCollisions(included)
             included.forEach { schema ->
                 conflicts.getOrPut(schema.jsonReference, ::linkedSetOf).addAll(keys)
@@ -20,7 +21,7 @@ internal class SchemaCompositionRelationships(
     }
 
     fun conflictingPropertyKeys(schema: OpenApiSchema): Set<String> =
-        propertyConflicts[schema.jsonReference] ?: propertyCollisions(listOf(schema) + allOfSchemas(schema))
+        propertyConflicts[schema.jsonReference] ?: propertyCollisions(listOf(schema) + schema.allOfAncestors())
 
     private fun propertyCollisions(schemas: Collection<OpenApiSchema>): Set<String> =
         schemas
@@ -43,18 +44,5 @@ internal class SchemaCompositionRelationships(
                     }
             }.distinctBy { it.jsonReference }
 
-    fun allOfComponents(schema: OpenApiSchema): List<OpenApiSchema> = allOfSchemas(schema).mapNotNull { components[it.jsonReference] }
-
-    private fun allOfSchemas(schema: OpenApiSchema): List<OpenApiSchema> {
-        val ancestors = mutableListOf<OpenApiSchema>()
-        val visited = mutableSetOf(schema.jsonReference)
-        val pending = ArrayDeque(schema.allOfSchemas)
-        while (pending.isNotEmpty()) {
-            val ancestor = pending.removeFirst()
-            if (!visited.add(ancestor.jsonReference)) continue
-            ancestors.add(ancestor)
-            pending.addAll(ancestor.allOfSchemas)
-        }
-        return ancestors
-    }
+    fun allOfComponents(schema: OpenApiSchema): List<OpenApiSchema> = schema.allOfAncestors().mapNotNull { components[it.jsonReference] }
 }

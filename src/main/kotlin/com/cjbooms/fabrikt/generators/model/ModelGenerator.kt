@@ -37,6 +37,7 @@ import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.allOfAncestors
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.componentKey
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.findOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getDiscriminatorForInlinedObjectUnderAllOf
@@ -1171,13 +1172,13 @@ class ModelGenerator(
         val subTypes =
             allSchemas
                 .filter { model ->
-                    model.schema.allOfSchemas.any { allOfRef ->
+                    model.schema.allOfAncestors().firstOrNull { it.isPolymorphicSuperType() }?.let { allOfRef ->
                         ModelNameRegistry.getOrRegister(allOfRef, direction = direction) == modelName &&
                             (
                                 allOfRef.discriminator == discriminator ||
                                     allOfRef.allOfSchemas.any { it.discriminator == discriminator }
                             )
-                    }
+                    } == true
                 }
 
         val mappings: Map<String, TypeName> =

@@ -296,7 +296,7 @@ sealed class PropertyInfo {
                                     isPolymorphicDiscriminator = isDiscriminatorProperty(api, property),
                                     maybeDiscriminator =
                                         enclosingSchema?.let {
-                                            this.getKeyIfSingleDiscriminatorValue(api, property, it)
+                                            this.getKeyIfSingleDiscriminatorValue(api, property, memberSchema)
                                         },
                                     enclosingSchema =
                                         when {

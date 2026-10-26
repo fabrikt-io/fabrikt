@@ -199,15 +199,25 @@ object SchemaParserExtensions {
 
     private fun Schema.getSchemaNameInParent(): String? = jsonPathInParent
 
-    fun Schema.isPolymorphicSubType(api: OpenApi3): Boolean =
-        getEnclosingSchema(api)?.let { schema ->
-            schema.allOfSchemas.any { it.isPolymorphicSuperType() }
-        } ?: false
+    fun Schema.isPolymorphicSubType(api: OpenApi3): Boolean = getSuperType(api) != null
 
     fun Schema.getSuperType(api: OpenApi3): Schema? =
         getEnclosingSchema(api)?.let { schema ->
-            schema.allOfSchemas.firstOrNull { it.isPolymorphicSuperType() }
+            schema.allOfAncestors().firstOrNull { it.isPolymorphicSuperType() }
         }
+
+    internal fun Schema.allOfAncestors(): List<Schema> {
+        val ancestors = mutableListOf<Schema>()
+        val visited = mutableSetOf(jsonReference)
+        val pending = ArrayDeque(allOfSchemas)
+        while (pending.isNotEmpty()) {
+            val ancestor = pending.removeFirst()
+            if (!visited.add(ancestor.jsonReference)) continue
+            ancestors.add(ancestor)
+            pending.addAll(ancestor.allOfSchemas)
+        }
+        return ancestors
+    }
 
     fun Schema.getDiscriminatorForInlinedObjectUnderAllOf(): Discriminator? =
         this.allOfSchemas.firstOrNull { it.isInlinedObjectUnderAllOf() }?.discriminator
@@ -450,11 +460,11 @@ object SchemaParserExtensions {
 
     private fun Schema.commonAllOfSuperType(): Schema? =
         oneOfSchemas.firstOrNull()?.let { first ->
-            (listOf(first) + first.allOfSchemas).firstOrNull { candidate ->
+            (listOf(first) + first.allOfAncestors()).firstOrNull { candidate ->
                 candidate.hasDiscriminator() &&
                     oneOfSchemas.all { member ->
                         member.jsonReference == candidate.jsonReference ||
-                            member.allOfSchemas.any { it.jsonReference == candidate.jsonReference }
+                            member.allOfAncestors().any { it.jsonReference == candidate.jsonReference }
                     }
             }
         }

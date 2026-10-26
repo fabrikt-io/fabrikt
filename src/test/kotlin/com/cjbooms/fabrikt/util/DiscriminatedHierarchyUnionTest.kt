@@ -28,6 +28,20 @@ class DiscriminatedHierarchyUnionTest {
     }
 
     @Test
+    fun `a common base is found through an indirect first alternative`() {
+        val union =
+            document { schemas ->
+                val alternatives = schemas.path("NamedUnion").path("oneOf") as ArrayNode
+                alternatives.remove(0)
+                alternatives.add(alternatives.remove(0))
+            }.schemas.getValue("NamedUnion")
+
+        assertThat(union.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType()).isTrue()
+        assertThat(union.isOneOfSuperInterface()).isFalse()
+        assertThat(union.safeName()).isEqualTo("Base")
+    }
+
+    @Test
     fun `an unrelated schema with identical fields does not join the hierarchy`() {
         val union =
             document { schemas ->

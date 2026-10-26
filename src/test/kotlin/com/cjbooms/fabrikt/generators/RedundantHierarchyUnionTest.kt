@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.generators
 
 import com.cjbooms.fabrikt.cli.CodeGenerationType
+import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
@@ -8,12 +9,14 @@ import com.cjbooms.fabrikt.generators.model.ModelGenerator
 import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.ResourceHelper.readTextResource
+import com.cjbooms.fabrikt.util.YamlObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
@@ -24,19 +27,34 @@ class RedundantHierarchyUnionTest {
     @TempDir
     lateinit var directory: Path
 
-    private fun generate(library: SerializationLibrary) =
-        run {
-            MutableSettings.updateSettings(
-                genTypes = setOf(CodeGenerationType.HTTP_MODELS),
-                serializationLibrary = library,
-                validationLibrary = ValidationLibrary.NO_VALIDATION,
-            )
-            ModelNameRegistry.clear()
-            ModelGenerator(
-                Packages("example"),
-                SourceApi(readTextResource("/examples/redundantHierarchyUnion/api.yaml")),
-            ).generate().files
+    private fun generate(
+        library: SerializationLibrary,
+        contracts: Boolean = false,
+        explicitMappings: Boolean = true,
+    ) = run {
+        MutableSettings.updateSettings(
+            genTypes = setOf(CodeGenerationType.HTTP_MODELS),
+            serializationLibrary = library,
+            validationLibrary = ValidationLibrary.NO_VALIDATION,
+            modelOptions = if (contracts) setOf(ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS) else emptySet(),
+        )
+        ModelNameRegistry.clear()
+        val spec = readTextResource("/examples/redundantHierarchyUnion/api.yaml")
+        val root = YamlObjectMapper.instance.readTree(spec)
+        if (!explicitMappings) {
+            (
+                root
+                    .path("components")
+                    .path("schemas")
+                    .path("Base")
+                    .path("discriminator") as ObjectNode
+            ).remove("mapping")
         }
+        ModelGenerator(
+            Packages("example"),
+            SourceApi(YamlObjectMapper.instance.writeValueAsString(root)),
+        ).generate().files
+    }
 
     @ParameterizedTest
     @EnumSource(value = SerializationLibrary::class, names = ["JACKSON_2", "JACKSON_3"])
@@ -54,10 +72,14 @@ class RedundantHierarchyUnionTest {
         )
     }
 
-    @Test
-    fun `compiled wrapper properties deserialize through the existing discriminator`() {
+    @ParameterizedTest
+    @CsvSource("false,true", "true,true", "false,false", "true,false")
+    fun `compiled wrapper properties deserialize through the existing discriminator`(
+        contracts: Boolean,
+        explicitMappings: Boolean,
+    ) {
         val source = directory.resolve("source")
-        val files = generate(SerializationLibrary.JACKSON_2)
+        val files = generate(SerializationLibrary.JACKSON_2, contracts, explicitMappings)
         files.forEach { it.writeTo(source) }
         val output = directory.resolve("classes")
         val diagnostics = ByteArrayOutputStream()
@@ -101,7 +123,8 @@ class RedundantHierarchyUnionTest {
                             .build(),
                     )
             listOf("first" to "First", "second" to "Second").forEach { (kind, type) ->
-                val value = """{"kind":"$kind","id":"example","enabled":true}"""
+                val discriminator = if (explicitMappings) kind else type
+                val value = """{"kind":"$discriminator","id":"example","enabled":true}"""
                 val json = """{"baseFirst":$value,"baseMiddle":$value,"baseLast":$value,"values":[$value,null],"named":$value}"""
                 val decoded = mapper.readValue(json, wrapper)
                 listOf("BaseFirst", "BaseMiddle", "BaseLast", "Named").forEach { property ->
@@ -109,7 +132,7 @@ class RedundantHierarchyUnionTest {
                     assertThat(getter.returnType).isEqualTo(base)
                     val actual = getter.invoke(decoded)
                     assertThat(actual.javaClass.simpleName).isEqualTo(type)
-                    assertThat(base.getMethod("getKind").invoke(actual)).isEqualTo(kind)
+                    assertThat(base.getMethod("getKind").invoke(actual)).isEqualTo(discriminator)
                     assertThat(base.getMethod("getId").invoke(actual)).isEqualTo("example")
                     assertThat(actual.javaClass.getMethod("getEnabled").invoke(actual)).isEqualTo(true)
                 }

@@ -10,7 +10,7 @@ import kotlin.String
   property = "${'$'}type",
   visible = true,
 )
-@JsonSubTypes(JsonSubTypes.Type(value = Parent::class, name = "parent"))
+@JsonSubTypes(JsonSubTypes.Type(value = Parent::class, name = "parent"),JsonSubTypes.Type(value = Child::class, name = "child"))
 public sealed class Grandparent() {
   public abstract val `$type`: String
 }
