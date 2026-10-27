@@ -50,6 +50,8 @@ class GenerationSettingsTest {
             ModelCodeGenOptionType.EXCLUDE_READ_ONLY,
             ModelCodeGenOptionType.EXCLUDE_WRITE_ONLY,
             ModelCodeGenOptionType.REQUEST_RESPONSE_MODELS,
+            ModelCodeGenOptionType.SEALED_CLASSES_FOR_ALL_OF,
+            ModelCodeGenOptionType.OPEN_CLASSES_FOR_ALL_OF,
         )
         val settings = Parameters.build {
             options.forEach { append("modelOptions", it.name) }

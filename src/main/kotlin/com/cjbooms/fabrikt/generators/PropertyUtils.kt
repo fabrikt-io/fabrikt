@@ -25,6 +25,9 @@ import com.squareup.kotlinpoet.asTypeName
 data class ClassSettings(
     val polymorphyType: PolymorphyType,
     val extensions: Map<String, Any> = emptyMap(),
+    val isConcreteSuperType: Boolean = false,
+    val hasConcreteSuperType: Boolean = false,
+    val concreteDiscriminatorValue: String? = null,
 ) {
     val isMergePatchPattern = extensions["x-json-merge-patch"] as? Boolean ?: false
     val addJsonIncludeNonNullAnnotation = extensions["x-jackson-include-non-null"] as? Boolean ?: false
@@ -129,7 +132,12 @@ object PropertyUtils {
         } else {
             when (classSettings.polymorphyType) {
                 ClassSettings.PolymorphyType.SUPER -> {
-                    if (this is PropertyInfo.Field && isPolymorphicDiscriminator) {
+                    if (classSettings.isConcreteSuperType) {
+                        property.addModifiers(KModifier.OPEN)
+                        serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
+                        serializationAnnotations.addProperty(property, oasKey, typeInfo)
+                        property.addValidationAnnotations(this, validationAnnotations, classSettings)
+                    } else if (this is PropertyInfo.Field && isPolymorphicDiscriminator) {
                         if (!serializationAnnotations.supportsBackingPropertyForDiscriminator) {
                             return // the serializer emits the discriminator, so it must not be a class property
                         }
@@ -147,11 +155,18 @@ object PropertyUtils {
                             return // the serializer emits the discriminator, so it must not be a class property
                         }
                         property.addModifiers(KModifier.OVERRIDE)
+                        if (classSettings.hasConcreteSuperType) {
+                            classBuilder.addSuperclassConstructorParameter("%N = %N", name, name)
+                        }
                     } else {
                         if (isInherited) {
                             property.addModifiers(KModifier.OVERRIDE)
                             if (serializationAnnotations.supportsInheritedBackingProperties) {
-                                classBuilder.addSuperclassConstructorParameter(name)
+                                if (classSettings.hasConcreteSuperType) {
+                                    classBuilder.addSuperclassConstructorParameter("%N = %N", name, name)
+                                } else {
+                                    classBuilder.addSuperclassConstructorParameter(name)
+                                }
                             }
                         }
                         serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
@@ -220,7 +235,19 @@ object PropertyUtils {
                     property.addAnnotation(JacksonMetadata.JSON_INCLUDE_ALWAYS)
                 }
 
-                if (!isRequired) {
+                if (classSettings.isConcreteSuperType && this is PropertyInfo.Field && isPolymorphicDiscriminator) {
+                    classSettings.concreteDiscriminatorValue?.let { value ->
+                        when (typeInfo) {
+                            is KotlinTypeInfo.Enum ->
+                                constructorParameter.defaultValue(
+                                    "%T.%L",
+                                    wrappedType.copy(nullable = false),
+                                    value.toEnumName(),
+                                )
+                            else -> constructorParameter.defaultValue("%S", value)
+                        }
+                    }
+                } else if (!isRequired) {
                     if (classSettings.addJsonIncludeNonNullAnnotation || (enforceNonNull && !isSchemaNullable)) {
                         property.addAnnotation(JacksonMetadata.JSON_INCLUDE_NON_NULL)
                     }
@@ -276,6 +303,7 @@ object PropertyUtils {
         schemaName: String,
     ) = this is PropertyInfo.Field &&
         isPolymorphicDiscriminator &&
+        !classSettings.isConcreteSuperType &&
         classSettings.polymorphyType != ClassSettings.PolymorphyType.NONE &&
         !isSubTypeDiscriminatorWithNoValue(classSettings) &&
         !isSubTypeDiscriminatorWithMultipleValues(classSettings, schemaName)
