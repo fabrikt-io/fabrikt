@@ -20,6 +20,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.json.JsonDecoder
 
 object KotlinxSerializationAnnotations : SerializationAnnotations {
     private const val DEFAULT_JSON_CLASS_DISCRIMINATOR = "type"
@@ -169,7 +170,8 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
 
     /**
      * kotlinx has no default enum constant, so the built-in enum serializer throws on unknown values.
-     * A nested serializer delegating to `fromValue` maps them to the UNRECOGNIZED fallback instead.
+     * A nested serializer maps them to the UNRECOGNIZED fallback instead.
+     * It honours `Json { decodeEnumsCaseInsensitive = true }`, which only applies to enum-kind descriptors.
      */
     override fun addFaultTolerantEnumSerializer(
         enumSpecBuilder: TypeSpec.Builder,
@@ -203,7 +205,11 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
                         .addModifiers(KModifier.OVERRIDE)
                         .addParameter("decoder", Decoder::class)
                         .returns(enumType)
-                        .addStatement("return fromValue(decoder.decodeString())")
+                        .addStatement("val value = decoder.decodeString()")
+                        .addStatement(
+                            "val ignoreCase = (decoder as? %T)?.json?.configuration?.decodeEnumsCaseInsensitive == true",
+                            JsonDecoder::class,
+                        ).addStatement("return entries.firstOrNull { it.value.equals(value, ignoreCase) } ?: UNRECOGNIZED")
                         .build(),
                 ).build()
         return enumSpecBuilder

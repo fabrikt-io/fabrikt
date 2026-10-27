@@ -42,6 +42,19 @@ class KotlinxSerializationOpenEnumTest {
     }
 
     @Test
+    fun `honours decodeEnumsCaseInsensitive and still falls back to UNRECOGNIZED`() {
+        val json = Json { decodeEnumsCaseInsensitive = true }
+        val values = json.decodeFromString<List<OpenEnum>>("""["FOO","Bar","nope"]""")
+        assertThat(values).containsExactly(OpenEnum.FOO, OpenEnum.BAR, OpenEnum.UNRECOGNIZED)
+    }
+
+    @Test
+    fun `decodes open enum values case-sensitively by default`() {
+        val values = Json.decodeFromString<List<OpenEnum>>("""["FOO"]""")
+        assertThat(values).containsExactly(OpenEnum.UNRECOGNIZED)
+    }
+
+    @Test
     fun `fromValue maps known values and falls back to UNRECOGNIZED for the rest`() {
         assertThat(OpenEnum.fromValue("baz")).isEqualTo(OpenEnum.BAZ)
         assertThat(OpenEnum.fromValue("nope")).isEqualTo(OpenEnum.UNRECOGNIZED)

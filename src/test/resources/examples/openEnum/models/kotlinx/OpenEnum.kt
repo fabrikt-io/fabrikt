@@ -10,6 +10,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonDecoder
 
 @Serializable(with = OpenEnum.Serializer::class)
 public enum class OpenEnum(
@@ -35,7 +36,11 @@ public enum class OpenEnum(
       encoder.encodeString(value.value)
     }
 
-    override fun deserialize(decoder: Decoder): OpenEnum = fromValue(decoder.decodeString())
+    override fun deserialize(decoder: Decoder): OpenEnum {
+      val value = decoder.decodeString()
+      val ignoreCase = (decoder as? JsonDecoder)?.json?.configuration?.decodeEnumsCaseInsensitive == true
+      return entries.firstOrNull { it.value.equals(value, ignoreCase) } ?: UNRECOGNIZED
+    }
   }
 
   public companion object {
