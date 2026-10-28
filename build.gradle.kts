@@ -81,6 +81,10 @@ dependencies {
     testImplementation(libs.ktlint.ruleset.standard)
 
     constraints {
+        implementation("com.google.guava:guava") {
+            version { strictly(libs.versions.guava.get()) }
+            because("The bundled Guava must include the fix for CVE-2023-2976")
+        }
         testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable") {
             version { strictly("2.3.20") }
             because("Ktlint 1.7.1 cannot initialize its formatter with Kotlin 2.4's compiler internals")

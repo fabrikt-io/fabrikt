@@ -7,12 +7,12 @@
 <dependency>
   <groupId>tools.jackson.core</groupId>
   <artifactId>jackson-databind</artifactId>
-  <version>3.2.2</version>
+  <version>3.2.4</version>
   <scope>compile</scope>
 </dependency>
 <dependency>
   <groupId>tools.jackson.module</groupId>
   <artifactId>jackson-module-kotlin</artifactId>
-  <version>3.2.2</version>
+  <version>3.2.4</version>
   <scope>compile</scope>
 </dependency>

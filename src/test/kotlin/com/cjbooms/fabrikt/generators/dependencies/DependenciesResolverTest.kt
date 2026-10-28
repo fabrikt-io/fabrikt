@@ -122,14 +122,14 @@ class DependenciesResolverTest {
                     ValidationLibrary.JAVAX_VALIDATION ->
                         listOf(
                             "COMPILE javax.validation:validation-api:2.0.1.Final",
-                            "COMPILE tools.jackson.core:jackson-databind:3.2.2",
-                            "COMPILE tools.jackson.module:jackson-module-kotlin:3.2.2",
+                            "COMPILE tools.jackson.core:jackson-databind:3.2.4",
+                            "COMPILE tools.jackson.module:jackson-module-kotlin:3.2.4",
                         )
                     ValidationLibrary.JAKARTA_VALIDATION -> defaultDependencies()
                     ValidationLibrary.NO_VALIDATION ->
                         listOf(
-                            "COMPILE tools.jackson.core:jackson-databind:3.2.2",
-                            "COMPILE tools.jackson.module:jackson-module-kotlin:3.2.2",
+                            "COMPILE tools.jackson.core:jackson-databind:3.2.4",
+                            "COMPILE tools.jackson.module:jackson-module-kotlin:3.2.4",
                         )
                 },
             )
@@ -147,16 +147,16 @@ class DependenciesResolverTest {
                     SerializationLibrary.JACKSON ->
                         listOf(
                             "COMPILE jakarta.validation:jakarta.validation-api:3.1.1",
-                            "COMPILE com.fasterxml.jackson.core:jackson-core:2.22.3",
-                            "COMPILE com.fasterxml.jackson.core:jackson-databind:2.22.3",
-                            "COMPILE com.fasterxml.jackson.module:jackson-module-kotlin:2.22.3",
+                            "COMPILE com.fasterxml.jackson.core:jackson-core:2.22.4",
+                            "COMPILE com.fasterxml.jackson.core:jackson-databind:2.22.4",
+                            "COMPILE com.fasterxml.jackson.module:jackson-module-kotlin:2.22.4",
                         )
                     SerializationLibrary.JACKSON_2 ->
                         listOf(
                             "COMPILE jakarta.validation:jakarta.validation-api:3.1.1",
-                            "COMPILE com.fasterxml.jackson.core:jackson-core:2.22.3",
-                            "COMPILE com.fasterxml.jackson.core:jackson-databind:2.22.3",
-                            "COMPILE com.fasterxml.jackson.module:jackson-module-kotlin:2.22.3",
+                            "COMPILE com.fasterxml.jackson.core:jackson-core:2.22.4",
+                            "COMPILE com.fasterxml.jackson.core:jackson-databind:2.22.4",
+                            "COMPILE com.fasterxml.jackson.module:jackson-module-kotlin:2.22.4",
                         )
                     SerializationLibrary.JACKSON_3 -> defaultDependencies()
                     SerializationLibrary.KOTLINX_SERIALIZATION ->
@@ -285,8 +285,8 @@ class DependenciesResolverTest {
     private fun defaultDependencies() =
         listOf(
             "COMPILE jakarta.validation:jakarta.validation-api:3.1.1",
-            "COMPILE tools.jackson.core:jackson-databind:3.2.2",
-            "COMPILE tools.jackson.module:jackson-module-kotlin:3.2.2",
+            "COMPILE tools.jackson.core:jackson-databind:3.2.4",
+            "COMPILE tools.jackson.module:jackson-module-kotlin:3.2.4",
         )
 
     companion object {
