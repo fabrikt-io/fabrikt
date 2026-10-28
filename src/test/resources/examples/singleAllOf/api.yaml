@@ -21,3 +21,32 @@ components:
       properties:
         foo:
           type: string
+
+    Person:
+      allOf:
+        - type: object
+          required: [name]
+          properties:
+            name:
+              type: string
+              minLength: 1
+
+    Example:
+      type: object
+      required: [wrappedRequired]
+      properties:
+        direct:
+          $ref: '#/components/schemas/Person'
+        wrapped:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Person'
+        wrappedRequired:
+          allOf:
+            - $ref: '#/components/schemas/Person'
+        people:
+          type: array
+          items:
+            nullable: true
+            allOf:
+              - $ref: '#/components/schemas/Person'

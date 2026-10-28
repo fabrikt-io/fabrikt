@@ -325,7 +325,12 @@ sealed class KotlinTypeInfo(
                         from(schema.additionalPropertiesSchema, "", enclosingSchema, direction = direction),
                     )
 
-                OasType.Any -> getOverridableAnyType()
+                OasType.Any ->
+                    schema
+                        .singleAggregatedAliasSchema()
+                        ?.takeIf { schema.oneOfSchemas.isEmpty() }
+                        ?.let { from(it, oasKey, enclosingSchema, direction = direction) }
+                        ?: getOverridableAnyType()
                 OasType.OneOfAny ->
                     if (schema.isOneOfSuperInterfaceWithDiscriminator() ||
                         (
