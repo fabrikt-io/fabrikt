@@ -121,6 +121,9 @@ class ModelGeneratorTest {
     @MethodSource("testCases")
     fun `correct models are generated for different OpenApi Specifications`(testCaseName: String) {
         print("Testcase: $testCaseName")
+        if (testCaseName == "polymorphicModels") {
+            MutableSettings.addOption(ModelCodeGenOptionType.OPEN_CLASSES_FOR_ALL_OF)
+        }
         if (testCaseName.startsWith("sharedComposition")) {
             MutableSettings.addOption(ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS)
         }

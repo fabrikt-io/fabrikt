@@ -1,7 +1,6 @@
 package examples.polymorphicModels.models
 
 import com.fasterxml.jackson.`annotation`.JsonProperty
-import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
 import kotlin.Int
 import kotlin.String
@@ -19,7 +18,7 @@ public data class PolymorphicTypeTwo(
   @param:JsonProperty("pets")
   @get:JsonProperty("pets")
   @get:NotNull
-  override val pets: List<@Valid Pet>,
+  override val pets: List<Pet>,
   @param:JsonProperty("some_integer_propery")
   @get:JsonProperty("some_integer_propery")
   public val someIntegerPropery: Int? = null,
@@ -30,5 +29,5 @@ public data class PolymorphicTypeTwo(
   @get:NotNull
   @param:JsonProperty("generation")
   override val generation: String = "polymorphic_type_two",
-) : PolymorphicSuperType(firstName, lastName, pets),
+) : PolymorphicSuperType(generation = generation, firstName = firstName, lastName = lastName, pets = pets),
     PolymorphicType

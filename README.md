@@ -331,6 +331,8 @@ Usage: <main class> [options]
 |                                         |   `EXCLUDE_WRITE_ONLY` - Exclude writeOnly properties and honour requiredness of retained readOnly properties |
 |                                         |   `REQUEST_RESPONSE_MODELS` - Generate separate Request and Response model sets, excluding readOnly and writeOnly properties respectively |
 |                                         |   `SHARED_COMPOSITION_CONTRACTS` - Expose explicitly included object schemas through shared Kotlin interfaces |
+|                                         |   `SEALED_CLASSES_FOR_ALL_OF` - Generate sealed classes for discriminated allOf parents. Default; takes precedence over OPEN_CLASSES_FOR_ALL_OF |
+|                                         |   `OPEN_CLASSES_FOR_ALL_OF` - Generate open classes for all discriminated allOf parents with Jackson 2 or 3; ignored for kotlinx.serialization. Exhaustive when expressions may need else branches. |
 |                                         |   `X_EXTENSIBLE_ENUMS` - This option treats x-extensible-enums as enums |
 |                                         |   `JAVA_SERIALIZATION` - This option adds Java Serializable interface to the generated models |
 |                                         |   `QUARKUS_REFLECTION` - This option adds @RegisterForReflection to the generated models. Requires dependency "'io.quarkus:quarkus-core:+" |

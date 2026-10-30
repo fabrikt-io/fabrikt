@@ -67,6 +67,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleAggregatedEnumAliasSchema
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
@@ -74,6 +75,7 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asTypeName
+import com.squareup.kotlinpoet.joinToCode
 import java.io.Serializable
 import java.net.MalformedURLException
 import java.net.URI
@@ -92,6 +94,25 @@ class ModelGenerator(
 ) {
     private val propertySettings = PropertyInfo.httpSettings(direction)
     private val options = MutableSettings.modelOptions
+    private val openAllOfParents =
+        run {
+            val requested = ModelCodeGenOptionType.OPEN_CLASSES_FOR_ALL_OF in options
+            when {
+                requested && ModelCodeGenOptionType.SEALED_CLASSES_FOR_ALL_OF in options -> {
+                    logger.warning(
+                        "Both allOf class options are set; using SEALED_CLASSES_FOR_ALL_OF. Remove it to select OPEN_CLASSES_FOR_ALL_OF.",
+                    )
+                    false
+                }
+                requested && !MutableSettings.serializationLibrary.isJackson -> {
+                    logger.warning(
+                        "Ignoring OPEN_CLASSES_FOR_ALL_OF for kotlinx.serialization; keeping sealed parents. Select JACKSON_2 or JACKSON_3 to use open parents.",
+                    )
+                    false
+                }
+                else -> requested
+            }
+        }
     private val validationAnnotations: ValidationAnnotations = MutableSettings.validationLibrary.annotations
     private val serializationAnnotations: SerializationAnnotations = MutableSettings.effectiveSerializationAnnotations
     private val externalRefResolutionMode: ExternalReferencesResolutionMode = MutableSettings.externalRefResolutionMode
@@ -1161,7 +1182,7 @@ class ModelGenerator(
         allSchemas: List<SchemaInfo>,
         constructorBuilder: FunSpec.Builder = FunSpec.constructorBuilder(),
     ): TypeSpec.Builder {
-        this.addModifiers(KModifier.SEALED)
+        this.addModifiers(if (openAllOfParents) KModifier.OPEN else KModifier.SEALED)
         serializationAnnotations.addBasePolymorphicTypeAnnotation(this, discriminator.propertyName!!)
         this.modifiers.remove(KModifier.DATA)
 
@@ -1185,16 +1206,19 @@ class ModelGenerator(
                     } == true
                 }
 
+        val discriminatorType = properties.firstOrNull { it.oasKey == discriminator.propertyName }?.typeInfo
+        val parentTypeIds = if (openAllOfParents) discriminator.parentTypeIds(schemaName, discriminatorType) else emptyList()
+        val parentMappings = parentTypeIds.associateWith { generatedType(packages.base, modelName) }
         val mappings: Map<String, TypeName> =
             subTypes
                 .map { schemaInfo ->
                     discriminator.getDiscriminatorMappings(schemaInfo)
                 }.toMapList()
-                .firstValueMap()
+                .firstValueMap() + parentMappings
 
         val maybeEnumDiscriminator =
             properties
-                .firstOrNull { it.name == discriminator.propertyName }
+                .firstOrNull { if (openAllOfParents) it.oasKey == discriminator.propertyName else it.name == discriminator.propertyName }
                 ?.typeInfo as? KotlinTypeInfo.Enum
 
         serializationAnnotations.addPolymorphicSubTypesAnnotation(this, mappings, maybeEnumDiscriminator)
@@ -1207,8 +1231,15 @@ class ModelGenerator(
             schemaName,
             constructorBuilder,
             this,
-            ClassSettings(ClassSettings.PolymorphyType.SUPER, extensions),
+            ClassSettings(
+                ClassSettings.PolymorphyType.SUPER,
+                extensions,
+                isOpenSuperType = openAllOfParents,
+                parentDiscriminatorValue = parentTypeIds.firstOrNull(),
+            ),
         )
+
+        if (openAllOfParents) addParentValueMethods(modelName)
 
         serializationAnnotations.addClassAnnotation(this)
         return this
@@ -1279,7 +1310,11 @@ class ModelGenerator(
             schemaName,
             constructorBuilder,
             this,
-            ClassSettings(ClassSettings.PolymorphyType.SUB, extensions),
+            ClassSettings(
+                ClassSettings.PolymorphyType.SUB,
+                extensions,
+                hasOpenSuperType = openAllOfParents && superTypeDiscriminator != null,
+            ),
         )
 
         serializationAnnotations.addClassAnnotation(this)
@@ -1292,24 +1327,27 @@ class ModelGenerator(
         classBuilder: TypeSpec.Builder,
         classType: ClassSettings,
     ): TypeSpec.Builder {
-        // Supertype properties deliberately carry no validation annotations (see PropertyUtils.addToClass),
+        // Sealed supertype properties carry no validation annotations (see PropertyUtils.addToClass),
         // so the container element annotation must be suppressed there too.
-        val propertyValidationAnnotations =
-            validationAnnotations.takeIf { classType.polymorphyType != ClassSettings.PolymorphyType.SUPER }
-        this.forEach {
-            it.addToClass(
+        this.forEach { property ->
+            val propertyValidationAnnotations =
+                validationAnnotations.takeIf {
+                    (classType.polymorphyType != ClassSettings.PolymorphyType.SUPER || classType.isOpenSuperType) &&
+                        !classType.inheritsCascadedValidation(property)
+                }
+            property.addToClass(
                 schemaName = schemaName,
                 type =
                     toModelType(
                         packages.base,
-                        it.typeInfo,
-                        it.isNullable(classType),
+                        property.typeInfo,
+                        property.isNullable(classType),
                         propertyValidationAnnotations,
                     ),
                 parameterizedType =
                     toClassName(
                         packages.base,
-                        it.typeInfo,
+                        property.typeInfo,
                     ),
                 classBuilder = classBuilder,
                 constructorBuilder = constructorBuilder,
@@ -1347,6 +1385,83 @@ class ModelGenerator(
                         KotlinTypeInfo.from(schemaInfo.schema, schemaInfo.name, direction = direction),
                     )
             }.toMap()
+
+    private fun Discriminator.parentTypeIds(
+        schemaName: String,
+        type: KotlinTypeInfo?,
+    ): List<String> {
+        val explicit = mappings.filterValues { it.substringAfterLast('/') == schemaName }.keys
+        val candidates = explicit.ifEmpty { setOf(schemaName) }
+        return candidates.filter { value ->
+            val problem =
+                when {
+                    explicit.isEmpty() && value in mappings -> "the discriminator value '$value' is mapped to another schema"
+                    type is KotlinTypeInfo.Enum && value !in type.entries -> "the discriminator enum has no member '$value'"
+                    type != null && type !is KotlinTypeInfo.Enum && type != KotlinTypeInfo.Text ->
+                        "the discriminator is not a string or string enum"
+                    else -> null
+                }
+            if (problem != null) {
+                logger.warning(
+                    "Not registering open parent '$schemaName': $problem. " +
+                        "Use a string discriminator with a matching self-mapping/enum value, or use SEALED_CLASSES_FOR_ALL_OF.",
+                )
+            }
+            problem == null
+        }
+    }
+
+    private fun TypeSpec.Builder.addParentValueMethods(modelName: String) {
+        val properties = propertySpecs.toList()
+        val values = properties.map { CodeBlock.of("this.%N", it) }.joinToCode(", ")
+        val equality =
+            properties
+                .map { CodeBlock.of("%T.deepEquals(this.%N, other.%N)", java.util.Objects::class, it, it) }
+                .joinToCode(" && ")
+                .takeUnless { properties.isEmpty() } ?: CodeBlock.of("true")
+        addFunction(
+            FunSpec
+                .builder("equals")
+                .addModifiers(KModifier.OVERRIDE)
+                .addParameter("other", Any::class.asTypeName().copy(nullable = true))
+                .returns(Boolean::class)
+                .addStatement("if (this === other) return true")
+                .addStatement("if (other == null || this::class != other::class) return false")
+                .addStatement("other as %T", generatedType(packages.base, modelName))
+                .addStatement("return %L", equality)
+                .build(),
+        )
+        addFunction(
+            FunSpec
+                .builder("hashCode")
+                .addModifiers(KModifier.OVERRIDE)
+                .returns(Int::class)
+                .addStatement(
+                    "return %T.deepHashCode(arrayOf<%T>(%L))",
+                    java.util.Arrays::class,
+                    Any::class.asTypeName().copy(nullable = true),
+                    values,
+                ).build(),
+        )
+        val text = CodeBlock.builder().add("%S", "$modelName(")
+        properties.forEachIndexed { index, property ->
+            text.add(" + %S + this.%N", "${if (index == 0) "" else ", "}${property.name}=", property)
+            val rawType = property.type.copy(nullable = false)
+            if (rawType is ClassName && rawType.packageName == "kotlin" && rawType.simpleName.endsWith("Array")) {
+                text.add(if (property.type.isNullable) "?.contentToString()" else ".contentToString()")
+            }
+        }
+        text.add(" + %S", ")")
+        addFunction(
+            FunSpec
+                .builder(
+                    "toString",
+                ).addModifiers(KModifier.OVERRIDE)
+                .returns(String::class)
+                .addStatement("return %L", text.build())
+                .build(),
+        )
+    }
 
     private fun <K, V> List<Map<K, V>>.toMapList(): Map<K, List<V>> =
         asSequence()
