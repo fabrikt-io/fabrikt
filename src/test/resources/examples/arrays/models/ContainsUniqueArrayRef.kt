@@ -3,7 +3,7 @@ package examples.arrays.models
 import com.fasterxml.jackson.`annotation`.JsonProperty
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotNull
-import java.util.LinkedHashSet
+import kotlin.collections.LinkedHashSet
 
 public data class ContainsUniqueArrayRef(
   @param:JsonProperty("weight_on_mars")
