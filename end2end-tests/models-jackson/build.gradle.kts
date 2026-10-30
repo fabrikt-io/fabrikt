@@ -160,6 +160,23 @@ tasks {
         "${rootProject.projectDir}/src/test/resources/examples/redundantHierarchyUnion/api.yaml",
         "com.example.redundanthierarchyunion",
     )
+    val generateRedundantHierarchyUnionContractsCodeTask = createGenerateCodeTask(
+        "generateRedundantHierarchyUnionContractsCode",
+        "${rootProject.projectDir}/src/test/resources/examples/redundantHierarchyUnion/api.yaml",
+        "com.example.redundanthierarchyunion.contracts",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS")
+    )
+    val generateRedundantHierarchyUnionImplicitCodeTask = createGenerateCodeTask(
+        "generateRedundantHierarchyUnionImplicitCode",
+        "$projectDir/openapi/redundant_hierarchy_union_implicit.yaml",
+        "com.example.redundanthierarchyunion.implicit",
+    )
+    val generateRedundantHierarchyUnionImplicitContractsCodeTask = createGenerateCodeTask(
+        "generateRedundantHierarchyUnionImplicitContractsCode",
+        "$projectDir/openapi/redundant_hierarchy_union_implicit.yaml",
+        "com.example.redundanthierarchyunion.implicit.contracts",
+        listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS")
+    )
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
@@ -182,6 +199,9 @@ tasks {
         dependsOn(generateValidationStringOverrideCodeTask)
         dependsOn(generateValidationCustomTypeCodeTask)
         dependsOn(generateRedundantHierarchyUnionCodeTask)
+        dependsOn(generateRedundantHierarchyUnionContractsCodeTask)
+        dependsOn(generateRedundantHierarchyUnionImplicitCodeTask)
+        dependsOn(generateRedundantHierarchyUnionImplicitContractsCodeTask)
     }
 
     withType<Test> {
