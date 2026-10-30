@@ -155,6 +155,12 @@ tasks {
         )
     )
 
+    val generateRedundantHierarchyUnionCodeTask = createGenerateCodeTask(
+        "generateRedundantHierarchyUnionCode",
+        "${rootProject.projectDir}/src/test/resources/examples/redundantHierarchyUnion/api.yaml",
+        "com.example.redundanthierarchyunion",
+    )
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         // Generated models place cascading `@Valid` on container type arguments (e.g. `List<@Valid Foo>`).
@@ -175,6 +181,7 @@ tasks {
         dependsOn(generateValidationCodeTask)
         dependsOn(generateValidationStringOverrideCodeTask)
         dependsOn(generateValidationCustomTypeCodeTask)
+        dependsOn(generateRedundantHierarchyUnionCodeTask)
     }
 
     withType<Test> {

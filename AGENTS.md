@@ -33,7 +33,7 @@ Generated code is consumed directly by a large Kotlin community; changing what e
 - Justify any example diff in the PR: why the new output is more correct and worth the downstream impact.
 - Never let a change alter output for unrelated specs — review the full example diff, not just your target case.
 
-**Generated type changes:** When changing a generated Kotlin type or its resolution, check the downstream effects on validation annotations, serialization/deserialization, defaults, nullability and collection elements. Check compatibility against the generated Kotlin type, not just the OpenAPI primitive type. Add targeted regression cases combining the changed behavior with relevant constraints or metadata. Where compatibility depends on runtime behavior, exercise the actual validator or serializer; golden-file comparisons and compilation alone are insufficient. For validation, check that valid values pass without exceptions and that invalid values still produce the expected violations where constraints are supported.
+**Generated type changes:** When changing a generated Kotlin type or its resolution, check the downstream effects on validation annotations, serialization/deserialization, defaults, nullability and collection elements. Check compatibility against the generated Kotlin type, not just the OpenAPI primitive type. Add targeted regression cases combining the changed behavior with relevant constraints or metadata. Where runtime serialization or validation verification is needed, add tests to `end2end-tests/models-jackson/` or `end2end-tests/models-kotlinx/`. Never invoke the Kotlin compiler in memory or use reflection inside root generator tests.
 
 ## Golden-file tests
 
@@ -101,7 +101,7 @@ Fabrikt tests follow a golden-file convention: generator tests compare output ag
 Follow these conventions when adding or updating tests:
 
 1. **Adjust or extend the nearest existing fixture.** Add only the schemas that differ, or update existing schemas to exercise the behavior. Reference existing schemas with `$ref` instead of redefining them. Existing golden files must stay byte-identical unless changing them is the intended bug fix.
-2. **In-memory unit tests.** Use only when testing isolated generator logic or edge cases where golden files provide no value (for example, uninhabitable schemas). Precedent: `false schema properties use best effort generation` in `ModelGeneratorTest.kt`.
+2. **In-memory unit tests.** Use only for pure string assertions on generated code for isolated generator logic or edge cases where golden files provide no value (for example, uninhabitable schemas). Never run in-memory compilation (`K2JVMCompiler`) or reflection tests in root generator tests.
 3. **New parameterized example directory.** Use only for a new OpenAPI pattern that does not fit an existing fixture, a new CLI option, a new generator, or a global setting that no existing fixture configures. Never copy an existing `api.yaml` or duplicate shapes that existing fixtures already cover. Put all permutations of one scenario in one `api.yaml`.
 
 When adding a new example directory, add at most one, explain why in the "Solution" section, and ask first.
@@ -119,5 +119,5 @@ Keep fixture specs minimal. Declare only the schemas the behavior needs, and nev
 
 - Always: run `./gradlew build` before declaring done; review the full golden-file diff before committing regenerated examples.
 - Comments: prefer a readable function/variable name over a comment; write one only when no name can carry the intent (e.g. a non-obvious external contract, a constraint that would otherwise silently regress). When a comment is necessary, keep it terse and describe current functionality — never narrate history, prior attempts, or why an old approach was rejected. This applies to KDoc, inline comments, and test comments alike.
-- Ask first: changes that alter output for existing specs, add a new example directory, add dependencies, change `.github/workflows/`, or touch `end2end-tests/` / `playground/` build config.
+- Ask first: changes that alter output for existing specs, add a new example directory, add dependencies, change `.github/workflows/`, or touch `playground/` build config. Adding runtime verification tests to existing `end2end-tests/` modules is permitted.
 - Never: commit with `SHOULD_OVERWRITE_EXAMPLES = true`; hand-edit files under `src/test/resources/examples/`; flip the overwrite flag to silence an unexpected failure; commit secrets or signing keys.
