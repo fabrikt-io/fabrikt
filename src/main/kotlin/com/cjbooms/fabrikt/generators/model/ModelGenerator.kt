@@ -1182,8 +1182,7 @@ class ModelGenerator(
         allSchemas: List<SchemaInfo>,
         constructorBuilder: FunSpec.Builder = FunSpec.constructorBuilder(),
     ): TypeSpec.Builder {
-        val concrete = openAllOfParents
-        this.addModifiers(if (concrete) KModifier.OPEN else KModifier.SEALED)
+        this.addModifiers(if (openAllOfParents) KModifier.OPEN else KModifier.SEALED)
         serializationAnnotations.addBasePolymorphicTypeAnnotation(this, discriminator.propertyName!!)
         this.modifiers.remove(KModifier.DATA)
 
@@ -1208,7 +1207,7 @@ class ModelGenerator(
                 }
 
         val discriminatorType = properties.firstOrNull { it.oasKey == discriminator.propertyName }?.typeInfo
-        val parentTypeIds = if (concrete) discriminator.parentTypeIds(schemaName, discriminatorType) else emptyList()
+        val parentTypeIds = if (openAllOfParents) discriminator.parentTypeIds(schemaName, discriminatorType) else emptyList()
         val parentMappings = parentTypeIds.associateWith { generatedType(packages.base, modelName) }
         val mappings: Map<String, TypeName> =
             subTypes
@@ -1219,7 +1218,7 @@ class ModelGenerator(
 
         val maybeEnumDiscriminator =
             properties
-                .firstOrNull { if (concrete) it.oasKey == discriminator.propertyName else it.name == discriminator.propertyName }
+                .firstOrNull { if (openAllOfParents) it.oasKey == discriminator.propertyName else it.name == discriminator.propertyName }
                 ?.typeInfo as? KotlinTypeInfo.Enum
 
         serializationAnnotations.addPolymorphicSubTypesAnnotation(this, mappings, maybeEnumDiscriminator)
@@ -1235,12 +1234,12 @@ class ModelGenerator(
             ClassSettings(
                 ClassSettings.PolymorphyType.SUPER,
                 extensions,
-                isConcreteSuperType = concrete,
-                concreteDiscriminatorValue = parentTypeIds.firstOrNull(),
+                isOpenSuperType = openAllOfParents,
+                parentDiscriminatorValue = parentTypeIds.firstOrNull(),
             ),
         )
 
-        if (concrete) addParentValueMethods(modelName)
+        if (openAllOfParents) addParentValueMethods(modelName)
 
         serializationAnnotations.addClassAnnotation(this)
         return this
@@ -1314,7 +1313,7 @@ class ModelGenerator(
             ClassSettings(
                 ClassSettings.PolymorphyType.SUB,
                 extensions,
-                hasConcreteSuperType = openAllOfParents && superTypeDiscriminator != null,
+                hasOpenSuperType = openAllOfParents && superTypeDiscriminator != null,
             ),
         )
 
@@ -1330,24 +1329,25 @@ class ModelGenerator(
     ): TypeSpec.Builder {
         // Sealed supertype properties carry no validation annotations (see PropertyUtils.addToClass),
         // so the container element annotation must be suppressed there too.
-        val propertyValidationAnnotations =
-            validationAnnotations.takeIf {
-                classType.polymorphyType != ClassSettings.PolymorphyType.SUPER || classType.isConcreteSuperType
-            }
-        this.forEach {
-            it.addToClass(
+        this.forEach { property ->
+            val propertyValidationAnnotations =
+                validationAnnotations.takeIf {
+                    (classType.polymorphyType != ClassSettings.PolymorphyType.SUPER || classType.isOpenSuperType) &&
+                        !classType.inheritsCascadedValidation(property)
+                }
+            property.addToClass(
                 schemaName = schemaName,
                 type =
                     toModelType(
                         packages.base,
-                        it.typeInfo,
-                        it.isNullable(classType),
+                        property.typeInfo,
+                        property.isNullable(classType),
                         propertyValidationAnnotations,
                     ),
                 parameterizedType =
                     toClassName(
                         packages.base,
-                        it.typeInfo,
+                        property.typeInfo,
                     ),
                 classBuilder = classBuilder,
                 constructorBuilder = constructorBuilder,

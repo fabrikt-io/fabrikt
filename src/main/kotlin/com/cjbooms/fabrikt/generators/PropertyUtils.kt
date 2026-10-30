@@ -25,15 +25,17 @@ import com.squareup.kotlinpoet.asTypeName
 data class ClassSettings(
     val polymorphyType: PolymorphyType,
     val extensions: Map<String, Any> = emptyMap(),
-    val isConcreteSuperType: Boolean = false,
-    val hasConcreteSuperType: Boolean = false,
-    val concreteDiscriminatorValue: String? = null,
+    val isOpenSuperType: Boolean = false,
+    val hasOpenSuperType: Boolean = false,
+    val parentDiscriminatorValue: String? = null,
 ) {
     val isMergePatchPattern = extensions["x-json-merge-patch"] as? Boolean ?: false
     val addJsonIncludeNonNullAnnotation = extensions["x-jackson-include-non-null"] as? Boolean ?: false
     val nullableObjectRefs: Set<String> =
         (extensions["x-FABRIKT-INTERNAL-nullable"] as? List<*>)?.map { it.toString() }?.toSet()
             ?: emptySet()
+
+    fun inheritsCascadedValidation(property: PropertyInfo): Boolean = hasOpenSuperType && property.isInherited
 
     enum class PolymorphyType {
         NONE,
@@ -132,7 +134,7 @@ object PropertyUtils {
         } else {
             when (classSettings.polymorphyType) {
                 ClassSettings.PolymorphyType.SUPER -> {
-                    if (classSettings.isConcreteSuperType) {
+                    if (classSettings.isOpenSuperType) {
                         property.addModifiers(KModifier.OPEN)
                         serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
                         serializationAnnotations.addProperty(property, oasKey, typeInfo)
@@ -155,14 +157,14 @@ object PropertyUtils {
                             return // the serializer emits the discriminator, so it must not be a class property
                         }
                         property.addModifiers(KModifier.OVERRIDE)
-                        if (classSettings.hasConcreteSuperType) {
+                        if (classSettings.hasOpenSuperType) {
                             classBuilder.addSuperclassConstructorParameter("%N = %N", name, name)
                         }
                     } else {
                         if (isInherited) {
                             property.addModifiers(KModifier.OVERRIDE)
                             if (serializationAnnotations.supportsInheritedBackingProperties) {
-                                if (classSettings.hasConcreteSuperType) {
+                                if (classSettings.hasOpenSuperType) {
                                     classBuilder.addSuperclassConstructorParameter("%N = %N", name, name)
                                 } else {
                                     classBuilder.addSuperclassConstructorParameter(name)
@@ -235,8 +237,8 @@ object PropertyUtils {
                     property.addAnnotation(JacksonMetadata.JSON_INCLUDE_ALWAYS)
                 }
 
-                if (classSettings.isConcreteSuperType && this is PropertyInfo.Field && isPolymorphicDiscriminator) {
-                    classSettings.concreteDiscriminatorValue?.let { value ->
+                if (classSettings.isOpenSuperType && this is PropertyInfo.Field && isPolymorphicDiscriminator) {
+                    classSettings.parentDiscriminatorValue?.let { value ->
                         when (typeInfo) {
                             is KotlinTypeInfo.Enum ->
                                 constructorParameter.defaultValue(
@@ -303,7 +305,7 @@ object PropertyUtils {
         schemaName: String,
     ) = this is PropertyInfo.Field &&
         isPolymorphicDiscriminator &&
-        !classSettings.isConcreteSuperType &&
+        !classSettings.isOpenSuperType &&
         classSettings.polymorphyType != ClassSettings.PolymorphyType.NONE &&
         !isSubTypeDiscriminatorWithNoValue(classSettings) &&
         !isSubTypeDiscriminatorWithMultipleValues(classSettings, schemaName)
@@ -432,7 +434,7 @@ object PropertyUtils {
             is KotlinTypeInfo.Map, is KotlinTypeInfo.Array -> Unit
 
             else -> {
-                if (typeInfo.isComplexType) {
+                if (typeInfo.isComplexType && !classSettings.inheritsCascadedValidation(info)) {
                     maybeAddAnnotation(validationAnnotations.fieldValid())
                 }
             }

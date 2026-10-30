@@ -23,6 +23,7 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
+import java.lang.reflect.AnnotatedParameterizedType
 import java.net.URLClassLoader
 import java.nio.file.Path
 import java.util.logging.Handler
@@ -41,12 +42,13 @@ class RedundantHierarchyUnionTest {
         explicitMappings: Boolean = true,
         open: Boolean = false,
         sealed: Boolean = false,
+        validationLibrary: ValidationLibrary = ValidationLibrary.NO_VALIDATION,
         change: (ObjectNode) -> Unit = {},
     ) = run {
         MutableSettings.updateSettings(
             genTypes = setOf(CodeGenerationType.HTTP_MODELS),
             serializationLibrary = library,
-            validationLibrary = ValidationLibrary.NO_VALIDATION,
+            validationLibrary = validationLibrary,
             modelOptions =
                 buildSet {
                     if (contracts) add(ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS)
@@ -87,6 +89,65 @@ class RedundantHierarchyUnionTest {
             "values: List<Base?>?",
             "named: Base?",
         )
+    }
+
+    @ParameterizedTest
+    @CsvSource("false,false", "false,true", "true,false", "true,true")
+    fun `cascade validation is declared once for inherited properties and retained for child properties`(
+        open: Boolean,
+        contracts: Boolean,
+    ) {
+        val files =
+            generate(
+                SerializationLibrary.JACKSON_2,
+                open = open,
+                contracts = contracts,
+                validationLibrary = ValidationLibrary.JAKARTA_VALIDATION,
+            ) { root ->
+                val schemas = root.at("/components/schemas") as ObjectNode
+                val item = schemas.putObject("Item").put("type", "object")
+                item.putArray("required").add("name")
+                item
+                    .putObject("properties")
+                    .putObject("name")
+                    .put("type", "string")
+                    .put("minLength", 1)
+                val properties = root.at("/components/schemas/Base/properties") as ObjectNode
+                properties
+                    .putObject("items")
+                    .put("type", "array")
+                    .putObject("items")
+                    .put("\$ref", "#/components/schemas/Item")
+                properties
+                    .putObject("lookup")
+                    .put("type", "object")
+                    .putObject("additionalProperties")
+                    .put("\$ref", "#/components/schemas/Item")
+                properties.putObject("detail").put("\$ref", "#/components/schemas/Item")
+                val childProperties = root.at("/components/schemas/First/allOf/1/properties") as ObjectNode
+                listOf("items" to "childItems", "lookup" to "childLookup", "detail" to "childDetail").forEach { (parent, child) ->
+                    childProperties.set<ObjectNode>(child, properties.path(parent).deepCopy<ObjectNode>())
+                }
+            }
+        withCompiledModels(files) { loader ->
+            listOf("Base", "First").forEach { model ->
+                val type = loader.loadClass("example.models.$model")
+                listOf("getItems", "getLookup").forEach { getter ->
+                    val container = type.getMethod(getter).annotatedReturnType as AnnotatedParameterizedType
+                    assertThat(container.annotatedActualTypeArguments.last().isAnnotationPresent(jakarta.validation.Valid::class.java))
+                        .describedAs("$model.$getter container element validation")
+                        .isEqualTo(if (model == "Base") open else !open)
+                }
+                assertThat(type.getMethod("getDetail").isAnnotationPresent(jakarta.validation.Valid::class.java))
+                    .isEqualTo(if (model == "Base") open else !open)
+            }
+            val child = loader.loadClass("example.models.First")
+            listOf("getChildItems", "getChildLookup").forEach { getter ->
+                val container = child.getMethod(getter).annotatedReturnType as AnnotatedParameterizedType
+                assertThat(container.annotatedActualTypeArguments.last().isAnnotationPresent(jakarta.validation.Valid::class.java)).isTrue()
+            }
+            assertThat(child.getMethod("getChildDetail").isAnnotationPresent(jakarta.validation.Valid::class.java)).isTrue()
+        }
     }
 
     @ParameterizedTest
@@ -295,6 +356,7 @@ class RedundantHierarchyUnionTest {
                 com.fasterxml.jackson.annotation.JsonTypeInfo::class.java,
                 com.fasterxml.jackson.databind.ObjectMapper::class.java,
                 com.fasterxml.jackson.core.JsonFactory::class.java,
+                jakarta.validation.Valid::class.java,
             ).map {
                 Path
                     .of(
@@ -310,6 +372,7 @@ class RedundantHierarchyUnionTest {
                 "-no-reflect",
                 "-jvm-target",
                 "17",
+                "-Xemit-jvm-type-annotations",
                 "-classpath",
                 classpath,
                 "-d",
