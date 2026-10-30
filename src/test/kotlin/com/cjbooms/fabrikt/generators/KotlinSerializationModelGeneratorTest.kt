@@ -40,6 +40,7 @@ class KotlinSerializationModelGeneratorTest {
             "openEnum",
             "customTypeMapping",
             "mixedTypeUnion",
+            "arrays",
         )
 
     @BeforeEach
