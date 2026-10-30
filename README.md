@@ -251,14 +251,6 @@ Use a supported `oneOf` schema when a concrete polymorphic Kotlin model is neede
 
 Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared interfaces for compatible models that explicitly include a named object through `allOf`. See [Shared composition contracts](SHARED_COMPOSITION_CONTRACTS.md) for examples and current scope.
 
-### 6. Deserialize concrete discriminator parents with Jackson
-
-Discriminated `allOf` parents are generated as sealed classes by default. Set `--http-model-opts SEALED_CLASSES_FOR_ALL_OF` to explicitly pin that behaviour, or select `OPEN_CLASSES_FOR_ALL_OF` to generate concrete open parents with Jackson 2 or 3. If both options are supplied, Fabrikt logs a warning and uses sealed classes. With kotlinx.serialization, the open option is ignored with a warning.
-
-Open parents are registered using their explicit discriminator self-mapping values, or their original component schema name when no self-mapping exists. The first supported parent value becomes the discriminator constructor default. If that value is already mapped to another schema or is absent from the discriminator enum, Fabrikt logs a warning and omits that parent registration; a parent with no supported registration keeps its discriminator constructor argument required. Missing and unknown discriminator values are still rejected; no `defaultImpl` fallback is generated.
-
-The open option applies to every discriminated `allOf` parent in that generation, including when `SHARED_COMPOSITION_CONTRACTS` is enabled. It can require an `else` branch in exhaustive `when` expressions. Open parents receive property-based `equals`, `hashCode` and `toString` methods; equality requires the same runtime class, and child data classes retain their own value methods. Open parents do not receive data-class `copy` or destructuring functions.
-
 ## Multipart clients
 
 For `OK_HTTP`, `OPEN_FEIGN` and `SPRING_HTTP_INTERFACE`, `multipart/form-data` JSON object and array parts are sent as `application/json`, including when this is inferred from the schema rather than explicitly declared in `encoding`. Optional null parts are omitted; binary arrays are sent as repeated parts with the original property name. JSON parts do not receive a filename. Unsupported JSON-part encodings, such as `application/xml`, produce a warning and fall back to JSON; this does not add XML serialization or general support for multipart `encoding` options.
@@ -340,7 +332,7 @@ Usage: <main class> [options]
 |                                         |   `REQUEST_RESPONSE_MODELS` - Generate separate Request and Response model sets, excluding readOnly and writeOnly properties respectively |
 |                                         |   `SHARED_COMPOSITION_CONTRACTS` - Expose explicitly included object schemas through shared Kotlin interfaces |
 |                                         |   `SEALED_CLASSES_FOR_ALL_OF` - Generate sealed classes for discriminated allOf parents. Default; takes precedence over OPEN_CLASSES_FOR_ALL_OF |
-|                                         |   `OPEN_CLASSES_FOR_ALL_OF` - Generate concrete open classes for discriminated allOf parents with Jackson 2 or 3; ignored for kotlinx.serialization |
+|                                         |   `OPEN_CLASSES_FOR_ALL_OF` - Generate open classes for all discriminated allOf parents with Jackson 2 or 3; ignored for kotlinx.serialization. Exhaustive when expressions may need else branches. |
 |                                         |   `X_EXTENSIBLE_ENUMS` - This option treats x-extensible-enums as enums |
 |                                         |   `JAVA_SERIALIZATION` - This option adds Java Serializable interface to the generated models |
 |                                         |   `QUARKUS_REFLECTION` - This option adds @RegisterForReflection to the generated models. Requires dependency "'io.quarkus:quarkus-core:+" |

@@ -141,7 +141,8 @@ enum class ModelCodeGenOptionType(
         "Generate sealed classes for discriminated allOf parents. Default; takes precedence over OPEN_CLASSES_FOR_ALL_OF",
     ),
     OPEN_CLASSES_FOR_ALL_OF(
-        "Generate concrete open classes for discriminated allOf parents with Jackson 2 or 3; ignored for kotlinx.serialization",
+        "Generate open classes for all discriminated allOf parents with Jackson 2 or 3; ignored for kotlinx.serialization. " +
+            "Exhaustive when expressions may need else branches.",
     ),
     X_EXTENSIBLE_ENUMS("This option treats x-extensible-enums as enums"),
     JAVA_SERIALIZATION("This option adds Java Serializable interface to the generated models"),
