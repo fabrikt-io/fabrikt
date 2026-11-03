@@ -63,8 +63,64 @@ paths:
           Bearer: []
       responses:
         '204': { description: OK }
+  /basic:
+    get:
+      operationId: getBasic
+      security: [{Basic: []}]
+      responses:
+        '204': {description: OK}
+    post:
+      operationId: createBasic
+      security: [{Basic: [], Key: []}]
+      responses:
+        '204': {description: OK}
+    put:
+      operationId: replaceBasic
+      security: [{Basic: []}, {OtherBasic: []}]
+      responses:
+        '204': {description: OK}
+    delete:
+      operationId: deleteBasic
+      security: []
+      responses:
+        '204': {description: OK}
+  /basic-alternatives:
+    get:
+      operationId: getBasicAlternatives
+      security: [{Basic: []}, {Bearer: []}, {OAuth: [read:documents]}, {Key: []}, {}]
+      responses:
+        '204': {description: OK}
+    post:
+      operationId: createBasicAlternatives
+      security: [{Basic: [], Bearer: []}]
+      responses:
+        '204': {description: OK}
+    put:
+      operationId: replaceBasicAlternatives
+      security: [{Basic: [], Unknown: []}]
+      responses:
+        '204': {description: OK}
+    delete:
+      operationId: deleteBasicAlternatives
+      security: [{Basic: [], Key: []}, {OtherBasic: [], OtherKey: []}]
+      responses:
+        '204': {description: OK}
+    patch:
+      operationId: updateBasicAlternatives
+      security: [{Basic: [], OtherBasic: []}]
+      responses:
+        '204': {description: OK}
 components:
   securitySchemes:
+    Basic:
+      type: http
+      scheme: basic
+    OtherBasic:
+      type: http
+      scheme: BASIC
+    Unknown:
+      type: http
+      scheme: digest
     Key:
       type: apiKey
       in: header

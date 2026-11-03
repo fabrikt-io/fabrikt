@@ -9,6 +9,52 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
 class ClientHeaderApiKeySecurityTest {
+    @ParameterizedTest
+    @ValueSource(strings = ["3.0.4", "3.1.2", "3.2.0"])
+    fun `Basic respects inherited overridden alternative and combined requirements`(version: String) {
+        val document = SourceApi(spec.replace("3.0.4", version).replace("security:\n  - Key: []", "security:\n  - Basic: []")).openApi3
+        val resolver = ClientHeaderApiKeySecurity(document)
+        val enabled = options + ClientCodeGenOptionType.OPENAPI_BASIC_AUTHENTICATION
+
+        fun plan(
+            path: String,
+            verb: String = "get",
+            selected: Set<ClientCodeGenOptionType> = enabled,
+        ) = resolver.forOperation(
+            document.paths
+                .getValue(path)
+                .operations
+                .getValue(verb),
+            selected,
+        )
+
+        assertThat(
+            plan("/documents", "put")!!
+                .single()
+                .alternatives
+                .single()
+                .single()
+                .kind,
+        ).isEqualTo(HeaderCredentialKind.BASIC)
+        assertThat(plan("/documents", "delete")).isNull()
+        assertThat(plan("/basic", selected = setOf(ClientCodeGenOptionType.OPENAPI_BASIC_AUTHENTICATION))!!.single().kinds)
+            .containsExactly(HeaderCredentialKind.BASIC)
+        assertThat(plan("/basic", "post")!!.single().kinds).containsExactly(HeaderCredentialKind.API_KEY, HeaderCredentialKind.BASIC)
+        assertThat(plan("/basic", "post", setOf(ClientCodeGenOptionType.OPENAPI_BASIC_AUTHENTICATION))).isEmpty()
+        assertThat(plan("/basic", "put")!!.single().alternatives.map { it.single().scheme }).containsExactly("Basic", "OtherBasic")
+        assertThat(plan("/basic", "delete")).isNull()
+        assertThat(plan("/basic", selected = options)).isNull()
+        assertThat(plan("/basic-alternatives")!!.map { it.kinds }).containsExactly(
+            listOf(HeaderCredentialKind.BASIC),
+            listOf(HeaderCredentialKind.BEARER),
+            listOf(HeaderCredentialKind.OAUTH2),
+            listOf(HeaderCredentialKind.API_KEY),
+        )
+        assertThat(plan("/basic-alternatives", "delete")!!.single().alternatives.map { it.map(HeaderCredential::scheme) })
+            .containsExactly(listOf("Basic", "Key"), listOf("OtherBasic", "OtherKey"))
+        listOf("post", "put", "patch").forEach { assertThat(plan("/basic-alternatives", it)).isEmpty() }
+    }
+
     private val spec = readTextResource("/examples/headerApiKeySecurity/api.yaml")
     private val options =
         setOf(

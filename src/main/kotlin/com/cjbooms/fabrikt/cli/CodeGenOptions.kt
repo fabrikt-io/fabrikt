@@ -80,6 +80,9 @@ enum class ClientCodeGenOptionType(
     OPENAPI_OAUTH2_AUTHENTICATION(
         "Adds operation-specific OAuth2 access-token helpers that pass required scopes to a caller-provided token provider",
     ),
+    OPENAPI_BASIC_AUTHENTICATION(
+        "Adds operation-specific HTTP Basic helpers using caller-provided username and password credentials",
+    ),
     ;
 
     override fun toString() = "`${super.toString()}` - $description"

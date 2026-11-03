@@ -36,6 +36,7 @@ class HeaderApiKeySecurityGeneratorTest {
             ClientCodeGenOptionType.OPENAPI_API_KEY_AUTHENTICATION,
             ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION,
             ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION,
+            ClientCodeGenOptionType.OPENAPI_BASIC_AUTHENTICATION,
         )
 
     @ParameterizedTest
@@ -66,10 +67,21 @@ class HeaderApiKeySecurityGeneratorTest {
             "getDocumentsWithOAuth2Token",
             "createDocumentWithApiKeyAndOAuth2Token",
             "getBearerWithApiKeyAndBearerToken",
+            "getBasicWithBasicCredentials",
+            "createBasicWithApiKeyAndBasicCredentials",
+            "getBasicAlternativesWithBasicCredentials",
+            "getBasicAlternativesWithBearerToken",
+            "getBasicAlternativesWithOAuth2Token",
         )
         assertThat(com.squareup.kotlinpoet.KModifier.SUSPEND in functions.getValue("getDocumentsWithApiKey").modifiers)
             .isEqualTo(com.squareup.kotlinpoet.KModifier.SUSPEND in functions.getValue("getDocuments").modifiers)
         assertThat(functions).doesNotContainKeys("createDocumentWithApiKey", "createDocumentWithOAuth2Token", "deleteDocumentWithApiKey")
+        assertThat(functions).doesNotContainKeys(
+            "deleteBasicWithBasicCredentials",
+            "createBasicAlternativesWithBasicCredentials",
+            "replaceBasicAlternativesWithBasicCredentials",
+            "updateBasicAlternativesWithBasicCredentials",
+        )
         assertThat(
             functions.getValue("createDocumentWithApiKeyAndOAuth2Token").parameters.take(2).map {
                 it.name
@@ -96,16 +108,24 @@ class HeaderApiKeySecurityGeneratorTest {
     @EnumSource(ClientCodeGenTargetType::class)
     fun `provider and local names avoid operation parameter collisions`(target: ClientCodeGenTargetType) {
         val source =
-            spec.replace(
-                "      operationId: getDocuments",
-                """      operationId: getDocuments
+            spec
+                .replace(
+                    "      operationId: getDocuments",
+                    """      operationId: getDocuments
       parameters:
         - {name: apiKeyProvider, in: query, schema: {type: string}}
         - {name: oauth2TokenProvider, in: query, schema: {type: string}}
         - {name: credential, in: query, schema: {type: string}}
         - {name: credentialCache, in: query, schema: {type: string}}
         - {name: authenticationHeaders, in: query, schema: {type: string}}""",
-            )
+                ).replace(
+                    "      operationId: getBasic\n",
+                    """      operationId: getBasic
+      parameters:
+        - {name: basicCredentialsProvider, in: query, schema: {type: string}}
+        - {name: basicCredentialsCharset, in: query, schema: {type: string}}
+""".trimEnd() + "\n",
+                )
         MutableSettings.updateSettings(genTypes = setOf(CodeGenerationType.CLIENT), clientTarget = target, clientOptions = options)
         val functions =
             generator(target, SourceApi(source))
@@ -118,6 +138,13 @@ class HeaderApiKeySecurityGeneratorTest {
         assertThat(wrapper.toString()).contains("credentialCacheExtra", "authenticationHeadersExtra", "credentialExtra")
         val token = functions.getValue("getDocumentsWithOAuth2Token")
         assertThat(token.parameters.map { it.name }).contains("oauth2TokenProviderExtra", "oauth2TokenProvider")
+        val basic = functions.getValue("getBasicWithBasicCredentials")
+        assertThat(basic.parameters.map { it.name }).contains(
+            "basicCredentialsProviderExtra",
+            "basicCredentialsProvider",
+            "basicCredentialsCharsetExtra",
+            "basicCredentialsCharset",
+        )
     }
 
     private fun generator(
