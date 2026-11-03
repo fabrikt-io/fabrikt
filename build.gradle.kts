@@ -51,12 +51,7 @@ dependencies {
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.dataformat.yaml)
     implementation(libs.jcommander)
-    implementation(libs.openapi.parser) {
-        exclude(group = "junit")
-        exclude(group = "com.sun.mail", module = "javax.mail")
-        exclude(group = "javax.mail", module = "javax.mail-api")
-    }
-    implementation(libs.jakarta.mail)
+    implementation(libs.openapi.parser) { exclude(group = "junit") }
     implementation(libs.jsonoverlay)
     implementation(libs.kotlinpoet) { exclude(module = "kotlin-stdlib-jre7") }
     implementation(libs.flogger)
