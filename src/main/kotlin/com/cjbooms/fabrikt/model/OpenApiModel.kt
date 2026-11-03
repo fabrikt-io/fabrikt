@@ -101,6 +101,17 @@ class OpenApiSchema(
                 ?.orElse(null)
                 ?.documentUrl
     val parsedJson: JsonNode? get() = Overlay.of(kaizen).parsedJson
+
+    fun declaredPropertyDefault(propertyName: String): Any? =
+        parsedJson?.get("properties")?.get(propertyName)?.get("default")?.let {
+            when {
+                it.isTextual -> it.textValue()
+                it.isNumber -> it.numberValue()
+                it.isBoolean -> it.booleanValue()
+                else -> null
+            }
+        }
+
     internal val isUninhabitable: Boolean get() = schemaSemanticsAt(jsonPathFromRoot).isUninhabitable
     internal val hasMultipleNonNullTypes: Boolean get() = schemaSemanticsAt(jsonPathFromRoot).hasMultipleNonNullTypes
 

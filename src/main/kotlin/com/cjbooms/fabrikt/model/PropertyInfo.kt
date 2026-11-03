@@ -23,6 +23,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.oneOfDiscriminatorValues
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeType
+import java.util.logging.Logger
 import com.cjbooms.fabrikt.model.OpenApi3Document as OpenApi3
 import com.cjbooms.fabrikt.model.OpenApiSchema as Schema
 
@@ -111,8 +112,78 @@ sealed class PropertyInfo {
                         )
                     } +
                     getInLinedProperties(settings, api, enclosingSchema, combinedRequiredFields, memberSchema)
-            return results.distinctBy { it.oasKey }
+            return results.groupBy { it.oasKey }.values.map { declarations ->
+                val first = declarations.first()
+                if (first is Field && declarations.size > 1 && allOfSchemas.isNotEmpty()) {
+                    refineDefault(first, declarations.filterIsInstance<Field>())
+                } else {
+                    first
+                }
+            }
         }
+
+        private data class PropertyRefinement(
+            val default: Any?,
+            val enumValues: List<String>,
+        )
+
+        private fun Schema.localPropertyRefinements(key: String): List<PropertyRefinement> =
+            listOfNotNull(
+                properties[key]?.let { property ->
+                    PropertyRefinement(declaredPropertyDefault(key), property.enums.mapNotNull { it?.toString() })
+                },
+            ) + allOfSchemas.filter { it.name == null }.flatMap { it.localPropertyRefinements(key) }
+
+        private fun Schema.refineDefault(
+            first: Field,
+            declarations: List<Field>,
+        ): Field {
+            val originalEnum = first.typeInfo as? KotlinTypeInfo.Enum
+            val inherited =
+                if (originalEnum != null &&
+                    first.schema.isInlinedEnumDefinition() &&
+                    first.schema.jsonReference.startsWith("$jsonReference/")
+                ) {
+                    declarations.firstOrNull {
+                        val enum = it.typeInfo as? KotlinTypeInfo.Enum
+                        val isAncestor = !it.schema.jsonReference.startsWith("$jsonReference/")
+                        isAncestor &&
+                            (it.typeInfo == KotlinTypeInfo.Text || enum?.entries?.containsAll(originalEnum.entries) == true)
+                    } ?: first
+                } else {
+                    first
+                }
+            val inheritedEnum = inherited.typeInfo as? KotlinTypeInfo.Enum
+            val refinement =
+                localPropertyRefinements(first.oasKey).firstOrNull {
+                    it.default != null ||
+                        ((inheritedEnum != null || inherited.typeInfo == KotlinTypeInfo.Text) && it.enumValues.size == 1)
+                } ?: return first
+            val value = refinement.default ?: refinement.enumValues.single()
+            if (!inherited.acceptsDefault(value) ||
+                (refinement.enumValues.isNotEmpty() && value.toString() !in refinement.enumValues)
+            ) {
+                Logger.getGlobal().warning(
+                    "Ignoring incompatible composed default for '${first.oasKey}' in '${safeName()}'. " +
+                        "Use a default compatible with the inherited property type and enum values.",
+                )
+                return first
+            }
+            return inherited.copy(compositionDefault = value, isRequired = declarations.any { it.isRequired })
+        }
+
+        private fun Field.acceptsDefault(value: Any): Boolean =
+            when (val type = typeInfo) {
+                is KotlinTypeInfo.Enum -> value is String && value in type.entries
+                KotlinTypeInfo.Text, KotlinTypeInfo.Uri, KotlinTypeInfo.ByteArray -> value is String
+                KotlinTypeInfo.Boolean -> value is Boolean
+                KotlinTypeInfo.Integer -> value is Int
+                KotlinTypeInfo.BigInt -> value is Int || value is Long
+                KotlinTypeInfo.Numeric -> value is Number && value.toString().toBigDecimalOrNull() != null
+                KotlinTypeInfo.Float -> value is Number && value.toFloat().isFinite()
+                KotlinTypeInfo.Double -> value is Number && value.toDouble().isFinite()
+                else -> false
+            }
 
         private fun maybeMarkInherited(
             settings: Settings,
@@ -354,6 +425,7 @@ sealed class PropertyInfo {
         val enclosingSchema: Schema? = null,
         val direction: ModelDirection? = null,
         val memberDiscriminatorValues: Set<String> = emptySet(),
+        val compositionDefault: Any? = null,
     ) : PropertyInfo() {
         override val typeInfo: KotlinTypeInfo =
             KotlinTypeInfo.from(schema, oasKey, enclosingSchema, direction = direction)
