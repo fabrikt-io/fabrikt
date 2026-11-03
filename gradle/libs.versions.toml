@@ -15,6 +15,7 @@ jackson-databind-nullable = "0.2.10"
 # OpenAPI
 kaizen-openapi-parser = "4.2.0"
 jsonoverlay = "4.0.4"
+jakarta-mail = "1.6.8"
 
 # Code generation
 jcommander = "3.0"
@@ -81,6 +82,7 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test" }
 jcommander = { module = "org.jcommander:jcommander", version.ref = "jcommander" }
 openapi-parser = { module = "io.fabrikt:kaizen-openapi-parser", version.ref = "kaizen-openapi-parser" }
 jsonoverlay = { module = "com.reprezen.jsonoverlay:jsonoverlay", version.ref = "jsonoverlay" }
+jakarta-mail = { module = "com.sun.mail:jakarta.mail", version.ref = "jakarta-mail" }
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 flogger = { module = "com.google.flogger:flogger", version.ref = "flogger" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
