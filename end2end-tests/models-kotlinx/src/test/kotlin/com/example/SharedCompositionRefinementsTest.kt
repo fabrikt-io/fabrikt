@@ -3,6 +3,13 @@ package com.example
 import com.example.compositionrefinements.models.Cat
 import com.example.compositionrefinements.models.CatProfile
 import com.example.compositionrefinements.models.Dog
+import com.example.compositionrefinements.models.KafkaAlias
+import com.example.compositionrefinements.models.KafkaNarrowed
+import com.example.compositionrefinements.models.KafkaReference
+import com.example.compositionrefinements.models.KafkaReversed
+import com.example.compositionrefinements.models.NakadiDefault
+import com.example.compositionrefinements.models.SinkFieldsComposite
+import com.example.compositionrefinements.models.SinkType
 import com.example.compositionrefinements.models.Pet
 import com.example.compositionrefinements.models.PetComposite
 import com.example.compositionrefinements.models.ProfileComposite
@@ -16,6 +23,21 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class SharedCompositionRefinementsTest {
+    @Test
+    fun `composed defaults keep the parent enum without enforcing the leaf restriction`() {
+        val models = listOf<SinkFieldsComposite>(KafkaReference(), KafkaAlias(), KafkaNarrowed(), KafkaReversed())
+        assertThat(models.map { it.type }).containsOnly(SinkType.KAFKA)
+        assertThat(Json.encodeToString(KafkaNarrowed())).contains("\"type\":\"Kafka\"")
+        assertThat(NakadiDefault().type).isEqualTo(SinkType.NAKADI)
+        assertThat(Json.decodeFromString<NakadiDefault>("{}").type).isEqualTo(SinkType.NAKADI)
+        assertThat(Json.decodeFromString<KafkaReference>("{}").type).isEqualTo(SinkType.KAFKA)
+        assertThat(Json.decodeFromString<KafkaAlias>("{}").type).isEqualTo(SinkType.KAFKA)
+        assertThat(Json.decodeFromString<KafkaNarrowed>("{}").type).isEqualTo(SinkType.KAFKA)
+        val explicit = KafkaNarrowed(type = SinkType.NAKADI)
+        assertThat(explicit.copy().type).isEqualTo(SinkType.NAKADI)
+        assertThat(Json.decodeFromString<KafkaNarrowed>(Json.encodeToString(explicit))).isEqualTo(explicit)
+    }
+
     private val catJson = """{"id":"cat-1","name":"Cat"}"""
     private val profileJson = """{"pet":$catJson,"pets":[$catJson],"petsByName":{"one":$catJson},"optionalPet":$catJson}"""
 

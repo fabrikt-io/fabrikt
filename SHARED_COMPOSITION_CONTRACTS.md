@@ -94,6 +94,8 @@ The contract follows the actual generated Kotlin property set, including nullabi
 
 Composition contracts do not change existing property discovery or type resolution. If an existing composition generates a broader type instead of a schema refinement, its contract retains that generated type; this option does not resolve the broader type-resolution limitation.
 
+For composed scalar property refinements, Fabrikt retains the inherited Kotlin type and supplies a constructor default from a compatible leaf default or single-value enum. This works with or without shared contracts; it does not enforce the leaf's restricted values at runtime.
+
 A non-null property can implement a nullable contract. A generated subtype can implement a property of its generated superclass or interface type, and read-only collections can retain compatible element/value refinements. For example, `List<Cat>` can implement `val pets: List<Pet>` when the generated Cat actually extends Pet. Map keys remain invariant, as do mutable collections. A same-named class from another package is not treated as that generated subtype.
 
 Incompatible primitive types, missing fields or nullable values where the contract requires non-null values prevent membership and produce a warning describing the property types. The generator retains the concrete model's original properties and constructor rather than widening or coercing them to make the interface fit. Empty object projections can still expose an empty contract without inventing filtered properties.
