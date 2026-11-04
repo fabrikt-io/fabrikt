@@ -21,5 +21,9 @@ public data class B(
   override val kind: BKind = BKind.B,
 ) : Mixed,
     Shared,
+    InlineContainerDirect,
+    InlineContainerEntries,
+    InlineContainerMixed,
+    InlineArray,
     AComposite,
     BComposite

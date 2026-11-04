@@ -262,6 +262,7 @@ class ModelGenerator(
     private val mappedCompositionSchemas = linkedMapOf<String, Pair<OpenApi3, SchemaInfo>>()
     private val mappedContractModels = linkedMapOf<String, TypeSpec>()
     private val compositionSchemas = linkedMapOf<String, Schema>()
+    private val generatedCompositionSchemas = linkedMapOf<String, Schema>()
     private val externalCompositionRoots = linkedMapOf<String, MutableSet<String>>()
 
     fun generate(): Models {
@@ -340,7 +341,13 @@ class ModelGenerator(
         }
         val composedModels =
             if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) {
-                SharedCompositionContractGenerator(packages, compositionSchemas.values, primaryModels, mappedContractModels).apply(models)
+                SharedCompositionContractGenerator(
+                    packages,
+                    compositionSchemas.values,
+                    primaryModels,
+                    mappedContractModels,
+                    generatedCompositionSchemas.values,
+                ).apply(models)
             } else {
                 models
             }
@@ -374,11 +381,24 @@ class ModelGenerator(
             is KotlinTypeInfo.Enum -> models.add(buildEnumClass(schema, type))
             is KotlinTypeInfo.Object, is KotlinTypeInfo.GeneratedTypedAdditionalProperties -> {
                 val properties = schema.topLevelProperties(propertySettings, sourceApi.openApi3, schema)
-                models.add(standardDataClass(name, schema.safeName(), properties, schema, emptyList()))
+                models.add(
+                    standardDataClass(name, schema.safeName(), properties, schema, emptyList()).also {
+                        registerCompositionModel(schema, it)
+                    },
+                )
                 models.addAll(buildInLinedModels(properties, schema, schema.getDocumentUrl()))
             }
             else -> Unit
         }
+    }
+
+    private fun registerCompositionModel(
+        schema: Schema,
+        model: TypeSpec,
+    ) {
+        if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS !in options) return
+        generatedCompositionSchemas[schema.jsonReference] = schema
+        primaryModels.putIfAbsent(schema.jsonReference, model)
     }
 
     private fun registerCompositionSchemas(
@@ -615,7 +635,7 @@ class ModelGenerator(
                                         props,
                                         it.schema,
                                         oneOfInterfaces = emptyList(),
-                                    )
+                                    ).also { model -> registerCompositionModel(it.schema, model) }
                                 val inlinedModels = buildInLinedModels(props, enclosingSchema, apiDocUrl)
                                 inlinedModels + currentModel
                             }
@@ -660,7 +680,7 @@ class ModelGenerator(
                                     properties = props,
                                     schema = it.schema,
                                     oneOfInterfaces = emptyList(),
-                                )
+                                ).also { model -> registerCompositionModel(it.schema, model) }
                             buildInLinedModels(props, enclosingSchema, apiDocUrl) + currentModel
                         } else {
                             emptySet()
@@ -738,7 +758,7 @@ class ModelGenerator(
                                     properties = props,
                                     schema = schema,
                                     oneOfInterfaces = emptyList(),
-                                )
+                                ).also { registerCompositionModel(items, it) }
                         }
 
                 items.isInlinedEnumDefinition() ->
@@ -926,7 +946,7 @@ class ModelGenerator(
                 properties = props,
                 schema = schema,
                 oneOfInterfaces = emptyList(),
-            )
+            ).also { registerCompositionModel(schema, it) }
         return buildInLinedModels(props, enclosingSchema, apiDocUrl) + currentModel
     }
 
@@ -1078,7 +1098,7 @@ class ModelGenerator(
             .addMicronautIntrospectedAnnotation()
             .addMicronautReflectionAnnotation()
 
-        return interfaceBuilder.build()
+        return interfaceBuilder.build().also { registerCompositionModel(schema, it) }
     }
 
     private fun getFlattenedDiscriminatorMappings(

@@ -18,4 +18,5 @@ public data class Other(
   @param:JsonProperty("kind")
   override val kind: OtherKind = OtherKind.OTHER,
 ) : Mixed,
+    InlineContainerMixed,
     OtherComposite

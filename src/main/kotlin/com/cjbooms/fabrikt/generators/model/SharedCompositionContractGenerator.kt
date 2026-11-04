@@ -23,9 +23,10 @@ internal class SharedCompositionContractGenerator(
     componentSchemas: Collection<OpenApiSchema>,
     private val primaryModels: Map<String, TypeSpec>,
     private val mappedContractModels: Map<String, TypeSpec> = emptyMap(),
+    private val generatedSchemas: Collection<OpenApiSchema> = emptyList(),
 ) {
-    private val schemas = componentSchemas.distinctBy { it.jsonReference }
-    private val relationships = SchemaCompositionRelationships(schemas)
+    private val schemas = (componentSchemas + generatedSchemas).distinctBy { it.jsonReference }
+    private val relationships = SchemaCompositionRelationships(componentSchemas)
     private val modelsByName = primaryModels.values.associateBy { it.name }
     private val modelPackage = modelsPackage(packages.base)
 
@@ -33,7 +34,7 @@ internal class SharedCompositionContractGenerator(
         val contracts = mutableListOf<TypeSpec>()
         val interfacesByModel = mutableMapOf<String, MutableList<ClassName>>()
         val overriddenProperties = mutableMapOf<String, MutableSet<String>>()
-        val ancestors = relationships.contractComponents()
+        val ancestors = relationships.contractComponents(generatedSchemas)
         ancestors.forEach { ancestor ->
             val baseModel = primaryModels[ancestor.jsonReference] ?: mappedContractModels[ancestor.jsonReference] ?: return@forEach
             if (ancestor.safeType() != OasType.Object.type || !baseModel.isConcreteObject()) return@forEach

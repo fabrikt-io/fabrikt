@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.clients
 
 import com.example.compositionunions.models.AComposite
+import com.example.compositionunions.models.InlineContainer
 import com.example.compositionunions.models.Combined
 import com.example.compositionunions.models.DeductionChoice
 import com.example.compositionunions.models.Mixed
@@ -11,6 +12,16 @@ import tools.jackson.databind.json.JsonMapper
 import tools.jackson.module.kotlin.kotlinModule
 
 class SharedCompositionUnionsTest {
+    @Test
+    fun `inline unions and composed objects retain typed contracts after deserialization`() {
+        val payload = """{"named":{"kind":"b","id":"b-4","label":"B"},"direct":{"kind":"b","id":"b-1","label":"B"},"entries":[{"kind":"c","id":"c-1","count":3}],"nested":{"choice":{"id":"a-nested","note":"N"}},"composed":{"id":"a-1","note":"N"},"rows":[{"id":"a-2","note":"R"}],"alias":[{"kind":"b","id":"b-3","label":"B"}],"records":{"one":{"id":"a-3","note":"M"}},"mixed":{"kind":"other","id":"other-1","message":"O"}}"""
+        val value = mapper.readValue(payload, InlineContainer::class.java)
+        val contracts: List<AComposite> = listOf(value.direct!!, value.entries!!.single(), value.nested!!.choice!!, value.composed!!, value.rows!!.single(), value.alias!!.single(), value.records!!.getValue("one")!!, value.named!!)
+        assertThat(contracts.map { it.id }).containsExactly("b-1", "c-1", "a-nested", "a-1", "a-2", "b-3", "a-3", "b-4")
+        assertThat(value.mixed as? AComposite).isNull()
+        assertThat(mapper.readValue(mapper.writeValueAsString(value), InlineContainer::class.java)).isEqualTo(value)
+    }
+
     private val mapper = JsonMapper.builder().addModule(kotlinModule()).build()
 
     @Test

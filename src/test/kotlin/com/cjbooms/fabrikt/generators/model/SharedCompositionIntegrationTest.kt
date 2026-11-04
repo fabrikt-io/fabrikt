@@ -16,6 +16,26 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 class SharedCompositionIntegrationTest {
+    @Test
+    fun `inline object and union models expose the same named contracts as component models`() {
+        MutableSettings.updateSettings(modelOptions = setOf(ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS))
+        val files =
+            ModelGenerator(Packages("example"), SourceApi(readTextResource("/examples/sharedCompositionUnions/api.yaml")))
+                .generate()
+                .files
+                .associate { it.name to it.toString() }
+
+        listOf("InlineContainerDirect", "InlineContainerEntries", "InlineArray").forEach { name ->
+            assertThat(files.getValue(name)).contains("sealed interface $name : AComposite")
+        }
+        listOf("InlineContainerComposed", "InlineContainerRows", "InlineContainerChoice").forEach { name ->
+            assertThat(files.getValue(name)).contains("override val id: String", ") : AComposite")
+        }
+        assertThat(files.getValue("InlineContainer")).contains("val entries: List<", "InlineContainerEntries>")
+        assertThat(files.getValue("InlineContainerMixed")).doesNotContain("AComposite")
+        assertThat(files.getValue("Shared")).contains("sealed interface Shared : AComposite")
+    }
+
     @BeforeEach
     fun reset() {
         MutableSettings.updateSettings()
