@@ -42,6 +42,40 @@ components:
           oneOf:
             - "$ref": "#/components/schemas/OneObject"
             - "$ref": "#/components/schemas/TwoObject"
+    NestedInlineContainer:
+      type: object
+      properties:
+        nested:
+          type: object
+          properties:
+            detail:
+              type: object
+              properties:
+                value:
+                  oneOf:
+                    - $ref: '#/components/schemas/OneObject'
+                    - $ref: '#/components/schemas/TwoObject'
+                  discriminator:
+                    propertyName: type
+                    mapping:
+                      char_location: '#/components/schemas/OneObject'
+                      content_block_location: '#/components/schemas/TwoObject'
+        entries:
+          type: array
+          items:
+            type: object
+            properties:
+              selection:
+                oneOf:
+                  - $ref: '#/components/schemas/OneObject'
+                  - $ref: '#/components/schemas/TwoObject'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    char_location: '#/components/schemas/OneObject'
+                    content_block_location: '#/components/schemas/TwoObject'
+        recursive:
+          $ref: '#/components/schemas/NestedInlineContainer'
     State:
       oneOf:
         - $ref: '#/components/schemas/StateA'

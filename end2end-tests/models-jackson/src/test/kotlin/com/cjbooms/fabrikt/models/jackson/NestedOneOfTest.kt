@@ -14,6 +14,16 @@ class NestedOneOfTest {
     private val writer = objectMapper.writerWithDefaultPrettyPrinter()
 
     @Test
+    fun `must deserialize unions inside nested inline objects and array objects`() {
+        val payload = """{"nested":{"detail":{"value":{"type":"char_location"}}},"entries":[{"selection":{"type":"content_block_location"}}]}"""
+        val result = objectMapper.readValue(payload, NestedInlineContainer::class.java)
+
+        assertThat(result.nested!!.detail!!.value).isEqualTo(OneObject(type = "char_location"))
+        assertThat(result.entries!!.single().selection).isEqualTo(TwoObject(type = "content_block_location"))
+        assertThat(objectMapper.readValue(objectMapper.writeValueAsString(result), NestedInlineContainer::class.java)).isEqualTo(result)
+    }
+
+    @Test
     fun `must serialize StateA`() {
         val obj = StateA(status = Status.A)
         val result = writer.writeValueAsString(obj)

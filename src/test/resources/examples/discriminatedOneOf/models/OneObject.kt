@@ -14,4 +14,6 @@ public data class OneObject(
   public val type: String = "char_location",
 ) : SomeObjInlinedArray,
     SomeObjInlinedObject,
-    SomeObjInlinedObjectNoMappings
+    SomeObjInlinedObjectNoMappings,
+    NestedInlineContainerValue,
+    NestedInlineContainerSelection

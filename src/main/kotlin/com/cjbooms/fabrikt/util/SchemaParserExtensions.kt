@@ -282,7 +282,7 @@ object SchemaParserExtensions {
         // Check inline oneOf within properties of all schemas
         val inlineInterfaces =
             allSchemas.flatMap { enclosingSchema ->
-                enclosingSchema.properties.values.flatMap { property ->
+                enclosingSchema.propertiesInInlineObjects().flatMap { property ->
                     val interfaces = mutableListOf<Schema>()
 
                     // Check oneOf in array items
@@ -324,6 +324,17 @@ object SchemaParserExtensions {
 
         return (topLevelInterfaces + inlineInterfaces + topLevelArrayInterfaces).distinctBy { it.jsonReference }
     }
+
+    private fun Schema.propertiesInInlineObjects(visited: MutableSet<String> = mutableSetOf()): List<Schema> =
+        buildList {
+            if (!visited.add(jsonReference)) return@buildList
+            properties.values.forEach { property ->
+                add(property)
+                listOf(property, property.itemsSchema)
+                    .filter { it.isInlinedObjectDefinition() && !it.isOneOfSuperInterface() }
+                    .forEach { addAll(it.propertiesInInlineObjects(visited)) }
+            }
+        }
 
     fun Schema.oneOfDiscriminatorValues(
         api: OpenApi3,

@@ -64,6 +64,21 @@ components:
       items:
         $ref: "#/components/schemas/Pet"
     # Polymorphic type with type as discriminator
+    InlinePhoneEnvelope:
+      type: object
+      properties:
+        details:
+          type: object
+          properties:
+            phone:
+              oneOf:
+                - $ref: '#/components/schemas/LandlinePhone'
+                - $ref: '#/components/schemas/MobilePhone'
+              discriminator:
+                propertyName: type
+                mapping:
+                  landline: '#/components/schemas/LandlinePhone'
+                  mobile: '#/components/schemas/MobilePhone'
     Phone:
       oneOf:
         - $ref: "#/components/schemas/LandlinePhone"
