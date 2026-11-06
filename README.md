@@ -249,7 +249,7 @@ Use a supported `oneOf` schema when a concrete polymorphic Kotlin model is neede
 
 ### 5. Read shared fields from explicitly composed models
 
-Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared interfaces for compatible models that explicitly include a named object through `allOf`. See [Shared composition contracts](SHARED_COMPOSITION_CONTRACTS.md) for examples and current scope.
+Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared interfaces for compatible models that explicitly include a named object through `allOf`. See the [generated examples](src/test/resources/examples/sharedCompositionUnions/models).
 
 ## Multipart clients
 
