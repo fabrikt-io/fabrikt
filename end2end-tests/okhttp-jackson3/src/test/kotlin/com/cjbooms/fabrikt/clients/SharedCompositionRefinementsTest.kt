@@ -3,6 +3,14 @@ package com.cjbooms.fabrikt.clients
 import com.example.compositionrefinements.models.Cat
 import com.example.compositionrefinements.models.CatProfile
 import com.example.compositionrefinements.models.Dog
+import com.example.compositionrefinements.models.KafkaAlias
+import com.example.compositionrefinements.models.KafkaNarrowed
+import com.example.compositionrefinements.models.KafkaReference
+import com.example.compositionrefinements.models.KafkaReversed
+import com.example.compositionrefinements.models.NakadiDefault
+import com.example.compositionrefinements.models.ScalarDefaults
+import com.example.compositionrefinements.models.SinkFieldsComposite
+import com.example.compositionrefinements.models.SinkType
 import com.example.compositionrefinements.models.Pet
 import com.example.compositionrefinements.models.PetComposite
 import com.example.compositionrefinements.models.ProfileComposite
@@ -15,6 +23,33 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class SharedCompositionRefinementsTest {
+    @Test
+    fun `ordinary properties ignore incompatible defaults without losing valid defaults`() {
+        val mapper = jacksonObjectMapper()
+        val model = mapper.readValue("{}", ScalarDefaults::class.java)
+
+        assertThat(listOf(model.text, model.flag, model.count, model.number, model.booleanText, model.overflowFloat)).containsOnlyNulls()
+        assertThat(model.validFlag).isTrue()
+        assertThat(model.validCount).isEqualTo(7)
+        assertThat(model.validLong).isEqualTo(4294967296L)
+        assertThat(mapper.readValue(mapper.writeValueAsString(model), ScalarDefaults::class.java)).isEqualTo(model)
+    }
+
+    @Test
+    fun `composed defaults keep the parent enum without enforcing the leaf restriction`() {
+        val models = listOf<SinkFieldsComposite>(KafkaReference(), KafkaAlias(), KafkaNarrowed(), KafkaReversed())
+        assertThat(models.map { it.type }).containsOnly(SinkType.KAFKA)
+        assertThat(mapper.writeValueAsString(KafkaNarrowed())).contains("\"type\":\"Kafka\"")
+        assertThat(NakadiDefault().type).isEqualTo(SinkType.NAKADI)
+        assertThat(mapper.readValue("{}", NakadiDefault::class.java).type).isEqualTo(SinkType.NAKADI)
+        assertThat(mapper.readValue("{}", KafkaReference::class.java).type).isEqualTo(SinkType.KAFKA)
+        assertThat(mapper.readValue("{}", KafkaAlias::class.java).type).isEqualTo(SinkType.KAFKA)
+        assertThat(mapper.readValue("{}", KafkaNarrowed::class.java).type).isEqualTo(SinkType.KAFKA)
+        val explicit = KafkaNarrowed(type = SinkType.NAKADI)
+        assertThat(explicit.copy().type).isEqualTo(SinkType.NAKADI)
+        assertThat(mapper.readValue(mapper.writeValueAsString(explicit), KafkaNarrowed::class.java)).isEqualTo(explicit)
+    }
+
     private val mapper = jacksonObjectMapper()
     private val catJson = """{"kind":"cat","id":"cat-1","name":"Cat"}"""
     private val profileJson = """{"pet":$catJson,"pets":[$catJson],"petsByName":{"one":$catJson},"optionalPet":$catJson}"""

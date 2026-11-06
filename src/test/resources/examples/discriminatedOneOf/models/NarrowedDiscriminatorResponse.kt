@@ -8,7 +8,7 @@ public data class NarrowedDiscriminatorResponse(
   @param:JsonProperty("errorCode")
   @get:JsonProperty("errorCode")
   @get:NotNull
-  public val errorCode: String,
+  public val errorCode: String = "ERR_ONE",
   @param:JsonProperty("message")
   @get:JsonProperty("message")
   @get:NotNull

@@ -121,6 +121,16 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
     override fun addClassAnnotation(typeSpecBuilder: TypeSpec.Builder) =
         typeSpecBuilder.addAnnotation(AnnotationSpec.builder(Serializable::class).build())
 
+    override fun addRequiredDefault(propertySpecBuilder: PropertySpec.Builder): PropertySpec.Builder =
+        propertySpecBuilder
+            .addAnnotation(ClassName("kotlinx.serialization", "EncodeDefault"))
+            .addAnnotation(
+                AnnotationSpec
+                    .builder(ClassName("kotlin", "OptIn"))
+                    .addMember("%T::class", ClassName("kotlinx.serialization", "ExperimentalSerializationApi"))
+                    .build(),
+            )
+
     @OptIn(ExperimentalSerializationApi::class)
     override fun addBasePolymorphicTypeAnnotation(
         typeSpecBuilder: TypeSpec.Builder,

@@ -270,6 +270,11 @@ object PropertyUtils {
                             }
                         constructorParameter.defaultValue(undefinedDefault)
                     }
+                } else if (this is PropertyInfo.Field && compositionDefault != null) {
+                    oasDefault?.let {
+                        constructorParameter.defaultValue(it.getDefault())
+                        serializationAnnotations.addRequiredDefault(property)
+                    }
                 } else if (this is PropertyInfo.Field) {
                     memberDiscriminatorDefault(wrappedType.copy(nullable = false), classSettings, serializationAnnotations)
                         ?.let { constructorParameter.defaultValue(it) }
@@ -337,7 +342,7 @@ object PropertyUtils {
     ): OasDefault? =
         when (propTypeInfo) {
             is PropertyInfo.Field ->
-                propTypeInfo.schema.default?.let {
+                (propTypeInfo.compositionDefault ?: propTypeInfo.schema.default)?.let {
                     val className = parameterizedType as? ClassName
                     OasDefault.from(propTypeInfo.typeInfo, className, it)
                 }
@@ -351,7 +356,10 @@ object PropertyUtils {
     fun PropertyInfo.isNullable(classSettings: ClassSettings): Boolean {
         if (classSettings.isMergePatchPattern && !isRequired) return isSchemaNullable(classSettings)
         return when (this) {
-            is PropertyInfo.Field -> !isRequired && schema.default == null || isSchemaNullable(classSettings)
+            is PropertyInfo.Field -> {
+                val default = compositionDefault ?: schema.default
+                (!isRequired && (default == null || !OasDefault.isCompatible(typeInfo, default))) || isSchemaNullable(classSettings)
+            }
             is PropertyInfo.ListField, is PropertyInfo.MapField,
             is PropertyInfo.ObjectRefField, is PropertyInfo.ObjectInlinedField,
             is PropertyInfo.OneOfInlinedField,

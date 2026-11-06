@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt.generators.model
 
 import com.cjbooms.fabrikt.cli.CustomTypeMapping
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
+import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.SourceApi
@@ -40,6 +41,23 @@ class SharedCompositionIntegrationTest {
     fun reset() {
         MutableSettings.updateSettings()
         ModelNameRegistry.clear()
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["JACKSON_2", "JACKSON_3", "KOTLINX_SERIALIZATION"])
+    fun `ordinary properties ignore incompatible scalar defaults`(library: String) {
+        MutableSettings.updateSettings(serializationLibrary = SerializationLibrary.valueOf(library))
+        val file =
+            ModelGenerator(Packages("example"), SourceApi(readTextResource("/examples/sharedCompositionRefinements/api.yaml")))
+                .generate()
+                .files
+                .first { it.name == "ScalarDefaults" }
+                .toString()
+
+        listOf("text", "flag", "count", "number", "booleanText", "overflowFloat").forEach { name ->
+            assertThat(file.lineSequence().first { it.contains("val $name:") }).endsWith("= null,")
+        }
+        assertThat(file).contains("val validFlag: Boolean = true", "val validCount: Int = 7", "val validLong: Long = 4294967296")
     }
 
     @ParameterizedTest

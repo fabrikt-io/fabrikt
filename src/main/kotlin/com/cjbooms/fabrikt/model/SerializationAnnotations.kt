@@ -45,6 +45,8 @@ sealed interface SerializationAnnotations {
 
     fun addClassAnnotation(typeSpecBuilder: TypeSpec.Builder): TypeSpec.Builder
 
+    fun addRequiredDefault(propertySpecBuilder: PropertySpec.Builder): PropertySpec.Builder = propertySpecBuilder
+
     fun addBasePolymorphicTypeAnnotation(
         typeSpecBuilder: TypeSpec.Builder,
         propertyName: String,

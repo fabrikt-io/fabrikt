@@ -8,6 +8,7 @@ import com.squareup.kotlinpoet.TypeName
 import java.math.BigDecimal
 import java.net.URI
 import java.util.Base64
+import java.util.logging.Logger
 
 sealed class OasDefault {
     abstract fun getDefault(): CodeBlock
@@ -83,16 +84,39 @@ sealed class OasDefault {
     }
 
     companion object {
+        fun isCompatible(
+            typeInfo: KotlinTypeInfo,
+            value: Any,
+        ): Boolean =
+            when (typeInfo) {
+                is KotlinTypeInfo.Enum -> value is String && value in typeInfo.entries
+                KotlinTypeInfo.Text, KotlinTypeInfo.Uri, KotlinTypeInfo.ByteArray -> value is String
+                KotlinTypeInfo.Boolean -> value is Boolean
+                KotlinTypeInfo.Integer -> value is Int
+                KotlinTypeInfo.BigInt -> value is Int || value is Long
+                KotlinTypeInfo.Numeric -> value is Number && value.toString().toBigDecimalOrNull() != null
+                KotlinTypeInfo.Float -> value is Number && value.toFloat().isFinite()
+                KotlinTypeInfo.Double -> value is Number && value.toDouble().isFinite()
+                else -> false
+            }
+
         fun from(
             typeInfo: KotlinTypeInfo,
             type: TypeName?,
             default: Any,
-        ): OasDefault? =
-            when (default) {
+        ): OasDefault? {
+            if (!isCompatible(typeInfo, default)) {
+                Logger.getGlobal().warning(
+                    "Ignoring default incompatible with generated type '${type ?: typeInfo.modelKClass.qualifiedName}'. " +
+                        "Use a default supported by the generated Kotlin type or remove it.",
+                )
+                return null
+            }
+            return when (default) {
                 is String -> {
                     when (typeInfo) {
                         is KotlinTypeInfo.Enum -> {
-                            if (type != null && typeInfo.entries.contains(default)) {
+                            if (type != null) {
                                 OasDefault.EnumValue(type, default)
                             } else {
                                 null
@@ -115,5 +139,6 @@ sealed class OasDefault {
                 is Boolean -> OasDefault.BooleanValue(default)
                 else -> null
             }
+        }
     }
 }
