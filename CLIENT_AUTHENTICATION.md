@@ -1,12 +1,13 @@
 # Authentication in generated clients
 
-Fabrikt can generate opt-in authentication helpers for header API keys, HTTP Bearer and OAuth2 security schemes declared in an OpenAPI specification. Helpers are supported by OkHttp, OpenFeign, Spring HTTP Interface and Ktor clients. They delegate to the ordinary generated client methods, which remain available.
+Fabrikt can generate opt-in authentication helpers for header API keys, HTTP Basic, HTTP Bearer and OAuth2 security schemes declared in an OpenAPI specification. Helpers are supported by OkHttp, OpenFeign, Spring HTTP Interface and Ktor clients. They delegate to the ordinary generated client methods, which remain available.
 
 Enable the relevant option through `--http-client-opts` or the corresponding playground control:
 
 | Security scheme | Option | Generated helper | Provider signature |
 | --- | --- | --- | --- |
 | Header API key | `OPENAPI_API_KEY_AUTHENTICATION` | `<operation>WithApiKey` | `(schemeName: String) -> String?` |
+| HTTP Basic | `OPENAPI_BASIC_AUTHENTICATION` | `<operation>WithBasicCredentials` | `(schemeName: String) -> Pair<String, String>?` |
 | HTTP Bearer | `OPENAPI_BEARER_AUTHENTICATION` | `<operation>WithBearerToken` | `(schemeName: String) -> String?` |
 | OAuth2 | `OPENAPI_OAUTH2_AUTHENTICATION` | `<operation>WithOAuth2Token` | `(schemeName: String, requiredScopes: Set<String>) -> String?` |
 
@@ -67,6 +68,22 @@ The helper sends both `X-API-Key` and `Authorization: Bearer …` on the same requ
 A helper only replaces headers it supplies, matching existing names case-insensitively and preserving other headers. Existing client/transport configuration can still add credentials; helpers do not strip those credentials or validate them. Anonymous alternatives remain available through the ordinary generated client method; explicitly choosing an authentication helper still requires its credentials. Ktor helpers copy the supplied `ApiConfiguration` and preserve its other settings.
 
 Query and cookie API keys are not supported by this option. Unsupported schemes, disabled authentication kinds and combinations that require multiple values for the same header are skipped as a complete alternative with a warning; they never become a helper for just the supported subset. Supply the full credentials through the ordinary client method for those cases. The option does not implement token acquisition, refresh or credential validation. Existing Bearer/OAuth2 helper generation remains unchanged when this option is disabled, and operations without API-key security retain their existing helpers.
+
+## HTTP Basic
+
+Enable `OPENAPI_BASIC_AUTHENTICATION` for `type: http`, `scheme: basic`. The provider receives the security scheme's component name and returns a username/password pair, or `null` when credentials are unavailable:
+
+```kotlin
+client.getAccountWithBasicCredentials(
+    basicCredentialsProvider = { schemeName -> credentialStore.usernameAndPassword(schemeName) },
+)
+```
+
+The helper sends `Authorization: Basic <encoded credentials>`. It defaults to ISO-8859-1, matching OkHttp's Basic credential helper. Set `basicCredentialsCharset = Charsets.UTF_8` when the server expects UTF-8. Characters that cannot be encoded with the selected charset cause an error instead of silent replacement. Empty usernames and passwords are supported; colons in usernames and control characters in either value are rejected. Passwords may contain colons. Errors do not include credential values.
+
+Basic uses the complete security alternatives described above, including when no API key is present. Enable the other authentication options to generate their alternatives and combinations. For Basic AND a header API key, the helper is `<operation>WithApiKeyAndBasicCredentials`; it requires both providers and never combines partial credentials from separate alternatives. Conflicting `Authorization` schemes in one requirement are skipped with a warning. Anonymous alternatives use the ordinary method; explicitly choosing a Basic helper requires credentials. Operation-level overrides and `security: []` work as described above.
+
+The helper encodes credentials; it does not encrypt them, negotiate a challenge, or manage authentication sessions. Use HTTPS for real credentials. Redirect and transport authentication policies remain controlled by the underlying client.
 
 ## HTTP Bearer
 
@@ -132,7 +149,7 @@ Return the access token without a `Bearer ` prefix. The helper sends a non-blank
 
 ## Security requirements and alternatives
 
-This section describes the standalone Bearer/OAuth2 helpers. Operations with API-key security use the explicit alternatives described above when `OPENAPI_API_KEY_AUTHENTICATION` is enabled.
+This section describes the standalone Bearer/OAuth2 helpers. Operations with enabled API-key or Basic security use the explicit alternatives described above.
 
 Operation-level security replaces global security. An operation without its own security declaration inherits the global requirements. Explicit `security: []` removes those requirements and generates no authentication helper for that operation.
 
@@ -178,7 +195,6 @@ The header API-key helpers address [#721](https://github.com/fabrikt-io/fabrikt/
 
 | Proposed support | Tracking issue |
 | --- | --- |
-| HTTP Basic authentication | [#723](https://github.com/fabrikt-io/fabrikt/issues/723) |
 | OpenID Connect access tokens and operation scopes | [#724](https://github.com/fabrikt-io/fabrikt/issues/724) |
 | API keys in query parameters | [#725](https://github.com/fabrikt-io/fabrikt/issues/725) |
 | API keys in cookies | [#726](https://github.com/fabrikt-io/fabrikt/issues/726) |

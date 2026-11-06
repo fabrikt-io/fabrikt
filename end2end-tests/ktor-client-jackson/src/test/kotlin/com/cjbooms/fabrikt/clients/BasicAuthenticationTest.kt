@@ -1,0 +1,86 @@
+package com.cjbooms.fabrikt.clients
+
+import com.example.basic.client.BasicClient
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import java.nio.charset.Charset
+import com.example.basic.client.ApiConfiguration
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import kotlinx.coroutines.runBlocking
+
+class BasicAuthenticationTest {
+    private val server = WireMockServer(options().dynamicPort())
+    private val httpClient = HttpClient(CIO)
+    private val client = BasicClient(httpClient)
+
+    @BeforeEach
+    fun start() {
+        server.start()
+        server.stubFor(any(anyUrl()).willReturn(aResponse().withStatus(204)))
+    }
+
+    @AfterEach
+    fun stop() {
+        httpClient.close()
+        server.stop()
+    }
+
+    @Test
+    fun `Basic credentials use the selected encoding and preserve unrelated headers`() {
+        getBasic({ "Aladdin" to "open:sesame" }, headers = mapOf("authorization" to "old", "X-Trace" to "trace"))
+        val request = server.allServeEvents.single().request
+        assertThat(request.getHeader("Authorization")).isEqualTo("Basic QWxhZGRpbjpvcGVuOnNlc2FtZQ==")
+        assertThat(request.headers.getHeader("Authorization").values()).hasSize(1)
+        assertThat(request.getHeader("X-Trace")).isEqualTo("trace")
+    }
+
+    @Test
+    fun `Basic combines with an API key and anonymous operations stay anonymous`() {
+        createBasic()
+        val request = server.allServeEvents.single().request
+        assertThat(request.getHeader("Authorization")).isEqualTo("Basic dXNlcjpwYXNz")
+        assertThat(request.getHeader("X-API-Key")).isEqualTo("key")
+        server.resetRequests()
+        deleteBasic()
+        assertThat(server.allServeEvents.single().request.getHeader("Authorization")).isNull()
+        assertThat(server.allServeEvents.single().request.getHeader("X-API-Key")).isNull()
+    }
+
+    @Test
+    fun `missing or malformed credentials fail before making a request`() {
+        assertThatThrownBy { getBasic({ null }) }.isInstanceOf(IllegalStateException::class.java)
+        listOf("bad:user" to "pass", "user" to "bad\npass", "user" to "\u0000").forEach { credentials ->
+            assertThatThrownBy { getBasic({ credentials }) }.isInstanceOf(IllegalArgumentException::class.java)
+        }
+        assertThatThrownBy { getBasic({ "用户" to "pass" }) }.isInstanceOf(IllegalArgumentException::class.java)
+        assertThat(server.allServeEvents).isEmpty()
+    }
+
+    @Test
+    fun `UTF8 and empty credentials are supported explicitly`() {
+        getBasic({ "ü" to "päss" }, Charsets.UTF_8)
+        assertThat(server.allServeEvents.single().request.getHeader("Authorization")).isEqualTo("Basic w7w6cMOkc3M=")
+        server.resetRequests()
+        getBasic({ "" to "" })
+        assertThat(server.allServeEvents.single().request.getHeader("Authorization")).isEqualTo("Basic Og==")
+    }
+
+    private fun getBasic(provider: (String) -> Pair<String, String>?, charset: Charset = Charsets.ISO_8859_1, headers: Map<String, String> = emptyMap()) = runBlocking {
+        client.getBasicWithBasicCredentials(provider, basicCredentialsCharset = charset, apiConfiguration = ApiConfiguration(basePath = server.baseUrl(), customHeaders = headers))
+    }
+
+    private fun createBasic() = runBlocking {
+        client.createBasicWithApiKeyAndBasicCredentials(apiKeyProvider = { "key" }, basicCredentialsProvider = { "user" to "pass" }, apiConfiguration = ApiConfiguration(basePath = server.baseUrl()))
+    }
+
+    private fun deleteBasic() = runBlocking {
+        client.deleteBasic(apiConfiguration = ApiConfiguration(basePath = server.baseUrl()))
+    }
+}

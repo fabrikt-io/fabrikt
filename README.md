@@ -74,7 +74,7 @@ The library currently has support for generating:
   * **Micronaut** HTTP annotated controller interfaces
   * **Ktor server** routes and controller interfaces
 
-Client generators offer opt-in header API-key, HTTP Bearer and OAuth2 helpers through `--http-client-opts OPENAPI_API_KEY_AUTHENTICATION`, `OPENAPI_BEARER_AUTHENTICATION` and `OPENAPI_OAUTH2_AUTHENTICATION`. See [Client authentication](CLIENT_AUTHENTICATION.md) for credential providers, operation scopes, security alternatives and examples.
+Client generators offer opt-in header API-key, HTTP Basic, HTTP Bearer and OAuth2 helpers through `--http-client-opts OPENAPI_API_KEY_AUTHENTICATION`, `OPENAPI_BASIC_AUTHENTICATION`, `OPENAPI_BEARER_AUTHENTICATION` and `OPENAPI_OAUTH2_AUTHENTICATION`. See [Client authentication](CLIENT_AUTHENTICATION.md) for credential providers, operation scopes, security alternatives and examples.
 
 OpenAPI 3.2 `query` operations are supported by all client targets and by Ktor and Micronaut controllers, including JSON request bodies. OpenFeign requires 13.14 or later and a transport that supports `QUERY`, such as `feign-okhttp`; its default `HttpURLConnection` transport does not. Spring HTTP Interface clients likewise require a suitable transport, such as `JdkClientHttpRequestFactory`. Spring controllers skip `QUERY` operations with a warning because the supported stable Spring versions lack `RequestMethod.QUERY`; implement those routes separately or use another controller target.
 
@@ -306,6 +306,7 @@ Usage: <main class> [options]
 |                                         |   `OPENAPI_API_KEY_AUTHENTICATION` - Adds header API-key helpers and complete security alternatives with enabled Bearer and OAuth2 schemes |
 |                                         |   `OPENAPI_BEARER_AUTHENTICATION` - Adds operation-specific Bearer token helpers for OpenAPI HTTP Bearer security schemes |
 |                                         |   `OPENAPI_OAUTH2_AUTHENTICATION` - Adds operation-specific OAuth2 access-token helpers that pass required scopes to a caller-provided token provider |
+|                                         |   `OPENAPI_BASIC_AUTHENTICATION` - Adds operation-specific HTTP Basic helpers using caller-provided username and password credentials |
 |   `--http-client-target`                | Optionally select the target client that you want to be generated. Defaults to OK_HTTP |
 |                                         | CHOOSE ONE OF: |
 |                                         |   `OK_HTTP` - Generate OkHttp client. |

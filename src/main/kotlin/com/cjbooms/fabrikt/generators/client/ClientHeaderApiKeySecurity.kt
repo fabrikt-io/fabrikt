@@ -4,6 +4,7 @@ import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.ClientFunction
 import com.cjbooms.fabrikt.model.OpenApi3Document
 import com.cjbooms.fabrikt.model.OpenApiOperation
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -12,6 +13,8 @@ import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.SET
 import com.squareup.kotlinpoet.STRING
+import java.nio.charset.Charset
+import java.util.Base64
 import java.util.logging.Logger
 
 internal enum class HeaderCredentialKind(
@@ -19,6 +22,7 @@ internal enum class HeaderCredentialKind(
     val provider: String,
 ) {
     API_KEY("ApiKey", "apiKeyProvider"),
+    BASIC("BasicCredentials", "basicCredentialsProvider"),
     BEARER("BearerToken", "bearerTokenProvider"),
     OAUTH2("OAuth2Token", "oauth2TokenProvider"),
 }
@@ -43,11 +47,21 @@ internal class ClientHeaderApiKeySecurity(
         operation: OpenApiOperation,
         options: Set<ClientCodeGenOptionType>,
     ): List<HeaderSecurityPlan>? {
-        if (ClientCodeGenOptionType.OPENAPI_API_KEY_AUTHENTICATION !in options) return null
+        if (ClientCodeGenOptionType.OPENAPI_API_KEY_AUTHENTICATION !in options &&
+            ClientCodeGenOptionType.OPENAPI_BASIC_AUTHENTICATION !in options
+        ) {
+            return null
+        }
         val requirements = if (operation.hasSecurityRequirements()) operation.securityRequirements else document.securityRequirements
         if (requirements.none {
                 it.requirements.keys.any { name ->
-                    document.securitySchemes[name]?.type.equals("apiKey", true)
+                    val scheme = document.securitySchemes[name]
+                    (scheme?.type.equals("apiKey", true) && ClientCodeGenOptionType.OPENAPI_API_KEY_AUTHENTICATION in options) ||
+                        (
+                            scheme?.type.equals("http", true) &&
+                                scheme?.scheme.equals("basic", true) &&
+                                ClientCodeGenOptionType.OPENAPI_BASIC_AUTHENTICATION in options
+                        )
                 }
             }
         ) {
@@ -61,9 +75,14 @@ internal class ClientHeaderApiKeySecurity(
                         val scheme = document.securitySchemes[name]
                         when {
                             scheme?.type.equals("apiKey", true) &&
+                                ClientCodeGenOptionType.OPENAPI_API_KEY_AUTHENTICATION in options &&
                                 scheme?.location == "header" &&
                                 scheme.name?.matches(Regex("[!#\$%&'*+.^_`|~0-9A-Za-z-]+")) == true ->
                                 HeaderCredential(HeaderCredentialKind.API_KEY, name, scheme.name!!)
+                            scheme?.type.equals("http", true) &&
+                                scheme?.scheme.equals("basic", true) &&
+                                ClientCodeGenOptionType.OPENAPI_BASIC_AUTHENTICATION in options ->
+                                HeaderCredential(HeaderCredentialKind.BASIC, name, "Authorization")
                             scheme?.type.equals("oauth2", true) &&
                                 ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION in options ->
                                 HeaderCredential(HeaderCredentialKind.OAUTH2, name, "Authorization", scopes.distinct())
@@ -116,6 +135,7 @@ internal fun FunSpec.withHeaderSecurityWrapper(
 
     fun unique(base: String): String = generateSequence(base) { "${it}Extra" }.first { used.add(it) }
     val providers = plan.kinds.associateWith { unique(it.provider) }
+    val charset = if (HeaderCredentialKind.BASIC in plan.kinds) unique("basicCredentialsCharset") else null
     val headers = unique("authenticationHeaders")
     val adjusted = unique("authenticatedConfiguration")
     val cache = unique("credentialCache")
@@ -134,14 +154,37 @@ internal fun FunSpec.withHeaderSecurityWrapper(
                 scopes.add(")")
                 val lookup = CodeBlock.of("%S to %L", credential.scheme, scopes.build())
                 code.beginControlFlow("if (!%N.containsKey(%L))", cache, lookup)
-                code.addStatement(
-                    "%N[%L] = %N(%S%L)?.takeIf { it.isNotBlank() }",
-                    cache,
-                    lookup,
-                    providers.getValue(credential.kind),
-                    credential.scheme,
-                    if (credential.kind == HeaderCredentialKind.OAUTH2) CodeBlock.of(", %L", scopes.build()) else CodeBlock.of(""),
-                )
+                if (credential.kind == HeaderCredentialKind.BASIC) {
+                    code
+                        .add(
+                            "%N[%L] = %N(%S)?.let { (username, password) ->\n",
+                            cache,
+                            lookup,
+                            providers.getValue(credential.kind),
+                            credential.scheme,
+                        ).indent()
+                    code.addStatement(
+                        "require(':' !in username && (username + password).none { it.code < 32 || it.code == 127 }) { %S }",
+                        "Basic credentials must not contain control characters or a colon in the username",
+                    )
+                    code.addStatement("val userPass = username + %S + password", ":")
+                    code.addStatement(
+                        "require(%N.newEncoder().canEncode(userPass)) { %S }",
+                        charset,
+                        "Basic credentials cannot be encoded with the selected charset",
+                    )
+                    code.addStatement("%T.getEncoder().encodeToString(userPass.toByteArray(%N))", Base64::class, charset)
+                    code.unindent().add("}\n")
+                } else {
+                    code.addStatement(
+                        "%N[%L] = %N(%S%L)?.takeIf { it.isNotBlank() }",
+                        cache,
+                        lookup,
+                        providers.getValue(credential.kind),
+                        credential.scheme,
+                        if (credential.kind == HeaderCredentialKind.OAUTH2) CodeBlock.of(", %L", scopes.build()) else CodeBlock.of(""),
+                    )
+                }
                 code.endControlFlow()
                 code.addStatement("val %N = %N[%L]", value, cache, lookup)
                 code.addStatement(
@@ -156,6 +199,8 @@ internal fun FunSpec.withHeaderSecurityWrapper(
         values.forEach { (credential, value) ->
             if (credential.kind == HeaderCredentialKind.API_KEY) {
                 code.add("%S to %N!!,\n", credential.header, value)
+            } else if (credential.kind == HeaderCredentialKind.BASIC) {
+                code.add("%S to (\"Basic \" + %N!!),\n", credential.header, value)
             } else {
                 code.add("%S to (\"Bearer \" + %N!!),\n", credential.header, value)
             }
@@ -193,7 +238,11 @@ internal fun FunSpec.withHeaderSecurityWrapper(
         .apply {
             providers.forEach { (kind, provider) ->
                 val args = if (kind == HeaderCredentialKind.OAUTH2) arrayOf(STRING, SET.parameterizedBy(STRING)) else arrayOf(STRING)
-                addParameter(provider, LambdaTypeName.get(parameters = args, returnType = STRING.copy(nullable = true)))
+                val result = if (kind == HeaderCredentialKind.BASIC) ClassName("kotlin", "Pair").parameterizedBy(STRING, STRING) else STRING
+                addParameter(provider, LambdaTypeName.get(parameters = args, returnType = result.copy(nullable = true)))
+            }
+            if (charset != null) {
+                addParameter(ParameterSpec.builder(charset, Charset::class).defaultValue("%T.ISO_8859_1", Charsets::class).build())
             }
         }.addParameters(parameters.map { ParameterSpec.builder(it.name, it.type).apply { it.defaultValue?.let(::defaultValue) }.build() })
         .returns(returnType)

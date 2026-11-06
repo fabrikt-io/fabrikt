@@ -22,6 +22,14 @@ import org.junit.jupiter.api.Test
 
 class GenerationSettingsTest {
     @Test
+    fun basicClientOption() {
+        val option = ClientCodeGenOptionType.OPENAPI_BASIC_AUTHENTICATION
+        val settings = Parameters.build { append("clientOptions", option.name) }.receiveGenerationSettings()
+        assertEquals(setOf(option), settings.clientOptions)
+        assertTrue(settings.toQueryParams().contains("clientOptions=${option.name}"))
+    }
+
+    @Test
     fun internalVisibility() {
         val settings = Parameters.build { append("visibility", "INTERNAL") }.receiveGenerationSettings()
         assertEquals(GeneratedVisibility.INTERNAL, settings.visibility)

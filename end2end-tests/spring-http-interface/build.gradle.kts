@@ -3,10 +3,11 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 val fabrikt: Configuration by configurations.creating
 
 val generationDir = "$buildDir/generated"
+val basicGenerationDir = "$buildDir/generated-basic"
 val apiFile = "${rootProject.projectDir}/src/test/resources/examples/okHttpClient/api.yaml"
 
 sourceSets {
-    main { java.srcDirs("$generationDir/src/main/kotlin") }
+    main { java.srcDirs("$generationDir/src/main/kotlin", "$basicGenerationDir/src/main/kotlin") }
     test { java.srcDirs("$generationDir/src/test/kotlin") }
 }
 
@@ -37,6 +38,26 @@ dependencies {
 }
 
 tasks {
+    val generateBasicCode by creating(JavaExec::class) {
+        val spec = rootProject.file("src/test/resources/examples/headerApiKeySecurity/api.yaml")
+        inputs.file(spec)
+        outputs.dir(basicGenerationDir)
+        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        mainClass.set("io.fabrikt.cli.CodeGen")
+        args = listOf(
+            "--output-directory", basicGenerationDir,
+            "--base-package", "com.example.basic",
+            "--api-file", spec.path,
+            "--targets", "client",
+            "--http-client-target", "spring_http_interface",
+            "--serialization-library", "jackson",
+            "--http-client-opts", "OPENAPI_BASIC_AUTHENTICATION",
+            "--http-client-opts", "OPENAPI_API_KEY_AUTHENTICATION",
+            "--http-client-opts", "OPENAPI_BEARER_AUTHENTICATION",
+            "--http-client-opts", "OPENAPI_OAUTH2_AUTHENTICATION",
+        )
+        dependsOn(":shadowJar")
+    }
     val generateCode by creating(JavaExec::class) {
         inputs.files(apiFile)
         outputs.dir(generationDir)
@@ -57,7 +78,7 @@ tasks {
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
-        dependsOn(generateCode)
+        dependsOn(generateCode, generateBasicCode)
     }
 
 
