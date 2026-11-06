@@ -33,8 +33,8 @@ internal class SchemaCompositionRelationships(
             .flatten()
             .toSet()
 
-    fun contractComponents(): List<OpenApiSchema> =
-        components.values
+    fun contractComponents(additionalMembers: Collection<OpenApiSchema> = emptyList()): List<OpenApiSchema> =
+        (components.values + additionalMembers)
             .flatMap { schema ->
                 allOfComponents(schema) +
                     if (schema.isOneOfSuperInterface()) {

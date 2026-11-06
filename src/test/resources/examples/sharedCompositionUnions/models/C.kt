@@ -25,5 +25,8 @@ public data class C(
   override val kind: CKind = CKind.C,
 ) : Mixed,
     Shared,
+    InlineContainerDirect,
+    InlineContainerEntries,
+    InlineArray,
     AComposite,
     CComposite

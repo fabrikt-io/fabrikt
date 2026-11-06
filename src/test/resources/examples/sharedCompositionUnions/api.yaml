@@ -77,6 +77,76 @@ components:
       required: [x]
       properties:
         x: {type: string}
+    InlineArray:
+      type: array
+      items:
+        oneOf:
+          - $ref: '#/components/schemas/B'
+          - $ref: '#/components/schemas/C'
+        discriminator:
+          propertyName: kind
+          mapping: {b: '#/components/schemas/B', c: '#/components/schemas/C'}
+    InlineContainer:
+      type: object
+      properties:
+        named:
+          $ref: '#/components/schemas/Shared'
+        direct:
+          oneOf:
+            - $ref: '#/components/schemas/B'
+            - $ref: '#/components/schemas/C'
+          discriminator:
+            propertyName: kind
+            mapping: {b: '#/components/schemas/B', c: '#/components/schemas/C'}
+        alias:
+          $ref: '#/components/schemas/InlineArray'
+        entries:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/B'
+              - $ref: '#/components/schemas/C'
+            discriminator:
+              propertyName: kind
+              mapping: {b: '#/components/schemas/B', c: '#/components/schemas/C'}
+        nested:
+          type: object
+          properties:
+            choice:
+              allOf:
+                - $ref: '#/components/schemas/A'
+                - type: object
+                  properties:
+                    note: {type: string}
+        composed:
+          allOf:
+            - $ref: '#/components/schemas/A'
+            - type: object
+              properties:
+                note: {type: string}
+        rows:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/A'
+              - type: object
+                properties:
+                  note: {type: string}
+        mixed:
+          oneOf:
+            - $ref: '#/components/schemas/B'
+            - $ref: '#/components/schemas/Other'
+          discriminator:
+            propertyName: kind
+            mapping: {b: '#/components/schemas/B', other: '#/components/schemas/Other'}
+        records:
+          type: object
+          additionalProperties:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/A'
+            properties:
+              note: {type: string}
     Y:
       type: object
       required: [y]

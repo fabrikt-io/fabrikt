@@ -70,6 +70,8 @@ fun process(value: Shared) {
 
 The same guarantee applies to supported `allOf`/`oneOf` combinations: each generated composed alternative includes the referenced object, so its union can expose that object's contract. A property mismatch on any alternative prevents the union from promising the contract. Named object alternatives can also expose their own contracts through direct `oneOf` references.
 
+Generated inline object and union models take part in these checks, including models used as array items or map values. An inline union exposes a contract only when every concrete alternative can implement it safely.
+
 Existing discriminator mappings, Jackson subtype deduction, and Kotlinx polymorphic serialization remain responsible for selecting the concrete model. Shared interfaces carry neither subtype mappings nor their own serializers. They do not add runtime checks enforcing `oneOf` exclusivity, and unions generated as an untyped fallback cannot provide typed variant guarantees.
 
 Kotlinx retains its existing discriminator configuration requirements. If a concrete property has the same serialized name as its class discriminator, use its supported array polymorphism configuration (`Json { useArrayPolymorphism = true }`) for polymorphic serialization; enabling contracts does not resolve that existing collision.
