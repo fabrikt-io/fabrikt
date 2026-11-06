@@ -356,7 +356,10 @@ object PropertyUtils {
     fun PropertyInfo.isNullable(classSettings: ClassSettings): Boolean {
         if (classSettings.isMergePatchPattern && !isRequired) return isSchemaNullable(classSettings)
         return when (this) {
-            is PropertyInfo.Field -> !isRequired && compositionDefault == null && schema.default == null || isSchemaNullable(classSettings)
+            is PropertyInfo.Field -> {
+                val default = compositionDefault ?: schema.default
+                (!isRequired && (default == null || !OasDefault.isCompatible(typeInfo, default))) || isSchemaNullable(classSettings)
+            }
             is PropertyInfo.ListField, is PropertyInfo.MapField,
             is PropertyInfo.ObjectRefField, is PropertyInfo.ObjectInlinedField,
             is PropertyInfo.OneOfInlinedField,

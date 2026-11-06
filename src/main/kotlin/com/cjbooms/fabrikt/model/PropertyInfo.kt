@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt.model
 
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.generators.MutableSettings
+import com.cjbooms.fabrikt.generators.OasDefault
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getKeyIfSingleDiscriminatorValue
@@ -160,7 +161,7 @@ sealed class PropertyInfo {
                         ((inheritedEnum != null || inherited.typeInfo == KotlinTypeInfo.Text) && it.enumValues.size == 1)
                 } ?: return first
             val value = refinement.default ?: refinement.enumValues.single()
-            if (!inherited.acceptsDefault(value) ||
+            if (!OasDefault.isCompatible(inherited.typeInfo, value) ||
                 (refinement.enumValues.isNotEmpty() && value.toString() !in refinement.enumValues)
             ) {
                 Logger.getGlobal().warning(
@@ -171,19 +172,6 @@ sealed class PropertyInfo {
             }
             return inherited.copy(compositionDefault = value, isRequired = declarations.any { it.isRequired })
         }
-
-        private fun Field.acceptsDefault(value: Any): Boolean =
-            when (val type = typeInfo) {
-                is KotlinTypeInfo.Enum -> value is String && value in type.entries
-                KotlinTypeInfo.Text, KotlinTypeInfo.Uri, KotlinTypeInfo.ByteArray -> value is String
-                KotlinTypeInfo.Boolean -> value is Boolean
-                KotlinTypeInfo.Integer -> value is Int
-                KotlinTypeInfo.BigInt -> value is Int || value is Long
-                KotlinTypeInfo.Numeric -> value is Number && value.toString().toBigDecimalOrNull() != null
-                KotlinTypeInfo.Float -> value is Number && value.toFloat().isFinite()
-                KotlinTypeInfo.Double -> value is Number && value.toDouble().isFinite()
-                else -> false
-            }
 
         private fun maybeMarkInherited(
             settings: Settings,

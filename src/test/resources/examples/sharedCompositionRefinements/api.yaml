@@ -135,3 +135,15 @@ components:
               allOf:
                 - $ref: '#/components/schemas/SinkType'
               default: Unknown
+    ScalarDefaults:
+      type: object
+      properties:
+        text: {type: string, default: 42}
+        flag: {type: boolean, default: 1}
+        count: {type: integer, format: int32, default: 1.5}
+        number: {type: number, default: true}
+        booleanText: {type: string, default: false}
+        overflowFloat: {type: number, format: float, default: 1.0e+100}
+        validFlag: {type: boolean, default: true}
+        validCount: {type: integer, format: int32, default: 7}
+        validLong: {type: integer, format: int64, default: 4294967296}
