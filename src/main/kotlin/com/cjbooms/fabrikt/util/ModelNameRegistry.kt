@@ -94,18 +94,16 @@ object ModelNameRegistry {
             qualifiedByEnclosingSchema = enclosingSchema.qualifiesModelClassName(),
         )
 
-    // Two schemas can coincidentally compute the same modelClassName (e.g. a property named
-    // through its qualifying enclosingSchema colliding with an unrelated top-level schema of
-    // that same computed name). Fold in the schema's own position so they get distinct tags,
-    // unless the name isn't enclosing-schema-qualified in the first place — in which case two
-    // calls for the same schema (e.g. with and without an array enclosingSchema) must share one.
+    // Qualified inline models use their source position; other models retain their original
+    // schema name so normalization cannot conflate distinct components. Array/item aliases
+    // with the same source name still share a registration.
     private fun resolveTag(
         schema: Schema,
         modelClassName: String,
         qualifiedByEnclosingSchema: Boolean,
     ): String {
         val uri = URL(schema.jsonReference)
-        val position = if (qualifiedByEnclosingSchema) schema.jsonPathFromRoot else ""
+        val position = if (qualifiedByEnclosingSchema) schema.jsonPathFromRoot else schema.safeName()
         return "file:${uri.file}#$position#$modelClassName"
     }
 

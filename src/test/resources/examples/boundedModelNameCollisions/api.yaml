@@ -82,3 +82,29 @@ components:
       properties:
         state:
           $ref: "#/components/schemas/Product/properties/state"
+    Foo.Bar:
+      type: object
+      required: [size]
+      properties:
+        size: {type: integer, format: int32, minimum: 1}
+    FooBar:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string, minLength: 2}
+    NameCollisionHolder:
+      type: object
+      required: [first, second]
+      properties:
+        first:
+          $ref: '#/components/schemas/Foo.Bar'
+        second:
+          $ref: '#/components/schemas/FooBar'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Foo.Bar'
+        byName:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/FooBar'

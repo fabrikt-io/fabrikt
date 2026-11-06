@@ -119,6 +119,7 @@ class DirectionalModelGeneratorTest {
     @ParameterizedTest
     @ValueSource(
         strings = [
+            "boundedModelNameCollisions",
             "discriminatedOneOf",
             "polymorphicModels",
             "nestedPolymorphicModels",
