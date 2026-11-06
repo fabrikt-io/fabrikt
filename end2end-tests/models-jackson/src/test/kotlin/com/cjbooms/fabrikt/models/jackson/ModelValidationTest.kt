@@ -13,6 +13,7 @@ import com.example.validation.models.ListValue
 import com.example.validation.models.MapValue
 import com.example.validation.models.MappedObject
 import com.example.validation.models.MergePatchValue
+import com.example.validation.models.NameCollisionHolder
 import com.example.validation.models.NestedListValue
 import com.example.validation.models.NestedSetValue
 import com.example.validation.models.NestedValue
@@ -52,6 +53,24 @@ import com.example.validationstrings.models.UuidValue as UuidStringValue
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ModelValidationTest {
     private lateinit var factory: ValidatorFactory
+
+    @Test
+    fun `normalized component name collisions retain their own fields and constraints`() {
+        val mapper = Helpers.mapper()
+        val payload = """{"first":{"size":1},"second":{"name":"ok"},"items":[{"size":2}],"byName":{"x":{"name":"map"}}}"""
+        val model = mapper.readValue(payload, NameCollisionHolder::class.java)
+
+        assertThat(model.first.size).isEqualTo(1)
+        assertThat(model.second.name).isEqualTo("ok")
+        assertThat(model.items!!.single().size).isEqualTo(2)
+        assertThat(model.byName!!.getValue("x")!!.name).isEqualTo("map")
+        assertThat(factory.validator.validate(model)).isEmpty()
+        assertThat(mapper.readValue(mapper.writeValueAsString(model), NameCollisionHolder::class.java)).isEqualTo(model)
+
+        val invalid = mapper.readValue("""{"first":{"size":0},"second":{"name":"x"}}""", NameCollisionHolder::class.java)
+        assertThat(factory.validator.validate(invalid).map { it.propertyPath.toString() })
+            .containsExactlyInAnyOrder("first.size", "second.name")
+    }
 
     @BeforeAll
     fun openValidator() {

@@ -7,6 +7,7 @@ import com.cjbooms.fabrikt.cli.CustomTypeMapping
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.cli.OutputOptionType
+import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.cli.ValidationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.ValueSource
 import java.io.File
@@ -116,6 +118,22 @@ class ModelGeneratorTest {
 
     @Test
     fun `debug single test`() = `correct models are generated for different OpenApi Specifications`("discriminatedOneOf")
+
+    @ParameterizedTest
+    @EnumSource(value = SerializationLibrary::class, names = ["JACKSON_2", "JACKSON_3", "KOTLINX_SERIALIZATION"])
+    fun `preserves distinct top level schemas whose names normalize to the same Kotlin name`(library: SerializationLibrary) {
+        MutableSettings.updateSettings(serializationLibrary = library)
+        val files =
+            ModelGenerator(Packages("example"), SourceApi(readTextResource("/examples/boundedModelNameCollisions/api.yaml")))
+                .generate()
+                .files
+                .associate { it.name to it.toString() }
+
+        assertThat(files.keys).contains("FooBar", "FooBarExtra", "NameCollisionHolder")
+        assertThat(files.getValue("FooBar")).contains("val size: Int")
+        assertThat(files.getValue("FooBarExtra")).contains("val name: String")
+        assertThat(files.getValue("NameCollisionHolder")).contains("val first: FooBar", "val second: FooBarExtra")
+    }
 
     @ParameterizedTest
     @MethodSource("testCases")
