@@ -5,4 +5,5 @@ import kotlinx.serialization.Serializable
 
 @SerialName("char_location")
 @Serializable
-public object OneObject : SomeObjInlinedArray, SomeObjInlinedObject, SomeObjInlinedObjectNoMappings
+public object OneObject : SomeObjInlinedArray, SomeObjInlinedObject, SomeObjInlinedObjectNoMappings,
+    NestedInlineContainerValue, NestedInlineContainerSelection

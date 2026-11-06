@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.models.kotlinx
 
+import com.example.models.InlinePhoneEnvelope
 import com.example.models.LandlinePhone
 import com.example.models.Module
 import com.example.models.ModuleA
@@ -13,6 +14,15 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class KotlinxSerializationOneOfPolymorphicTest {
+
+    @Test
+    fun `must deserialize an inline union nested inside another inline object`() {
+        val payload = """{"details":{"phone":{"type":"landline","number":"123","area_code":"456"}}}"""
+        val result = kotlinx.serialization.json.Json.decodeFromString<InlinePhoneEnvelope>(payload)
+
+        assertThat(result.details!!.phone).isEqualTo(LandlinePhone(number = "123", areaCode = "456"))
+        assertThat(kotlinx.serialization.json.Json.decodeFromString<InlinePhoneEnvelope>(kotlinx.serialization.json.Json.encodeToString(result))).isEqualTo(result)
+    }
 
     @Nested
     inner class DefaultClassDiscriminator {

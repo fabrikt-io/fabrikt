@@ -5,4 +5,5 @@ import kotlinx.serialization.Serializable
 
 @SerialName("content_block_location")
 @Serializable
-public object TwoObject : SomeObjInlinedArray, SomeObjInlinedObject, SomeObjInlinedObjectNoMappings
+public object TwoObject : SomeObjInlinedArray, SomeObjInlinedObject, SomeObjInlinedObjectNoMappings,
+    NestedInlineContainerValue, NestedInlineContainerSelection

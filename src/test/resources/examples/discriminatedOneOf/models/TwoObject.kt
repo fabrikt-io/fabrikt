@@ -11,4 +11,6 @@ public data class TwoObject(
   public val type: String = "content_block_location",
 ) : SomeObjInlinedArray,
     SomeObjInlinedObject,
-    SomeObjInlinedObjectNoMappings
+    SomeObjInlinedObjectNoMappings,
+    NestedInlineContainerValue,
+    NestedInlineContainerSelection

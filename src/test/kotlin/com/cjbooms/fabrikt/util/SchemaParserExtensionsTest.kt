@@ -1,14 +1,34 @@
 package com.cjbooms.fabrikt.util
 
+import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.OpenApi3Document
 import com.cjbooms.fabrikt.model.OpenApiSchema
+import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.util.ResourceHelper.readTextResource
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.basePath
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.findOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeyForSchemaName
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Test
 
 class SchemaParserExtensionsTest {
+    @Test
+    fun `finds unions inside nested inline objects and array objects without following component cycles`() {
+        MutableSettings.updateSettings()
+        ModelNameRegistry.clear()
+        val schemas =
+            SourceApi(readTextResource("/examples/discriminatedOneOf/api.yaml"))
+                .openApi3.schemas.values
+                .toList()
+        val interfaces = schemas.first { it.name == "OneObject" }.findOneOfSuperInterface(schemas)
+
+        assertThat(interfaces.map { ModelNameRegistry.getBySchema(it) })
+            .contains("NestedInlineContainerValue", "NestedInlineContainerSelection")
+        assertThat(interfaces.map { it.jsonReference }).doesNotHaveDuplicates()
+        ModelNameRegistry.clear()
+    }
+
     private fun apiWithServerUrl(url: String?): OpenApi3Document {
         val serverBlock = if (url == null) "" else "servers:\n  - url: \"$url\"\n"
         val spec =

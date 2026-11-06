@@ -181,7 +181,7 @@ object ModelNameRegistry {
 
     internal fun hasPreRegisteredReference(schema: Schema): Boolean = getByReference(schema) != null
 
-    private val inlineSchemaTracking: MutableMap<Schema, String> = mutableMapOf()
+    private val inlineSchemaTracking: MutableMap<String, String> = mutableMapOf()
 
     /**
      * Pre-compute what name an inline schema will get without allocating it yet.
@@ -191,15 +191,15 @@ object ModelNameRegistry {
         schema: Schema,
         enclosingSchema: Schema,
     ) {
-        if (inlineSchemaTracking.containsKey(schema)) return
+        if (inlineSchemaTracking.containsKey(schema.jsonReference)) return
         val modelClassName = register(schema, enclosingSchema, valueSuffix = false, schemaInfoName = null, allocate = false)
-        inlineSchemaTracking[schema] = modelClassName
+        inlineSchemaTracking[schema.jsonReference] = modelClassName
     }
 
     fun getBySchema(
         schema: Schema,
         direction: ModelDirection? = null,
-    ): String? = inlineSchemaTracking[schema]?.directionalName(direction)
+    ): String? = inlineSchemaTracking[schema.jsonReference]?.directionalName(direction)
 
     fun compositionContractName(
         schema: Schema,
