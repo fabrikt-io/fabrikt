@@ -22,6 +22,12 @@ paths:
   /documents/{id}:
     get:
       operationId: get_document_by_id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       security:
         - BearerAuth: []
         - BasicAuth: []
@@ -30,6 +36,12 @@ paths:
           description: OK
     delete:
       operationId: deleteDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       security: []
       responses:
         '204':
