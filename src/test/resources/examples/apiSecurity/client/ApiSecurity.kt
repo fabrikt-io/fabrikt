@@ -159,6 +159,30 @@ public object ApiSecurity {
                         ),
                     ),
                 ),
+            "getSubDocument" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "ApiKeyAuth" to emptySet<String>(),
+                        ),
+                    ),
+                ),
+            "getTeam" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "BearerAuth" to emptySet<String>(),
+                        ),
+                    ),
+                ),
+            "listMembers" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "ApiKeyAuth" to emptySet<String>(),
+                        ),
+                    ),
+                ),
             "createDocument" to
                 SecurityRequirement(
                     listOf(
@@ -228,6 +252,30 @@ public object ApiSecurity {
                         ),
                     ),
                 ),
+            "GET /sub/documents/{id}" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "ApiKeyAuth" to emptySet<String>(),
+                        ),
+                    ),
+                ),
+            "GET /teams/{id}" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "BearerAuth" to emptySet<String>(),
+                        ),
+                    ),
+                ),
+            "GET /{name}/members" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "ApiKeyAuth" to emptySet<String>(),
+                        ),
+                    ),
+                ),
             "POST /documents" to
                 SecurityRequirement(
                     listOf(
@@ -248,13 +296,15 @@ public object ApiSecurity {
         requirementsByPath[methodKey + " " + path]?.let { return it.resolve(schemes, provider) }
         val concrete = path.trim('/').let { if (it.isEmpty()) emptyList() else it.split('/') }
         var best: SecurityRequirement? = null
+        var bestSegments = -1
         var bestWildcards = Int.MAX_VALUE
+        var ambiguous = false
         for ((templateKey, requirement) in requirementsByPath) {
             val separator = templateKey.indexOf(' ')
             if (separator <= 0 || templateKey.substring(0, separator) != methodKey) continue
             val template = templateKey.substring(separator + 1).trim('/')
             val segments = if (template.isEmpty()) emptyList() else template.split('/')
-            if (segments.size > concrete.size) continue
+            if (segments.isEmpty() || segments.size > concrete.size) continue
             val tail = concrete.subList(concrete.size - segments.size, concrete.size)
             var wildcards = 0
             var matches = true
@@ -267,12 +317,20 @@ public object ApiSecurity {
                     matches = false
                 }
             }
-            if (matches && wildcards < bestWildcards) {
-                best = requirement
-                bestWildcards = wildcards
+            if (matches) {
+                val moreSpecific =
+                    segments.size > bestSegments || (segments.size == bestSegments && wildcards < bestWildcards)
+                if (moreSpecific) {
+                    best = requirement
+                    bestSegments = segments.size
+                    bestWildcards = wildcards
+                    ambiguous = false
+                } else if (segments.size == bestSegments && wildcards == bestWildcards && requirement != best) {
+                    ambiguous = true
+                }
             }
         }
-        return best?.resolve(schemes, provider) ?: emptyMap()
+        return if (ambiguous) emptyMap() else best?.resolve(schemes, provider) ?: emptyMap()
     }
 }
 

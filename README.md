@@ -330,7 +330,7 @@ Both maps use the operation's effective security: its own `security` when declar
 | `Http("basic")` | `Credential.Basic` | `Authorization: Basic <base64(username:password)>` |
 | any other `Http` scheme | — | never complete |
 
-`resolveFor(method, path, provider)` finds the requirement of a concrete request: an exact `"<METHOD> <path>"` match first, then trailing-segment alignment of templates with the same verb, treating `{param}` as a wildcard, preferring literal segments, then the fewest wildcards. Aligning from the end keeps it independent of the target's base path — pass the path without host and query. Return `null` from the provider when a credential is unavailable, and return tokens without a `Bearer ` prefix.
+`resolveFor(method, path, provider)` finds the requirement of a concrete request: an exact `"<METHOD> <path>"` match first, then trailing-segment alignment of templates with the same verb, treating `{param}` as a wildcard. Among candidate templates it prefers the longest matching route, then the fewest wildcards; when two routes match with equal specificity it returns no headers (fail closed) rather than guessing. Aligning from the end keeps it independent of the target's base path — pass the path without host and query. Return `null` from the provider when a credential is unavailable, and return tokens without a `Bearer ` prefix.
 
 ### Using it
 

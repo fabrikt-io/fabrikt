@@ -65,6 +65,9 @@ class ApiSecurityTest {
                 "getSession",
                 "getReports",
                 "getStatus",
+                "getSubDocument",
+                "getTeam",
+                "listMembers",
                 "GET /anonymous",
             )
 
@@ -175,6 +178,24 @@ class ApiSecurityTest {
             .containsExactlyEntriesOf(mapOf("X-API-Key" to "secret"))
         assertThat(ApiSecurity.resolveFor("GET", "/v2/api/status") { _, _ -> Credential.Token("t") })
             .containsExactlyEntriesOf(mapOf("Authorization" to "Bearer t"))
+    }
+
+    @Test
+    fun `resolveFor prefers the longest matching route when templates overlap`() {
+        val headers = ApiSecurity.resolveFor("GET", "/sub/documents/42") { _, _ -> Credential.ApiKey("k") }
+
+        assertThat(headers).containsExactlyEntriesOf(mapOf("X-API-Key" to "k"))
+        assertThat(ApiSecurity.resolveFor("GET", "/documents/42") { _, _ -> Credential.Token("t") })
+            .containsExactlyEntriesOf(mapOf("Authorization" to "Bearer t"))
+    }
+
+    @Test
+    fun `resolveFor returns no headers when two routes match with equal specificity`() {
+        val key = ApiSecurity.resolveFor("GET", "/teams/members") { _, _ -> Credential.ApiKey("k") }
+        val token = ApiSecurity.resolveFor("GET", "/teams/members") { _, _ -> Credential.Token("t") }
+
+        assertThat(key).isEmpty()
+        assertThat(token).isEmpty()
     }
 
     @Test

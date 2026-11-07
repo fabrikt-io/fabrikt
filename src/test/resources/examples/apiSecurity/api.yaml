@@ -46,6 +46,48 @@ paths:
       responses:
         '204':
           description: Deleted
+  /sub/documents/{id}:
+    get:
+      operationId: getSubDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+  /teams/{id}:
+    get:
+      operationId: getTeam
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+  /{name}/members:
+    get:
+      operationId: listMembers
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
   /session:
     get:
       operationId: getSession
