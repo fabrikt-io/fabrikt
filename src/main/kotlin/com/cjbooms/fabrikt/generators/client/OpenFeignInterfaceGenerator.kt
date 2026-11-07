@@ -64,9 +64,6 @@ class OpenFeignInterfaceGenerator(
     private val packages: Packages,
     private val api: SourceApi,
 ) : ClientGenerator {
-    private val bearerSecurity = ClientBearerSecurity(api.openApi3)
-    private val oauth2Security = ClientOAuth2Security(api.openApi3)
-
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
         val clientTypes =
             api
@@ -77,22 +74,6 @@ class OpenFeignInterfaceGenerator(
                             .flatMap { (resource, path) ->
                                 api.requestOperations(path).flatMap { (verb, operation) ->
                                     val parameters = deriveClientParameters(path, operation, packages.base)
-                                    val headerPlans = ClientHeaderApiKeySecurity(api.openApi3).forOperation(operation, options)
-                                    val securityPlan =
-                                        if (headerPlans == null && ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
-                                            bearerSecurity.forOperation(operation)
-                                        } else {
-                                            null
-                                        }
-                                    val oauth2Plan =
-                                        if (headerPlans == null &&
-                                            ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION in
-                                            options
-                                        ) {
-                                            oauth2Security.forOperation(operation)
-                                        } else {
-                                            null
-                                        }
                                     val baseName = functionName(operation, resource, verb)
                                     val baseGroup =
                                         buildFunctions(
@@ -126,17 +107,9 @@ class OpenFeignInterfaceGenerator(
                                                 },
                                             ).map { ClientFunction(it, isMediaTypeFunction = true) }
                                         }
-                                    (
-                                        listOf(
-                                            baseGroup,
-                                        ) + mediaTypeGroups
-                                    ).map {
-                                        if (headerPlans != null) {
-                                            it.withHeaderSecurityWrappers(headerPlans)
-                                        } else {
-                                            it.withBearerTokenWrapper(securityPlan).withOAuth2TokenWrapper(oauth2Plan)
-                                        }
-                                    }
+                                    listOf(
+                                        baseGroup,
+                                    ) + mediaTypeGroups
                                 }
                             }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 

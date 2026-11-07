@@ -1,188 +1,198 @@
 # Authentication in generated clients
 
-Fabrikt can generate opt-in authentication helpers for header API keys, HTTP Bearer and OAuth2 security schemes declared in an OpenAPI specification. Helpers are supported by OkHttp, OpenFeign, Spring HTTP Interface and Ktor clients. They delegate to the ordinary generated client methods, which remain available.
+> **Replaces the per-operation auth helpers.** The `OPENAPI_API_KEY_AUTHENTICATION`, `OPENAPI_BEARER_AUTHENTICATION` and `OPENAPI_OAUTH2_AUTHENTICATION` options, and the `<operation>WithApiKey` / `<operation>WithBearerToken` / `<operation>WithOAuth2Token` helper functions, are removed. See [MIGRATION.md](MIGRATION.md).
 
-Enable the relevant option through `--http-client-opts` or the corresponding playground control:
+Fabrikt can emit an opt-in **security declaration**: what security schemes the specification declares, what each operation effectively requires, and a pure resolver that turns caller-supplied credentials into request headers. It is contract data only.
 
-| Security scheme | Option | Generated helper | Provider signature |
-| --- | --- | --- | --- |
-| Header API key | `OPENAPI_API_KEY_AUTHENTICATION` | `<operation>WithApiKey` | `(schemeName: String) -> String?` |
-| HTTP Bearer | `OPENAPI_BEARER_AUTHENTICATION` | `<operation>WithBearerToken` | `(schemeName: String) -> String?` |
-| OAuth2 | `OPENAPI_OAUTH2_AUTHENTICATION` | `<operation>WithOAuth2Token` | `(schemeName: String, requiredScopes: Set<String>) -> String?` |
+Enable it with `--http-client-opts OPENAPI_SECURITY` (or the playground checkbox). It emits one file, `<base-package>.client.ApiSecurity.kt`, identical for every `--http-client-target`: OkHttp, OpenFeign, Spring HTTP Interface and Ktor all get the same declaration. This option concerns requests sent by generated clients; the headers used to *fetch* an API specification are configured separately with `--auth` (see [README](README.md#configuration-options)).
 
-These options can be enabled independently or together. Without these options, generated clients do not gain authentication helpers. These options concern requests sent by generated clients; headers used to fetch an API specification are configured separately with `--auth` (see [README](README.md#configuration-options)).
-
-## Header API keys and explicit security alternatives
-
-Enable `OPENAPI_API_KEY_AUTHENTICATION` for `type: apiKey` schemes with `in: header`. The generated helper obtains each key from `apiKeyProvider` using the security scheme component name, and sends it under the declared header name. Key values are supplied at runtime and are never embedded in the generated sources. Global security is inherited, operation security replaces it, and `security: []` generates no helper.
-
-Enable `OPENAPI_OAUTH2_AUTHENTICATION` or `OPENAPI_BEARER_AUTHENTICATION` as well to support alternatives and combinations with those schemes. For operations that reference API-key security, each helper represents a complete supported alternative, with required providers for its credential kinds. Separate entries are OR; multiple schemes in one entry are AND:
-
-```yaml
-components:
-  securitySchemes:
-    Key:
-      type: apiKey
-      in: header
-      name: X-API-Key
-    OAuth:
-      type: oauth2
-      flows:
-        clientCredentials:
-          tokenUrl: https://example.com/token
-          scopes:
-            read:documents: Read documents
-# API key OR OAuth2
-security:
-  - Key: []
-  - OAuth: [read:documents]
-```
-
-Choose the desired alternative explicitly:
+## What is generated
 
 ```kotlin
-client.getDocumentsWithApiKey(apiKeyProvider = { scheme -> keyStore.keyFor(scheme) })
-client.getDocumentsWithOAuth2Token(oauth2TokenProvider = { scheme, scopes -> tokenService.accessToken(scheme, scopes) })
+sealed interface SecurityScheme {
+    data class Http(val scheme: String, val bearerFormat: String? = null) : SecurityScheme
+    data class ApiKey(val location: Location, val name: String) : SecurityScheme
+    data class OAuth2(val flows: Map<Flow, OAuth2Flow>) : SecurityScheme
+    data class OpenIdConnect(val openIdConnectUrl: String) : SecurityScheme
+}
+enum class Location { HEADER, QUERY, COOKIE }
+enum class Flow { CLIENT_CREDENTIALS, AUTHORIZATION_CODE, IMPLICIT, PASSWORD }
+data class OAuth2Flow(val authorizationUrl: String?, val tokenUrl: String?, val refreshUrl: String?, val scopes: Map<String, String>)
+
+data class SecurityRequirement(val alternatives: List<Map<String, Set<String>>>)
+
+sealed interface Credential {
+    data class Token(val token: String) : Credential
+    data class Basic(val username: String, val password: String) : Credential
+    data class ApiKey(val key: String) : Credential
+}
+
+object ApiSecurity {
+    val schemes: Map<String, SecurityScheme>
+    val requirements: Map<String, SecurityRequirement>
+    val requirementsByPath: Map<String, SecurityRequirement>
+    fun resolveFor(method: String, path: String, provider: (scheme: String, scopes: Set<String>) -> Credential?): Map<String, String>
+}
+
+fun SecurityRequirement.resolve(
+    schemes: Map<String, SecurityScheme>,
+    provider: (scheme: String, scopes: Set<String>) -> Credential?,
+): Map<String, String>
 ```
 
-For an AND requirement, declare both schemes in the same entry:
+### `schemes`
+
+Keyed by the security-scheme component name, verbatim from `components.securitySchemes`. An OAuth2 scheme exposes only the flows the specification declares. A scheme with no credential a header resolver can produce (for example `type: mutualTLS`) is omitted with a warning, so requirements referencing it never resolve.
+
+### `requirements` and `requirementsByPath`
+
+`requirements` is keyed by the raw `operationId`. Keys are therefore invariant under `GROUP_BY_TAG`, `RESPONSE_MEDIA_TYPE_FUNCTIONS` and `--operation-id-transform`. An operation without an `operationId` is keyed by its uppercase verb, a space and the specification path template, for example `GET /documents/{id}`. Every operation has an entry; an operation that requires no credentials has `SecurityRequirement(emptyList())`.
+
+`requirementsByPath` holds the same requirements keyed by `"<VERB> <path template>"`, for interceptors that only know the method and path.
+
+Both maps use the operation's *effective* security: an operation with its own `security` uses it, an operation without one inherits the document-level `security`.
 
 ```yaml
 security:
-  - Key: []
-    OAuth: [read:documents]
-```
-
-Only the combined helper is generated for that entry:
-
-```kotlin
-client.getDocumentsWithApiKeyAndOAuth2Token(
-    apiKeyProvider = { scheme -> keyStore.keyFor(scheme) },
-    oauth2TokenProvider = { scheme, scopes -> tokenService.accessToken(scheme, scopes) },
-)
-```
-
-The helper sends both `X-API-Key` and `Authorization: Bearer �` on the same request. Multiple API-key schemes in one entry are also supported when their header names differ. Alternatives requiring the same credential kinds share one helper, which tries complete alternatives in specification order. Scope sets remain separate; partial credentials from different alternatives are never combined. Providers return `null` or blank to indicate unavailable credentials. If no complete alternative is available, the helper throws before calling the transport, even when existing headers contain credentials. Control characters in provider values are rejected without including those values in the error message.
-
-A helper only replaces headers it supplies, matching existing names case-insensitively and preserving other headers. Existing client/transport configuration can still add credentials; helpers do not strip those credentials or validate them. Anonymous alternatives remain available through the ordinary generated client method; explicitly choosing an authentication helper still requires its credentials. Ktor helpers copy the supplied `ApiConfiguration` and preserve its other settings.
-
-Query and cookie API keys are not supported by this option. Unsupported schemes, disabled authentication kinds and combinations that require multiple values for the same header are skipped as a complete alternative with a warning; they never become a helper for just the supported subset. Supply the full credentials through the ordinary client method for those cases. The option does not implement token acquisition, refresh or credential validation. Existing Bearer/OAuth2 helper generation remains unchanged when this option is disabled, and operations without API-key security retain their existing helpers.
-
-## HTTP Bearer
-
-Declare an HTTP Bearer scheme and apply it globally or to an operation:
-
-```yaml
-components:
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-security:
-  - BearerAuth: []
-```
-
-For an operation named `getPets`, the caller supplies the token through its generated helper:
-
-```kotlin
-client.getPetsWithBearerToken(
-    bearerTokenProvider = { schemeName -> tokenStore.tokenFor(schemeName) },
-)
-```
-
-The provider receives the security scheme's component name (`BearerAuth` here). Return the token itself, without a `Bearer ` prefix. A non-blank token becomes the `Authorization: Bearer <token>` header. Fabrikt does not acquire, refresh or validate the token, and `bearerFormat` does not change the provider contract.
-
-## OAuth2 access tokens and scopes
-
-An OAuth2 security scheme advertises available scopes through its flows. The security requirement on an operation selects the scopes needed for that operation:
-
-```yaml
-components:
-  securitySchemes:
-    PetOAuth:
-      type: oauth2
-      flows:
-        clientCredentials:
-          tokenUrl: https://example.com/oauth/token
-          scopes:
-            read:pets: Read pets
-            write:pets: Update pets
+  - ApiKeyAuth: []                       # applied to every operation without its own `security`
 paths:
-  /pets:
+  /documents:
+    get:                                 # inherits ApiKeyAuth
+      operationId: getDocuments
+      responses: { '200': { description: OK } }
+    post:
+      operationId: createDocument
+      security:                          # AND: both are needed for this one alternative
+        - ApiKeyAuth: []
+          OAuth: [read:documents]
+      responses: { '201': { description: Created } }
+  /documents/{id}:
     get:
-      operationId: getPets
-      security:
-        - PetOAuth: [read:pets]
-      responses:
-        '200':
-          description: OK
+      operationId: get_document_by_id
+      security:                          # OR: two alternatives, in this order
+        - BearerAuth: []
+        - BasicAuth: []
+      responses: { '200': { description: OK } }
+    delete:
+      operationId: deleteDocument
+      security: []                       # explicit `[]` means no credentials
+      responses: { '204': { description: Deleted } }
 ```
+
+Extra entries in the security array are alternatives (OR); several schemes inside one entry must all be satisfied (AND); `{}` is an anonymous alternative and stays an `emptyMap()` inside `alternatives`.
+
+## Resolving requirements to headers
+
+`SecurityRequirement.resolve` iterates `alternatives` in specification order. Each alternative resolves every `(scheme, scopes)` pair through the `provider`; a `null` credential makes that alternative incomplete, and so does a credential that does not match the scheme. The first complete alternative returns its header map; if none completes, the result is `emptyMap()`.
+
+| Scheme | Credential | Header |
+| --- | --- | --- |
+| `ApiKey` with `Location.HEADER` | `Credential.ApiKey` | `<name>: <key>` |
+| `ApiKey` with `Location.QUERY` or `Location.COOKIE` | — | never complete |
+| `Http(scheme = "bearer")`, `OAuth2`, `OpenIdConnect` | `Credential.Token` | `Authorization: Bearer <token>` |
+| `Http(scheme = "basic")` | `Credential.Basic` | `Authorization: Basic <base64(username:password)>` with ISO-8859-1 |
+| any other `Http` scheme | — | never complete |
+
+An empty alternative (`{}` or `security: []`) never completes, so it resolves to no headers.
+
+`ApiSecurity.resolveFor(method, path, provider)` looks up an equivalent requirement for a concrete request. It first tries an exact `"<METHOD> <path>"` match against `requirementsByPath`, which is what a transport-level interceptor with the request template wants. Otherwise it aligns each template of the same verb against the **trailing** segments of `path`, treating `{param}` segments as wildcards, preferring literal segments, then the fewest wildcards. Matching from the end is what makes it independent of the target's base path: strip the host and query, but keep any path prefix.
 
 ```kotlin
-client.getPetsWithOAuth2Token(
-    oauth2TokenProvider = { schemeName, requiredScopes ->
-        tokenService.accessToken(schemeName, requiredScopes)
-    },
-)
+val headers = ApiSecurity.resolveFor("GET", "/v2/api/documents/42") { scheme, scopes ->
+    when (scheme) {
+        "OAuth" -> tokenService.accessToken(scopes).let(Credential::Token)
+        else -> keyStore.keyFor(scheme)?.let(Credential::ApiKey)
+    }
+}
+// matches "GET /documents/{id}" -> mapOf("Authorization" to "Bearer …")
 ```
 
-Here, the provider receives `PetOAuth` and `setOf("read:pets")`, not every scope advertised by the flow. An empty scope requirement produces an empty set. The caller decides how to obtain a suitable token, including acquisition, consent, caching and refresh. The provider may obtain a token with additional scopes; Fabrikt neither inspects its contents nor verifies the scopes it grants.
+Return `null` from the provider when a credential is unavailable; return the token itself, without a `Bearer ` prefix.
 
-Return the access token without a `Bearer ` prefix. The helper sends a non-blank result as `Authorization: Bearer <token>`. OpenAPI 3.0, 3.1 and 3.2 security requirements follow the same provider contract. Flow metadata, including device authorization, does not cause Fabrikt to implement a token acquisition flow.
+## Consuming the declaration
 
-## Security requirements and alternatives
+The declaration is never applied automatically: a generated client does not gain a second auth channel. Feed the resolved headers through the parameters the generated methods already have.
 
-This section describes the standalone Bearer/OAuth2 helpers. Operations with API-key security use the explicit alternatives described above when `OPENAPI_API_KEY_AUTHENTICATION` is enabled.
+**OkHttp** (`additionalHeaders: Map<String, String>`):
 
-Operation-level security replaces global security. An operation without its own security declaration inherits the global requirements. Explicit `security: []` removes those requirements and generates no authentication helper for that operation.
-
-Separate entries in the security array are alternatives (OR). Helpers try supported standalone alternatives in specification order and use the first non-blank token returned by the provider:
-
-```yaml
-security:
-  - PetOAuth: [read:pets]
-  - PetOAuth: [write:pets]
+```kotlin
+client.getDocuments(additionalHeaders = ApiSecurity.requirements.getValue("getDocuments").resolve(ApiSecurity.schemes, credentials))
 ```
 
-The OAuth2 provider is first called with `setOf("read:pets")`. If it returns `null` or a blank string, the helper tries `setOf("write:pets")`. Scope sets from separate alternatives are not combined. Bearer helpers similarly try their standalone Bearer schemes in order.
+**OpenFeign** (the parameter is `@HeaderMap additionalHeaders: Map<String, String>`):
 
-If every alternative requires a supported standalone scheme of the helper's kind, a missing token throws before delegating to the client method. An anonymous alternative makes the token optional:
-
-```yaml
-security:
-  - {}
-  - PetOAuth: [read:pets]
+```kotlin
+feignClient.getDocuments(additionalHeaders = ApiSecurity.requirements.getValue("getDocuments").resolve(ApiSecurity.schemes, credentials))
 ```
 
-When a token is optional and the provider returns no usable token, the helper delegates with the existing headers or client configuration intact, including any existing `Authorization` header. When the provider returns a token, its `Authorization` header replaces an existing header with that exact name while retaining other headers. Ktor helpers apply this through a copy of the call's `ApiConfiguration`.
+**Spring HTTP Interface** (the parameter is `@RequestHeader additionalHeaders: Map<String, Any>`):
 
-An alternative using another kind of scheme also makes the helper's token optional. The caller must configure credentials for that alternative through the ordinary client headers or transport. Neither helper automatically obtains API keys, Basic credentials or credentials for other security schemes.
-
-## Combined requirements
-
-Multiple schemes inside one requirement must all be satisfied (AND):
-
-```yaml
-security:
-  - PetOAuth: [read:pets]
-    ApiKey: []
+```kotlin
+springClient.getDocuments(additionalHeaders = ApiSecurity.requirements.getValue("getDocuments").resolve(ApiSecurity.schemes, credentials))
 ```
 
-A single token does not satisfy this combination. Without `OPENAPI_API_KEY_AUTHENTICATION`, Fabrikt warns and skips combined requirements when considering token helpers. If no supported standalone alternative remains, it generates no helper. Use the ordinary client method with the complete credentials, or add a standalone alternative only if the API actually accepts it.
+**Ktor** (`apiConfiguration: ApiConfiguration`, whose `customHeaders` is `Map<String, String>`):
 
-Enabling the Bearer and OAuth2 options together does not combine their providers into one request. Each helper supports its own standalone alternatives. A mixed Bearer/OAuth2 requirement, or a requirement containing multiple OAuth2 schemes, is still a combined requirement and is not fulfilled automatically.
+```kotlin
+client.getDocuments(apiConfiguration = ApiConfiguration(customHeaders = ApiSecurity.requirements.getValue("getDocuments").resolve(ApiSecurity.schemes, credentials)))
+```
 
-## Further authentication support
+### Applying it to every request
 
-The header API-key helpers address [#721](https://github.com/fabrikt-io/fabrikt/issues/721). The OAuth2 helpers described above address [#722](https://github.com/fabrikt-io/fabrikt/issues/722). Additional authentication support is tracked in the following issues. These are proposed extensions; Fabrikt does not currently generate dedicated helpers or options for them. The issues describe the intended scope, without promising a release date or final API.
+To avoid passing headers per call, call `resolveFor` from the transport's own interceptor. Each of the following appends the resolved headers to the request; `credentials` is the provider shown above.
 
-| Proposed support | Tracking issue |
+**OkHttp** — `request.method` and `request.url.encodedPath`:
+
+```kotlin
+Interceptor { chain ->
+    val request = chain.request()
+    val headers = ApiSecurity.resolveFor(request.method, request.url.encodedPath, credentials)
+    chain.proceed(request.newBuilder().apply { headers.forEach { (name, value) -> addHeader(name, value) } }.build())
+}
+```
+
+**Ktor** — a client plugin, `request.method.value` and `request.url.encodedPath`:
+
+```kotlin
+createClientPlugin("ApiSecurity") {
+    onRequest { request, _ ->
+        ApiSecurity.resolveFor(request.method.value, request.url.encodedPath, credentials)
+            .forEach { (name, value) -> request.headers.append(name, value) }
+    }
+}
+```
+
+**Spring** — a `filter` (`ExchangeFilterFunction`), `request.method().name()` and `request.url().path`:
+
+```kotlin
+ExchangeFilterFunction.ofRequestProcessor { request ->
+    val headers = ApiSecurity.resolveFor(request.method().name(), request.url().path, credentials)
+    Mono.just(ClientRequest.from(request).headers { it.addAll(headers) }.build())
+}
+```
+
+A `ClientHttpRequestInterceptor` works the same way with `request.method.name()` and `request.uri.path`. Note that a filter sees the path *with* the base URL, which the trailing-segment match tolerates; an interceptor below the base URL sees it without.
+
+**Feign** — a `RequestInterceptor`, `template.methodMetadata().template()`:
+
+```kotlin
+RequestInterceptor { template ->
+    ApiSecurity.resolveFor(template.method(), template.methodMetadata().template(), credentials)
+        .forEach { (name, value) -> template.header(name, value) }
+}
+```
+
+## Out of scope
+
+The declaration describes credentials it can turn into headers. Everything else belongs to the native client:
+
+| Concern | Where it belongs |
 | --- | --- |
-| HTTP Basic authentication | [#723](https://github.com/fabrikt-io/fabrikt/issues/723) |
-| OpenID Connect access tokens and operation scopes | [#724](https://github.com/fabrikt-io/fabrikt/issues/724) |
-| API keys in query parameters | [#725](https://github.com/fabrikt-io/fabrikt/issues/725) |
-| API keys in cookies | [#726](https://github.com/fabrikt-io/fabrikt/issues/726) |
-| Explicit mutual TLS transport requirements | [#727](https://github.com/fabrikt-io/fabrikt/issues/727) |
-| Hooks for additional HTTP authentication schemes | [#728](https://github.com/fabrikt-io/fabrikt/issues/728) |
+| HTTP Basic | OkHttp `Authenticator` + `Credentials.basic`, Feign `BasicAuthRequestInterceptor`, Spring `ExchangeFilterFunctions.basicAuthentication`, Ktor `Auth` |
+| API keys in query parameters or cookies | the client's URL/query builder and cookie jar |
+| Mutual TLS, proxies, custom signature schemes | the transport's own configuration |
+| Token acquisition, refresh, caching, consent | the application, behind the `provider` |
 
-Until dedicated support is available, callers can configure credentials through the ordinary client methods or their underlying transport. This requires applying the API's security requirements themselves, including alternatives and combinations.
+`Credential.Basic` exists so that a resolved `Http(scheme = "basic")` alternative can produce a header from a caller-supplied pair, for callers that prefer to resolve everything themselves. Using the native Basic support above is generally the better choice: it also applies to requests Fabrikt does not generate.
+
+Cookie and query API keys are mirrored in the dictionary (`Location.COOKIE`, `Location.QUERY`) so requirements stay faithful to the specification, but they never resolve to a header; such an alternative is always incomplete, and resolution falls through to the next alternative.

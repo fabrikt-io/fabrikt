@@ -8,15 +8,8 @@ import com.cjbooms.fabrikt.generators.GeneratorUtils.kdocDescription
 import com.cjbooms.fabrikt.generators.GeneratorUtils.splitByType
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKCodeName
-import com.cjbooms.fabrikt.generators.client.ClientBearerSecurity
 import com.cjbooms.fabrikt.generators.client.ClientGenerator
 import com.cjbooms.fabrikt.generators.client.ClientGeneratorUtils.groupedClientPaths
-import com.cjbooms.fabrikt.generators.client.ClientHeaderApiKeySecurity
-import com.cjbooms.fabrikt.generators.client.ClientOAuth2Security
-import com.cjbooms.fabrikt.generators.client.TokenWrapperTarget
-import com.cjbooms.fabrikt.generators.client.withBearerTokenWrapper
-import com.cjbooms.fabrikt.generators.client.withHeaderSecurityWrapper
-import com.cjbooms.fabrikt.generators.client.withOAuth2TokenWrapper
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.toSuccessResponseType
 import com.cjbooms.fabrikt.model.ClientType
 import com.cjbooms.fabrikt.model.Clients
@@ -48,8 +41,6 @@ class KtorClientGenerator(
     private val api: SourceApi,
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE,
 ) : ClientGenerator {
-    private val bearerSecurity = ClientBearerSecurity(api.openApi3)
-    private val oauth2Security = ClientOAuth2Security(api.openApi3)
     private val networkResultClassName = ClassName(packages.client, "NetworkResult")
     private val networkErrorClassName = ClassName(packages.client, "NetworkError")
 
@@ -401,24 +392,6 @@ class KtorClientGenerator(
 
                         val function = clientFunctionBuilder.build()
                         clientClassBuilder.addFunction(function)
-                        val headerPlans = ClientHeaderApiKeySecurity(api.openApi3).forOperation(operation, options)
-                        headerPlans?.forEach {
-                            clientClassBuilder.addFunction(
-                                function.withHeaderSecurityWrapper(it, TokenWrapperTarget.API_CONFIGURATION),
-                            )
-                        }
-                        if (headerPlans == null && ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
-                            bearerSecurity.forOperation(operation)?.let {
-                                clientClassBuilder.addFunction(
-                                    function.withBearerTokenWrapper(it, TokenWrapperTarget.API_CONFIGURATION),
-                                )
-                            }
-                        }
-                        if (headerPlans == null && ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION in options) {
-                            oauth2Security.forOperation(operation)?.let {
-                                clientClassBuilder.addFunction(function.withOAuth2TokenWrapper(it, TokenWrapperTarget.API_CONFIGURATION))
-                            }
-                        }
                     }
                 }
 

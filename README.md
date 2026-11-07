@@ -74,7 +74,7 @@ The library currently has support for generating:
   * **Micronaut** HTTP annotated controller interfaces
   * **Ktor server** routes and controller interfaces
 
-Client generators offer opt-in header API-key, HTTP Bearer and OAuth2 helpers through `--http-client-opts OPENAPI_API_KEY_AUTHENTICATION`, `OPENAPI_BEARER_AUTHENTICATION` and `OPENAPI_OAUTH2_AUTHENTICATION`. See [Client authentication](CLIENT_AUTHENTICATION.md) for credential providers, operation scopes, security alternatives and examples.
+Client generators can emit an opt-in security declaration through `--http-client-opts OPENAPI_SECURITY`: a scheme dictionary, the effective requirement of every operation, and a pure header resolver. See [Client authentication](CLIENT_AUTHENTICATION.md) for the generated declaration, the resolver contract and consumption recipes for each client target.
 
 OpenAPI 3.2 `query` operations are supported by all client targets and by Ktor and Micronaut controllers, including JSON request bodies. OpenFeign requires 13.14 or later and a transport that supports `QUERY`, such as `feign-okhttp`; its default `HttpURLConnection` transport does not. Spring HTTP Interface clients likewise require a suitable transport, such as `JdkClientHttpRequestFactory`. Spring controllers skip `QUERY` operations with a warning because the supported stable Spring versions lack `RequestMethod.QUERY`; implement those routes separately or use another controller target.
 
@@ -303,9 +303,7 @@ Usage: <main class> [options]
 |                                         |   `OKHTTP_NON_NULL_RESPONSE_PAYLOADS` - This option makes ApiResponse.data non-null. Responses declared with a body must return one: a missing body, or one that deserializes to null, throws ApiException. An operation that declares both a body response and an empty success response (e.g. 200 and 204) throws on the empty success. Binary responses return an empty ByteArray for an empty body (only for OkHttp clients) |
 |                                         |   `RESPONSE_MEDIA_TYPE_FUNCTIONS` - This option adds, for each operation whose success responses declare a different JSON schema per media type, one function per media type. The function always sends that media type as the Accept header and returns that schema's type instead of JsonNode. Its name is the operation's function name plus the media subtype, e.g. getItemsVndCustomJson for application/vnd.custom+json (only for OkHttp, OpenFeign and Spring HTTP Interface clients) |
 |                                         |   `DYNAMIC_BASE_URL` - This option makes ApiConfiguration.basePath empty, allowing you to set the base URL at runtime (only for Ktor clients) |
-|                                         |   `OPENAPI_API_KEY_AUTHENTICATION` - Adds header API-key helpers and complete security alternatives with enabled Bearer and OAuth2 schemes |
-|                                         |   `OPENAPI_BEARER_AUTHENTICATION` - Adds operation-specific Bearer token helpers for OpenAPI HTTP Bearer security schemes |
-|                                         |   `OPENAPI_OAUTH2_AUTHENTICATION` - Adds operation-specific OAuth2 access-token helpers that pass required scopes to a caller-provided token provider |
+|                                         |   `OPENAPI_SECURITY` - Emits a scheme-agnostic security declaration (scheme dictionary, per-operation requirements) and a single header resolver |
 |   `--http-client-target`                | Optionally select the target client that you want to be generated. Defaults to OK_HTTP |
 |                                         | CHOOSE ONE OF: |
 |                                         |   `OK_HTTP` - Generate OkHttp client. |

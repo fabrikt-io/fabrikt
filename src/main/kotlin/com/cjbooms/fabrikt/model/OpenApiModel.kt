@@ -333,9 +333,57 @@ class OpenApiSecurityScheme(
 
     val location: String? get() = kaizen.`in`
 
+    val bearerFormat: String? get() = kaizen.bearerFormat
+
+    val openIdConnectUrl: String? get() = kaizen.openIdConnectUrl
+
+    /**
+     * Keyed by the OpenAPI flow name (`implicit`, `password`, `clientCredentials`, `authorizationCode`).
+     *
+     * Read from the parsed JSON: the Kaizen flow accessors return an empty placeholder for flows the
+     * specification does not declare, and their accessors yield no values even for declared flows.
+     */
+    val oauth2Flows: Map<String, OpenApiOAuth2Flow>
+        get() {
+            val flows = Overlay.of(kaizen).parsedJson?.get("flows") ?: return emptyMap()
+            return OAUTH2_FLOW_KEYS
+                .mapNotNull { key -> flows.get(key)?.let { key to OpenApiOAuth2Flow(it) } }
+                .toMap()
+        }
+
     override fun equals(other: Any?): Boolean = other is OpenApiSecurityScheme && kaizen == other.kaizen
 
     override fun hashCode(): Int = kaizen.hashCode()
+
+    companion object {
+        private val OAUTH2_FLOW_KEYS = listOf("implicit", "password", "clientCredentials", "authorizationCode")
+    }
+}
+
+class OpenApiOAuth2Flow(
+    internal val json: JsonNode,
+) {
+    val authorizationUrl: String? get() = textOrNull("authorizationUrl")
+
+    val tokenUrl: String? get() = textOrNull("tokenUrl")
+
+    val refreshUrl: String? get() = textOrNull("refreshUrl")
+
+    val scopes: Map<String, String>
+        get() =
+            json
+                .get("scopes")
+                ?.takeIf { it.isObject }
+                ?.fields()
+                ?.asSequence()
+                ?.associate { it.key to it.value.asText() }
+                ?: emptyMap()
+
+    private fun textOrNull(name: String): String? = json.get(name)?.takeIf { it.isTextual }?.asText()
+
+    override fun equals(other: Any?): Boolean = other is OpenApiOAuth2Flow && json == other.json
+
+    override fun hashCode(): Int = json.hashCode()
 }
 
 class OpenApiServer(
