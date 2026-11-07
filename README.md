@@ -15,6 +15,7 @@
   * [Maven](#maven)
   * [Docker](#docker)
 * [Getting the Most from Fabrikt](#getting-the-most-from-fabrikt)
+* [Client authentication](#client-authentication)
 * [Configuration Options](#configuration-options)
 * [Migration Guide](MIGRATION.md)
 * [Original Motivation](#original-motivation)
@@ -74,7 +75,7 @@ The library currently has support for generating:
   * **Micronaut** HTTP annotated controller interfaces
   * **Ktor server** routes and controller interfaces
 
-Client generators can emit an opt-in security declaration through `--http-client-opts OPENAPI_SECURITY`: a scheme dictionary, the effective requirement of every operation, and a pure header resolver. See [Client authentication](CLIENT_AUTHENTICATION.md) for the generated declaration, the resolver contract and consumption recipes for each client target.
+Client generators can emit an opt-in security declaration through `--http-client-opts OPENAPI_SECURITY`: a scheme dictionary, the effective requirement of every operation, and a pure header resolver. See [Client authentication](#client-authentication).
 
 OpenAPI 3.2 `query` operations are supported by all client targets and by Ktor and Micronaut controllers, including JSON request bodies. OpenFeign requires 13.14 or later and a transport that supports `QUERY`, such as `feign-okhttp`; its default `HttpURLConnection` transport does not. Spring HTTP Interface clients likewise require a suitable transport, such as `JdkClientHttpRequestFactory`. Spring controllers skip `QUERY` operations with a warning because the supported stable Spring versions lack `RequestMethod.QUERY`; implement those routes separately or use another controller target.
 
@@ -270,6 +271,99 @@ JSON arguments retain their generated model types. File arguments use `FeignMult
 Parts use `@RequestPart` with their original names and requiredness. Wrap JSON arguments in the generated `JsonPart(model)` or `JsonPart(listOfModels)`, which fixes their content type to JSON and preserves an array as one JSON part. File arguments use Spring's `Resource`, with a filename supplied by the resource; binary arrays use `List<Resource>`. These replace the previously unbound multipart parameters and therefore change their Kotlin signatures.
 
 Configure a multipart-capable message converter, such as `AllEncompassingFormHttpMessageConverter`, with the selected Jackson generation's JSON part converter. A standalone JSON converter cannot serialize the complete multipart request. For a `ByteArrayResource`, override `getFilename()` to supply the upload filename. The synchronous `RestClient` adapter is supported; reactive adapter behavior must be verified separately.
+
+## Client authentication
+
+`--http-client-opts OPENAPI_SECURITY` emits one target-neutral `ApiSecurity.kt` in `<base-package>.client`, identical for every `--http-client-target`: the security schemes the specification declares, the effective requirement of every operation, and a pure resolver that turns caller-supplied credentials into request headers. The [apiSecurity example](src/test/resources/examples/apiSecurity) is the authoritative sample of the generated output, and `end2end-tests/okhttp-jackson3` compiles and exercises it.
+
+It is contract data only. Generated clients gain no parameters, no second auth channel, and no transport logic; credential acquisition, refresh, caching and transport-level authentication stay in the application and its HTTP client.
+
+### Generated declaration
+
+```kotlin
+sealed interface SecurityScheme {
+    data class Http(val scheme: String, val bearerFormat: String? = null) : SecurityScheme
+    data class ApiKey(val location: Location, val name: String) : SecurityScheme
+    data class OAuth2(val flows: Map<Flow, OAuth2Flow>) : SecurityScheme
+    data class OpenIdConnect(val openIdConnectUrl: String) : SecurityScheme
+}
+enum class Location { HEADER, QUERY, COOKIE }
+enum class Flow { CLIENT_CREDENTIALS, AUTHORIZATION_CODE, IMPLICIT, PASSWORD }
+data class OAuth2Flow(val authorizationUrl: String?, val tokenUrl: String?, val refreshUrl: String?, val scopes: Map<String, String>)
+
+data class SecurityRequirement(val alternatives: List<Map<String, Set<String>>>)
+
+sealed interface Credential {
+    data class Token(val token: String) : Credential
+    data class Basic(val username: String, val password: String) : Credential
+    data class ApiKey(val key: String) : Credential
+}
+
+object ApiSecurity {
+    val schemes: Map<String, SecurityScheme>
+    val requirements: Map<String, SecurityRequirement>
+    val requirementsByPath: Map<String, SecurityRequirement>
+    fun resolveFor(method: String, path: String, provider: (scheme: String, scopes: Set<String>) -> Credential?): Map<String, String>
+}
+
+fun SecurityRequirement.resolve(
+    schemes: Map<String, SecurityScheme>,
+    provider: (scheme: String, scopes: Set<String>) -> Credential?,
+): Map<String, String>
+```
+
+`schemes` is keyed by the security-scheme component name, verbatim. An OAuth2 scheme exposes only the flows the specification declares, and a scheme with no credential a header resolver can produce is omitted with a warning.
+
+`requirements` is keyed by the raw `operationId`, so keys are invariant under `GROUP_BY_TAG`, `RESPONSE_MEDIA_TYPE_FUNCTIONS` and `--operation-id-transform`; an operation without an `operationId` is keyed `"<VERB> <path template>"`. Every operation has an entry. `requirementsByPath` holds the same requirements keyed by `"<VERB> <path template>"`, for interceptors that only know the method and path.
+
+Both maps use the operation's effective security: its own `security` when declared, otherwise the document-level `security`. Entries in the security array are alternatives (OR), schemes inside one entry must all be satisfied (AND), `{}` stays an empty map inside `alternatives`, and `security: []` is an empty alternative list.
+
+### Resolution
+
+`resolve` walks `alternatives` in specification order and calls the provider for every `(scheme, scopes)` pair. A `null` credential, or one whose type does not match the scheme, makes that alternative incomplete; the first complete alternative returns its headers, and no complete alternative yields an empty map.
+
+| Scheme | Credential | Header |
+| --- | --- | --- |
+| `ApiKey` with `Location.HEADER` | `Credential.ApiKey` | `<name>: <key>` |
+| `ApiKey` with `Location.QUERY` or `Location.COOKIE` | — | never complete |
+| `Http("bearer")`, `OAuth2`, `OpenIdConnect` | `Credential.Token` | `Authorization: Bearer <token>` |
+| `Http("basic")` | `Credential.Basic` | `Authorization: Basic <base64(username:password)>` |
+| any other `Http` scheme | — | never complete |
+
+`resolveFor(method, path, provider)` finds the requirement of a concrete request: an exact `"<METHOD> <path>"` match first, then trailing-segment alignment of templates with the same verb, treating `{param}` as a wildcard, preferring literal segments, then the fewest wildcards. Aligning from the end keeps it independent of the target's base path — pass the path without host and query. Return `null` from the provider when a credential is unavailable, and return tokens without a `Bearer ` prefix.
+
+### Using it
+
+Feed the resolved headers through the parameters generated methods already have.
+
+| Target | Parameter |
+| --- | --- |
+| OkHttp, OpenFeign | `additionalHeaders: Map<String, String>` |
+| Spring HTTP Interface | `additionalHeaders: Map<String, Any>`, i.e. `@RequestHeader` |
+| Ktor | `apiConfiguration: ApiConfiguration`, whose `customHeaders` is `Map<String, String>` |
+
+```kotlin
+val credentials: (scheme: String, scopes: Set<String>) -> Credential? = { scheme, scopes ->
+    when (scheme) {
+        "OAuth" -> tokenService.accessToken(scopes)?.let(Credential::Token)
+        else -> keyStore.keyFor(scheme)?.let(Credential::ApiKey)
+    }
+}
+
+client.getDocuments(additionalHeaders = ApiSecurity.requirements.getValue("getDocuments").resolve(ApiSecurity.schemes, credentials))
+```
+
+To apply requirements to every request, call `resolveFor` from the transport's own interceptor and set the returned headers, replacing any of the same name: OkHttp `Interceptor` with `request.method` and `request.url.encodedPath`; a Ktor `onRequest` plugin with `request.method.value` and `request.url.encodedPath`; a Spring `ExchangeFilterFunction` with `request.method().name()` and `request.url().path`; a Feign `RequestInterceptor` with `template.method()` and `template.methodMetadata().template()`.
+
+```kotlin
+Interceptor { chain ->
+    val request = chain.request()
+    val headers = ApiSecurity.resolveFor(request.method, request.url.encodedPath, credentials)
+    chain.proceed(request.newBuilder().apply { headers.forEach { (name, value) -> header(name, value) } }.build())
+}
+```
+
+HTTP Basic, query and cookie API keys, mutual TLS and proxies belong to the native client instead: OkHttp `Authenticator` with `Credentials.basic`, Feign `BasicAuthRequestInterceptor`, Spring `ExchangeFilterFunctions.basicAuthentication`, Ktor `Auth`. The headers used to fetch a remote `--api-file` or `$ref` are configured separately with `--auth`.
 
 ## Configuration Options
 
