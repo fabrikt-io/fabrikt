@@ -115,6 +115,7 @@ class ApiSecurityGenerator(
                     )
                 }
             }.distinctBy { it.operationKey }
+            .sortedBy { it.routeKey }
 
     private fun securitySchemeInterface(): TypeSpec =
         TypeSpec

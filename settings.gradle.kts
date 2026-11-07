@@ -1,7 +1,6 @@
 rootProject.name = "fabrikt"
 
 include(
-    "end2end-tests:api-security",
     "end2end-tests:okhttp",
     "end2end-tests:okhttp-jackson3",
     "end2end-tests:okhttp-multipart",

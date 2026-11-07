@@ -98,16 +98,18 @@ An empty alternative (`{}` or `security: []`) never completes, so it resolves to
 `ApiSecurity.resolveFor(method, path, provider)` looks up an equivalent requirement for a concrete request. It first tries an exact `"<METHOD> <path>"` match against `requirementsByPath`, which is what a transport-level interceptor with the request template wants. Otherwise it aligns each template of the same verb against the **trailing** segments of `path`, treating `{param}` segments as wildcards, preferring literal segments, then the fewest wildcards. Matching from the end is what makes it independent of the target's base path: strip the host and query, but keep any path prefix.
 
 ```kotlin
-val headers = ApiSecurity.resolveFor("GET", "/v2/api/documents/42") { scheme, scopes ->
+val credentials: (scheme: String, scopes: Set<String>) -> Credential? = { scheme, scopes ->
     when (scheme) {
-        "OAuth" -> tokenService.accessToken(scopes).let(Credential::Token)
+        "OAuth" -> tokenService.accessToken(scopes)?.let(Credential::Token)
         else -> keyStore.keyFor(scheme)?.let(Credential::ApiKey)
     }
 }
+
+val headers = ApiSecurity.resolveFor("GET", "/v2/api/documents/42", credentials)
 // matches "GET /documents/{id}" -> mapOf("Authorization" to "Bearer …")
 ```
 
-Return `null` from the provider when a credential is unavailable; return the token itself, without a `Bearer ` prefix.
+Return `null` from the provider when a credential is unavailable; return the token itself, without a `Bearer ` prefix. The `credentials` provider below is this one.
 
 ## Consuming the declaration
 
@@ -139,7 +141,7 @@ client.getDocuments(apiConfiguration = ApiConfiguration(customHeaders = ApiSecur
 
 ### Applying it to every request
 
-To avoid passing headers per call, call `resolveFor` from the transport's own interceptor. Each of the following appends the resolved headers to the request; `credentials` is the provider shown above.
+To avoid passing headers per call, call `resolveFor` from the transport's own interceptor. Each of the following **replaces** any header of the same name the caller already set — a resolved `Authorization` is authoritative, and is not added a second time.
 
 **OkHttp** — `request.method` and `request.url.encodedPath`:
 
@@ -147,7 +149,7 @@ To avoid passing headers per call, call `resolveFor` from the transport's own in
 Interceptor { chain ->
     val request = chain.request()
     val headers = ApiSecurity.resolveFor(request.method, request.url.encodedPath, credentials)
-    chain.proceed(request.newBuilder().apply { headers.forEach { (name, value) -> addHeader(name, value) } }.build())
+    chain.proceed(request.newBuilder().apply { headers.forEach { (name, value) -> header(name, value) } }.build())
 }
 ```
 
@@ -157,7 +159,7 @@ Interceptor { chain ->
 createClientPlugin("ApiSecurity") {
     onRequest { request, _ ->
         ApiSecurity.resolveFor(request.method.value, request.url.encodedPath, credentials)
-            .forEach { (name, value) -> request.headers.append(name, value) }
+            .forEach { (name, value) -> request.headers[name] = value }
     }
 }
 ```
@@ -166,8 +168,9 @@ createClientPlugin("ApiSecurity") {
 
 ```kotlin
 ExchangeFilterFunction.ofRequestProcessor { request ->
-    val headers = ApiSecurity.resolveFor(request.method().name(), request.url().path, credentials)
-    Mono.just(ClientRequest.from(request).headers { it.addAll(headers) }.build())
+    val resolved = ApiSecurity.resolveFor(request.method().name(), request.url().path, credentials)
+    val headers = { existing: HttpHeaders -> resolved.forEach { (name, value) -> existing[name] = listOf(value) } }
+    Mono.just(ClientRequest.from(request).headers(headers).build())
 }
 ```
 

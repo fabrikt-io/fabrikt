@@ -1,13 +1,13 @@
 package com.cjbooms.fabrikt
 
-import com.example.client.ApiSecurity
-import com.example.client.Credential
-import com.example.client.Flow
-import com.example.client.Location
-import com.example.client.OAuth2Flow
-import com.example.client.SecurityRequirement
-import com.example.client.SecurityScheme
-import com.example.client.resolve
+import com.example.apisecurity.client.ApiSecurity
+import com.example.apisecurity.client.Credential
+import com.example.apisecurity.client.Flow
+import com.example.apisecurity.client.Location
+import com.example.apisecurity.client.OAuth2Flow
+import com.example.apisecurity.client.SecurityRequirement
+import com.example.apisecurity.client.SecurityScheme
+import com.example.apisecurity.client.resolve
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 

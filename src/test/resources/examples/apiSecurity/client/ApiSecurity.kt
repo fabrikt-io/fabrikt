@@ -103,7 +103,8 @@ public object ApiSecurity {
 
     public val requirements: Map<String, SecurityRequirement> =
         mapOf(
-            "getDocuments" to
+            "deleteDocument" to SecurityRequirement(emptyList()),
+            "GET /anonymous" to
                 SecurityRequirement(
                     listOf(
                         mapOf(
@@ -111,12 +112,11 @@ public object ApiSecurity {
                         ),
                     ),
                 ),
-            "createDocument" to
+            "getDocuments" to
                 SecurityRequirement(
                     listOf(
                         mapOf(
                             "ApiKeyAuth" to emptySet<String>(),
-                            "OAuth" to setOf("read:documents", "write:documents"),
                         ),
                     ),
                 ),
@@ -131,15 +131,6 @@ public object ApiSecurity {
                         ),
                     ),
                 ),
-            "deleteDocument" to SecurityRequirement(emptyList()),
-            "getSession" to
-                SecurityRequirement(
-                    listOf(
-                        mapOf(
-                            "OpenId" to emptySet<String>(),
-                        ),
-                    ),
-                ),
             "getReports" to
                 SecurityRequirement(
                     listOf(
@@ -148,6 +139,14 @@ public object ApiSecurity {
                         ),
                         mapOf(
                             "ApiKeyAuth" to emptySet<String>(),
+                        ),
+                    ),
+                ),
+            "getSession" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "OpenId" to emptySet<String>(),
                         ),
                     ),
                 ),
@@ -160,6 +159,20 @@ public object ApiSecurity {
                         ),
                     ),
                 ),
+            "createDocument" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "ApiKeyAuth" to emptySet<String>(),
+                            "OAuth" to setOf("read:documents", "write:documents"),
+                        ),
+                    ),
+                ),
+        )
+
+    public val requirementsByPath: Map<String, SecurityRequirement> =
+        mapOf(
+            "DELETE /documents/{id}" to SecurityRequirement(emptyList()),
             "GET /anonymous" to
                 SecurityRequirement(
                     listOf(
@@ -168,24 +181,11 @@ public object ApiSecurity {
                         ),
                     ),
                 ),
-        )
-
-    public val requirementsByPath: Map<String, SecurityRequirement> =
-        mapOf(
             "GET /documents" to
                 SecurityRequirement(
                     listOf(
                         mapOf(
                             "ApiKeyAuth" to emptySet<String>(),
-                        ),
-                    ),
-                ),
-            "POST /documents" to
-                SecurityRequirement(
-                    listOf(
-                        mapOf(
-                            "ApiKeyAuth" to emptySet<String>(),
-                            "OAuth" to setOf("read:documents", "write:documents"),
                         ),
                     ),
                 ),
@@ -200,15 +200,6 @@ public object ApiSecurity {
                         ),
                     ),
                 ),
-            "DELETE /documents/{id}" to SecurityRequirement(emptyList()),
-            "GET /session" to
-                SecurityRequirement(
-                    listOf(
-                        mapOf(
-                            "OpenId" to emptySet<String>(),
-                        ),
-                    ),
-                ),
             "GET /reports" to
                 SecurityRequirement(
                     listOf(
@@ -217,6 +208,14 @@ public object ApiSecurity {
                         ),
                         mapOf(
                             "ApiKeyAuth" to emptySet<String>(),
+                        ),
+                    ),
+                ),
+            "GET /session" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "OpenId" to emptySet<String>(),
                         ),
                     ),
                 ),
@@ -229,11 +228,12 @@ public object ApiSecurity {
                         ),
                     ),
                 ),
-            "GET /anonymous" to
+            "POST /documents" to
                 SecurityRequirement(
                     listOf(
                         mapOf(
                             "ApiKeyAuth" to emptySet<String>(),
+                            "OAuth" to setOf("read:documents", "write:documents"),
                         ),
                     ),
                 ),
