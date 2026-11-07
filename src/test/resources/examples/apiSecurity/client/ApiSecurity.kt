@@ -71,6 +71,7 @@ public object ApiSecurity {
             "ApiKeyAuth" to SecurityScheme.ApiKey(Location.HEADER, "X-API-Key"),
             "BasicAuth" to SecurityScheme.Http("basic"),
             "BearerAuth" to SecurityScheme.Http("bearer", "JWT"),
+            "CaseKey" to SecurityScheme.ApiKey(Location.HEADER, "x-api-key"),
             "OAuth" to
                 SecurityScheme.OAuth2(
                     mapOf(
@@ -99,6 +100,7 @@ public object ApiSecurity {
                 ),
             "OpenId" to SecurityScheme.OpenIdConnect("https://example.com/.well-known/openid-configuration"),
             "QueryKey" to SecurityScheme.ApiKey(Location.QUERY, "api_key"),
+            "SecondKey" to SecurityScheme.ApiKey(Location.HEADER, "X-API-Key"),
         )
 
     public val requirements: Map<String, SecurityRequirement> =
@@ -109,6 +111,22 @@ public object ApiSecurity {
                     listOf(
                         mapOf(
                             "ApiKeyAuth" to emptySet<String>(),
+                        ),
+                    ),
+                ),
+            "getHeaderConflict" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "ApiKeyAuth" to emptySet<String>(),
+                            "SecondKey" to emptySet<String>(),
+                        ),
+                        mapOf(
+                            "ApiKeyAuth" to emptySet<String>(),
+                            "CaseKey" to emptySet<String>(),
+                        ),
+                        mapOf(
+                            "BearerAuth" to emptySet<String>(),
                         ),
                     ),
                 ),
@@ -202,6 +220,22 @@ public object ApiSecurity {
                     listOf(
                         mapOf(
                             "ApiKeyAuth" to emptySet<String>(),
+                        ),
+                    ),
+                ),
+            "GET /conflict" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "ApiKeyAuth" to emptySet<String>(),
+                            "SecondKey" to emptySet<String>(),
+                        ),
+                        mapOf(
+                            "ApiKeyAuth" to emptySet<String>(),
+                            "CaseKey" to emptySet<String>(),
+                        ),
+                        mapOf(
+                            "BearerAuth" to emptySet<String>(),
                         ),
                     ),
                 ),
@@ -385,7 +419,22 @@ public fun SecurityRequirement.resolve(
                 complete = false
                 break
             }
-            headers.putAll(resolved)
+            var conflict = false
+            for ((name, value) in resolved) {
+                val existing = headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }
+                if (existing != null) {
+                    if (existing.value != value) {
+                        conflict = true
+                        break
+                    }
+                } else {
+                    headers[name] = value
+                }
+            }
+            if (conflict) {
+                complete = false
+                break
+            }
         }
         if (complete) return headers
     }

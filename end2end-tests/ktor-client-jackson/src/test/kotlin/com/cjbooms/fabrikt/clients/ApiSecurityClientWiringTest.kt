@@ -17,6 +17,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.api.createClientPlugin
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.jackson.jackson
 import kotlinx.coroutines.runBlocking
@@ -49,6 +50,22 @@ class ApiSecurityClientWiringTest {
     private val httpClient = HttpClient(CIO) { install(ContentNegotiation) { jackson() } }
     private val documentsClient = DocumentsClient(httpClient)
     private val statusClient = StatusClient(httpClient)
+
+    private val apiSecurityPlugin =
+        createClientPlugin("ApiSecurity") {
+            onRequest { request, _ ->
+                val path = "/" + request.url.encodedPathSegments.joinToString("/")
+                ApiSecurity.resolveFor(request.method.value, path, credentials)
+                    .forEach { (name, value) -> request.headers[name] = value }
+            }
+        }
+    private val pluginClient =
+        DocumentsClient(
+            HttpClient(CIO) {
+                install(ContentNegotiation) { jackson() }
+                install(apiSecurityPlugin)
+            },
+        )
 
     private fun authHeadersFor(operationId: String) =
         ApiSecurity.requirements.getValue(operationId).resolve(ApiSecurity.schemes, credentials)
@@ -84,6 +101,17 @@ class ApiSecurityClientWiringTest {
         runBlocking { statusClient.getStatus(apiConfiguration = ApiConfiguration(baseUrl, authHeadersFor("getStatus"))) }
 
         wiremock.verify(getRequestedFor(urlPathEqualTo("/status")).withHeader("Authorization", equalTo("Bearer oauth-token")))
+    }
+
+    @Test
+    fun `a ktor plugin resolves credentials for the request it covers`() {
+        wiremock.stubFor(get(urlPathEqualTo("/documents/42")).willReturn(aResponse().withStatus(200)))
+
+        runBlocking { pluginClient.getDocumentById(id = "42", apiConfiguration = ApiConfiguration(baseUrl)) }
+
+        wiremock.verify(
+            getRequestedFor(urlPathEqualTo("/documents/42")).withHeader("Authorization", equalTo("Bearer bearer-token")),
+        )
     }
 
     @Test

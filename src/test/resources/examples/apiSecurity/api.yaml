@@ -88,6 +88,18 @@ paths:
       responses:
         '200':
           description: OK
+  /conflict:
+    get:
+      operationId: getHeaderConflict
+      security:
+        - ApiKeyAuth: []
+          SecondKey: []
+        - ApiKeyAuth: []
+          CaseKey: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
   /session:
     get:
       operationId: getSession
@@ -153,3 +165,11 @@ components:
       type: apiKey
       in: query
       name: api_key
+    SecondKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    CaseKey:
+      type: apiKey
+      in: header
+      name: x-api-key

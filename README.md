@@ -274,7 +274,7 @@ Configure a multipart-capable message converter, such as `AllEncompassingFormHtt
 
 ## Client authentication
 
-`--http-client-opts OPENAPI_SECURITY` emits one target-neutral `ApiSecurity.kt` in `<base-package>.client`, identical for every `--http-client-target`: the security schemes the specification declares, the effective requirement of every operation, and a pure resolver that turns caller-supplied credentials into request headers. The [apiSecurity example](src/test/resources/examples/apiSecurity) is the authoritative sample of the generated output. [`ApiSecurityTest`](end2end-tests/okhttp-jackson3/src/test/kotlin/com/cjbooms/fabrikt/ApiSecurityTest.kt) exercises the declaration. Two wiring tests prove it against real clients: OkHttp [`ApiSecurityClientWiringTest`](end2end-tests/okhttp-jackson3/src/test/kotlin/com/cjbooms/fabrikt/ApiSecurityClientWiringTest.kt) (resolved headers through `additionalHeaders` and a `resolveFor` interceptor) and Ktor [`ApiSecurityClientWiringTest`](end2end-tests/ktor-client-jackson/src/test/kotlin/com/cjbooms/fabrikt/clients/ApiSecurityClientWiringTest.kt) (through `ApiConfiguration.customHeaders`); both assert an operation with `security: []` gains no headers.
+`--http-client-opts OPENAPI_SECURITY` emits one target-neutral `ApiSecurity.kt` in `<base-package>.client`, identical for every `--http-client-target`: the security schemes the specification declares, the effective requirement of every operation, and a pure resolver that turns caller-supplied credentials into request headers. The [apiSecurity example](src/test/resources/examples/apiSecurity) is the authoritative sample of the generated output. [`ApiSecurityTest`](end2end-tests/okhttp-jackson3/src/test/kotlin/com/cjbooms/fabrikt/ApiSecurityTest.kt) exercises the declaration. Two wiring tests prove it against real clients: OkHttp [`ApiSecurityClientWiringTest`](end2end-tests/okhttp-jackson3/src/test/kotlin/com/cjbooms/fabrikt/ApiSecurityClientWiringTest.kt) (resolved headers through `additionalHeaders` and a `resolveFor` interceptor) and Ktor [`ApiSecurityClientWiringTest`](end2end-tests/ktor-client-jackson/src/test/kotlin/com/cjbooms/fabrikt/clients/ApiSecurityClientWiringTest.kt) (through `ApiConfiguration.customHeaders` and an `onRequest` plugin); both assert an operation with `security: []` gains no headers.
 
 It is contract data only. Generated clients gain no parameters, no second auth channel, and no transport logic; credential acquisition, refresh, caching and transport-level authentication stay in the application and its HTTP client.
 
@@ -320,7 +320,7 @@ Both maps use the operation's effective security: its own `security` when declar
 
 ### Resolution
 
-`resolve` walks `alternatives` in specification order and calls the provider for every `(scheme, scopes)` pair. A `null` credential, or one whose type does not match the scheme, makes that alternative incomplete; the first complete alternative returns its headers, and no complete alternative yields an empty map.
+`resolve` walks `alternatives` in specification order and calls the provider for every `(scheme, scopes)` pair. A `null` credential, or one whose type does not match the scheme, makes that alternative incomplete; so does two credentials resolving to the same header name (case-insensitively) with different values. The first complete alternative returns its headers, and no complete alternative yields an empty map.
 
 | Scheme | Credential | Header |
 | --- | --- | --- |

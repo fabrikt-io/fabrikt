@@ -446,7 +446,22 @@ class ApiSecurityGenerator(
                   complete = false
                   break
                 }
-                headers.putAll(resolved)
+                var conflict = false
+                for ((name, value) in resolved) {
+                  val existing = headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }
+                  if (existing != null) {
+                    if (existing.value != value) {
+                      conflict = true
+                      break
+                    }
+                  } else {
+                    headers[name] = value
+                  }
+                }
+                if (conflict) {
+                  complete = false
+                  break
+                }
               }
               if (complete) return headers
             }

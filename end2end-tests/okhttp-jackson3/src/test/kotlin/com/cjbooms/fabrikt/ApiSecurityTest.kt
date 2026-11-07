@@ -17,7 +17,9 @@ class ApiSecurityTest {
     @Test
     fun `scheme dictionary mirrors the specification`() {
         assertThat(ApiSecurity.schemes.keys)
-            .containsExactlyInAnyOrder("ApiKeyAuth", "BasicAuth", "BearerAuth", "OAuth", "OpenId", "QueryKey")
+            .containsExactlyInAnyOrder(
+                "ApiKeyAuth", "BasicAuth", "BearerAuth", "CaseKey", "OAuth", "OpenId", "QueryKey", "SecondKey",
+            )
 
         val apiKey = ApiSecurity.schemes.getValue("ApiKeyAuth") as SecurityScheme.ApiKey
         assertThat(apiKey.location).isEqualTo(Location.HEADER)
@@ -65,6 +67,7 @@ class ApiSecurityTest {
                 "getSession",
                 "getReports",
                 "getStatus",
+                "getHeaderConflict",
                 "getSubDocument",
                 "getTeam",
                 "listMembers",
@@ -102,6 +105,7 @@ class ApiSecurityTest {
                 "GET /sub/documents/{id}",
                 "GET /teams/{id}",
                 "GET /{name}/members",
+                "GET /conflict",
             )
         assertThat(ApiSecurity.requirementsByPath.getValue("GET /documents/{id}").alternatives)
             .containsExactly(mapOf("BearerAuth" to emptySet()), mapOf("BasicAuth" to emptySet()))
@@ -209,6 +213,58 @@ class ApiSecurityTest {
     @Test
     fun `resolveFor matches a path template exactly, as a Feign interceptor passes it`() {
         val headers = ApiSecurity.resolveFor("GET", "/documents/{id}") { _, _ -> Credential.Token("t") }
+
+        assertThat(headers).containsExactlyEntriesOf(mapOf("Authorization" to "Bearer t"))
+    }
+
+    @Test
+    fun `an exact same-header conflict makes an AND alternative incomplete`() {
+        val requirement =
+            SecurityRequirement(listOf(mapOf("ApiKeyAuth" to emptySet(), "SecondKey" to emptySet())))
+
+        val headers = requirement.resolve(ApiSecurity.schemes) { scheme, _ ->
+            when (scheme) {
+                "ApiKeyAuth" -> Credential.ApiKey("a")
+                "SecondKey" -> Credential.ApiKey("b")
+                else -> null
+            }
+        }
+
+        assertThat(headers).isEmpty()
+    }
+
+    @Test
+    fun `a case-only same-header conflict makes an AND alternative incomplete`() {
+        val requirement =
+            SecurityRequirement(listOf(mapOf("ApiKeyAuth" to emptySet(), "CaseKey" to emptySet())))
+
+        val headers = requirement.resolve(ApiSecurity.schemes) { scheme, _ ->
+            when (scheme) {
+                "ApiKeyAuth" -> Credential.ApiKey("a")
+                "CaseKey" -> Credential.ApiKey("c")
+                else -> null
+            }
+        }
+
+        assertThat(headers).isEmpty()
+    }
+
+    @Test
+    fun `a conflicting alternative falls through to the next complete one`() {
+        // getHeaderConflict: [ApiKeyAuth + SecondKey] (exact), [ApiKeyAuth + CaseKey] (case),
+        // then [BearerAuth]. The first two conflict, so the bearer alternative completes.
+        val headers =
+            ApiSecurity.requirements
+                .getValue("getHeaderConflict")
+                .resolve(ApiSecurity.schemes) { scheme, _ ->
+                    when (scheme) {
+                        "ApiKeyAuth" -> Credential.ApiKey("a")
+                        "SecondKey" -> Credential.ApiKey("b")
+                        "CaseKey" -> Credential.ApiKey("c")
+                        "BearerAuth" -> Credential.Token("t")
+                        else -> null
+                    }
+                }
 
         assertThat(headers).containsExactlyEntriesOf(mapOf("Authorization" to "Bearer t"))
     }
