@@ -94,7 +94,15 @@ class ApiSecurityTest {
     @Test
     fun `requirements by path use the uppercase verb and the path template`() {
         assertThat(ApiSecurity.requirementsByPath.keys)
-            .contains("GET /documents", "POST /documents", "GET /documents/{id}", "DELETE /documents/{id}")
+            .contains(
+                "GET /documents",
+                "POST /documents",
+                "GET /documents/{id}",
+                "DELETE /documents/{id}",
+                "GET /sub/documents/{id}",
+                "GET /teams/{id}",
+                "GET /{name}/members",
+            )
         assertThat(ApiSecurity.requirementsByPath.getValue("GET /documents/{id}").alternatives)
             .containsExactly(mapOf("BearerAuth" to emptySet()), mapOf("BasicAuth" to emptySet()))
     }
@@ -196,6 +204,13 @@ class ApiSecurityTest {
 
         assertThat(key).isEmpty()
         assertThat(token).isEmpty()
+    }
+
+    @Test
+    fun `resolveFor matches a path template exactly, as a Feign interceptor passes it`() {
+        val headers = ApiSecurity.resolveFor("GET", "/documents/{id}") { _, _ -> Credential.Token("t") }
+
+        assertThat(headers).containsExactlyEntriesOf(mapOf("Authorization" to "Bearer t"))
     }
 
     @Test
