@@ -274,96 +274,17 @@ Configure a multipart-capable message converter, such as `AllEncompassingFormHtt
 
 ## Client authentication
 
-`--http-client-opts OPENAPI_SECURITY` emits one target-neutral `ApiSecurity.kt` in `<base-package>.client`, identical for every `--http-client-target`: the security schemes the specification declares, the effective requirement of every operation, and a pure resolver that turns caller-supplied credentials into request headers. The [apiSecurity example](src/test/resources/examples/apiSecurity) is the authoritative sample of the generated output. [`ApiSecurityTest`](end2end-tests/okhttp-jackson3/src/test/kotlin/com/cjbooms/fabrikt/ApiSecurityTest.kt) exercises the declaration. Two wiring tests prove it against real clients: OkHttp [`ApiSecurityClientWiringTest`](end2end-tests/okhttp-jackson3/src/test/kotlin/com/cjbooms/fabrikt/ApiSecurityClientWiringTest.kt) (resolved headers through `additionalHeaders` and a `resolveFor` interceptor) and Ktor [`ApiSecurityClientWiringTest`](end2end-tests/ktor-client-jackson/src/test/kotlin/com/cjbooms/fabrikt/clients/ApiSecurityClientWiringTest.kt) (through `ApiConfiguration.customHeaders` and an `onRequest` plugin); both assert an operation with `security: []` gains no headers.
+`--http-client-opts OPENAPI_SECURITY` emits one target-neutral `ApiSecurity.kt` in `<base-package>.client`, identical for every `--http-client-target`. It is contract data only: the scheme dictionary (`schemes`), every operation's effective requirement (`requirements`, keyed by the raw `operationId`, and `requirementsByPath`, keyed by `"<VERB> <path template>"` for interceptors), and a pure `resolve` / `resolveFor` that turn a `(scheme, scopes) -> Credential?` provider into request headers. The full generated shape is the golden [`ApiSecurity.kt`](src/test/resources/examples/apiSecurity/client/ApiSecurity.kt) from the [`apiSecurity` example](src/test/resources/examples/apiSecurity); the resolver's edge cases are covered by [`ApiSecurityTest`](end2end-tests/okhttp-jackson3/src/test/kotlin/com/cjbooms/fabrikt/ApiSecurityTest.kt).
 
-It is contract data only. Generated clients gain no parameters, no second auth channel, and no transport logic; credential acquisition, refresh, caching and transport-level authentication stay in the application and its HTTP client.
+An operation uses its own `security` when declared, otherwise the document-level `security`. Entries in the security array are alternatives (OR), schemes inside one entry are AND, `{}` stays an empty alternative, and `security: []` clears requirements.
 
-### Generated declaration
+`resolve` walks the alternatives in order, calling the provider for each `(scheme, scopes)`, and returns the first complete alternative's headers. An api key becomes `<name>: <key>`, a bearer/OAuth2/OpenIdConnect token becomes `Authorization: Bearer <token>`, and basic credentials become `Authorization: Basic <base64>`. An alternative is incomplete when a credential is missing, mismatches its scheme, or two credentials land on the same header name (case-insensitively) with different values; query/cookie api keys and unrecognized HTTP schemes never complete. No complete alternative yields an empty map.
 
-```kotlin
-sealed interface SecurityScheme {
-    data class Http(val scheme: String, val bearerFormat: String? = null) : SecurityScheme
-    data class ApiKey(val location: Location, val name: String) : SecurityScheme
-    data class OAuth2(val flows: Map<Flow, OAuth2Flow>) : SecurityScheme
-    data class OpenIdConnect(val openIdConnectUrl: String) : SecurityScheme
-}
-enum class Location { HEADER, QUERY, COOKIE }
-enum class Flow { CLIENT_CREDENTIALS, AUTHORIZATION_CODE, IMPLICIT, PASSWORD }
-data class OAuth2Flow(val authorizationUrl: String?, val tokenUrl: String?, val refreshUrl: String?, val scopes: Map<String, String>)
+`resolveFor(method, path, provider)` finds the requirement of a concrete request: an exact `"<METHOD> <path>"` match first, then trailing-segment alignment of same-verb templates, preferring the longest matching route then the fewest wildcards, and returning no headers when two routes tie. Trailing alignment keeps it independent of a base-path prefix, so pass the path without host and query.
 
-data class SecurityRequirement(val alternatives: List<Map<String, Set<String>>>)
+Feeding the headers in is left to the caller through parameters the generated methods already have: `additionalHeaders: Map<String, String>` for OkHttp and OpenFeign, `additionalHeaders: Map<String, Any>` for Spring HTTP Interface, and `ApiConfiguration.customHeaders` for Ktor. To apply requirements to every request, call `resolveFor` from the transport's own interceptor (OkHttp `Interceptor`, Ktor `onRequest`, Spring `ExchangeFilterFunction`, Feign `RequestInterceptor`). End-to-end wiring is shown by the OkHttp and Ktor [`ApiSecurityClientWiringTest`](end2end-tests/okhttp-jackson3/src/test/kotlin/com/cjbooms/fabrikt/ApiSecurityClientWiringTest.kt) / [`ApiSecurityClientWiringTest`](end2end-tests/ktor-client-jackson/src/test/kotlin/com/cjbooms/fabrikt/clients/ApiSecurityClientWiringTest.kt) tests. No transport behavior, credential acquisition, or auto-applied interceptors are generated.
 
-sealed interface Credential {
-    data class Token(val token: String) : Credential
-    data class Basic(val username: String, val password: String) : Credential
-    data class ApiKey(val key: String) : Credential
-}
-
-object ApiSecurity {
-    val schemes: Map<String, SecurityScheme>
-    val requirements: Map<String, SecurityRequirement>
-    val requirementsByPath: Map<String, SecurityRequirement>
-    fun resolveFor(method: String, path: String, provider: (scheme: String, scopes: Set<String>) -> Credential?): Map<String, String>
-}
-
-fun SecurityRequirement.resolve(
-    schemes: Map<String, SecurityScheme>,
-    provider: (scheme: String, scopes: Set<String>) -> Credential?,
-): Map<String, String>
-```
-
-`schemes` is keyed by the security-scheme component name, verbatim. An OAuth2 scheme exposes only the flows the specification declares, and a scheme with no credential a header resolver can produce is omitted with a warning.
-
-`requirements` is keyed by the raw `operationId`, so keys are invariant under `GROUP_BY_TAG`, `RESPONSE_MEDIA_TYPE_FUNCTIONS` and `--operation-id-transform`; an operation without an `operationId` is keyed `"<VERB> <path template>"`. Every operation has an entry. `requirementsByPath` holds the same requirements keyed by `"<VERB> <path template>"`, for interceptors that only know the method and path.
-
-Both maps use the operation's effective security: its own `security` when declared, otherwise the document-level `security`. Entries in the security array are alternatives (OR), schemes inside one entry must all be satisfied (AND), `{}` stays an empty map inside `alternatives`, and `security: []` is an empty alternative list.
-
-### Resolution
-
-`resolve` walks `alternatives` in specification order and calls the provider for every `(scheme, scopes)` pair. A `null` credential, or one whose type does not match the scheme, makes that alternative incomplete; so does two credentials resolving to the same header name (case-insensitively) with different values. The first complete alternative returns its headers, and no complete alternative yields an empty map.
-
-| Scheme | Credential | Header |
-| --- | --- | --- |
-| `ApiKey` with `Location.HEADER` | `Credential.ApiKey` | `<name>: <key>` |
-| `ApiKey` with `Location.QUERY` or `Location.COOKIE` | — | never complete |
-| `Http("bearer")`, `OAuth2`, `OpenIdConnect` | `Credential.Token` | `Authorization: Bearer <token>` |
-| `Http("basic")` | `Credential.Basic` | `Authorization: Basic <base64(username:password)>` |
-| any other `Http` scheme | — | never complete |
-
-`resolveFor(method, path, provider)` finds the requirement of a concrete request: an exact `"<METHOD> <path>"` match first, then trailing-segment alignment of templates with the same verb, treating `{param}` as a wildcard. Among candidate templates it prefers the longest matching route, then the fewest wildcards; when two routes match with equal specificity it returns no headers (fail closed) rather than guessing. Aligning from the end keeps it independent of the target's base path — pass the path without host and query. Return `null` from the provider when a credential is unavailable, and return tokens without a `Bearer ` prefix.
-
-### Using it
-
-Feed the resolved headers through the parameters generated methods already have.
-
-| Target | Parameter |
-| --- | --- |
-| OkHttp, OpenFeign | `additionalHeaders: Map<String, String>` |
-| Spring HTTP Interface | `additionalHeaders: Map<String, Any>`, i.e. `@RequestHeader` |
-| Ktor | `apiConfiguration: ApiConfiguration`, whose `customHeaders` is `Map<String, String>` |
-
-```kotlin
-val credentials: (scheme: String, scopes: Set<String>) -> Credential? = { scheme, scopes ->
-    when (scheme) {
-        "OAuth" -> tokenService.accessToken(scopes)?.let(Credential::Token)
-        else -> keyStore.keyFor(scheme)?.let(Credential::ApiKey)
-    }
-}
-
-client.getDocuments(additionalHeaders = ApiSecurity.requirements.getValue("getDocuments").resolve(ApiSecurity.schemes, credentials))
-```
-
-To apply requirements to every request, call `resolveFor` from the transport's own interceptor and set the returned headers, replacing any of the same name: OkHttp `Interceptor` with `request.method` and `request.url.encodedPath`; a Ktor `onRequest` plugin with `request.method.value` and `request.url.encodedPathSegments.joinToString("/")`; a Spring `ExchangeFilterFunction` with `request.method().name()` and `request.url().path`; a Feign `RequestInterceptor` with `template.method()` and `template.methodMetadata().template()`.
-
-```kotlin
-Interceptor { chain ->
-    val request = chain.request()
-    val headers = ApiSecurity.resolveFor(request.method, request.url.encodedPath, credentials)
-    chain.proceed(request.newBuilder().apply { headers.forEach { (name, value) -> header(name, value) } }.build())
-}
-```
-
-HTTP Basic, query and cookie API keys, mutual TLS and proxies belong to the native client instead: OkHttp `Authenticator` with `Credentials.basic`, Feign `BasicAuthRequestInterceptor`, Spring `ExchangeFilterFunctions.basicAuthentication`, Ktor `Auth`. The headers used to fetch a remote `--api-file` or `$ref` are configured separately with `--auth`.
+HTTP Basic, query/cookie api keys, mutual TLS and proxies belong to the native client (OkHttp `Authenticator`, Feign `BasicAuthRequestInterceptor`, Spring `ExchangeFilterFunctions.basicAuthentication`, Ktor `Auth`). Headers used to fetch a remote `--api-file` or `$ref` are configured separately with `--auth`.
 
 ## Configuration Options
 
