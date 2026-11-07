@@ -1,6 +1,6 @@
 # Authentication in generated clients
 
-> **Replaces the per-operation auth helpers.** The `OPENAPI_API_KEY_AUTHENTICATION`, `OPENAPI_BEARER_AUTHENTICATION` and `OPENAPI_OAUTH2_AUTHENTICATION` options, and the `<operation>WithApiKey` / `<operation>WithBearerToken` / `<operation>WithOAuth2Token` helper functions, are removed. See [MIGRATION.md](MIGRATION.md).
+> **Replaces the per-operation auth helpers.** The `OPENAPI_API_KEY_AUTHENTICATION`, `OPENAPI_BEARER_AUTHENTICATION` and `OPENAPI_OAUTH2_AUTHENTICATION` options, and the `<operation>WithApiKey` / `<operation>WithBearerToken` / `<operation>WithOAuth2Token` helper functions, are removed in favour of the declaration described below.
 
 Fabrikt can emit an opt-in **security declaration**: what security schemes the specification declares, what each operation effectively requires, and a pure resolver that turns caller-supplied credentials into request headers. It is contract data only.
 

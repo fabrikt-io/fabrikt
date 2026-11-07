@@ -29,18 +29,3 @@ Three generator defects that this change exposed were fixed alongside it, so som
 ### 4. Type-override defaults are now explicit options
 
 The default type overrides can now be selected explicitly (for example `DATETIME_AS_OFFSETDATETIME`, `BINARY_AS_BYTEARRAY`, `URI_AS_URI`, `UUID_AS_UUID`, `ANY_AS_ANY`). No migration is required; pin them explicitly if you want to be insulated from future default changes.
-### 5. The per-operation authentication helpers were replaced by a security declaration
-
-`--http-client-opts OPENAPI_API_KEY_AUTHENTICATION`, `OPENAPI_BEARER_AUTHENTICATION` and `OPENAPI_OAUTH2_AUTHENTICATION` were removed, and passing any of them fails argument parsing. The `<operation>WithApiKey`, `<operation>WithBearerToken` and `<operation>WithOAuth2Token` functions are no longer generated.
-
-They are replaced by `--http-client-opts OPENAPI_SECURITY`, which emits one target-neutral `ApiSecurity.kt` instead: the scheme dictionary, every operation's effective requirement, and a pure resolver. Generated clients gain no new parameters; pass the resolved headers through the `additionalHeaders` / `customHeaders` parameters the methods already have, or call `resolveFor` from your own interceptor.
-
-```kotlin
-// before
-client.getDocumentsWithApiKey(apiKeyProvider = { scheme -> keyStore.keyFor(scheme) })
-
-// after
-client.getDocuments(additionalHeaders = ApiSecurity.requirements.getValue("getDocuments").resolve(ApiSecurity.schemes, credentials))
-```
-
-See [Client authentication](CLIENT_AUTHENTICATION.md) for the generated types, the resolver contract, and recipes for OkHttp, OpenFeign, Spring HTTP Interface and Ktor.
