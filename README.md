@@ -353,7 +353,7 @@ val credentials: (scheme: String, scopes: Set<String>) -> Credential? = { scheme
 client.getDocuments(additionalHeaders = ApiSecurity.requirements.getValue("getDocuments").resolve(ApiSecurity.schemes, credentials))
 ```
 
-To apply requirements to every request, call `resolveFor` from the transport's own interceptor and set the returned headers, replacing any of the same name: OkHttp `Interceptor` with `request.method` and `request.url.encodedPath`; a Ktor `onRequest` plugin with `request.method.value` and `request.url.encodedPath`; a Spring `ExchangeFilterFunction` with `request.method().name()` and `request.url().path`; a Feign `RequestInterceptor` with `template.method()` and `template.methodMetadata().template()`.
+To apply requirements to every request, call `resolveFor` from the transport's own interceptor and set the returned headers, replacing any of the same name: OkHttp `Interceptor` with `request.method` and `request.url.encodedPath`; a Ktor `onRequest` plugin with `request.method.value` and `request.url.encodedPathSegments.joinToString("/")`; a Spring `ExchangeFilterFunction` with `request.method().name()` and `request.url().path`; a Feign `RequestInterceptor` with `template.method()` and `template.methodMetadata().template()`.
 
 ```kotlin
 Interceptor { chain ->
