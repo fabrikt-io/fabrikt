@@ -101,6 +101,7 @@ public object ApiSecurity {
             "OpenId" to SecurityScheme.OpenIdConnect("https://example.com/.well-known/openid-configuration"),
             "QueryKey" to SecurityScheme.ApiKey(Location.QUERY, "api_key"),
             "SecondKey" to SecurityScheme.ApiKey(Location.HEADER, "X-API-Key"),
+            "TenantKey" to SecurityScheme.ApiKey(Location.HEADER, "X-Tenant-Key"),
         )
 
     public val requirements: Map<String, SecurityRequirement> =
@@ -198,6 +199,14 @@ public object ApiSecurity {
                     listOf(
                         mapOf(
                             "ApiKeyAuth" to emptySet<String>(),
+                        ),
+                    ),
+                ),
+            "getTenantDocument" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "TenantKey" to emptySet<String>(),
                         ),
                     ),
                 ),
@@ -310,6 +319,14 @@ public object ApiSecurity {
                         ),
                     ),
                 ),
+            "GET /{tenant}/documents/{id}" to
+                SecurityRequirement(
+                    listOf(
+                        mapOf(
+                            "TenantKey" to emptySet<String>(),
+                        ),
+                    ),
+                ),
             "POST /documents" to
                 SecurityRequirement(
                     listOf(
@@ -331,6 +348,7 @@ public object ApiSecurity {
         val concrete = path.trim('/').let { if (it.isEmpty()) emptyList() else it.split('/') }
         var best: SecurityRequirement? = null
         var bestSegments = -1
+        var bestEffectiveLength = -1
         var bestWildcards = Int.MAX_VALUE
         var ambiguous = false
         for ((templateKey, requirement) in requirementsByPath) {
@@ -352,15 +370,21 @@ public object ApiSecurity {
                 }
             }
             if (matches) {
+                val leadingWildcards = segments.takeWhile { it.startsWith("{") && it.endsWith("}") }.size
+                val effectiveLength = segments.size - leadingWildcards
                 val moreSpecific =
-                    segments.size > bestSegments || (segments.size == bestSegments && wildcards < bestWildcards)
+                    effectiveLength > bestEffectiveLength ||
+                        (effectiveLength == bestEffectiveLength && wildcards < bestWildcards)
                 if (moreSpecific) {
                     best = requirement
                     bestSegments = segments.size
+                    bestEffectiveLength = effectiveLength
                     bestWildcards = wildcards
                     ambiguous = false
-                } else if (segments.size == bestSegments && wildcards == bestWildcards && requirement != best) {
-                    ambiguous = true
+                } else if (requirement != best) {
+                    val rawTie = segments.size == bestSegments && wildcards == bestWildcards
+                    val effectiveTie = effectiveLength == bestEffectiveLength && wildcards == bestWildcards
+                    if (rawTie || effectiveTie) ambiguous = true
                 }
             }
         }

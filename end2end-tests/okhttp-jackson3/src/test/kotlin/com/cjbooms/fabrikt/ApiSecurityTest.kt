@@ -18,7 +18,7 @@ class ApiSecurityTest {
     fun `scheme dictionary mirrors the specification`() {
         assertThat(ApiSecurity.schemes.keys)
             .containsExactlyInAnyOrder(
-                "ApiKeyAuth", "BasicAuth", "BearerAuth", "CaseKey", "OAuth", "OpenId", "QueryKey", "SecondKey",
+                "ApiKeyAuth", "BasicAuth", "BearerAuth", "CaseKey", "OAuth", "OpenId", "QueryKey", "SecondKey", "TenantKey",
             )
 
         val apiKey = ApiSecurity.schemes.getValue("ApiKeyAuth") as SecurityScheme.ApiKey
@@ -71,6 +71,7 @@ class ApiSecurityTest {
                 "getSubDocument",
                 "getTeam",
                 "listMembers",
+                "getTenantDocument",
                 "GET /anonymous",
             )
 
@@ -106,6 +107,7 @@ class ApiSecurityTest {
                 "GET /teams/{id}",
                 "GET /{name}/members",
                 "GET /conflict",
+                "GET /{tenant}/documents/{id}",
             )
         assertThat(ApiSecurity.requirementsByPath.getValue("GET /documents/{id}").alternatives)
             .containsExactly(mapOf("BearerAuth" to emptySet()), mapOf("BasicAuth" to emptySet()))
@@ -211,7 +213,7 @@ class ApiSecurityTest {
     }
 
     @Test
-    fun `resolveFor matches a path template exactly, as a Feign interceptor passes it`() {
+    fun `resolveFor matches a path template exactly`() {
         val headers = ApiSecurity.resolveFor("GET", "/documents/{id}") { _, _ -> Credential.Token("t") }
 
         assertThat(headers).containsExactlyEntriesOf(mapOf("Authorization" to "Bearer t"))
@@ -265,6 +267,23 @@ class ApiSecurityTest {
                         else -> null
                     }
                 }
+
+        assertThat(headers).containsExactlyEntriesOf(mapOf("Authorization" to "Bearer t"))
+    }
+
+    @Test
+    fun `resolveFor does not let a leading path parameter swallow a base path prefix`() {
+        // /documents/{id} (bearer) and /{tenant}/documents/{id} (tenant key) both match
+        // /v1/documents/42. The leading parameter could be the base path, so the anchored
+        // /documents/{id} route wins rather than attaching the tenant credential.
+        val headers =
+            ApiSecurity.resolveFor("GET", "/v1/documents/42") { scheme, _ ->
+                when (scheme) {
+                    "BearerAuth" -> Credential.Token("t")
+                    "TenantKey" -> Credential.ApiKey("tenant-key")
+                    else -> null
+                }
+            }
 
         assertThat(headers).containsExactlyEntriesOf(mapOf("Authorization" to "Bearer t"))
     }

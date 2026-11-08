@@ -88,6 +88,25 @@ paths:
       responses:
         '200':
           description: OK
+  /{tenant}/documents/{id}:
+    get:
+      operationId: getTenantDocument
+      parameters:
+        - name: tenant
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - TenantKey: []
+      responses:
+        '200':
+          description: OK
   /conflict:
     get:
       operationId: getHeaderConflict
@@ -173,3 +192,7 @@ components:
       type: apiKey
       in: header
       name: x-api-key
+    TenantKey:
+      type: apiKey
+      in: header
+      name: X-Tenant-Key
