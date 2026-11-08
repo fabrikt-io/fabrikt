@@ -79,6 +79,22 @@ object SchemaParserExtensions {
 
     fun Schema.isInlinedArrayDefinition() = isArrayType() && !isSchemaLess() && this.itemsSchema.isInlinedObjectDefinition()
 
+    /** All schemas reached by following `itemsSchema` through nested `array` items, outermost
+     *  first, excluding the array schema itself. */
+    fun Schema.nestedArrayItems(limit: Int = 10): List<Schema> {
+        val items = mutableListOf<Schema>()
+        var current = this
+        var depth = 0
+        while (current.type == OasType.Array.type && depth < limit) {
+            val next = current.itemsSchema
+            if (next.isSchemaAbsent()) break
+            items.add(next)
+            current = next
+            depth++
+        }
+        return items
+    }
+
     fun Schema.isSchemaLess() =
         isObjectType() &&
             properties.isEmpty() &&
@@ -285,8 +301,8 @@ object SchemaParserExtensions {
                 enclosingSchema.propertiesInInlineObjects().flatMap { property ->
                     val interfaces = mutableListOf<Schema>()
 
-                    // Check oneOf in array items
-                    property.itemsSchema.let { items ->
+                    // Check oneOf at any array-item depth
+                    property.nestedArrayItems().forEach { items ->
                         if (items.isInlinedOneOfSuperInterface() &&
                             items.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
                         ) {
@@ -548,7 +564,7 @@ object SchemaParserExtensions {
         val path = jsonPathFromRoot
 
         val isDirectProperty = Regex(".*/properties/[^/]+$").matches(path)
-        val isArrayItem = Regex(".*/properties/[^/]+/items$").matches(path)
+        val isArrayItem = Regex(".*/properties/[^/]+(/items)+$").matches(path)
 
         return isDirectProperty || isArrayItem
     }

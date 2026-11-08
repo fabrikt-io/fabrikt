@@ -15,6 +15,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedDiscriminatedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedTypedAdditionalProperties
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterfaceWithDiscriminator
@@ -391,7 +392,11 @@ sealed class KotlinTypeInfo(
             return when {
                 (
                     itemsSchema.isInlinedObjectDefinition() ||
-                        itemsSchema.isInlinedDiscriminatedOneOfSuperInterface()
+                        itemsSchema.isInlinedDiscriminatedOneOfSuperInterface() ||
+                        (
+                            itemsSchema.isInlinedOneOfSuperInterface() &&
+                                itemsSchema.isSubTypeDeductionEnabled()
+                        )
                 ) &&
                     !itemsSchema.isUnsupportedComplexInlinedDefinition() ->
                     Object(ModelNameRegistry.getOrRegister(arraySchema, enclosingSchema, direction = direction))

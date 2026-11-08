@@ -27,6 +27,7 @@ import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.ModelDirection
 import com.cjbooms.fabrikt.model.ModelType
 import com.cjbooms.fabrikt.model.Models
+import com.cjbooms.fabrikt.model.OasType
 import com.cjbooms.fabrikt.model.PropertyInfo
 import com.cjbooms.fabrikt.model.PropertyInfo.Companion.topLevelProperties
 import com.cjbooms.fabrikt.model.SchemaCompositionRelationships
@@ -86,6 +87,8 @@ import java.util.logging.Logger
 import com.cjbooms.fabrikt.model.OpenApi3Document as OpenApi3
 import com.cjbooms.fabrikt.model.OpenApiDiscriminator as Discriminator
 import com.cjbooms.fabrikt.model.OpenApiSchema as Schema
+
+private const val MAX_ARRAY_ITEM_DEPTH = 10
 
 class ModelGenerator(
     private val packages: Packages,
@@ -737,8 +740,10 @@ class ModelGenerator(
         schemaName: String,
         enclosingSchema: Schema,
         apiDocUrl: String,
-    ): Collection<TypeSpec> =
-        schema.itemsSchema.let { items ->
+        depth: Int = 0,
+    ): Collection<TypeSpec> {
+        if (depth > MAX_ARRAY_ITEM_DEPTH) return emptySet()
+        return schema.itemsSchema.let { items ->
             when {
                 items.isInlinedObjectDefinition() || items.isInlinedObjectDefinitionUnderTopLevelArrayDefinition() ->
                     items
@@ -782,9 +787,13 @@ class ModelGenerator(
                         ),
                     )
 
+                items.type == OasType.Array.type && depth < MAX_ARRAY_ITEM_DEPTH ->
+                    buildInlinedListDefinition(items, items.safeName(), enclosingSchema, apiDocUrl, depth + 1)
+
                 else -> emptySet()
             }
         }
+    }
 
     private fun Schema.captureMissingExternalSchemas(
         apiDocUrl: String,

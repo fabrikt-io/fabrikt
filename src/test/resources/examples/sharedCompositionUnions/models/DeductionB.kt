@@ -16,5 +16,6 @@ public data class DeductionB(
   @get:NotNull
   override val b: String,
 ) : DeductionChoice,
+    InlineContainerDeduced,
     AComposite,
     DeductionBComposite

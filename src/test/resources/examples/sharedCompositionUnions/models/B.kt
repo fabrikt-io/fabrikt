@@ -23,6 +23,7 @@ public data class B(
     Shared,
     InlineContainerDirect,
     InlineContainerEntries,
+    InlineContainerMatrix,
     InlineContainerMixed,
     InlineArray,
     AComposite,

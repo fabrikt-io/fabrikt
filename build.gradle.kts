@@ -146,7 +146,7 @@ tasks {
 
     create("printCodeGenUsage", JavaExec::class) {
         dependsOn(shadowJar)
-        classpath = project.files("./build/libs/$executableName-$version.jar")
+        classpath = files(shadowJar.archiveFile)
         mainClass.set("com.cjbooms.fabrikt.cli.CodeGen")
         args = listOf("--help")
     }

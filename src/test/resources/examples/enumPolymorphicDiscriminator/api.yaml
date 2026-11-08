@@ -60,6 +60,14 @@ components:
             some_prop:
               type: string
 
+    DiscriminatedChild4:
+      allOf:
+        - $ref: '#/components/schemas/ChildDefinition'
+        - type: object
+          properties:
+            some_prop:
+              type: string
+
     discriminated_child_3:
       allOf:
         - $ref: '#/components/schemas/ChildDefinition'

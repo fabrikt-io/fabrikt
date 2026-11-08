@@ -27,6 +27,7 @@ public data class C(
     Shared,
     InlineContainerDirect,
     InlineContainerEntries,
+    InlineContainerMatrix,
     InlineArray,
     AComposite,
     CComposite

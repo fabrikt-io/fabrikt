@@ -109,6 +109,24 @@ components:
             discriminator:
               propertyName: kind
               mapping: {b: '#/components/schemas/B', c: '#/components/schemas/C'}
+        deduced:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/DeductionB'
+              - $ref: '#/components/schemas/DeductionC'
+            x-jackson-subtype-deduction: true
+        matrix:
+          type: array
+          items:
+            type: array
+            items:
+              oneOf:
+                - $ref: '#/components/schemas/B'
+                - $ref: '#/components/schemas/C'
+              discriminator:
+                propertyName: kind
+                mapping: {b: '#/components/schemas/B', c: '#/components/schemas/C'}
         nested:
           type: object
           properties:
