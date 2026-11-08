@@ -79,6 +79,8 @@ Client generators can emit an opt-in security declaration through `--http-client
 
 OpenAPI 3.2 `query` operations are supported by all client targets and by Ktor and Micronaut controllers, including JSON request bodies. OpenFeign requires 13.14 or later and a transport that supports `QUERY`, such as `feign-okhttp`; its default `HttpURLConnection` transport does not. Spring HTTP Interface clients likewise require a suitable transport, such as `JdkClientHttpRequestFactory`. Spring controllers skip `QUERY` operations with a warning because the supported stable Spring versions lack `RequestMethod.QUERY`; implement those routes separately or use another controller target.
 
+Spring controllers read the operation extension `x-spring-api-version` and add its value as the `version` attribute of `@RequestMapping`. This attribute needs Spring Framework 7 with [API versioning](https://docs.spring.io/spring-framework/reference/web/webmvc-versioning.html) configured. An empty value or no extension gives no attribute. Quote the value in YAML, so that `1.10` stays `1.10`.
+
 ## Examples
 
 Consult the test directory for OpenAPI code generation examples.
