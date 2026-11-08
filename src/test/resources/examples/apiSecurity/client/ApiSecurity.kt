@@ -71,10 +71,15 @@ public data class OAuth2Flow(
 )
 
 /**
+ * One alternative in a security requirement: an AND group mapping scheme name to required scopes.
+ */
+public typealias SecurityAlternative = Map<String, Set<String>>
+
+/**
  * One operation's effective requirement. Each entry in alternatives is an OR option; the scheme-to-scopes map inside an entry is an AND group. An empty list means security: [].
  */
 public data class SecurityRequirement(
-    public val alternatives: List<Map<String, Set<String>>>,
+    public val alternatives: List<SecurityAlternative>,
 )
 
 /**
@@ -102,6 +107,19 @@ public sealed interface Credential {
     public data class ApiKey(
         public val key: String,
     ) : Credential
+}
+
+/**
+ * Returns the caller's credential for one scheme and its required scopes, or null when that credential is unavailable, so a later alternative is tried.
+ */
+public fun interface CredentialProvider {
+    /**
+     * Provides the credential for the named security scheme. The scopes are those the operation requires for that scheme; returning null skips the alternative.
+     */
+    public fun provide(
+        scheme: String,
+        scopes: Set<String>,
+    ): Credential?
 }
 
 /**
@@ -399,7 +417,7 @@ public object ApiSecurity {
     public fun resolveFor(
         method: String,
         path: String,
-        provider: (scheme: String, scopes: Set<String>) -> Credential?,
+        provider: CredentialProvider,
     ): Map<String, String> {
         val methodKey = method.uppercase()
         requirementsByPath[methodKey + " " + path]?.let { return it.resolve(schemes, provider) }
@@ -508,7 +526,7 @@ private fun headerValue(`value`: String): String? =
  */
 public fun SecurityRequirement.resolve(
     schemes: Map<String, SecurityScheme>,
-    provider: (scheme: String, scopes: Set<String>) -> Credential?,
+    provider: CredentialProvider,
 ): Map<String, String> {
     for (alternative in alternatives) {
         if (alternative.isEmpty()) continue
@@ -516,7 +534,7 @@ public fun SecurityRequirement.resolve(
         var complete = true
         for ((schemeName, scopes) in alternative) {
             val scheme = schemes[schemeName]
-            val resolved = if (scheme == null) null else credentialHeaders(scheme, provider(schemeName, scopes))
+            val resolved = if (scheme == null) null else credentialHeaders(scheme, provider.provide(schemeName, scopes))
             if (resolved == null) {
                 complete = false
                 break
@@ -549,7 +567,7 @@ public fun SecurityRequirement.resolve(
  */
 public fun SecurityRequirement.resolveOrThrow(
     schemes: Map<String, SecurityScheme>,
-    provider: (scheme: String, scopes: Set<String>) -> Credential?,
+    provider: CredentialProvider,
 ): Map<String, String> {
     val headers = resolve(schemes, provider)
     check(headers.isNotEmpty() || alternatives.isEmpty()) {

@@ -3,6 +3,7 @@ package com.cjbooms.fabrikt.clients
 import com.example.apisecurity.client.ApiConfiguration
 import com.example.apisecurity.client.ApiSecurity
 import com.example.apisecurity.client.Credential
+import com.example.apisecurity.client.CredentialProvider
 import com.example.apisecurity.client.DocumentsClient
 import com.example.apisecurity.client.StatusClient
 import com.example.apisecurity.client.resolve
@@ -38,7 +39,7 @@ class ApiSecurityClientWiringTest {
     private val wiremock = WireMockServer(options().port(port))
     private val baseUrl = "http://localhost:$port"
 
-    private val credentials: (scheme: String, scopes: Set<String>) -> Credential? = { scheme, _ ->
+    private val credentials = CredentialProvider { scheme, _ ->
         when (scheme) {
             "ApiKeyAuth" -> Credential.ApiKey("secret")
             "BearerAuth" -> Credential.Token("bearer-token")

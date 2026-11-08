@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt
 
 import com.example.apisecurity.client.ApiSecurity
 import com.example.apisecurity.client.Credential
+import com.example.apisecurity.client.CredentialProvider
 import com.example.apisecurity.client.Flow
 import com.example.apisecurity.client.Location
 import com.example.apisecurity.client.OAuth2Flow
@@ -14,7 +15,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class ApiSecurityTest {
-    private val noCredentials: (String, Set<String>) -> Credential? = { _, _ -> null }
+    private val noCredentials = CredentialProvider { _, _ -> null }
 
     @Test
     fun `scheme dictionary mirrors the specification`() {

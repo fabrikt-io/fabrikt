@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt
 
 import com.example.apisecurity.client.ApiSecurity
 import com.example.apisecurity.client.Credential
+import com.example.apisecurity.client.CredentialProvider
 import com.example.apisecurity.client.DocumentsClient
 import com.example.apisecurity.client.resolve
 import com.github.tomakehurst.wiremock.WireMockServer
@@ -35,7 +36,7 @@ class ApiSecurityClientWiringTest {
     private val mapper = JsonMapper.builder().addModule(kotlinModule()).build()
     private val baseUrl = "http://localhost:$port"
 
-    private val credentials: (scheme: String, scopes: Set<String>) -> Credential? = { scheme, _ ->
+    private val credentials = CredentialProvider { scheme, _ ->
         when (scheme) {
             "ApiKeyAuth" -> Credential.ApiKey("secret")
             "BearerAuth" -> Credential.Token("bearer-token")

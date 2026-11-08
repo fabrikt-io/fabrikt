@@ -13,13 +13,13 @@ import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.LIST
-import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.MAP
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.SET
 import com.squareup.kotlinpoet.STRING
+import com.squareup.kotlinpoet.TypeAliasSpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import java.util.logging.Logger
@@ -43,16 +43,8 @@ class ApiSecurityGenerator(
     private val flowClassName = ClassName(packages.client, "Flow")
     private val oauth2FlowClassName = ClassName(packages.client, "OAuth2Flow")
     private val securityRequirementClassName = ClassName(packages.client, "SecurityRequirement")
+    private val credentialProviderClassName = ClassName(packages.client, "CredentialProvider")
     private val headerMapType = MAP.parameterizedBy(STRING, STRING)
-    private val providerType =
-        LambdaTypeName.get(
-            parameters =
-                listOf(
-                    ParameterSpec.builder("scheme", STRING).build(),
-                    ParameterSpec.builder("scopes", SET.parameterizedBy(STRING)).build(),
-                ),
-            returnType = credentialClassName.copy(nullable = true),
-        )
 
     fun generate(): FileSpec {
         val locationType =
@@ -74,8 +66,15 @@ class ApiSecurityGenerator(
             .addType(locationType)
             .addType(flowType)
             .addType(oauth2FlowDataClass())
-            .addType(securityRequirementDataClass())
+            .addTypeAlias(
+                TypeAliasSpec
+                    .builder("SecurityAlternative", MAP.parameterizedBy(STRING, SET.parameterizedBy(STRING)))
+                    .addModifiers(KModifier.PUBLIC)
+                    .addKdoc("One alternative in a security requirement: an AND group mapping scheme name to required scopes.")
+                    .build(),
+            ).addType(securityRequirementDataClass())
             .addType(credentialInterface())
+            .addType(credentialProviderInterface())
             .addType(apiSecurityObject())
             .addFunction(credentialHeadersFunction())
             .addFunction(headerValueFunction())
@@ -202,6 +201,26 @@ class ApiSecurityGenerator(
                 ),
             ).build()
 
+    private fun credentialProviderInterface(): TypeSpec =
+        TypeSpec
+            .funInterfaceBuilder("CredentialProvider")
+            .addModifiers(KModifier.PUBLIC)
+            .addKdoc(
+                "Returns the caller's credential for one scheme and its required scopes, or null when that " +
+                    "credential is unavailable, so a later alternative is tried.",
+            ).addFunction(
+                FunSpec
+                    .builder("provide")
+                    .addModifiers(KModifier.PUBLIC, KModifier.ABSTRACT)
+                    .addKdoc(
+                        "Provides the credential for the named security scheme. The scopes are those the " +
+                            "operation requires for that scheme; returning null skips the alternative.",
+                    ).addParameter("scheme", STRING)
+                    .addParameter("scopes", SET.parameterizedBy(STRING))
+                    .returns(credentialClassName.copy(nullable = true))
+                    .build(),
+            ).build()
+
     private fun oauth2FlowDataClass(): TypeSpec =
         dataClass(
             "OAuth2Flow",
@@ -217,7 +236,7 @@ class ApiSecurityGenerator(
             "SecurityRequirement",
             ConstructorProperty(
                 "alternatives",
-                LIST.parameterizedBy(MAP.parameterizedBy(STRING, SET.parameterizedBy(STRING))),
+                LIST.parameterizedBy(ClassName(packages.client, "SecurityAlternative")),
             ),
             kdoc =
                 "One operation's effective requirement. Each entry in alternatives is an OR option; the " +
@@ -462,7 +481,7 @@ class ApiSecurityGenerator(
                     "specific routes, or a provider that yields nothing, produce an empty map, never a throw.",
             ).addParameter("method", STRING)
             .addParameter("path", STRING)
-            .addParameter("provider", providerType)
+            .addParameter("provider", credentialProviderClassName)
             .returns(headerMapType)
             .addCode(RESOLVE_FOR_BODY)
             .build()
@@ -479,7 +498,7 @@ class ApiSecurityGenerator(
                     "complete alternative's headers are returned, otherwise an empty map.",
             ).receiver(securityRequirementClassName)
             .addParameter("schemes", MAP.parameterizedBy(STRING, securitySchemeClassName))
-            .addParameter("provider", providerType)
+            .addParameter("provider", credentialProviderClassName)
             .returns(headerMapType)
             .addCode(RESOLVE_BODY)
             .build()
@@ -493,7 +512,7 @@ class ApiSecurityGenerator(
                     "empty requirement (security: []) still returns an empty map rather than throwing.",
             ).receiver(securityRequirementClassName)
             .addParameter("schemes", MAP.parameterizedBy(STRING, securitySchemeClassName))
-            .addParameter("provider", providerType)
+            .addParameter("provider", credentialProviderClassName)
             .returns(headerMapType)
             .addCode(
                 """
@@ -543,7 +562,7 @@ class ApiSecurityGenerator(
               var complete = true
               for ((schemeName, scopes) in alternative) {
                 val scheme = schemes[schemeName]
-                val resolved = if (scheme == null) null else credentialHeaders(scheme, provider(schemeName, scopes))
+                val resolved = if (scheme == null) null else credentialHeaders(scheme, provider.provide(schemeName, scopes))
                 if (resolved == null) {
                   complete = false
                   break
