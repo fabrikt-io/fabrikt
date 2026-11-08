@@ -54,6 +54,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterf
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedTypedAdditionalProperties
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isNamedComponent
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isNamedEnumUnion
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOpenEnumDefinition
@@ -457,7 +458,7 @@ class ModelGenerator(
         schemas: List<SchemaInfo>,
     ) = schemas
         .map { if (direction == null) it else SchemaInfo(it.name, it.schema, direction) }
-        .filterNot { it.schema.isSimpleType() }
+        .filterNot { it.schema.isSimpleType() && !it.schema.isNamedEnumUnion() }
         .onEach { schemaInfo ->
             val custom = schemaInfo.typeInfo as? KotlinTypeInfo.Custom
             if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options && custom?.isObject == true) {
@@ -535,6 +536,8 @@ class ModelGenerator(
         val modelName = ModelNameRegistry.getOrRegister(schemaInfo, direction = direction)
         val schemaName = schemaInfo.schema.componentKey()
         return when {
+            schemaInfo.typeInfo is KotlinTypeInfo.Enum -> buildEnumClass(schemaInfo.schema, schemaInfo.typeInfo)
+
             schemaInfo.schema.isOneOfSuperInterface() ->
                 oneOfSuperInterface(
                     schema = schemaInfo.schema,
@@ -579,7 +582,6 @@ class ModelGenerator(
                     schemaInfo.schema.findOneOfSuperInterface(allSchemas.map { it.schema }),
                 ).toBuilder().addDeprecation(schemaInfo.schema).build()
 
-            schemaInfo.typeInfo is KotlinTypeInfo.Enum -> buildEnumClass(schemaInfo.schema, schemaInfo.typeInfo)
             else ->
                 standardDataClass(
                     modelName = modelName,
@@ -840,7 +842,8 @@ class ModelGenerator(
     ): TypeSpec {
         val enumType = generatedType(packages.base, enum.enumClassName)
         val isFaultTolerant =
-            options.contains(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS) ||
+            enum.isFaultTolerant ||
+                options.contains(ModelCodeGenOptionType.FAULT_TOLERANT_ENUMS) ||
                 schema.isOpenEnumDefinition()
 
         val classBuilder =

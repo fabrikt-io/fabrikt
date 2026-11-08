@@ -25,4 +25,7 @@ public data class EnumHolder(
   @param:JsonProperty("nullable_ref")
   @get:JsonProperty("nullable_ref")
   public val nullableRef: NullableEnum? = null,
+  @param:JsonProperty("extensible_enum_union")
+  @get:JsonProperty("extensible_enum_union")
+  public val extensibleEnumUnion: ExtensibleEnumUnion? = null,
 )

@@ -35,6 +35,18 @@ components:
           $ref: '#/components/schemas/ListEnums'
         nullable_ref:
           $ref: '#/components/schemas/NullableEnum'
+        extensible_enum_union:
+          $ref: '#/components/schemas/ExtensibleEnumUnion'
+
+    ExtensibleEnumUnion:
+      oneOf:
+        - $ref: '#/components/schemas/ExtensibleEnumObject'
+        - $ref: '#/components/schemas/ContentType'
+      discriminator:
+        propertyName: kind
+        mapping:
+          STATUS: '#/components/schemas/ExtensibleEnumObject'
+          CONTENT_TYPE: '#/components/schemas/ContentType'
 
     EnumObject:
       type: string

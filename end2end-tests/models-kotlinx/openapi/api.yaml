@@ -271,3 +271,29 @@ components:
           properties:
             payload:
               type: integer
+    Cow:
+      type: string
+      enum:
+        - Moo
+    Sheep:
+      type: string
+      enum:
+        - Baa
+    Animal:
+      oneOf:
+        - $ref: '#/components/schemas/Cow'
+        - $ref: '#/components/schemas/Sheep'
+      discriminator:
+        propertyName: type
+        mapping:
+          COW_FARM: '#/components/schemas/Cow'
+          SHEEP_FARM: '#/components/schemas/Sheep'
+    Farm:
+      type: object
+      required:
+        - animals
+      properties:
+        animals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Animal'
