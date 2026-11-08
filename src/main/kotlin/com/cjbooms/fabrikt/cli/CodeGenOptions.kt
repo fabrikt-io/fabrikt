@@ -266,9 +266,9 @@ enum class CodeGenTypeOverride(
     DATETIME_AS_STRING("Ignore string format `date-time` and use `String` as the type"),
     BYTEARRAY_AS_INPUTSTREAM("Use `InputStream` as ByteArray type. Defaults to `ByteArray`"),
     ANY_AS_JSONELEMENT(
-        "Use `kotlinx.serialization.json.JsonElement` for untyped (any) schemas and `JsonObject` for untyped objects. Requires the KOTLINX_SERIALIZATION serialization library. Defaults to `Any`",
+        "Use `kotlinx.serialization.json.JsonElement` for untyped (any) schemas and `JsonObject` for untyped objects. Requires the KOTLINX_SERIALIZATION serialization library. Default for kotlinx.serialization",
     ),
-    ANY_AS_ANY("Use `Any` as the untyped (any) type. Default"),
+    ANY_AS_ANY("Use `Any` as the untyped (any) type. Default for Jackson"),
     ;
 
     override fun toString() = "`${super.toString()}` - $description"

@@ -1,11 +1,11 @@
 package examples.discriminatedOneOf.models
 
-import kotlin.Any
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 public data class DiagnosticReport(
   @SerialName("failure")
-  public val failure: Any? = null,
+  public val failure: JsonElement? = null,
 )

@@ -41,6 +41,7 @@ class KotlinSerializationModelGeneratorTest {
             "customTypeMapping",
             "mixedTypeUnion",
             "arrays",
+            "untypedObject",
         )
 
     @BeforeEach
@@ -131,16 +132,15 @@ class KotlinSerializationModelGeneratorTest {
     }
 
     @Test
-    fun `schemas without properties result in UnsupportedOperationException`() {
+    fun `ANY_AS_ANY restores the unsupported untyped object failure`() {
+        MutableSettings.addOption(CodeGenTypeOverride.ANY_AS_ANY)
         val basePackage = "examples.untypedObject"
         val apiLocation = javaClass.getResource("/examples/untypedObject/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
 
         val e =
             assertThrows<UnsupportedOperationException> {
-                val models = ModelGenerator(Packages(basePackage), sourceApi).generate()
-                val sourceSet = setOf(KotlinSourceSet(models.files, Paths.get("")))
-                println(sourceSet)
+                ModelGenerator(Packages(basePackage), sourceApi).generate()
             }
         assertThat(
             e.message,

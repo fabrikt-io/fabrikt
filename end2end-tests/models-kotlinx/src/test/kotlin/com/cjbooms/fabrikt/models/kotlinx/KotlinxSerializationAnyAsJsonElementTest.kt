@@ -18,10 +18,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 /**
- * End-to-end verification of the ANY_AS_JSONELEMENT type override (fabrikt issue #633)
- * with kotlinx.serialization. Untyped (any) schemas are generated as
- * `kotlinx.serialization.json.JsonElement`, allowing dynamic JSON to round-trip without
- * custom serializers.
+ * End-to-end verification that untyped (any) schemas generate as
+ * `kotlinx.serialization.json.JsonElement` by default, so dynamic JSON round-trips
+ * without custom serializers (#633, #846). No type override is passed.
  */
 class KotlinxSerializationAnyAsJsonElementTest {
 
