@@ -28,6 +28,16 @@ abstract class AnnotationBasedControllerInterfaceGenerator(
         verb: String,
     ): FunSpec
 
+    /**
+     * Builds the controller functions for a single operation. Targets that can route one operation to several
+     * methods (e.g. per API version) override this; the default emits the single aggregate method.
+     */
+    protected open fun buildFunctions(
+        path: OpenApiPath,
+        op: OpenApiOperation,
+        verb: String,
+    ): List<FunSpec> = listOf(buildFunction(path, op, verb))
+
     abstract fun controllerBuilder(
         className: String,
         basePath: String,
@@ -54,8 +64,8 @@ abstract class AnnotationBasedControllerInterfaceGenerator(
                     .requestOperations(path)
                     .filter { it.first.toUpperCase() != "HEAD" }
                     .filter { supportsOperation(it.first, path.pathString) }
-                    .map { op ->
-                        buildFunction(
+                    .flatMap { op ->
+                        buildFunctions(
                             path,
                             op.second,
                             op.first,

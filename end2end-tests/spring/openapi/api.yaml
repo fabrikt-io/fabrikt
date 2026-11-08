@@ -58,8 +58,46 @@ paths:
       responses:
         "204":
           description: No Content
+  /contributors/{id}:
+    get:
+      operationId: getContributor
+      summary: Returns a contributor representation for the requested API version
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/x.example.contributor+json;version=1:
+              schema:
+                $ref: "#/components/schemas/ContributorV1"
+            application/x.example.contributor+json;version=2:
+              schema:
+                $ref: "#/components/schemas/Contributor"
 components:
   schemas:
+    ContributorV1:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Contributor:
+      type: object
+      required: [id, name, role]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
     ParameterEcho:
       type: object
       properties:

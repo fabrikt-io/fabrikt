@@ -79,7 +79,9 @@ Client generators can emit an opt-in security declaration through `--http-client
 
 OpenAPI 3.2 `query` operations are supported by all client targets and by Ktor and Micronaut controllers, including JSON request bodies. OpenFeign requires 13.14 or later and a transport that supports `QUERY`, such as `feign-okhttp`; its default `HttpURLConnection` transport does not. Spring HTTP Interface clients likewise require a suitable transport, such as `JdkClientHttpRequestFactory`. Spring controllers skip `QUERY` operations with a warning because the supported stable Spring versions lack `RequestMethod.QUERY`; implement those routes separately or use another controller target.
 
-Spring controllers read the operation extension `x-spring-api-version` and add its value as the `version` attribute of `@RequestMapping`. This attribute needs Spring Framework 7 with [API versioning](https://docs.spring.io/spring-framework/reference/web/webmvc-versioning.html) configured. An empty value or no extension gives no attribute. Quote the value in YAML, so that `1.10` stays `1.10`.
+Spring controllers read the operation extension `x-spring-api-version` and add its value as the `version` attribute of `@RequestMapping`. An empty value, a non-scalar value, or no extension gives no attribute. Quote the value in YAML, so that `1.10` stays `1.10`.
+
+Spring controllers can also split one operation into one abstract method per API version through `--http-controller-opts RESPONSE_MEDIA_TYPE_VERSIONS`. That option follows the [Zalando guideline for media type versioning](https://opensource.zalando.com/restful-api-guidelines/#114): when every success response media type of an operation is a `version` variant of one base type, e.g. `application/x.example.contributor+json;version=1` and `;version=2`, fabrikt emits one method per version instead of the aggregate method. A mix with an unversioned media type, a second base type, or a single version falls back to the aggregate method with a warning. Both forms need Spring Framework 7, and routing additionally needs API versioning configured. Micronaut and Ktor controllers ignore the option.
 
 ## Examples
 
@@ -336,6 +338,7 @@ Usage: <main class> [options]
 |                                         |   `GROUP_BY_TAG` - This option groups controllers based on the first tag rather than paths |
 |                                         |   `COMPLETION_STAGE` - This option makes generated controller functions have Type CompletionStage<T> (works only with Spring Controller generator). Can be overridden per operation using the OpenAPI extension `x-async-support: true|false` |
 |                                         |   `SSE_EMITTER` - This option makes generated controller functions have Type SseEmitter (works only with Spring Controller generator) |
+|                                         |   `RESPONSE_MEDIA_TYPE_VERSIONS` - This option emits one abstract method per API version for an operation whose success responses are versioned variants of a single media type (keys carrying a `version` parameter), each with a narrow `produces` and `@RequestMapping(version = "...")` (works only with Spring Controller generator) |
 |   `--http-controller-target`            | Optionally select the target framework for the controllers that you want to be generated. Defaults to Spring Controllers |
 |                                         | CHOOSE ONE OF: |
 |                                         |   `SPRING` - Generate for Spring framework. |

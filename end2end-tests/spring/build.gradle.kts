@@ -50,6 +50,7 @@ tasks {
             "--targets", "http_models",
             "--targets", "controllers",
             "--http-controller-target", "SPRING",
+            "--http-controller-opts", "RESPONSE_MEDIA_TYPE_VERSIONS",
             "--validation-library", "jakarta_validation"
         )
         dependsOn(":jar")

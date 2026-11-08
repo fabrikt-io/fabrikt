@@ -3,8 +3,10 @@ package com.cjbooms.fabrikt.generators.controller
 import com.cjbooms.fabrikt.cli.ControllerCodeGenOptionType
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.GeneratorUtils.addDeprecation
+import com.cjbooms.fabrikt.generators.GeneratorUtils.getBodySuccessResponses
 import com.cjbooms.fabrikt.generators.GeneratorUtils.groupingStrategyFrom
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toIncomingParameters
+import com.cjbooms.fabrikt.generators.GeneratorUtils.toKCodeName
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKdoc
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.isSseResponse
@@ -13,6 +15,7 @@ import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.securi
 import com.cjbooms.fabrikt.generators.controller.ControllerGeneratorUtils.toSuccessResponseType
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringAnnotations
 import com.cjbooms.fabrikt.generators.controller.metadata.SpringImports
+import com.cjbooms.fabrikt.generators.model.ModelGenerator.Companion.toModelType
 import com.cjbooms.fabrikt.model.BodyParameter
 import com.cjbooms.fabrikt.model.ControllerLibraryType
 import com.cjbooms.fabrikt.model.ControllerType
@@ -23,6 +26,7 @@ import com.cjbooms.fabrikt.model.KotlinTypes
 import com.cjbooms.fabrikt.model.MultipartParameter
 import com.cjbooms.fabrikt.model.OpenApiOperation
 import com.cjbooms.fabrikt.model.OpenApiPath
+import com.cjbooms.fabrikt.model.OpenApiSchema
 import com.cjbooms.fabrikt.model.PathParam
 import com.cjbooms.fabrikt.model.QueryParam
 import com.cjbooms.fabrikt.model.RequestParameter
@@ -31,6 +35,7 @@ import com.cjbooms.fabrikt.util.FileUtils.addFileDisclaimer
 import com.cjbooms.fabrikt.util.GroupingStrategy
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.groupedPaths
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSingleResource
+import com.cjbooms.fabrikt.util.capitalized
 import com.cjbooms.fabrikt.util.toUpperCase
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
@@ -38,6 +43,7 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import java.util.logging.Logger
@@ -95,9 +101,24 @@ class SpringControllerInterfaceGenerator(
         path: OpenApiPath,
         op: OpenApiOperation,
         verb: String,
+    ): FunSpec =
+        buildFunction(
+            path,
+            op,
+            verb,
+            methodName = methodName(op, verb, path.pathString.isSingleResource()),
+            returnType = op.toSuccessResponseType(packages.base),
+        )
+
+    private fun buildFunction(
+        path: OpenApiPath,
+        op: OpenApiOperation,
+        verb: String,
+        methodName: String,
+        returnType: TypeName,
+        producesOverride: List<String>? = null,
+        version: String? = null,
     ): FunSpec {
-        val methodName = methodName(op, verb, path.pathString.isSingleResource())
-        val returnType = op.toSuccessResponseType(packages.base)
         val parameters = op.toIncomingParameters(packages.base, path.parameters, emptyList(), validationAnnotations)
         val globalSecurity = api.openApi3.securityRequirements.securitySupport()
 
@@ -108,7 +129,7 @@ class SpringControllerInterfaceGenerator(
                 .addDeprecation(op)
                 .addModifiers(KModifier.ABSTRACT)
                 .addKdoc(op.toKdoc(parameters))
-                .addSpringFunAnnotation(op, verb, path.pathString)
+                .addSpringFunAnnotation(op, verb, path.pathString, producesOverride, version)
                 .addSuspendModifier()
 
         val explicitAsyncSupport = op.extensions[EXTENSION_ASYNC_SUPPORT] as? Boolean
@@ -172,6 +193,80 @@ class SpringControllerInterfaceGenerator(
         return funcSpec.build()
     }
 
+    override fun buildFunctions(
+        path: OpenApiPath,
+        op: OpenApiOperation,
+        verb: String,
+    ): List<FunSpec> {
+        val versioned = op.versionedSuccessMethods()
+        if (versioned.isEmpty()) {
+            if (ControllerCodeGenOptionType.RESPONSE_MEDIA_TYPE_VERSIONS in options &&
+                op.hasAnyVersionedSuccessMediaType()
+            ) {
+                Logger.getGlobal().warning(
+                    "Skipping per-version methods for ${verb.uppercase()} ${path.pathString}: success media types " +
+                        "are not exclusively versioned variants of a single media type. Generated the single aggregate method.",
+                )
+            }
+            return listOf(buildFunction(path, op, verb))
+        }
+        return versioned.map { mediaType ->
+            buildFunction(
+                path,
+                op,
+                verb,
+                methodName =
+                    methodName(op, verb, path.pathString.isSingleResource()) +
+                        "Version" + mediaType.version.toKCodeName().capitalized(),
+                returnType = mediaType.schema.toResponseType(),
+                producesOverride = listOf(mediaType.key),
+                version = mediaType.version,
+            )
+        }
+    }
+
+    private fun OpenApiSchema.toResponseType(): TypeName = toModelType(packages.base, KotlinTypeInfo.fromResponse(this), isNullable)
+
+    private fun OpenApiOperation.versionedSuccessMethods(): List<VersionedSuccessMediaType> {
+        if (ControllerCodeGenOptionType.RESPONSE_MEDIA_TYPE_VERSIONS !in options) return emptyList()
+        val entries = getBodySuccessResponses().flatMap { it.contentMediaTypes.entries }
+        val parsed = entries.mapNotNull { (key, mediaType) -> parseVersionedMediaType(key, mediaType.schema) }
+        val byVersion = parsed.groupBy { it.version }
+        val eligible =
+            parsed.size == entries.size &&
+                parsed.map { it.baseType }.distinct().size == 1 &&
+                byVersion.size >= 2 &&
+                // Several success codes may repeat a version; they must agree on the schema to yield one method.
+                byVersion.values.all { variants -> variants.map { it.schema }.distinct().size == 1 }
+        return if (eligible) byVersion.values.map { it.first() } else emptyList()
+    }
+
+    private fun OpenApiOperation.hasAnyVersionedSuccessMediaType(): Boolean =
+        getBodySuccessResponses().flatMap { it.contentMediaTypes.keys }.any { it.versionParameter() != null }
+
+    private data class VersionedSuccessMediaType(
+        val baseType: String,
+        val version: String,
+        val key: String,
+        val schema: OpenApiSchema,
+    )
+
+    private fun parseVersionedMediaType(
+        key: String,
+        schema: OpenApiSchema,
+    ): VersionedSuccessMediaType? =
+        key.versionParameter()?.let { VersionedSuccessMediaType(key.substringBefore(';').trim(), it, key, schema) }
+
+    /**
+     * The value of the `version` media-type parameter, e.g. `1` for `application/x.example.contributor+json;version=1`.
+     */
+    private fun String.versionParameter(): String? =
+        substringAfter(';', missingDelimiterValue = "")
+            .split(';')
+            .map { it.split('=', limit = 2).map(String::trim) }
+            .firstOrNull { it.size == 2 && it[0] == "version" && it[1].isNotBlank() }
+            ?.get(1)
+
     private val springMultipartFileType = ClassName.bestGuess("org.springframework.web.multipart.MultipartFile")
     private val springMultipartFileTypeList = List::class.asClassName().parameterizedBy(springMultipartFileType)
 
@@ -190,12 +285,15 @@ class SpringControllerInterfaceGenerator(
         op: OpenApiOperation,
         verb: String,
         path: String,
+        producesOverride: List<String>? = null,
+        version: String? = null,
     ): FunSpec.Builder {
         val produces =
-            op.responses
-                .flatMap { it.value.contentMediaTypes.keys }
-                .distinct()
-                .toTypedArray()
+            (
+                producesOverride ?: op.responses
+                    .flatMap { it.value.contentMediaTypes.keys }
+                    .distinct()
+            ).toTypedArray()
 
         val consumes =
             op.requestBody
@@ -218,7 +316,7 @@ class SpringControllerInterfaceGenerator(
             )
         }
 
-        op.springApiVersion(verb, path)?.let { funcAnnotation.addMember("version = %S", it) }
+        (version ?: op.springApiVersion(verb, path))?.let { funcAnnotation.addMember("version = %S", it) }
 
         this.addAnnotation(funcAnnotation.build())
         return this
@@ -231,13 +329,14 @@ class SpringControllerInterfaceGenerator(
         when (val version = extensions[EXTENSION_SPRING_API_VERSION]) {
             null -> null
             is String -> version.ifBlank { null }
-            else ->
-                version.toString().also {
-                    Logger.getGlobal().warning(
-                        "$EXTENSION_SPRING_API_VERSION on ${verb.uppercase()} $path is not a string. Using \"$it\". " +
-                            "Quote the value in the spec to keep it exact.",
-                    )
-                }
+            is Number -> version.toString()
+            else -> {
+                Logger.getGlobal().warning(
+                    "Skipping $EXTENSION_SPRING_API_VERSION on ${verb.uppercase()} $path: only a string or a number " +
+                        "maps to @RequestMapping(version = ...). No version attribute is generated for this operation.",
+                )
+                null
+            }
         }
 
     private fun ParameterSpec.Builder.addSpringParamAnnotation(parameter: RequestParameter): ParameterSpec.Builder =
