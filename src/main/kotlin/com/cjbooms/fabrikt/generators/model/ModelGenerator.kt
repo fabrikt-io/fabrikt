@@ -88,8 +88,6 @@ import com.cjbooms.fabrikt.model.OpenApi3Document as OpenApi3
 import com.cjbooms.fabrikt.model.OpenApiDiscriminator as Discriminator
 import com.cjbooms.fabrikt.model.OpenApiSchema as Schema
 
-private const val MAX_ARRAY_ITEM_DEPTH = 10
-
 class ModelGenerator(
     private val packages: Packages,
     private val sourceApi: SourceApi,
@@ -740,10 +738,9 @@ class ModelGenerator(
         schemaName: String,
         enclosingSchema: Schema,
         apiDocUrl: String,
-        depth: Int = 0,
-    ): Collection<TypeSpec> {
-        if (depth > MAX_ARRAY_ITEM_DEPTH) return emptySet()
-        return schema.itemsSchema.let { items ->
+        seenArraySchemas: Set<String> = emptySet(),
+    ): Collection<TypeSpec> =
+        schema.itemsSchema.let { items ->
             when {
                 items.isInlinedObjectDefinition() || items.isInlinedObjectDefinitionUnderTopLevelArrayDefinition() ->
                     items
@@ -787,18 +784,30 @@ class ModelGenerator(
                         ),
                     )
 
-                items.type == OasType.Array.type && depth < MAX_ARRAY_ITEM_DEPTH ->
-                    buildInlinedListDefinition(items, items.safeName(), enclosingSchema, apiDocUrl, depth + 1)
+                items.type == OasType.Array.type && items.name != null && items.name in seenArraySchemas -> emptySet()
+
+                items.type == OasType.Array.type ->
+                    buildInlinedListDefinition(
+                        items,
+                        items.safeName(),
+                        enclosingSchema,
+                        apiDocUrl,
+                        schema.name?.let { seenArraySchemas + it } ?: seenArraySchemas,
+                    )
 
                 else -> emptySet()
             }
         }
+
+    private fun Schema.captureMissingExternalSchemas(apiDocUrl: String) {
+        captureMissingExternalSchemas(apiDocUrl, mutableSetOf())
     }
 
     private fun Schema.captureMissingExternalSchemas(
         apiDocUrl: String,
-        depth: Int = 0,
+        visited: MutableSet<String>,
     ) {
+        if (!visited.add("${getDocumentUrl()}#${name ?: jsonPathFromRoot}")) return
         nestedSchemas().forEach { schema ->
             val docUrl = schema.getDocumentUrl()
             if (docUrl != apiDocUrl) {
@@ -808,7 +817,7 @@ class ModelGenerator(
                     // skip
                 }
             }
-            if (depth < 10) schema.captureMissingExternalSchemas(apiDocUrl, depth + 1)
+            schema.captureMissingExternalSchemas(apiDocUrl, visited)
         }
     }
 

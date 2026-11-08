@@ -41,8 +41,6 @@ sealed class PropertyInfo {
     open val isInherited: Boolean = false
 
     companion object {
-        private const val MAX_ARRAY_ITEM_DEPTH = 10
-
         data class Settings(
             val markAsInherited: Boolean = false,
             val markReadWriteOnlyOptional: Boolean = true,
@@ -467,7 +465,7 @@ sealed class PropertyInfo {
         override val maxItems: Int? = schema.maxItems
 
         private fun isInlined(): Boolean {
-            val innermost = schema.nestedArrayItems(MAX_ARRAY_ITEM_DEPTH).lastOrNull() ?: return false
+            val innermost = schema.nestedArrayItems().lastOrNull() ?: return false
             return innermost.isInlinedObjectDefinition() ||
                 innermost.isInlinedEnumDefinition() ||
                 innermost.isInlinedDiscriminatedOneOfSuperInterface() ||

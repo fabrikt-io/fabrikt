@@ -839,6 +839,126 @@ class ModelGeneratorTest {
             .doesNotContain("optionalImpossible")
     }
 
+    @Test
+    fun `a list whose items lead back to itself degrades to Any instead of overflowing the stack`() {
+        val spec =
+            """
+            openapi: 3.0.0
+            info:
+              title: Recursive list
+              version: "1.0"
+            paths: {}
+            components:
+              schemas:
+                Tree:
+                  type: object
+                  required: [children]
+                  properties:
+                    children:
+                      ${'$'}ref: '#/components/schemas/TreeList'
+                TreeList:
+                  type: array
+                  items:
+                    ${'$'}ref: '#/components/schemas/TreeList'
+            """.trimIndent()
+
+        val generated = ModelGenerator(Packages("examples.recursiveList"), SourceApi(spec)).generate().toSingleFile()
+
+        assertThat(generated)
+            .contains("public val children: List<Any>")
+            .doesNotContain("class TreeList")
+    }
+
+    @Test
+    fun `mutually recursive lists terminate`() {
+        val spec =
+            """
+            openapi: 3.0.0
+            info:
+              title: Mutually recursive lists
+              version: "1.0"
+            paths: {}
+            components:
+              schemas:
+                Alpha:
+                  type: object
+                  required: [betas]
+                  properties:
+                    betas:
+                      ${'$'}ref: '#/components/schemas/BetaList'
+                BetaList:
+                  type: array
+                  items:
+                    ${'$'}ref: '#/components/schemas/AlphaList'
+                AlphaList:
+                  type: array
+                  items:
+                    ${'$'}ref: '#/components/schemas/BetaList'
+            """.trimIndent()
+
+        val generated =
+            ModelGenerator(Packages("examples.mutuallyRecursiveLists"), SourceApi(spec)).generate().toSingleFile()
+
+        assertThat(generated)
+            .contains("public data class Alpha(")
+            .contains("List<Any>")
+            .doesNotContain("class BetaList")
+            .doesNotContain("class AlphaList")
+    }
+
+    @Test
+    fun `inline list items nested deeper than ten levels keep the same type name`() {
+        val spec =
+            """
+            openapi: 3.0.0
+            info:
+              title: Deeply nested inline list
+              version: "1.0"
+            paths: {}
+            components:
+              schemas:
+                Deep:
+                  type: object
+                  required: [value]
+                  properties:
+                    value:
+                      type: array
+                      items:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            type: array
+                            items:
+                              type: array
+                              items:
+                                type: array
+                                items:
+                                  type: array
+                                  items:
+                                    type: array
+                                    items:
+                                      type: array
+                                      items:
+                                        type: array
+                                        items:
+                                          type: array
+                                          items:
+                                            type: object
+                                            required: [name]
+                                            properties:
+                                              name:
+                                                type: string
+            """.trimIndent()
+
+        val generated =
+            ModelGenerator(Packages("examples.deeplyNestedInlineList"), SourceApi(spec)).generate().toSingleFile()
+
+        assertThat(generated)
+            .contains("public data class DeepValue(")
+            .contains("@Valid DeepValue>")
+    }
+
     private fun Models.toSingleFile(): String {
         val destPackage = if (models.isNotEmpty()) models.first().destinationPackage else ""
         val singleFileBuilder = FileSpec.builder(destPackage, "dummyFilename")

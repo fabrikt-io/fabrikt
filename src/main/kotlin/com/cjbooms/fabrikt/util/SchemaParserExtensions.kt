@@ -80,17 +80,18 @@ object SchemaParserExtensions {
     fun Schema.isInlinedArrayDefinition() = isArrayType() && !isSchemaLess() && this.itemsSchema.isInlinedObjectDefinition()
 
     /** All schemas reached by following `itemsSchema` through nested `array` items, outermost
-     *  first, excluding the array schema itself. */
-    fun Schema.nestedArrayItems(limit: Int = 10): List<Schema> {
+     *  first, excluding the array schema itself. Stops when an item repeats a schema already seen,
+     *  so a list whose items lead back to itself terminates. */
+    fun Schema.nestedArrayItems(): List<Schema> {
         val items = mutableListOf<Schema>()
+        val seen = mutableSetOf<String>()
         var current = this
-        var depth = 0
-        while (current.type == OasType.Array.type && depth < limit) {
+        while (current.type == OasType.Array.type) {
             val next = current.itemsSchema
             if (next.isSchemaAbsent()) break
+            if (!seen.add(next.name ?: next.jsonPathFromRoot)) break
             items.add(next)
             current = next
-            depth++
         }
         return items
     }
