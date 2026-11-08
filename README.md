@@ -15,6 +15,7 @@
   * [Maven](#maven)
   * [Docker](#docker)
 * [Getting the Most from Fabrikt](#getting-the-most-from-fabrikt)
+* [Client authentication](#client-authentication)
 * [Configuration Options](#configuration-options)
 * [Migration Guide](MIGRATION.md)
 * [Original Motivation](#original-motivation)
@@ -74,7 +75,7 @@ The library currently has support for generating:
   * **Micronaut** HTTP annotated controller interfaces
   * **Ktor server** routes and controller interfaces
 
-Client generators offer opt-in header API-key, HTTP Bearer and OAuth2 helpers through `--http-client-opts OPENAPI_API_KEY_AUTHENTICATION`, `OPENAPI_BEARER_AUTHENTICATION` and `OPENAPI_OAUTH2_AUTHENTICATION`. See [Client authentication](CLIENT_AUTHENTICATION.md) for credential providers, operation scopes, security alternatives and examples.
+Client generators can emit an opt-in security declaration through `--http-client-opts OPENAPI_SECURITY`: a scheme dictionary, the effective requirement of every operation, and a pure header resolver. See [Client authentication](#client-authentication).
 
 OpenAPI 3.2 `query` operations are supported by all client targets and by Ktor and Micronaut controllers, including JSON request bodies. OpenFeign requires 13.14 or later and a transport that supports `QUERY`, such as `feign-okhttp`; its default `HttpURLConnection` transport does not. Spring HTTP Interface clients likewise require a suitable transport, such as `JdkClientHttpRequestFactory`. Spring controllers skip `QUERY` operations with a warning because the supported stable Spring versions lack `RequestMethod.QUERY`; implement those routes separately or use another controller target.
 
@@ -271,6 +272,22 @@ Parts use `@RequestPart` with their original names and requiredness. Wrap JSON a
 
 Configure a multipart-capable message converter, such as `AllEncompassingFormHttpMessageConverter`, with the selected Jackson generation's JSON part converter. A standalone JSON converter cannot serialize the complete multipart request. For a `ByteArrayResource`, override `getFilename()` to supply the upload filename. The synchronous `RestClient` adapter is supported; reactive adapter behavior must be verified separately.
 
+## Client authentication
+
+`--http-client-opts OPENAPI_SECURITY` is for APIs that declare more than one way to authenticate, or combine schemes with OR/AND and scopes. It emits one target-neutral `ApiSecurity.kt` in `<base-package>.client`, identical for every `--http-client-target`, containing a scheme dictionary (`schemes`), every operation's effective requirement (`requirements` keyed by the raw `operationId` as written in the spec (e.g. `get_document_by_id`, not the generated `getDocumentById`), and `requirementsByPath` keyed by `"<VERB> <path template>"` for interceptors), and pure `resolve` / `resolveFor` functions that take a `CredentialProvider` and return request headers. The full shape is the golden [`ApiSecurity.kt`](src/test/resources/examples/apiSecurity/client/ApiSecurity.kt); the resolver edge cases are [`ApiSecurityTest`](end2end-tests/okhttp-jackson3/src/test/kotlin/com/cjbooms/fabrikt/ApiSecurityTest.kt). It replaces the former `OPENAPI_API_KEY_AUTHENTICATION`, `OPENAPI_BEARER_AUTHENTICATION` and `OPENAPI_OAUTH2_AUTHENTICATION` options.
+
+If an API uses one fixed scheme, skip the option and pass `additionalHeaders = mapOf("X-API-Key" to key)` directly. The declaration only pays for itself once requirements vary per operation.
+
+An operation uses its own `security` when declared, otherwise the document-level `security`. Entries in the security array are alternatives (OR), schemes inside one entry are AND, `{}` stays an empty alternative, and `security: []` clears requirements.
+
+`resolve` walks the alternatives in order and calls the provider for each `(scheme, scopes)`. An api key becomes `<name>: <key>`; a bearer/OAuth2/OpenIdConnect token becomes `Authorization: Bearer <token>`; basic credentials become `Authorization: Basic <base64>`. An alternative is incomplete when a credential is missing, mismatches its scheme, or two credentials land on the same header name (case-insensitively) with different values; a `null` credential skips that scheme so a later alternative is tried. Return a token that actually grants every requested scope, since Fabrikt cannot verify claims. The first complete alternative wins, and none produces an empty header map: a 401 at the service, deliberately not a throw. For per-call use, `resolveOrThrow` is the same but throws when a requirement has alternatives, none anonymous, and none complete, while still returning an empty map for `security: []` or a `{}` alternative.
+
+`resolveFor(method, path, provider)` resolves a concrete request for interceptors: an exact `"<METHOD> <path>"` match first, then trailing-segment alignment of same-verb templates. Leading path parameters do not earn specificity, because they may be the transport's base path, so a literal-anchored route beats one that would swallow that prefix. Among comparable routes it prefers the longest trusted match and then the fewest wildcards, and returns no headers when two routes tie rather than guessing. A literal base-path prefix is not disambiguated from a matching literal route segment, so strip a known prefix before calling if your base path overlaps a route.
+
+The dictionary is contract data first and a resolver second, so it keeps entries the resolver cannot turn into headers: query/cookie api keys and OAuth2 flow metadata (URLs and scope descriptions) are preserved for callers that need them, while unsupported types such as mutual TLS are omitted with a warning; only header api keys and bearer/basic/OpenIdConnect tokens resolve to headers here. Generated clients gain no new parameters. Feeding headers in is the caller's job through `additionalHeaders: Map<String, String>` (OkHttp, OpenFeign), `additionalHeaders: Map<String, Any>` (Spring HTTP Interface), or `ApiConfiguration.customHeaders` (Ktor), or by calling `resolveFor` from a transport interceptor (OkHttp `Interceptor`, Ktor `onRequest`, Spring `ExchangeFilterFunction`, Feign `RequestInterceptor`). End-to-end wiring is shown by the OkHttp [`ApiSecurityClientWiringTest`](end2end-tests/okhttp-jackson3/src/test/kotlin/com/cjbooms/fabrikt/ApiSecurityClientWiringTest.kt) and Ktor [`ApiSecurityClientWiringTest`](end2end-tests/ktor-client-jackson/src/test/kotlin/com/cjbooms/fabrikt/clients/ApiSecurityClientWiringTest.kt) tests.
+
+HTTP Basic, query/cookie api keys, mutual TLS and proxies belong to the native client (OkHttp `Authenticator`, Feign `BasicAuthRequestInterceptor`, Spring `ExchangeFilterFunctions.basicAuthentication`, Ktor `Auth`). Headers used to fetch a remote `--api-file` or `$ref` are separate (`--auth`). Fabrikt acquires no tokens and applies no interceptor.
+
 ## Configuration Options
 
 This section documents the available CLI parameters for controlling what gets generated. This documentation is generated using: `./gradlew printCodeGenUsage`
@@ -303,9 +320,7 @@ Usage: <main class> [options]
 |                                         |   `OKHTTP_NON_NULL_RESPONSE_PAYLOADS` - This option makes ApiResponse.data non-null. Responses declared with a body must return one: a missing body, or one that deserializes to null, throws ApiException. An operation that declares both a body response and an empty success response (e.g. 200 and 204) throws on the empty success. Binary responses return an empty ByteArray for an empty body (only for OkHttp clients) |
 |                                         |   `RESPONSE_MEDIA_TYPE_FUNCTIONS` - This option adds, for each operation whose success responses declare a different JSON schema per media type, one function per media type. The function always sends that media type as the Accept header and returns that schema's type instead of JsonNode. Its name is the operation's function name plus the media subtype, e.g. getItemsVndCustomJson for application/vnd.custom+json (only for OkHttp, OpenFeign and Spring HTTP Interface clients) |
 |                                         |   `DYNAMIC_BASE_URL` - This option makes ApiConfiguration.basePath empty, allowing you to set the base URL at runtime (only for Ktor clients) |
-|                                         |   `OPENAPI_API_KEY_AUTHENTICATION` - Adds header API-key helpers and complete security alternatives with enabled Bearer and OAuth2 schemes |
-|                                         |   `OPENAPI_BEARER_AUTHENTICATION` - Adds operation-specific Bearer token helpers for OpenAPI HTTP Bearer security schemes |
-|                                         |   `OPENAPI_OAUTH2_AUTHENTICATION` - Adds operation-specific OAuth2 access-token helpers that pass required scopes to a caller-provided token provider |
+|                                         |   `OPENAPI_SECURITY` - Emits a scheme-agnostic security declaration (scheme dictionary, per-operation requirements) and a single header resolver |
 |   `--http-client-target`                | Optionally select the target client that you want to be generated. Defaults to OK_HTTP |
 |                                         | CHOOSE ONE OF: |
 |                                         |   `OK_HTTP` - Generate OkHttp client. |

@@ -59,9 +59,6 @@ class SpringHttpInterfaceGenerator(
     private val api: SourceApi,
     private val srcPath: java.nio.file.Path = Destinations.MAIN_KT_SOURCE,
 ) : ClientGenerator {
-    private val bearerSecurity = ClientBearerSecurity(api.openApi3)
-    private val oauth2Security = ClientOAuth2Security(api.openApi3)
-
     override fun generate(options: Set<ClientCodeGenOptionType>): Clients {
         val clientTypes =
             api
@@ -72,22 +69,6 @@ class SpringHttpInterfaceGenerator(
                             .flatMap { (resource, path) ->
                                 api.requestOperations(path).flatMap { (verb, operation) ->
                                     val parameters = deriveClientParameters(path, operation, packages.base)
-                                    val headerPlans = ClientHeaderApiKeySecurity(api.openApi3).forOperation(operation, options)
-                                    val securityPlan =
-                                        if (headerPlans == null && ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
-                                            bearerSecurity.forOperation(operation)
-                                        } else {
-                                            null
-                                        }
-                                    val oauth2Plan =
-                                        if (headerPlans == null &&
-                                            ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION in
-                                            options
-                                        ) {
-                                            oauth2Security.forOperation(operation)
-                                        } else {
-                                            null
-                                        }
                                     val baseName = functionName(operation, resource, verb)
                                     val baseFunction =
                                         ClientFunction(
@@ -127,17 +108,9 @@ class SpringHttpInterfaceGenerator(
                                                 isMediaTypeFunction = true,
                                             )
                                         }
-                                    (
-                                        listOf(
-                                            listOf(baseFunction),
-                                        ) + mediaTypeFunctions.map { listOf(it) }
-                                    ).map {
-                                        if (headerPlans != null) {
-                                            it.withHeaderSecurityWrappers(headerPlans)
-                                        } else {
-                                            it.withBearerTokenWrapper(securityPlan).withOAuth2TokenWrapper(oauth2Plan)
-                                        }
-                                    }
+                                    listOf(
+                                        listOf(baseFunction),
+                                    ) + mediaTypeFunctions.map { listOf(it) }
                                 }
                             }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 

@@ -65,8 +65,6 @@ class OkHttpSimpleClientGenerator(
     private val srcPath: Path = Destinations.MAIN_KT_SOURCE,
 ) {
     private val multipartParameterToSpecBuilder = ClientGeneratorUtils.MultipartParameterToSpecBuilder(packages.client)
-    private val bearerSecurity = ClientBearerSecurity(api.openApi3)
-    private val oauth2Security = ClientOAuth2Security(api.openApi3)
 
     fun generateDynamicClientCode(options: Set<ClientCodeGenOptionType> = emptySet()): Collection<ClientType> =
         api
@@ -77,22 +75,6 @@ class OkHttpSimpleClientGenerator(
                         .flatMap { (resource, path) ->
                             api.requestOperations(path).flatMap { (verb, operation) ->
                                 val parameters = deriveClientParameters(path, operation, packages.base)
-                                val headerPlans = ClientHeaderApiKeySecurity(api.openApi3).forOperation(operation, options)
-                                val securityPlan =
-                                    if (headerPlans == null && ClientCodeGenOptionType.OPENAPI_BEARER_AUTHENTICATION in options) {
-                                        bearerSecurity.forOperation(operation)
-                                    } else {
-                                        null
-                                    }
-                                val oauth2Plan =
-                                    if (headerPlans == null &&
-                                        ClientCodeGenOptionType.OPENAPI_OAUTH2_AUTHENTICATION in
-                                        options
-                                    ) {
-                                        oauth2Security.forOperation(operation)
-                                    } else {
-                                        null
-                                    }
                                 val baseName = functionName(operation, resource, verb)
                                 val baseFunction =
                                     ClientFunction(
@@ -134,17 +116,9 @@ class OkHttpSimpleClientGenerator(
                                             isMediaTypeFunction = true,
                                         )
                                     }
-                                (
-                                    listOf(
-                                        listOf(baseFunction),
-                                    ) + mediaTypeFunctions.map { listOf(it) }
-                                ).map {
-                                    if (headerPlans != null) {
-                                        it.withHeaderSecurityWrappers(headerPlans)
-                                    } else {
-                                        it.withBearerTokenWrapper(securityPlan).withOAuth2TokenWrapper(oauth2Plan)
-                                    }
-                                }
+                                listOf(
+                                    listOf(baseFunction),
+                                ) + mediaTypeFunctions.map { listOf(it) }
                             }
                         }.withoutCollidingMediaTypeFunctions(simpleClientName(resourceName))
 

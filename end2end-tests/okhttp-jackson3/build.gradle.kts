@@ -8,8 +8,10 @@ val compositionExternalGenerationDir = "$buildDir/generated-composition-external
 val compositionRefinementsGenerationDir = "$buildDir/generated-composition-refinements"
 val compositionRequestProjectionGenerationDir = "$buildDir/generated-composition-requestprojection"
 val compositionResponseProjectionGenerationDir = "$buildDir/generated-composition-responseprojection"
+val securityGenerationDir = "$buildDir/generated-security"
 val apiFile = "${rootProject.projectDir}/src/test/resources/examples/okHttpClient/api.yaml"
 val nullableApiFile = "${rootProject.projectDir}/src/test/resources/examples/customExtensions/api.yaml"
+val securityApiFile = "${rootProject.projectDir}/src/test/resources/examples/apiSecurity/api.yaml"
 
 sourceSets {
     main {
@@ -22,6 +24,7 @@ sourceSets {
             "$compositionRefinementsGenerationDir/src/main/kotlin",
             "$compositionRequestProjectionGenerationDir/src/main/kotlin",
             "$compositionResponseProjectionGenerationDir/src/main/kotlin",
+            "$securityGenerationDir/src/main/kotlin",
         )
     }
     test { java.srcDirs("$generationDir/src/test/kotlin") }
@@ -174,6 +177,24 @@ tasks {
         dependsOn(":shadowJar")
     }
 
+    val generateSecurityCode by creating(JavaExec::class) {
+        inputs.files(securityApiFile)
+        outputs.dir(securityGenerationDir)
+        outputs.cacheIf { true }
+        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        mainClass.set("io.fabrikt.cli.CodeGen")
+        args = listOf(
+            "--output-directory", securityGenerationDir,
+            "--base-package", "com.example.apisecurity",
+            "--api-file", securityApiFile,
+            "--targets", "client",
+            "--http-client-opts", "OPENAPI_SECURITY",
+            "--serialization-library", "jackson_3",
+        )
+        dependsOn(":jar")
+        dependsOn(":shadowJar")
+    }
+
     val generateNullableCode by creating(JavaExec::class) {
         inputs.files(nullableApiFile)
         outputs.dir(nullableGenerationDir)
@@ -195,6 +216,7 @@ tasks {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         dependsOn(generateCode)
         dependsOn(generateNullableCode)
+        dependsOn(generateSecurityCode)
         dependsOn(generateCompositionCode)
         dependsOn(generateCompositionUnionsCode)
         dependsOn(generateCompositionExternalCode)

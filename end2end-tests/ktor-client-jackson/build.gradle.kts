@@ -1,9 +1,10 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 val generationDir = "$buildDir/generated"
+val securityGenerationDir = "$buildDir/generated-security"
 
 sourceSets {
-    main { java.srcDirs("$generationDir/src/main/kotlin") }
+    main { java.srcDirs("$generationDir/src/main/kotlin", "$securityGenerationDir/src/main/kotlin") }
     test { java.srcDirs("$generationDir/src/test/kotlin") }
 }
 
@@ -43,31 +44,47 @@ tasks {
         "src/test/resources/examples/ktorClient/api.yaml"
     )
 
+    val generateSecurityCode =
+        createGenerateCodeTask(
+            "generateKtorSecurityCode",
+            "src/test/resources/examples/apiSecurity/api.yaml",
+            basePackage = "com.example.apisecurity",
+            outputDir = securityGenerationDir,
+            additionalArgs = listOf("--http-client-opts", "OPENAPI_SECURITY"),
+        )
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
         dependsOn(generateCode)
+        dependsOn(generateSecurityCode)
     }
 
     withType<Test> {
         useJUnitPlatform()
         jvmArgs = listOf("--add-opens=java.base/java.lang=ALL-UNNAMED", "--add-opens=java.base/java.util=ALL-UNNAMED")
         dependsOn(generateCode)
+        dependsOn(generateSecurityCode)
     }
 }
 
-fun createGenerateCodeTask(name: String, apiFilePath: String, additionalArgs: List<String> = emptyList()) =
-    tasks.create(name, JavaExec::class) {
+fun createGenerateCodeTask(
+    name: String,
+    apiFilePath: String,
+    basePackage: String = "com.example",
+    outputDir: String = generationDir,
+    additionalArgs: List<String> = emptyList(),
+) = tasks.create(name, JavaExec::class) {
     val apiFile = "${rootProject.projectDir}/$apiFilePath"
     inputs.files(apiFile)
-    outputs.dir(generationDir)
+    outputs.dir(outputDir)
     outputs.cacheIf { true }
     classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
     mainClass.set("io.fabrikt.cli.CodeGen")
     args = listOf(
-        "--output-directory", generationDir,
-        "--base-package", "com.example",
+        "--output-directory", outputDir,
+        "--base-package", basePackage,
         "--api-file", apiFile,
         "--targets", "http_models",
         "--targets", "client",

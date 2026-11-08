@@ -1,0 +1,198 @@
+openapi: 3.0.3
+info:
+  title: Security declaration
+  version: '1.0'
+security:
+  - ApiKeyAuth: []
+paths:
+  /documents:
+    get:
+      operationId: getDocuments
+      responses:
+        '200':
+          description: OK
+    post:
+      operationId: createDocument
+      security:
+        - ApiKeyAuth: []
+          OAuth: [read:documents, write:documents]
+      responses:
+        '201':
+          description: Created
+  /documents/{id}:
+    get:
+      operationId: get_document_by_id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - BearerAuth: []
+        - BasicAuth: []
+      responses:
+        '200':
+          description: OK
+    delete:
+      operationId: deleteDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security: []
+      responses:
+        '204':
+          description: Deleted
+  /sub/documents/{id}:
+    get:
+      operationId: getSubDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+  /teams/{id}:
+    get:
+      operationId: getTeam
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+  /{name}/members:
+    get:
+      operationId: listMembers
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+  /{tenant}/documents/{id}:
+    get:
+      operationId: getTenantDocument
+      parameters:
+        - name: tenant
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - TenantKey: []
+      responses:
+        '200':
+          description: OK
+  /conflict:
+    get:
+      operationId: getHeaderConflict
+      security:
+        - ApiKeyAuth: []
+          SecondKey: []
+        - ApiKeyAuth: []
+          CaseKey: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+  /session:
+    get:
+      operationId: getSession
+      security:
+        - OpenId: []
+      responses:
+        '200':
+          description: OK
+  /reports:
+    get:
+      operationId: getReports
+      security:
+        - QueryKey: []
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: OK
+  /status:
+    get:
+      operationId: getStatus
+      security:
+        - {}
+        - OAuth: [read:documents]
+      responses:
+        '200':
+          description: OK
+  /anonymous:
+    get:
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    OAuth:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://example.com/oauth/token
+          scopes:
+            read:documents: Read documents
+            write:documents: Write documents
+        authorizationCode:
+          authorizationUrl: https://example.com/oauth/authorize
+          tokenUrl: https://example.com/oauth/token
+          refreshUrl: https://example.com/oauth/refresh
+          scopes:
+            read:documents: Read documents
+    BasicAuth:
+      type: http
+      scheme: basic
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    OpenId:
+      type: openIdConnect
+      openIdConnectUrl: https://example.com/.well-known/openid-configuration
+    QueryKey:
+      type: apiKey
+      in: query
+      name: api_key
+    SecondKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    CaseKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+    TenantKey:
+      type: apiKey
+      in: header
+      name: X-Tenant-Key
