@@ -71,6 +71,7 @@ public interface ContributorsController {
         value = ["/contributors"],
         produces = ["application/json"],
         method = [RequestMethod.GET],
+        version = "2",
     )
     public fun searchContributors(
         @Min(1) @Max(100) @RequestParam(value = "limit", required = false, defaultValue = "10") limit: Int,
@@ -115,6 +116,7 @@ public interface ContributorsController {
         value = ["/contributors/{id}"],
         produces = ["application/json"],
         method = [RequestMethod.GET],
+        version = "1.1+",
     )
     public fun getContributor(
         @PathVariable(value = "id", required = true) id: String,

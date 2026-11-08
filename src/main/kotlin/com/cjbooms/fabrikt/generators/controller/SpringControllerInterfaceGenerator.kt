@@ -51,6 +51,7 @@ class SpringControllerInterfaceGenerator(
     ControllerInterfaceGenerator {
     companion object {
         private const val EXTENSION_ASYNC_SUPPORT = "x-async-support"
+        private const val EXTENSION_SPRING_API_VERSION = "x-spring-api-version"
     }
 
     private val addAuthenticationParameter: Boolean
@@ -217,9 +218,27 @@ class SpringControllerInterfaceGenerator(
             )
         }
 
+        op.springApiVersion(verb, path)?.let { funcAnnotation.addMember("version = %S", it) }
+
         this.addAnnotation(funcAnnotation.build())
         return this
     }
+
+    private fun OpenApiOperation.springApiVersion(
+        verb: String,
+        path: String,
+    ): String? =
+        when (val version = extensions[EXTENSION_SPRING_API_VERSION]) {
+            null -> null
+            is String -> version.ifBlank { null }
+            else ->
+                version.toString().also {
+                    Logger.getGlobal().warning(
+                        "$EXTENSION_SPRING_API_VERSION on ${verb.uppercase()} $path is not a string. Using \"$it\". " +
+                            "Quote the value in the spec to keep it exact.",
+                    )
+                }
+        }
 
     private fun ParameterSpec.Builder.addSpringParamAnnotation(parameter: RequestParameter): ParameterSpec.Builder =
         when (parameter.parameterLocation) {

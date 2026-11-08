@@ -481,4 +481,30 @@ class SpringControllerGeneratorTest {
         assertThat(controllers).contains("fun getEvents(")
         assertThat(controllers).doesNotContain("eventsV2GetEvents")
     }
+
+    @Test
+    fun `uses the text of a non-string x-spring-api-version`() {
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /events:
+                get:
+                  operationId: getEvents
+                  x-spring-api-version: 2
+                  responses:
+                    '200':
+                      description: Success
+            """.trimIndent()
+
+        val controllers =
+            SpringControllerInterfaceGenerator(Packages(basePackage), SourceApi(spec), JavaxValidationAnnotations)
+                .generate()
+                .toSingleFile()
+
+        assertThat(controllers).contains("version = \"2\"")
+    }
 }
