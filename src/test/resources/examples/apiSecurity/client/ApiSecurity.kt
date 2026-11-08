@@ -109,7 +109,7 @@ public sealed interface Credential {
  */
 public object ApiSecurity {
     /**
-     * Security schemes keyed by their component name. Includes schemes no header resolver satisfies (query/cookie keys, mutual TLS); those are kept as contract data.
+     * Security schemes keyed by their component name. Header api keys and bearer/basic/OpenID Connect tokens resolve to headers; query/cookie keys are kept as contract data. Unsupported types such as mutualTLS are omitted with a warning, since they are transport-level, not headers.
      */
     public val schemes: Map<String, SecurityScheme> =
         mapOf(
@@ -392,8 +392,9 @@ public object ApiSecurity {
     /**
      * Resolves the requirement for one concrete request. Exact "METHOD /path" match first, then
      * trailing-segment alignment of same-verb templates; a leading path parameter never earns
-     * specificity because it may be the transport's base path. Two equally specific routes, or a
-     * provider that yields nothing, produce an empty map, never a throw.
+     * specificity because it may be the transport's base path. A literal base-path prefix is not
+     * disambiguated from a matching literal route segment, so strip a known prefix first. Two equally
+     * specific routes, or a provider that yields nothing, produce an empty map, never a throw.
      */
     public fun resolveFor(
         method: String,
@@ -501,7 +502,8 @@ public fun SecurityRequirement.resolve(
         val headers = linkedMapOf<String, String>()
         var complete = true
         for ((schemeName, scopes) in alternative) {
-            val resolved = credentialHeaders(schemes[schemeName], provider(schemeName, scopes))
+            val scheme = schemes[schemeName]
+            val resolved = if (scheme == null) null else credentialHeaders(scheme, provider(schemeName, scopes))
             if (resolved == null) {
                 complete = false
                 break

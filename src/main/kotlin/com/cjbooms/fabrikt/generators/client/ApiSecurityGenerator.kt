@@ -282,8 +282,9 @@ class ApiSecurityGenerator(
                     .builder("schemes", MAP.parameterizedBy(STRING, securitySchemeClassName))
                     .addModifiers(KModifier.PUBLIC)
                     .addKdoc(
-                        "Security schemes keyed by their component name. Includes schemes no header resolver " +
-                            "satisfies (query/cookie keys, mutual TLS); those are kept as contract data.",
+                        "Security schemes keyed by their component name. Header api keys and bearer/basic/OpenID " +
+                            "Connect tokens resolve to headers; query/cookie keys are kept as contract data. Unsupported " +
+                            "types such as mutualTLS are omitted with a warning, since they are transport-level, not headers.",
                     ).initializer(schemesCode())
                     .build(),
             ).addProperty(
@@ -343,7 +344,15 @@ class ApiSecurityGenerator(
                     else -> CodeBlock.of("%T.Http(%S, %S)", securitySchemeClassName, httpScheme, scheme.bearerFormat)
                 }
             }
-            "oauth2" -> CodeBlock.of("%T.OAuth2(%L)", securitySchemeClassName, oauth2FlowsCode(scheme.oauth2Flows))
+            "oauth2" -> {
+                if (scheme.oauth2Flows.isEmpty()) {
+                    Logger.getGlobal().warning(
+                        "OAuth2 scheme '$name' declares no resolvable flows; its URLs and scopes may be declared via \$ref, " +
+                            "which is not resolved.",
+                    )
+                }
+                CodeBlock.of("%T.OAuth2(%L)", securitySchemeClassName, oauth2FlowsCode(scheme.oauth2Flows))
+            }
             "openidconnect" -> {
                 val url = scheme.openIdConnectUrl
                 if (url == null) omittedScheme(name, scheme) else CodeBlock.of("%T.OpenIdConnect(%S)", securitySchemeClassName, url)
@@ -446,8 +455,9 @@ class ApiSecurityGenerator(
             .addKdoc(
                 "Resolves the requirement for one concrete request. Exact \"METHOD /path\" match first, then\n" +
                     "trailing-segment alignment of same-verb templates; a leading path parameter never earns\n" +
-                    "specificity because it may be the transport's base path. Two equally specific routes, or a\n" +
-                    "provider that yields nothing, produce an empty map, never a throw.",
+                    "specificity because it may be the transport's base path. A literal base-path prefix is not\n" +
+                    "disambiguated from a matching literal route segment, so strip a known prefix first. Two equally\n" +
+                    "specific routes, or a provider that yields nothing, produce an empty map, never a throw.",
             ).addParameter("method", STRING)
             .addParameter("path", STRING)
             .addParameter("provider", providerType)
@@ -497,7 +507,8 @@ class ApiSecurityGenerator(
               val headers = linkedMapOf<String, String>()
               var complete = true
               for ((schemeName, scopes) in alternative) {
-                val resolved = credentialHeaders(schemes[schemeName], provider(schemeName, scopes))
+                val scheme = schemes[schemeName]
+                val resolved = if (scheme == null) null else credentialHeaders(scheme, provider(schemeName, scopes))
                 if (resolved == null) {
                   complete = false
                   break
