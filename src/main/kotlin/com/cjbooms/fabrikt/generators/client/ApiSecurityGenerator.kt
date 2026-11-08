@@ -54,13 +54,25 @@ class ApiSecurityGenerator(
             returnType = credentialClassName.copy(nullable = true),
         )
 
-    fun generate(): FileSpec =
-        FileSpec
+    fun generate(): FileSpec {
+        val locationType =
+            enum(
+                "Location",
+                listOf("HEADER", "QUERY", "COOKIE"),
+                kdoc = "Where an api key travels. HEADER resolves to a request header; QUERY and COOKIE do not.",
+            )
+        val flowType =
+            enum(
+                "Flow",
+                listOf("CLIENT_CREDENTIALS", "AUTHORIZATION_CODE", "IMPLICIT", "PASSWORD"),
+                kdoc = "OAuth2 flow names, preserved from the spec as data.",
+            )
+        return FileSpec
             .builder(packages.client, "ApiSecurity")
             .addImport("java.util", "Base64")
             .addType(securitySchemeInterface())
-            .addType(enum("Location", listOf("HEADER", "QUERY", "COOKIE")))
-            .addType(enum("Flow", listOf("CLIENT_CREDENTIALS", "AUTHORIZATION_CODE", "IMPLICIT", "PASSWORD")))
+            .addType(locationType)
+            .addType(flowType)
             .addType(oauth2FlowDataClass())
             .addType(securityRequirementDataClass())
             .addType(credentialInterface())
@@ -69,6 +81,7 @@ class ApiSecurityGenerator(
             .addFunction(resolveFunction())
             .build()
             .withVisibility()
+    }
 
     private class ConstructorProperty(
         val name: String,
@@ -121,12 +134,16 @@ class ApiSecurityGenerator(
         TypeSpec
             .interfaceBuilder("SecurityScheme")
             .addModifiers(KModifier.SEALED, KModifier.PUBLIC)
-            .addType(
+            .addKdoc(
+                "One entry in the schemes dictionary. Only header api keys and bearer/basic/OpenID Connect " +
+                    "tokens resolve to request headers here; the other shapes are contract data.",
+            ).addType(
                 dataClass(
                     "Http",
                     ConstructorProperty("scheme", STRING),
                     ConstructorProperty("bearerFormat", STRING.copy(nullable = true), CodeBlock.of("null")),
                     parent = securitySchemeClassName,
+                    kdoc = "RFC 7235 HTTP scheme. 'bearer' and 'basic' resolve to headers; other values do not.",
                 ),
             ).addType(
                 dataClass(
@@ -134,18 +151,21 @@ class ApiSecurityGenerator(
                     ConstructorProperty("location", locationClassName),
                     ConstructorProperty("name", STRING),
                     parent = securitySchemeClassName,
+                    kdoc = "Key in a header, query or cookie. Only the header location resolves to a request header.",
                 ),
             ).addType(
                 dataClass(
                     "OAuth2",
                     ConstructorProperty("flows", MAP.parameterizedBy(flowClassName, oauth2FlowClassName)),
                     parent = securitySchemeClassName,
+                    kdoc = "OAuth2 scheme. The flows are metadata; the resolver turns a token into a Bearer header.",
                 ),
             ).addType(
                 dataClass(
                     "OpenIdConnect",
                     ConstructorProperty("openIdConnectUrl", STRING),
                     parent = securitySchemeClassName,
+                    kdoc = "OpenID Connect discovery document. The resolver treats it as a Bearer token source.",
                 ),
             ).build()
 
@@ -153,11 +173,15 @@ class ApiSecurityGenerator(
         TypeSpec
             .interfaceBuilder("Credential")
             .addModifiers(KModifier.SEALED, KModifier.PUBLIC)
-            .addType(
+            .addKdoc(
+                "What the caller's provider returns for one scheme. A token becomes a Bearer header, " +
+                    "basic credentials the Basic header, and an api key its header name.",
+            ).addType(
                 dataClass(
                     "Token",
                     ConstructorProperty("token", STRING),
                     parent = credentialClassName,
+                    kdoc = "Access token, without the Bearer prefix.",
                 ),
             ).addType(
                 dataClass(
@@ -165,12 +189,14 @@ class ApiSecurityGenerator(
                     ConstructorProperty("username", STRING),
                     ConstructorProperty("password", STRING),
                     parent = credentialClassName,
+                    kdoc = "Username and password for HTTP Basic.",
                 ),
             ).addType(
                 dataClass(
                     "ApiKey",
                     ConstructorProperty("key", STRING),
                     parent = credentialClassName,
+                    kdoc = "The key value sent under the scheme's header name.",
                 ),
             ).build()
 
@@ -181,6 +207,7 @@ class ApiSecurityGenerator(
             ConstructorProperty("tokenUrl", STRING.copy(nullable = true)),
             ConstructorProperty("refreshUrl", STRING.copy(nullable = true)),
             ConstructorProperty("scopes", MAP.parameterizedBy(STRING, STRING)),
+            kdoc = "One OAuth2 flow: its endpoints and scope descriptions. Contract data; never consumed by the resolver.",
         )
 
     private fun securityRequirementDataClass(): TypeSpec =
@@ -190,12 +217,16 @@ class ApiSecurityGenerator(
                 "alternatives",
                 LIST.parameterizedBy(MAP.parameterizedBy(STRING, SET.parameterizedBy(STRING))),
             ),
+            kdoc =
+                "One operation's effective requirement. Each entry in alternatives is an OR option; the " +
+                    "scheme-to-scopes map inside an entry is an AND group. An empty list means security: [].",
         )
 
     private fun dataClass(
         name: String,
         vararg properties: ConstructorProperty,
         parent: ClassName? = null,
+        kdoc: String? = null,
     ): TypeSpec {
         val constructor =
             FunSpec
@@ -213,6 +244,7 @@ class ApiSecurityGenerator(
         return TypeSpec
             .classBuilder(name)
             .addModifiers(KModifier.DATA, KModifier.PUBLIC)
+            .apply { kdoc?.let { addKdoc(it) } }
             .primaryConstructor(constructor)
             .addProperties(
                 properties.map { property ->
@@ -229,10 +261,12 @@ class ApiSecurityGenerator(
     private fun enum(
         name: String,
         constants: List<String>,
+        kdoc: String? = null,
     ): TypeSpec =
         TypeSpec
             .enumBuilder(name)
             .addModifiers(KModifier.PUBLIC)
+            .apply { kdoc?.let { addKdoc(it) } }
             .apply { constants.forEach { addEnumConstant(it, TypeSpec.anonymousClassBuilder().build()) } }
             .build()
 
@@ -240,23 +274,35 @@ class ApiSecurityGenerator(
         TypeSpec
             .objectBuilder("ApiSecurity")
             .addModifiers(KModifier.PUBLIC)
-            .addProperty(
+            .addKdoc(
+                "The security declaration for this API. Contract data only: nothing here sends a request or " +
+                    "attaches credentials. Feed the maps and resolver results into the client yourself.",
+            ).addProperty(
                 PropertySpec
                     .builder("schemes", MAP.parameterizedBy(STRING, securitySchemeClassName))
                     .addModifiers(KModifier.PUBLIC)
-                    .initializer(schemesCode())
+                    .addKdoc(
+                        "Security schemes keyed by their component name. Includes schemes no header resolver " +
+                            "satisfies (query/cookie keys, mutual TLS); those are kept as contract data.",
+                    ).initializer(schemesCode())
                     .build(),
             ).addProperty(
                 PropertySpec
                     .builder("requirements", MAP.parameterizedBy(STRING, securityRequirementClassName))
                     .addModifiers(KModifier.PUBLIC)
-                    .initializer(requirementsCode(byPath = false))
+                    .addKdoc(
+                        "Every operation's effective requirement, keyed by the raw operationId, or by " +
+                            "\"VERB /path\" when an operation has none. Keys do not change under naming options.",
+                    ).initializer(requirementsCode(byPath = false))
                     .build(),
             ).addProperty(
                 PropertySpec
                     .builder("requirementsByPath", MAP.parameterizedBy(STRING, securityRequirementClassName))
                     .addModifiers(KModifier.PUBLIC)
-                    .initializer(requirementsCode(byPath = true))
+                    .addKdoc(
+                        "The same requirements keyed by \"VERB /path template\", for transport interceptors " +
+                            "that only know a method and a path.",
+                    ).initializer(requirementsCode(byPath = true))
                     .build(),
             ).addFunction(resolveForFunction())
             .build()
@@ -397,7 +443,12 @@ class ApiSecurityGenerator(
         FunSpec
             .builder("resolveFor")
             .addModifiers(KModifier.PUBLIC)
-            .addParameter("method", STRING)
+            .addKdoc(
+                "Resolves the requirement for one concrete request. Exact \"METHOD /path\" match first, then\n" +
+                    "trailing-segment alignment of same-verb templates; a leading path parameter never earns\n" +
+                    "specificity because it may be the transport's base path. Two equally specific routes, or a\n" +
+                    "provider that yields nothing, produce an empty map, never a throw.",
+            ).addParameter("method", STRING)
             .addParameter("path", STRING)
             .addParameter("provider", providerType)
             .returns(headerMapType)
@@ -408,7 +459,12 @@ class ApiSecurityGenerator(
         FunSpec
             .builder("resolve")
             .addModifiers(KModifier.PUBLIC)
-            .receiver(securityRequirementClassName)
+            .addKdoc(
+                "Turns this requirement and caller credentials into request headers. Alternatives are tried in\n" +
+                    "order; a null credential, a credential that mismatches its scheme, or two credentials on the\n" +
+                    "same header name (case-insensitively) with different values make that alternative incomplete.\n" +
+                    "The first complete alternative's headers are returned, otherwise an empty map.",
+            ).receiver(securityRequirementClassName)
             .addParameter("schemes", MAP.parameterizedBy(STRING, securitySchemeClassName))
             .addParameter("provider", providerType)
             .returns(headerMapType)

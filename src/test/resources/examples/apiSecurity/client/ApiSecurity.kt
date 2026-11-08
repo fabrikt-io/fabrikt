@@ -6,32 +6,53 @@ import kotlin.collections.List
 import kotlin.collections.Map
 import kotlin.collections.Set
 
+/**
+ * One entry in the schemes dictionary. Only header api keys and bearer/basic/OpenID Connect tokens resolve to request headers here; the other shapes are contract data.
+ */
 public sealed interface SecurityScheme {
+    /**
+     * RFC 7235 HTTP scheme. 'bearer' and 'basic' resolve to headers; other values do not.
+     */
     public data class Http(
         public val scheme: String,
         public val bearerFormat: String? = null,
     ) : SecurityScheme
 
+    /**
+     * Key in a header, query or cookie. Only the header location resolves to a request header.
+     */
     public data class ApiKey(
         public val location: Location,
         public val name: String,
     ) : SecurityScheme
 
+    /**
+     * OAuth2 scheme. The flows are metadata; the resolver turns a token into a Bearer header.
+     */
     public data class OAuth2(
         public val flows: Map<Flow, OAuth2Flow>,
     ) : SecurityScheme
 
+    /**
+     * OpenID Connect discovery document. The resolver treats it as a Bearer token source.
+     */
     public data class OpenIdConnect(
         public val openIdConnectUrl: String,
     ) : SecurityScheme
 }
 
+/**
+ * Where an api key travels. HEADER resolves to a request header; QUERY and COOKIE do not.
+ */
 public enum class Location {
     HEADER,
     QUERY,
     COOKIE,
 }
 
+/**
+ * OAuth2 flow names, preserved from the spec as data.
+ */
 public enum class Flow {
     CLIENT_CREDENTIALS,
     AUTHORIZATION_CODE,
@@ -39,6 +60,9 @@ public enum class Flow {
     PASSWORD,
 }
 
+/**
+ * One OAuth2 flow: its endpoints and scope descriptions. Contract data; never consumed by the resolver.
+ */
 public data class OAuth2Flow(
     public val authorizationUrl: String?,
     public val tokenUrl: String?,
@@ -46,26 +70,47 @@ public data class OAuth2Flow(
     public val scopes: Map<String, String>,
 )
 
+/**
+ * One operation's effective requirement. Each entry in alternatives is an OR option; the scheme-to-scopes map inside an entry is an AND group. An empty list means security: [].
+ */
 public data class SecurityRequirement(
     public val alternatives: List<Map<String, Set<String>>>,
 )
 
+/**
+ * What the caller's provider returns for one scheme. A token becomes a Bearer header, basic credentials the Basic header, and an api key its header name.
+ */
 public sealed interface Credential {
+    /**
+     * Access token, without the Bearer prefix.
+     */
     public data class Token(
         public val token: String,
     ) : Credential
 
+    /**
+     * Username and password for HTTP Basic.
+     */
     public data class Basic(
         public val username: String,
         public val password: String,
     ) : Credential
 
+    /**
+     * The key value sent under the scheme's header name.
+     */
     public data class ApiKey(
         public val key: String,
     ) : Credential
 }
 
+/**
+ * The security declaration for this API. Contract data only: nothing here sends a request or attaches credentials. Feed the maps and resolver results into the client yourself.
+ */
 public object ApiSecurity {
+    /**
+     * Security schemes keyed by their component name. Includes schemes no header resolver satisfies (query/cookie keys, mutual TLS); those are kept as contract data.
+     */
     public val schemes: Map<String, SecurityScheme> =
         mapOf(
             "ApiKeyAuth" to SecurityScheme.ApiKey(Location.HEADER, "X-API-Key"),
@@ -104,6 +149,9 @@ public object ApiSecurity {
             "TenantKey" to SecurityScheme.ApiKey(Location.HEADER, "X-Tenant-Key"),
         )
 
+    /**
+     * Every operation's effective requirement, keyed by the raw operationId, or by "VERB /path" when an operation has none. Keys do not change under naming options.
+     */
     public val requirements: Map<String, SecurityRequirement> =
         mapOf(
             "deleteDocument" to SecurityRequirement(emptyList()),
@@ -221,6 +269,9 @@ public object ApiSecurity {
                 ),
         )
 
+    /**
+     * The same requirements keyed by "VERB /path template", for transport interceptors that only know a method and a path.
+     */
     public val requirementsByPath: Map<String, SecurityRequirement> =
         mapOf(
             "DELETE /documents/{id}" to SecurityRequirement(emptyList()),
@@ -338,6 +389,12 @@ public object ApiSecurity {
                 ),
         )
 
+    /**
+     * Resolves the requirement for one concrete request. Exact "METHOD /path" match first, then
+     * trailing-segment alignment of same-verb templates; a leading path parameter never earns
+     * specificity because it may be the transport's base path. Two equally specific routes, or a
+     * provider that yields nothing, produce an empty map, never a throw.
+     */
     public fun resolveFor(
         method: String,
         path: String,
@@ -429,6 +486,12 @@ private fun credentialHeaders(
     }
 }
 
+/**
+ * Turns this requirement and caller credentials into request headers. Alternatives are tried in
+ * order; a null credential, a credential that mismatches its scheme, or two credentials on the
+ * same header name (case-insensitively) with different values make that alternative incomplete.
+ * The first complete alternative's headers are returned, otherwise an empty map.
+ */
 public fun SecurityRequirement.resolve(
     schemes: Map<String, SecurityScheme>,
     provider: (scheme: String, scopes: Set<String>) -> Credential?,
