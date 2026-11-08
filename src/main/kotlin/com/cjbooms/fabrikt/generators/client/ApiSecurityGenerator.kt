@@ -214,7 +214,8 @@ class ApiSecurityGenerator(
                     .addModifiers(KModifier.PUBLIC, KModifier.ABSTRACT)
                     .addKdoc(
                         "Provides the credential for the named security scheme. The scopes are those the " +
-                            "operation requires for that scheme; returning null skips the alternative.",
+                            "operation requires for that scheme; returning null skips the alternative. The returned " +
+                            "token must actually grant every requested scope, since the resolver cannot verify claims.",
                     ).addParameter("scheme", STRING)
                     .addParameter("scopes", SET.parameterizedBy(STRING))
                     .returns(credentialClassName.copy(nullable = true))
@@ -314,7 +315,8 @@ class ApiSecurityGenerator(
                     .addModifiers(KModifier.PUBLIC)
                     .addKdoc(
                         "Every operation's effective requirement, keyed by the raw operationId, or by " +
-                            "\"VERB /path\" when an operation has none. Keys do not change under naming options.",
+                            "\"VERB /path\" when an operation has none. The key is the spec's operationId as written " +
+                            "(e.g. get_document_by_id), not the generated method name (getDocumentById).",
                     ).initializer(requirementsCode(byPath = false))
                     .build(),
             ).addProperty(
@@ -508,8 +510,9 @@ class ApiSecurityGenerator(
             .builder("resolveOrThrow")
             .addModifiers(KModifier.PUBLIC)
             .addKdoc(
-                "Like [resolve], but throws when this requirement has alternatives yet none complete. An\n" +
-                    "empty requirement (security: []) still returns an empty map rather than throwing.",
+                "Like [resolve], but throws when this requirement has alternatives, none is anonymous, and\n" +
+                    "none complete. security: [] and requirements with an anonymous {} alternative return an\n" +
+                    "empty map rather than throwing.",
             ).receiver(securityRequirementClassName)
             .addParameter("schemes", MAP.parameterizedBy(STRING, securitySchemeClassName))
             .addParameter("provider", credentialProviderClassName)
@@ -517,7 +520,7 @@ class ApiSecurityGenerator(
             .addCode(
                 """
                 val headers = resolve(schemes, provider)
-                check(headers.isNotEmpty() || alternatives.isEmpty()) {
+                check(headers.isNotEmpty() || alternatives.isEmpty() || alternatives.any { it.isEmpty() }) {
                   "Credentials for a complete security alternative are required for this operation"
                 }
                 return headers

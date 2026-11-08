@@ -31,7 +31,7 @@ class ApiSecurityGeneratorTest {
         val generated = generate()
 
         assertThat(generated).contains("\"get_document_by_id\" to")
-        assertThat(generated).doesNotContain("getDocumentById")
+        assertThat(generated).doesNotContain("\"getDocumentById\" to")
     }
 
     @Test

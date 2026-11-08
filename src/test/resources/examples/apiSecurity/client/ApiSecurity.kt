@@ -114,7 +114,7 @@ public sealed interface Credential {
  */
 public fun interface CredentialProvider {
     /**
-     * Provides the credential for the named security scheme. The scopes are those the operation requires for that scheme; returning null skips the alternative.
+     * Provides the credential for the named security scheme. The scopes are those the operation requires for that scheme; returning null skips the alternative. The returned token must actually grant every requested scope, since the resolver cannot verify claims.
      */
     public fun provide(
         scheme: String,
@@ -168,7 +168,7 @@ public object ApiSecurity {
         )
 
     /**
-     * Every operation's effective requirement, keyed by the raw operationId, or by "VERB /path" when an operation has none. Keys do not change under naming options.
+     * Every operation's effective requirement, keyed by the raw operationId, or by "VERB /path" when an operation has none. The key is the spec's operationId as written (e.g. get_document_by_id), not the generated method name (getDocumentById).
      */
     public val requirements: Map<String, SecurityRequirement> =
         mapOf(
@@ -562,15 +562,16 @@ public fun SecurityRequirement.resolve(
 }
 
 /**
- * Like [resolve], but throws when this requirement has alternatives yet none complete. An
- * empty requirement (security: []) still returns an empty map rather than throwing.
+ * Like [resolve], but throws when this requirement has alternatives, none is anonymous, and
+ * none complete. security: [] and requirements with an anonymous {} alternative return an
+ * empty map rather than throwing.
  */
 public fun SecurityRequirement.resolveOrThrow(
     schemes: Map<String, SecurityScheme>,
     provider: CredentialProvider,
 ): Map<String, String> {
     val headers = resolve(schemes, provider)
-    check(headers.isNotEmpty() || alternatives.isEmpty()) {
+    check(headers.isNotEmpty() || alternatives.isEmpty() || alternatives.any { it.isEmpty() }) {
         "Credentials for a complete security alternative are required for this operation"
     }
     return headers

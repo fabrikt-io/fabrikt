@@ -311,6 +311,9 @@ class ApiSecurityTest {
 
         val anonymous = ApiSecurity.requirements.getValue("deleteDocument")
         assertThat(anonymous.resolveOrThrow(ApiSecurity.schemes, noCredentials)).isEmpty()
+
+        val optional = ApiSecurity.requirements.getValue("getStatus")
+        assertThat(optional.resolveOrThrow(ApiSecurity.schemes, noCredentials)).isEmpty()
     }
 
     @Test
