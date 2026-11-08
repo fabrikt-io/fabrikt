@@ -16,8 +16,6 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-val springBootVersion = "3.4.3"
-
 dependencies {
     implementation(platform(libs.jackson.bom))
     implementation(libs.jakarta.validation.api)
@@ -26,14 +24,15 @@ dependencies {
     implementation(libs.jackson.core)
     implementation(libs.jackson.annotations)
 
-    // Spring Boot
-    implementation("org.springframework.boot:spring-boot-starter-web:$springBootVersion")
+    // Spring Boot 4 / Spring Framework 7
+    implementation(libs.spring.boot.starter.web)
 
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.bundles.junit)
     testImplementation(libs.assertj.core)
     testImplementation(libs.hibernate.validator)
-    testImplementation("org.springframework.boot:spring-boot-starter-test:$springBootVersion")
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.boot.webmvc.test)
 }
 
 tasks {

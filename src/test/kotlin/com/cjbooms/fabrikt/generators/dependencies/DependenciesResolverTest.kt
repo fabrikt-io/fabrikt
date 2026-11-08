@@ -62,7 +62,7 @@ class DependenciesResolverTest {
 
             assertThat(dependencies).isEqualTo(
                 defaultDependencies() +
-                    "COMPILE org.springframework:spring-webmvc:6.1.0",
+                    "COMPILE org.springframework:spring-webmvc:7.0.10",
             )
         }
 
@@ -201,7 +201,7 @@ class DependenciesResolverTest {
                     listOf(
                         "COMPILE com.squareup.okhttp3:okhttp:5.5.0",
                         "COMPILE org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0",
-                        "COMPILE org.springframework:spring-web:6.1.0",
+                        "COMPILE org.springframework:spring-web:7.0.10",
                         "COMPILE org.springframework.cloud:spring-cloud-starter-openfeign:5.0.3",
                     ),
             )
@@ -225,7 +225,7 @@ class DependenciesResolverTest {
                             "COMPILE io.github.openfeign:feign-core:13.17"
                     ClientCodeGenTargetType.SPRING_HTTP_INTERFACE ->
                         defaultDependencies() +
-                            "COMPILE org.springframework:spring-web:6.1.0"
+                            "COMPILE org.springframework:spring-web:7.0.10"
                     ClientCodeGenTargetType.KTOR ->
                         defaultDependencies() +
                             listOf(
@@ -249,7 +249,7 @@ class DependenciesResolverTest {
             assertThat(dependencies).isEqualTo(
                 defaultDependencies() +
                     listOf(
-                        "COMPILE org.springframework:spring-webmvc:6.1.0",
+                        "COMPILE org.springframework:spring-webmvc:7.0.10",
                         "COMPILE org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0",
                     ),
             )
@@ -267,7 +267,7 @@ class DependenciesResolverTest {
                 when (target) {
                     ControllerCodeGenTargetType.SPRING ->
                         defaultDependencies() +
-                            "COMPILE org.springframework:spring-webmvc:6.1.0"
+                            "COMPILE org.springframework:spring-webmvc:7.0.10"
                     ControllerCodeGenTargetType.MICRONAUT ->
                         defaultDependencies() +
                             listOf(
