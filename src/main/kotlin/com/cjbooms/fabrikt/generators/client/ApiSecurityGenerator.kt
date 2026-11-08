@@ -78,6 +78,7 @@ class ApiSecurityGenerator(
             .addType(credentialInterface())
             .addType(apiSecurityObject())
             .addFunction(credentialHeadersFunction())
+            .addFunction(headerValueFunction())
             .addFunction(resolveFunction())
             .build()
             .withVisibility()
@@ -471,9 +472,10 @@ class ApiSecurityGenerator(
             .addModifiers(KModifier.PUBLIC)
             .addKdoc(
                 "Turns this requirement and caller credentials into request headers. Alternatives are tried in\n" +
-                    "order; a null credential, a credential that mismatches its scheme, or two credentials on the\n" +
-                    "same header name (case-insensitively) with different values make that alternative incomplete.\n" +
-                    "The first complete alternative's headers are returned, otherwise an empty map.",
+                    "order; a null credential, a credential that mismatches its scheme, a blank token, an api-key\n" +
+                    "value containing control characters, or two credentials on the same header name\n" +
+                    "(case-insensitively) with different values make that alternative incomplete. The first\n" +
+                    "complete alternative's headers are returned, otherwise an empty map.",
             ).receiver(securityRequirementClassName)
             .addParameter("schemes", MAP.parameterizedBy(STRING, securitySchemeClassName))
             .addParameter("provider", providerType)
@@ -490,6 +492,17 @@ class ApiSecurityGenerator(
             .returns(headerMapType.copy(nullable = true))
             .addCode(CREDENTIAL_HEADERS_BODY)
             .build()
+
+    private fun headerValueFunction(): FunSpec =
+        FunSpec
+            .builder("headerValue")
+            .addModifiers(KModifier.PRIVATE)
+            .addParameter("value", STRING)
+            .returns(STRING.copy(nullable = true))
+            .addCode(
+                "return value.takeIf { candidate -> candidate.isNotBlank() && " +
+                    "candidate.none { character -> character.code < 32 || character.code == 127 } }\n",
+            ).build()
 
     companion object {
         private val OAUTH2_FLOW_NAMES =
@@ -591,14 +604,14 @@ class ApiSecurityGenerator(
             return when (scheme) {
               is SecurityScheme.ApiKey ->
                 if (scheme.location == Location.HEADER && credential is Credential.ApiKey) {
-                  mapOf(scheme.name to credential.key)
+                  headerValue(credential.key)?.let { mapOf(scheme.name to it) }
                 } else {
                   null
                 }
               is SecurityScheme.Http ->
                 when (scheme.scheme.lowercase()) {
                   "bearer" ->
-                    if (credential is Credential.Token) mapOf("Authorization" to "Bearer " + credential.token) else null
+                    if (credential is Credential.Token) headerValue(credential.token)?.let { mapOf("Authorization" to "Bearer " + it) } else null
                   "basic" ->
                     if (credential is Credential.Basic) {
                       mapOf(
@@ -614,9 +627,9 @@ class ApiSecurityGenerator(
                   else -> null
                 }
               is SecurityScheme.OAuth2 ->
-                if (credential is Credential.Token) mapOf("Authorization" to "Bearer " + credential.token) else null
+                if (credential is Credential.Token) headerValue(credential.token)?.let { mapOf("Authorization" to "Bearer " + it) } else null
               is SecurityScheme.OpenIdConnect ->
-                if (credential is Credential.Token) mapOf("Authorization" to "Bearer " + credential.token) else null
+                if (credential is Credential.Token) headerValue(credential.token)?.let { mapOf("Authorization" to "Bearer " + it) } else null
             }
             """.trimIndent()
     }

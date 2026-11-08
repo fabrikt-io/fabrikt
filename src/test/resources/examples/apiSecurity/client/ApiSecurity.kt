@@ -458,14 +458,20 @@ private fun credentialHeaders(
     return when (scheme) {
         is SecurityScheme.ApiKey ->
             if (scheme.location == Location.HEADER && credential is Credential.ApiKey) {
-                mapOf(scheme.name to credential.key)
+                headerValue(credential.key)?.let { mapOf(scheme.name to it) }
             } else {
                 null
             }
         is SecurityScheme.Http ->
             when (scheme.scheme.lowercase()) {
                 "bearer" ->
-                    if (credential is Credential.Token) mapOf("Authorization" to "Bearer " + credential.token) else null
+                    if (credential is Credential.Token) {
+                        headerValue(
+                            credential.token,
+                        )?.let { mapOf("Authorization" to "Bearer " + it) }
+                    } else {
+                        null
+                    }
                 "basic" ->
                     if (credential is Credential.Basic) {
                         mapOf(
@@ -481,17 +487,24 @@ private fun credentialHeaders(
                 else -> null
             }
         is SecurityScheme.OAuth2 ->
-            if (credential is Credential.Token) mapOf("Authorization" to "Bearer " + credential.token) else null
+            if (credential is Credential.Token) headerValue(credential.token)?.let { mapOf("Authorization" to "Bearer " + it) } else null
         is SecurityScheme.OpenIdConnect ->
-            if (credential is Credential.Token) mapOf("Authorization" to "Bearer " + credential.token) else null
+            if (credential is Credential.Token) headerValue(credential.token)?.let { mapOf("Authorization" to "Bearer " + it) } else null
     }
 }
 
+private fun headerValue(`value`: String): String? =
+    value.takeIf { candidate ->
+        candidate.isNotBlank() &&
+            candidate.none { character -> character.code < 32 || character.code == 127 }
+    }
+
 /**
  * Turns this requirement and caller credentials into request headers. Alternatives are tried in
- * order; a null credential, a credential that mismatches its scheme, or two credentials on the
- * same header name (case-insensitively) with different values make that alternative incomplete.
- * The first complete alternative's headers are returned, otherwise an empty map.
+ * order; a null credential, a credential that mismatches its scheme, a blank token, an api-key
+ * value containing control characters, or two credentials on the same header name
+ * (case-insensitively) with different values make that alternative incomplete. The first
+ * complete alternative's headers are returned, otherwise an empty map.
  */
 public fun SecurityRequirement.resolve(
     schemes: Map<String, SecurityScheme>,

@@ -289,6 +289,17 @@ class ApiSecurityTest {
     }
 
     @Test
+    fun `blank tokens and control-character values are incomplete`() {
+        val apiKeyed = ApiSecurity.requirements.getValue("getDocuments")
+        assertThat(apiKeyed.resolve(ApiSecurity.schemes) { _, _ -> Credential.ApiKey("") }).isEmpty()
+        assertThat(apiKeyed.resolve(ApiSecurity.schemes) { _, _ -> Credential.ApiKey("a\nb") }).isEmpty()
+
+        val bearer = ApiSecurity.requirements.getValue("get_document_by_id")
+        assertThat(bearer.resolve(ApiSecurity.schemes) { _, _ -> Credential.Token("") }).isEmpty()
+        assertThat(bearer.resolve(ApiSecurity.schemes) { _, _ -> Credential.Token("token\u0001") }).isEmpty()
+    }
+
+    @Test
     fun `resolveFor returns no headers for an unknown route`() {
         assertThat(ApiSecurity.resolveFor("GET", "/unknown") { _, _ -> Credential.ApiKey("secret") }).isEmpty()
         assertThat(ApiSecurity.resolveFor("GET", "/documents/42/extra") { _, _ -> Credential.ApiKey("secret") }).isEmpty()
