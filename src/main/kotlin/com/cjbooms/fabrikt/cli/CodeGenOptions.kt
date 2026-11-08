@@ -203,7 +203,10 @@ enum class ControllerCodeGenOptionType(
     COMPLETION_STAGE(
         "This option makes generated controller functions have Type CompletionStage<T> (works only with Spring Controller generator). Can be overridden per operation using the OpenAPI extension `x-async-support: true|false`",
     ),
-    SSE_EMITTER("This option makes generated controller functions have Type SseEmitter (works only with Spring Controller generator)"), ;
+    SSE_EMITTER("This option makes generated controller functions have Type SseEmitter (works only with Spring Controller generator)"),
+    RESPONSE_MEDIA_TYPE_VERSIONS(
+        "This option emits one abstract method per API version for an operation whose success responses are versioned variants of a single media type (keys carrying a `version` parameter), each with a narrow `produces` and `@RequestMapping(version = \"...\")` (works only with Spring Controller generator)",
+    ), ;
 
     override fun toString() = "`${super.toString()}` - $description"
 

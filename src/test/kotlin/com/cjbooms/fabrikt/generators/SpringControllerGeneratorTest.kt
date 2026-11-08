@@ -481,4 +481,308 @@ class SpringControllerGeneratorTest {
         assertThat(controllers).contains("fun getEvents(")
         assertThat(controllers).doesNotContain("eventsV2GetEvents")
     }
+
+    @Test
+    fun `splits versioned success media types into one method per version`() {
+        val controllers =
+            generateControllersWithVersioningOption(VERSIONED_CONTRIBUTOR_SPEC)
+
+        assertThat(controllers)
+            .contains("fun getContributorVersion1(")
+            .contains("fun getContributorVersion2(")
+            .doesNotContain("fun getContributor(")
+        assertThat(controllers)
+            .contains("""produces = ["application/x.example.contributor+json;version=1"]""")
+            .contains("""produces = ["application/x.example.contributor+json;version=2"]""")
+            .contains("""version = "1"""")
+            .contains("""version = "2"""")
+            .contains("ResponseEntity<ContributorV1>")
+            .contains("ResponseEntity<Contributor>")
+    }
+
+    @Test
+    fun `does not split non-versioned multi-schema success responses`() {
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /contributors/{id}:
+                get:
+                  operationId: getContributor
+                  parameters:
+                    - name: id
+                      in: path
+                      required: true
+                      schema:
+                        type: string
+                  responses:
+                    '200':
+                      description: Success
+                      content:
+                        application/json:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/Contributor'
+                        application/xml:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/ContributorXml'
+            components:
+              schemas:
+                Contributor:
+                  type: object
+                  required: [id]
+                  properties:
+                    id:
+                      type: string
+                ContributorXml:
+                  type: object
+                  required: [name]
+                  properties:
+                    name:
+                      type: string
+            """.trimIndent()
+
+        val controllers = generateControllersWithVersioningOption(spec)
+
+        assertThat(controllers)
+            .contains("fun getContributor(")
+            .doesNotContain("Version1")
+            .doesNotContain("version = ")
+    }
+
+    @Test
+    fun `keeps single method when versioned and unversioned media types mix`() {
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /contributors/{id}:
+                get:
+                  operationId: getContributor
+                  parameters:
+                    - name: id
+                      in: path
+                      required: true
+                      schema:
+                        type: string
+                  responses:
+                    '200':
+                      description: Success
+                      content:
+                        application/x.example.contributor+json;version=1:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/ContributorV1'
+                        application/json:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/Contributor'
+            components:
+              schemas:
+                ContributorV1:
+                  type: object
+                  required: [id]
+                  properties:
+                    id:
+                      type: string
+                Contributor:
+                  type: object
+                  required: [name]
+                  properties:
+                    name:
+                      type: string
+            """.trimIndent()
+
+        val controllers = generateControllersWithVersioningOption(spec)
+
+        assertThat(controllers)
+            .contains("fun getContributor(")
+            .doesNotContain("Version1")
+            .doesNotContain("version = ")
+    }
+
+    @Test
+    fun `emits one method per version when several success codes repeat the versions`() {
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /contributors/{id}:
+                get:
+                  operationId: getContributor
+                  parameters:
+                    - name: id
+                      in: path
+                      required: true
+                      schema:
+                        type: string
+                  responses:
+                    '200':
+                      description: Success
+                      content:
+                        application/x.example.contributor+json;version=1:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/ContributorV1'
+                        application/x.example.contributor+json;version=2:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/Contributor'
+                    '201':
+                      description: Created
+                      content:
+                        application/x.example.contributor+json;version=1:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/ContributorV1'
+                        application/x.example.contributor+json;version=2:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/Contributor'
+            components:
+              schemas:
+                ContributorV1:
+                  type: object
+                  required: [id]
+                  properties:
+                    id:
+                      type: string
+                Contributor:
+                  type: object
+                  required: [name]
+                  properties:
+                    name:
+                      type: string
+            """.trimIndent()
+
+        val controllers = generateControllersWithVersioningOption(spec)
+
+        assertThat(controllers)
+            .containsOnlyOnce("fun getContributorVersion1(")
+            .containsOnlyOnce("fun getContributorVersion2(")
+    }
+
+    @Test
+    fun `emits the text of a numeric x-spring-api-version`() {
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /events:
+                get:
+                  operationId: getEvents
+                  x-spring-api-version: 2
+                  responses:
+                    '200':
+                      description: Success
+            """.trimIndent()
+
+        val controllers =
+            SpringControllerInterfaceGenerator(Packages(basePackage), SourceApi(spec), JavaxValidationAnnotations)
+                .generate()
+                .toSingleFile()
+
+        assertThat(controllers).contains("version = \"2\"")
+    }
+
+    @Test
+    fun `skips a non-scalar x-spring-api-version`() {
+        val spec =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /events:
+                get:
+                  operationId: getEvents
+                  x-spring-api-version:
+                    - "1.0"
+                    - "2.0"
+                  responses:
+                    '200':
+                      description: Success
+              /flags:
+                get:
+                  operationId: getFlags
+                  x-spring-api-version: true
+                  responses:
+                    '200':
+                      description: Success
+            """.trimIndent()
+
+        val controllers =
+            SpringControllerInterfaceGenerator(Packages(basePackage), SourceApi(spec), JavaxValidationAnnotations)
+                .generate()
+                .toSingleFile()
+
+        assertThat(controllers)
+            .contains("fun getEvents(")
+            .contains("fun getFlags(")
+            .doesNotContain("version = ")
+    }
+
+    private fun generateControllersWithVersioningOption(spec: String): String =
+        SpringControllerInterfaceGenerator(
+            Packages(basePackage),
+            SourceApi(spec),
+            JavaxValidationAnnotations,
+            setOf(ControllerCodeGenOptionType.RESPONSE_MEDIA_TYPE_VERSIONS),
+        ).generate().toSingleFile()
+
+    private companion object {
+        private val VERSIONED_CONTRIBUTOR_SPEC =
+            """
+            openapi: "3.0.0"
+            info:
+              title: Test API
+              version: "1.0"
+            paths:
+              /contributors/{id}:
+                get:
+                  operationId: getContributor
+                  parameters:
+                    - name: id
+                      in: path
+                      required: true
+                      schema:
+                        type: string
+                  responses:
+                    '200':
+                      description: Success
+                      content:
+                        application/x.example.contributor+json;version=1:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/ContributorV1'
+                        application/x.example.contributor+json;version=2:
+                          schema:
+                            ${'$'}ref: '#/components/schemas/Contributor'
+            components:
+              schemas:
+                ContributorV1:
+                  type: object
+                  required: [id, name]
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                Contributor:
+                  type: object
+                  required: [id, name, role]
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    role:
+                      type: string
+            """.trimIndent()
+    }
 }
