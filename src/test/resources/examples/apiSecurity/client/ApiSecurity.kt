@@ -542,3 +542,18 @@ public fun SecurityRequirement.resolve(
     }
     return emptyMap()
 }
+
+/**
+ * Like [resolve], but throws when this requirement has alternatives yet none complete. An
+ * empty requirement (security: []) still returns an empty map rather than throwing.
+ */
+public fun SecurityRequirement.resolveOrThrow(
+    schemes: Map<String, SecurityScheme>,
+    provider: (scheme: String, scopes: Set<String>) -> Credential?,
+): Map<String, String> {
+    val headers = resolve(schemes, provider)
+    check(headers.isNotEmpty() || alternatives.isEmpty()) {
+        "Credentials for a complete security alternative are required for this operation"
+    }
+    return headers
+}

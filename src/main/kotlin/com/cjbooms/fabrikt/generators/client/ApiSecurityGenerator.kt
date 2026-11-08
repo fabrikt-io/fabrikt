@@ -80,6 +80,7 @@ class ApiSecurityGenerator(
             .addFunction(credentialHeadersFunction())
             .addFunction(headerValueFunction())
             .addFunction(resolveFunction())
+            .addFunction(resolveOrThrowFunction())
             .build()
             .withVisibility()
     }
@@ -482,6 +483,27 @@ class ApiSecurityGenerator(
             .returns(headerMapType)
             .addCode(RESOLVE_BODY)
             .build()
+
+    private fun resolveOrThrowFunction(): FunSpec =
+        FunSpec
+            .builder("resolveOrThrow")
+            .addModifiers(KModifier.PUBLIC)
+            .addKdoc(
+                "Like [resolve], but throws when this requirement has alternatives yet none complete. An\n" +
+                    "empty requirement (security: []) still returns an empty map rather than throwing.",
+            ).receiver(securityRequirementClassName)
+            .addParameter("schemes", MAP.parameterizedBy(STRING, securitySchemeClassName))
+            .addParameter("provider", providerType)
+            .returns(headerMapType)
+            .addCode(
+                """
+                val headers = resolve(schemes, provider)
+                check(headers.isNotEmpty() || alternatives.isEmpty()) {
+                  "Credentials for a complete security alternative are required for this operation"
+                }
+                return headers
+                """.trimIndent(),
+            ).build()
 
     private fun credentialHeadersFunction(): FunSpec =
         FunSpec

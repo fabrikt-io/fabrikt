@@ -8,8 +8,10 @@ import com.example.apisecurity.client.OAuth2Flow
 import com.example.apisecurity.client.SecurityRequirement
 import com.example.apisecurity.client.SecurityScheme
 import com.example.apisecurity.client.resolve
+import com.example.apisecurity.client.resolveOrThrow
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class ApiSecurityTest {
     private val noCredentials: (String, Set<String>) -> Credential? = { _, _ -> null }
@@ -297,6 +299,17 @@ class ApiSecurityTest {
         val bearer = ApiSecurity.requirements.getValue("get_document_by_id")
         assertThat(bearer.resolve(ApiSecurity.schemes) { _, _ -> Credential.Token("") }).isEmpty()
         assertThat(bearer.resolve(ApiSecurity.schemes) { _, _ -> Credential.Token("token\u0001") }).isEmpty()
+    }
+
+    @Test
+    fun `resolveOrThrow throws only when a required alternative fails`() {
+        val required = ApiSecurity.requirements.getValue("getDocuments")
+        assertThrows<IllegalStateException> { required.resolveOrThrow(ApiSecurity.schemes, noCredentials) }
+        assertThat(required.resolveOrThrow(ApiSecurity.schemes) { _, _ -> Credential.ApiKey("secret") })
+            .containsExactlyEntriesOf(mapOf("X-API-Key" to "secret"))
+
+        val anonymous = ApiSecurity.requirements.getValue("deleteDocument")
+        assertThat(anonymous.resolveOrThrow(ApiSecurity.schemes, noCredentials)).isEmpty()
     }
 
     @Test
