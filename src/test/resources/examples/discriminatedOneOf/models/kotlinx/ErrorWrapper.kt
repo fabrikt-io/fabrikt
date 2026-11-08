@@ -1,11 +1,11 @@
 package examples.discriminatedOneOf.models
 
-import kotlin.Any
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 public data class ErrorWrapper(
   @SerialName("error")
-  public val error: Any? = null,
+  public val error: JsonElement? = null,
 )

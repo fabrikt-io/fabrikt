@@ -85,8 +85,7 @@ tasks {
     val generateAnyAsJsonElementCodeTask = createGenerateCodeTask(
         "generateAnyAsJsonElementCode",
         "${rootProject.projectDir}/src/test/resources/examples/anyAsJsonElement/api.yaml",
-        "com.example.jsonelement",
-        listOf("--type-overrides", "ANY_AS_JSONELEMENT")
+        "com.example.jsonelement"
     )
 
     val generateCompositionRefinementsCodeTask = createGenerateCodeTask(
