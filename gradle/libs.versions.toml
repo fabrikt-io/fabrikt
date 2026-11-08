@@ -24,8 +24,9 @@ flogger = "0.9"
 ktor = "3.0.1"
 
 # Spring
-spring-boot = "3.4.3"
-spring-framework = "6.1.0"
+spring-boot = "4.0.9"
+spring-framework = "7.0.10"
+spring-security = "7.0.8"
 spring-cloud-openfeign = "5.0.3"
 
 # Micronaut
@@ -101,8 +102,10 @@ jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api",
 spring-web = { module = "org.springframework:spring-web", version.ref = "spring-framework" }
 spring-webmvc = { module = "org.springframework:spring-webmvc", version.ref = "spring-framework" }
 spring-test = { module = "org.springframework:spring-test", version.ref = "spring-framework" }
-spring-security-web = { module = "org.springframework.security:spring-security-web", version.ref = "spring-framework" }
+spring-security-web = { module = "org.springframework.security:spring-security-web", version.ref = "spring-security" }
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+spring-boot-webmvc-test = { module = "org.springframework.boot:spring-boot-webmvc-test", version.ref = "spring-boot" }
 spring-cloud-starter-openfeign = { module = "org.springframework.cloud:spring-cloud-starter-openfeign", version.ref = "spring-cloud-openfeign" }
 micronaut-core = { module = "io.micronaut:micronaut-core", version.ref = "micronaut" }
 micronaut-http = { module = "io.micronaut:micronaut-http", version.ref = "micronaut" }
