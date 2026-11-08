@@ -1,5 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+val fabriktCliJar = rootProject.tasks.named("shadowJar").map { it.outputs.files.singleFile }
+
 val generationDir = "$buildDir/generated"
 val nullableGenerationDir = "$buildDir/generated-nullable"
 val compositionGenerationDir = "$buildDir/generated-composition"
@@ -58,7 +60,7 @@ tasks {
         val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionRefinements/api.yaml"
         inputs.files(spec)
         outputs.dir(compositionRefinementsGenerationDir)
-        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        classpath = rootProject.files(fabriktCliJar)
         mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", compositionRefinementsGenerationDir,
@@ -76,7 +78,7 @@ tasks {
         val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionRequestProjection/api.yaml"
         inputs.files(spec)
         outputs.dir(compositionRequestProjectionGenerationDir)
-        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        classpath = rootProject.files(fabriktCliJar)
         mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", compositionRequestProjectionGenerationDir,
@@ -94,7 +96,7 @@ tasks {
         val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionResponseProjection/api.yaml"
         inputs.files(spec)
         outputs.dir(compositionResponseProjectionGenerationDir)
-        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        classpath = rootProject.files(fabriktCliJar)
         mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", compositionResponseProjectionGenerationDir,
@@ -112,7 +114,7 @@ tasks {
         val specDir = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionExternal"
         inputs.files(fileTree(specDir) { include("**/*.yaml") })
         outputs.dir(compositionExternalGenerationDir)
-        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        classpath = rootProject.files(fabriktCliJar)
         mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", compositionExternalGenerationDir,
@@ -129,7 +131,7 @@ tasks {
         val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionUnions/api.yaml"
         inputs.files(spec)
         outputs.dir(compositionUnionsGenerationDir)
-        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        classpath = rootProject.files(fabriktCliJar)
         mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", compositionUnionsGenerationDir,
@@ -146,7 +148,7 @@ tasks {
         val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionContracts/api.yaml"
         inputs.files(spec)
         outputs.dir(compositionGenerationDir)
-        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        classpath = rootProject.files(fabriktCliJar)
         mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", compositionGenerationDir,
@@ -163,7 +165,7 @@ tasks {
         inputs.files(apiFile)
         outputs.dir(generationDir)
         outputs.cacheIf { true }
-        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        classpath = rootProject.files(fabriktCliJar)
         mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", generationDir,
@@ -181,7 +183,7 @@ tasks {
         inputs.files(securityApiFile)
         outputs.dir(securityGenerationDir)
         outputs.cacheIf { true }
-        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        classpath = rootProject.files(fabriktCliJar)
         mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", securityGenerationDir,
@@ -199,7 +201,7 @@ tasks {
         inputs.files(nullableApiFile)
         outputs.dir(nullableGenerationDir)
         outputs.cacheIf { true }
-        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        classpath = rootProject.files(fabriktCliJar)
         mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", nullableGenerationDir,

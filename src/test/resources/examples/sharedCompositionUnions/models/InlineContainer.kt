@@ -21,6 +21,12 @@ public data class InlineContainer(
   @param:JsonProperty("entries")
   @get:JsonProperty("entries")
   public val entries: List<@Valid InlineContainerEntries>? = null,
+  @param:JsonProperty("deduced")
+  @get:JsonProperty("deduced")
+  public val deduced: List<@Valid InlineContainerDeduced>? = null,
+  @param:JsonProperty("matrix")
+  @get:JsonProperty("matrix")
+  public val matrix: List<List<@Valid InlineContainerMatrix>>? = null,
   @param:JsonProperty("nested")
   @get:JsonProperty("nested")
   @get:Valid

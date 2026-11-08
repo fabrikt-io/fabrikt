@@ -15,6 +15,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedDiscriminatedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedTypedAdditionalProperties
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterfaceWithDiscriminator
@@ -167,6 +168,7 @@ sealed class KotlinTypeInfo(
             oasKey: String = "",
             enclosingSchema: OpenApiSchema? = null,
             direction: ModelDirection? = null,
+            seenArraySchemas: Set<String> = emptySet(),
         ): KotlinTypeInfo {
             MutableSettings.customTypeMappings
                 .find {
@@ -187,7 +189,9 @@ sealed class KotlinTypeInfo(
                 )
                 return fallbackType
             }
-            schema.singleAggregatedEnumAliasSchema()?.let { return from(it, oasKey, enclosingSchema, direction = direction) }
+            schema.singleAggregatedEnumAliasSchema()?.let {
+                return from(it, oasKey, enclosingSchema, direction = direction, seenArraySchemas = seenArraySchemas)
+            }
             if (schema.isUnsupportedComplexInlinedDefinition() && !ModelNameRegistry.hasPreRegisteredReference(schema)) {
                 /*
                  * Defaults to Any for complex schemas under paths unless SourceApi discovered and named the schema.
@@ -277,19 +281,21 @@ sealed class KotlinTypeInfo(
                 OasType.Integer -> Integer
                 OasType.Boolean -> Boolean
                 OasType.Set -> {
-                    val parameterizedType = getParameterizedTypeForArray(schema, enclosingSchema, oasKey, direction = direction)
+                    val parameterizedType =
+                        getParameterizedTypeForArray(schema, enclosingSchema, oasKey, direction, seenArraySchemas)
                     Array(parameterizedType, schema.itemsSchema.isNullable, true)
                 }
 
                 OasType.Array -> {
-                    val parameterizedType = getParameterizedTypeForArray(schema, enclosingSchema, oasKey, direction = direction)
+                    val parameterizedType =
+                        getParameterizedTypeForArray(schema, enclosingSchema, oasKey, direction, seenArraySchemas)
                     Array(parameterizedType, schema.itemsSchema.isNullable, schema.itemsSchema.isUniqueItems)
                 }
 
                 OasType.Object -> {
                     val aliasedSchema = schema.singleAggregatedAliasSchema()
                     if (aliasedSchema != null) {
-                        from(aliasedSchema, oasKey, enclosingSchema, direction = direction)
+                        from(aliasedSchema, oasKey, enclosingSchema, direction = direction, seenArraySchemas = seenArraySchemas)
                     } else {
                         Object(ModelNameRegistry.getOrRegister(schema, enclosingSchema, direction = direction))
                     }
@@ -302,6 +308,7 @@ sealed class KotlinTypeInfo(
                             OasType.ADDITIONAL_PROPERTIES_VALUE,
                             enclosingSchema,
                             direction = direction,
+                            seenArraySchemas = seenArraySchemas,
                         ),
                     )
 
@@ -315,21 +322,29 @@ sealed class KotlinTypeInfo(
                     )
 
                 OasType.SimpleTypedAdditionalProperties ->
-                    SimpleTypedAdditionalProperties(from(schema, OasType.ADDITIONAL_PROPERTIES_VALUE, direction = direction))
+                    SimpleTypedAdditionalProperties(
+                        from(schema, OasType.ADDITIONAL_PROPERTIES_VALUE, direction = direction, seenArraySchemas = seenArraySchemas),
+                    )
 
                 OasType.UntypedObjectAdditionalProperties -> UntypedObjectAdditionalProperties
                 OasType.UntypedObject -> if (isAnyAsJsonElementActive()) JsonObject else UntypedObject
                 OasType.UnknownAdditionalProperties -> UnknownAdditionalProperties
                 OasType.TypedMapAdditionalProperties ->
                     MapTypeAdditionalProperties(
-                        from(schema.additionalPropertiesSchema, "", enclosingSchema, direction = direction),
+                        from(
+                            schema.additionalPropertiesSchema,
+                            "",
+                            enclosingSchema,
+                            direction = direction,
+                            seenArraySchemas = seenArraySchemas,
+                        ),
                     )
 
                 OasType.Any ->
                     schema
                         .singleAggregatedAliasSchema()
                         ?.takeIf { schema.oneOfSchemas.isEmpty() }
-                        ?.let { from(it, oasKey, enclosingSchema, direction = direction) }
+                        ?.let { from(it, oasKey, enclosingSchema, direction = direction, seenArraySchemas = seenArraySchemas) }
                         ?: getOverridableAnyType()
                 OasType.OneOfAny ->
                     if (schema.isOneOfSuperInterfaceWithDiscriminator() ||
@@ -386,19 +401,33 @@ sealed class KotlinTypeInfo(
             enclosingSchema: OpenApiSchema?,
             oasKey: String,
             direction: ModelDirection? = null,
+            seenArraySchemas: Set<String> = emptySet(),
         ): KotlinTypeInfo {
+            val arraySchemaName = arraySchema.name
+            val nextSeenArraySchemas = arraySchemaName?.let { seenArraySchemas + it } ?: seenArraySchemas
             val itemsSchema = arraySchema.itemsSchema
             return when {
                 (
                     itemsSchema.isInlinedObjectDefinition() ||
-                        itemsSchema.isInlinedDiscriminatedOneOfSuperInterface()
+                        itemsSchema.isInlinedDiscriminatedOneOfSuperInterface() ||
+                        (
+                            itemsSchema.isInlinedOneOfSuperInterface() &&
+                                itemsSchema.isSubTypeDeductionEnabled()
+                        )
                 ) &&
                     !itemsSchema.isUnsupportedComplexInlinedDefinition() ->
                     Object(ModelNameRegistry.getOrRegister(arraySchema, enclosingSchema, direction = direction))
                 arraySchema.hasInlinedItemsSchemaWithOneOf() || arraySchema.hasInlinedItemsSchemaOfTypeObject() ->
                     Object(ModelNameRegistry.getOrRegister(arraySchema, direction = direction))
                 arraySchema.itemsSchema.isSchemaAbsent() -> getOverridableAnyType()
-                else -> from(arraySchema.itemsSchema, oasKey, enclosingSchema, direction = direction)
+                itemsSchema.name != null && itemsSchema.name in nextSeenArraySchemas -> {
+                    logger.warning(
+                        "Schema ${itemsSchema.name} is an array whose items lead back to itself; " +
+                            "generating ${getOverridableAnyType().modelKClass.simpleName}. Use a named item schema for a recursive list.",
+                    )
+                    getOverridableAnyType()
+                }
+                else -> from(itemsSchema, oasKey, enclosingSchema, direction = direction, seenArraySchemas = nextSeenArraySchemas)
             }
         }
 

@@ -20,5 +20,6 @@ public data class DeductionC(
   @get:NotNull
   override val c: Int,
 ) : DeductionChoice,
+    InlineContainerDeduced,
     AComposite,
     DeductionCComposite

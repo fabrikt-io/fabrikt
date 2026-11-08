@@ -1,5 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+val fabriktCliJar = rootProject.tasks.named("shadowJar").map { it.outputs.files.singleFile }
+
 val fabrikt: Configuration by configurations.creating
 
 val generationDir = "$buildDir/generated"
@@ -42,7 +44,7 @@ tasks {
         inputs.files(apiFile)
         outputs.dir(generationDir)
         outputs.cacheIf { true }
-        classpath = rootProject.files("./build/libs/fabrikt-${rootProject.version}.jar")
+        classpath = rootProject.files(fabriktCliJar)
         mainClass.set("io.fabrikt.cli.CodeGen")
         args = listOf(
             "--output-directory", generationDir,

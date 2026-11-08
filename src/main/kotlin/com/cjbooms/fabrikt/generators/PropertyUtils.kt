@@ -202,7 +202,7 @@ object PropertyUtils {
                         serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
                         val constructorParameter: ParameterSpec.Builder = ParameterSpec.builder(name, wrappedType)
                         val discriminators = maybeDiscriminator.getDiscriminatorMappings(schemaName)
-                        when (val discriminator = discriminators.first()) {
+                        when (val discriminator = discriminators.single()) {
                             is PropertyInfo.DiscriminatorKey.EnumKey ->
                                 constructorParameter.defaultValue("%T.%L", wrappedType, discriminator.enumKey)
 
@@ -312,8 +312,7 @@ object PropertyUtils {
         isPolymorphicDiscriminator &&
         !classSettings.isOpenSuperType &&
         classSettings.polymorphyType != ClassSettings.PolymorphyType.NONE &&
-        !isSubTypeDiscriminatorWithNoValue(classSettings) &&
-        !isSubTypeDiscriminatorWithMultipleValues(classSettings, schemaName)
+        maybeDiscriminator.getDiscriminatorMappings(schemaName).size == 1
 
     private fun Map<String, PropertyInfo.DiscriminatorKey>?.getDiscriminatorMappings(
         schemaName: String,
@@ -323,18 +322,6 @@ object PropertyUtils {
                 it.value.stringValue == schemaName || it.value.modelName == schemaName
             }?.map { it.value }
             .orEmpty()
-
-    private fun PropertyInfo.Field.isSubTypeDiscriminatorWithNoValue(classType: ClassSettings) =
-        classType.polymorphyType == ClassSettings.PolymorphyType.SUB &&
-            isPolymorphicDiscriminator &&
-            maybeDiscriminator == null
-
-    private fun PropertyInfo.Field.isSubTypeDiscriminatorWithMultipleValues(
-        classType: ClassSettings,
-        schemaName: String,
-    ) = classType.polymorphyType == ClassSettings.PolymorphyType.SUB &&
-        isPolymorphicDiscriminator &&
-        maybeDiscriminator.getDiscriminatorMappings(schemaName).size > 1
 
     private fun getDefaultValue(
         propTypeInfo: PropertyInfo,

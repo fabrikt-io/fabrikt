@@ -9,7 +9,6 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.getKeyIfSingleDiscriminat
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasAdditionalProperties
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasNoDiscriminator
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isDiscriminatorProperty
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedArrayDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedDiscriminatedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedItemsSchemaUnderTopLevelArrayDefinition
@@ -21,6 +20,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaLess
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleMapDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSingleAggregatedInlinedObject
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.nestedArrayItems
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.oneOfDiscriminatorValues
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeType
@@ -464,15 +464,13 @@ sealed class PropertyInfo {
         override val minItems: Int? = schema.minItems
         override val maxItems: Int? = schema.maxItems
 
-        private fun isInlined(): Boolean =
-            schema
-                .itemsSchema
-                .let {
-                    it.isInlinedObjectDefinition() ||
-                        it.isInlinedEnumDefinition() ||
-                        it.isInlinedArrayDefinition() ||
-                        it.isInlinedDiscriminatedOneOfSuperInterface()
-                }
+        private fun isInlined(): Boolean {
+            val innermost = schema.nestedArrayItems().lastOrNull() ?: return false
+            return innermost.isInlinedObjectDefinition() ||
+                innermost.isInlinedEnumDefinition() ||
+                innermost.isInlinedDiscriminatedOneOfSuperInterface() ||
+                (innermost.isInlinedOneOfSuperInterface() && innermost.isSubTypeDeductionEnabled())
+        }
     }
 
     data class MapField(

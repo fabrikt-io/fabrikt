@@ -49,8 +49,6 @@ class SourceApi private constructor(
                 apiFragments.fold(YamlUtils.expandYamlAliases(baseApi)) { acc: String, fragment -> YamlUtils.mergeYamlTrees(acc, fragment) }
             return SourceApi(combinedApi, baseUri, jsonLoader, schemaConversion)
         }
-
-        private const val MAX_NESTED_ARRAY_DEPTH = 10
     }
 
     val openApi3: OpenApi3Document = OpenApiDocumentParser.parse(rawApiSpec, baseUri, jsonLoader, schemaConversion).asOpenApi3Document()
@@ -283,12 +281,12 @@ class SourceApi private constructor(
 
     private fun innermostInlineEnum(schema: OpenApiSchema?): OpenApiSchema? {
         var current = schema ?: return null
-        var depth = 0
-        while (current.type == OasType.Array.type && depth < MAX_NESTED_ARRAY_DEPTH) {
+        val seen = mutableSetOf<String>()
+        while (current.type == OasType.Array.type) {
             val items = current.itemsSchema
             if (items.isSchemaAbsent()) return null
+            if (!seen.add(items.name ?: items.jsonPathFromRoot)) return null
             current = items
-            depth++
         }
         return current.takeIf { isInlineEnum(it) }
     }

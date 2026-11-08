@@ -2,6 +2,9 @@ package com.example
 
 import com.example.compositionunions.models.B
 import com.example.compositionunions.models.AComposite
+import com.example.compositionunions.models.DeductionB
+import com.example.compositionunions.models.DeductionC
+import com.example.compositionunions.models.InlineContainerMatrix
 import com.example.compositionunions.models.InlineContainer
 import com.example.compositionunions.models.Combined
 import com.example.compositionunions.models.DeductionChoice
@@ -25,6 +28,31 @@ class SharedCompositionUnionsTest {
     }
 
     private val mapper = jacksonObjectMapper()
+
+    @Test
+    fun `inline union nested under two array levels keeps its members typed`() {
+        val payload = """{"matrix":[[{"kind":"c","id":"c-1","count":3}],[{"kind":"b","id":"b-1","label":"B"}]]}"""
+        val value = mapper.readValue(payload, InlineContainer::class.java)
+        val matrix = requireNotNull(value.matrix)
+
+        assertThat(matrix.map { it.single() }).containsExactly(
+            mapper.readValue("""{"kind":"c","id":"c-1","count":3}""", InlineContainerMatrix::class.java),
+            mapper.readValue("""{"kind":"b","id":"b-1","label":"B"}""", InlineContainerMatrix::class.java),
+        )
+        assertThat(matrix.flatten()).allMatch { it is AComposite }
+        assertThat(mapper.readValue(mapper.writeValueAsString(value), InlineContainer::class.java)).isEqualTo(value)
+    }
+
+    @Test
+    fun `deducted array item deserializes to the variant with its required field`() {
+        val payload = """{"deduced":[{"id":"d-1","b":"B"},{"id":"d-2","c":2}]}"""
+        val value = mapper.readValue(payload, InlineContainer::class.java)
+        val deduced = requireNotNull(value.deduced)
+
+        assertThat(deduced[0]).isInstanceOf(DeductionB::class.java)
+        assertThat(deduced[1]).isInstanceOf(DeductionC::class.java)
+        assertThat(mapper.readValue(mapper.writeValueAsString(value), InlineContainer::class.java)).isEqualTo(value)
+    }
 
     @Test
     fun `mixed unions expose the contract only on the appropriate deserialized variants`() {
