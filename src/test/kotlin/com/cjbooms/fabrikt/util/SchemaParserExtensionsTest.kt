@@ -7,6 +7,7 @@ import com.cjbooms.fabrikt.model.SourceApi
 import com.cjbooms.fabrikt.util.ResourceHelper.readTextResource
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.basePath
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.findOneOfSuperInterface
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isNamedEnumUnion
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeyForSchemaName
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
@@ -105,5 +106,50 @@ class SchemaParserExtensionsTest {
         val api = apiWithServerUrl("https://{username}.gigantic-server.com:{port}/{basePath}")
         assertDoesNotThrow { api.basePath() }
         assertThat(api.basePath()).isEqualTo("")
+    }
+
+    @Test
+    fun `a named enum union is a component, an inline union is not`() {
+        // Only a component union has an emitted enum to point at. Merging an inline union
+        // would name an enum that the inline paths never emit.
+        val spec =
+            """
+            |openapi: 3.0.0
+            |info:
+            |  title: test
+            |  version: 1.0.0
+            |paths: {}
+            |components:
+            |  schemas:
+            |    Animal:
+            |      oneOf:
+            |        - ${'$'}ref: '#/components/schemas/Cow'
+            |        - ${'$'}ref: '#/components/schemas/Sheep'
+            |    Holder:
+            |      type: object
+            |      properties:
+            |        inline:
+            |          oneOf:
+            |            - type: string
+            |              enum: [x]
+            |            - type: string
+            |              enum: [y]
+            |    Cow:
+            |      type: string
+            |      enum: [Moo]
+            |    Sheep:
+            |      type: string
+            |      enum: [Baa]
+            """.trimMargin()
+        val schemas = OpenApi3Document(YamlUtils.parseOpenApi(spec)).schemas
+
+        assertThat(schemas.getValue("Animal").isNamedEnumUnion()).isTrue()
+        assertThat(
+            schemas
+                .getValue("Holder")
+                .properties
+                .getValue("inline")
+                .isNamedEnumUnion(),
+        ).isFalse()
     }
 }

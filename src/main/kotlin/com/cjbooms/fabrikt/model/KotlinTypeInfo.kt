@@ -12,11 +12,13 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.getEnumValues
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasInlinedItemsSchemaOfTypeObject
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasInlinedItemsSchemaWithOneOf
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isEnumDefinition
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isExtensibleEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedDiscriminatedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedTypedAdditionalProperties
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isNamedEnumUnion
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterfaceWithDiscriminator
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaAbsent
@@ -121,6 +123,7 @@ sealed class KotlinTypeInfo(
     data class Enum(
         val entries: List<String>,
         val enumClassName: String,
+        val isFaultTolerant: kotlin.Boolean = false,
     ) : KotlinTypeInfo(GeneratedType::class, enumClassName)
 
     val isComplexType: kotlin.Boolean
@@ -197,6 +200,13 @@ sealed class KotlinTypeInfo(
                  * Defaults to Any for complex schemas under paths unless SourceApi discovered and named the schema.
                  */
                 return if (schema.isEnumDefinition()) Text else getOverridableAnyType()
+            }
+            if (schema.isNamedEnumUnion()) {
+                return Enum(
+                    schema.oneOfSchemas.flatMap { it.getEnumValues() }.distinct(),
+                    ModelNameRegistry.getOrRegister(schema, enclosingSchema, direction = direction),
+                    isFaultTolerant = schema.oneOfSchemas.any { it.isExtensibleEnumDefinition() },
+                )
             }
             return when (schema.toOasType(oasKey)) {
                 OasType.Date -> {

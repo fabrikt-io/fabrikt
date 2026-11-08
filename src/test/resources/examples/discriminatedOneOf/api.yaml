@@ -544,6 +544,31 @@ components:
           oneOf:
             - $ref: '#/components/schemas/ValidationErr'
             - $ref: '#/components/schemas/ServerErr'
+
+    Cow:
+      type: string
+      enum:
+        - Moo
+    Sheep:
+      type: string
+      enum:
+        - Baa
+    Animal:
+      oneOf:
+        - $ref: '#/components/schemas/Cow'
+        - $ref: '#/components/schemas/Sheep'
+      discriminator:
+        propertyName: type
+        mapping:
+          COW_FARM: '#/components/schemas/Cow'
+          SHEEP_FARM: '#/components/schemas/Sheep'
+    Farm:
+      type: object
+      required:
+        - animal
+      properties:
+        animal:
+          $ref: '#/components/schemas/Animal'
   responses:
     NarrowedDiscriminatorResponse:
       content:

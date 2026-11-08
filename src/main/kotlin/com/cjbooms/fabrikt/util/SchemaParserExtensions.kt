@@ -4,6 +4,7 @@ import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.OasType
 import com.cjbooms.fabrikt.model.PropertyInfo
+import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
 import java.net.URI
 import com.cjbooms.fabrikt.model.OpenApi3Document as OpenApi3
@@ -115,6 +116,19 @@ object SchemaParserExtensions {
             anyOfSchemas.isEmpty() &&
             allOfSchemas.isEmpty() &&
             properties.isEmpty()
+
+    fun Schema.isNamedEnumUnion(): Boolean {
+        if (!isNamedComponent() || oneOfSchemas.isEmpty()) return false
+        if (!oneOfSchemas.all { it.isEnumDefinition() }) return false
+        val values = oneOfSchemas.flatMap { it.getEnumValues() }
+        return values.map { it.toEnumName() }.distinct().size == values.size
+    }
+
+    fun Schema.isExtensibleEnumDefinition(): Boolean =
+        this.type == OasType.Text.type &&
+            !this.hasEnums() &&
+            MutableSettings.modelOptions.contains(ModelCodeGenOptionType.X_EXTENSIBLE_ENUMS) &&
+            extensions.containsKey(EXTENSIBLE_ENUM_KEY)
 
     fun Schema.isEnumDefinition(): Boolean =
         this.type == OasType.Text.type &&
