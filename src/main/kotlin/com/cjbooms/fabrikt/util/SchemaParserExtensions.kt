@@ -287,7 +287,7 @@ object SchemaParserExtensions {
         prop: Map.Entry<String, Schema>,
     ): Boolean =
         discriminator.propertyName == prop.key ||
-            findOneOfSuperInterface(api.schemas.values.toList()).any { oneOf ->
+            findOneOfSuperInterface(api).any { oneOf ->
                 oneOf.discriminator.propertyName == prop.key &&
                     oneOf.discriminator
                         .mappings
@@ -295,7 +295,15 @@ object SchemaParserExtensions {
                         .any { it.endsWith("/$name") }
             }
 
-    fun Schema.findOneOfSuperInterface(allSchemas: List<Schema>): List<Schema> {
+    fun Schema.findOneOfSuperInterface(api: OpenApi3): List<Schema> = api.oneOfSuperInterfaces(this)
+
+    fun Schema.findOneOfSuperInterface(allSchemas: List<Schema>): List<Schema> =
+        findOneOfSuperInterface(allSchemas, ModelNameRegistry::preRegisterInlineSchema)
+
+    internal fun Schema.findOneOfSuperInterface(
+        allSchemas: List<Schema>,
+        registerInline: (Schema, Schema) -> Unit,
+    ): List<Schema> {
         // Check top-level oneOf schemas
         val topLevelInterfaces =
             allSchemas
@@ -321,7 +329,7 @@ object SchemaParserExtensions {
                         if (items.isInlinedOneOfSuperInterface() &&
                             items.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
                         ) {
-                            ModelNameRegistry.preRegisterInlineSchema(items, enclosingSchema)
+                            registerInline(items, enclosingSchema)
                             interfaces.add(items)
                         }
                     }
@@ -330,7 +338,7 @@ object SchemaParserExtensions {
                     if (property.isInlinedOneOfSuperInterface() &&
                         property.oneOfSchemas.map { it.safeName() }.contains(this.safeName())
                     ) {
-                        ModelNameRegistry.preRegisterInlineSchema(property, enclosingSchema)
+                        registerInline(property, enclosingSchema)
                         interfaces.add(property)
                     }
 
@@ -371,7 +379,7 @@ object SchemaParserExtensions {
         api: OpenApi3,
         prop: Map.Entry<String, Schema>,
     ): Set<String> =
-        findOneOfSuperInterface(api.schemas.values.toList())
+        findOneOfSuperInterface(api)
             .filter { it.discriminator.propertyName == prop.key }
             .flatMap { union ->
                 val mappings = union.discriminator.mappings
@@ -408,7 +416,7 @@ object SchemaParserExtensions {
                 this.discriminator
             } else {
                 val oneOfDiscriminator =
-                    findOneOfSuperInterface(api.schemas.values.toList())
+                    findOneOfSuperInterface(api)
                         .firstOrNull { oneOfInterface ->
                             oneOfInterface.hasDiscriminator()
                         }?.discriminator

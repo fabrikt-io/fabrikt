@@ -38,9 +38,9 @@ import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
+import com.cjbooms.fabrikt.util.OneOfSuperInterfaceCache
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.allOfAncestors
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.componentKey
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.findOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getDiscriminatorForInlinedObjectUnderAllOf
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getSuperType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasInlinedItemsSchemaOfTypeObject
@@ -265,7 +265,15 @@ class ModelGenerator(
     private val mappedContractModels = linkedMapOf<String, TypeSpec>()
     private val compositionSchemas = linkedMapOf<String, Schema>()
     private val generatedCompositionSchemas = linkedMapOf<String, Schema>()
+    private val oneOfInterfaceCaches = mutableListOf<OneOfSuperInterfaceCache>()
     private val externalCompositionRoots = linkedMapOf<String, MutableSet<String>>()
+
+    private fun Schema.findOneOfSuperInterface(candidates: List<Schema>): List<Schema> {
+        val cache =
+            oneOfInterfaceCaches.firstOrNull { it.matchesCandidates(candidates) }
+                ?: OneOfSuperInterfaceCache(candidates).also { oneOfInterfaceCaches.add(it) }
+        return cache.find(this)
+    }
 
     fun generate(): Models {
         if (ModelCodeGenOptionType.REQUEST_RESPONSE_MODELS in options) {

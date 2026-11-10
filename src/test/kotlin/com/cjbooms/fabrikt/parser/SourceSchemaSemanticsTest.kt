@@ -9,6 +9,37 @@ import java.math.BigDecimal
 
 class SourceSchemaSemanticsTest {
     @Test
+    fun `schema classification is reused only within its source document`() {
+        var reads = 0
+
+        fun document(body: String): Pair<GeneratorSchemaDocument, String> {
+            val schema = parseSchema("3.1.2", body)
+            val sources = mapOf(schema.location to schema)
+            val countedSources =
+                object : Map<String, SourceSchema> by sources {
+                    override fun get(key: String): SourceSchema? {
+                        reads++
+                        return sources[key]
+                    }
+                }
+            return GeneratorSchemaDocument(OpenApiVersion.parse("3.1.2"), emptyMap(), countedSources, emptyMap()) to schema.location
+        }
+        val (first, location) = document("type: string")
+        assertThat(first.schemaSemanticsAt(location).isNullable).isNull()
+        val initialReads = reads
+        assertThat(initialReads).isPositive()
+        repeat(20) {
+            assertThat(first.schemaSemanticsAt(location).declaredType).isEqualTo("string")
+        }
+        assertThat(reads).isEqualTo(initialReads)
+
+        val (second, sameLocation) = document("type: [string, 'null']")
+        assertThat(sameLocation).isEqualTo(location)
+        assertThat(second.schemaSemanticsAt(sameLocation).isNullable).isTrue()
+        assertThat(first.schemaSemanticsAt(location).isNullable).isNull()
+    }
+
+    @Test
     fun `normalizes OpenAPI 3_0 schema semantics`() {
         val schema = parseSchema("3.0.4", openApi30Schema) as SourceObjectSchema
 
