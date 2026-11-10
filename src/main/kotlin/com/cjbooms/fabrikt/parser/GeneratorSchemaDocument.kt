@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.parser
 
 import com.cjbooms.fabrikt.model.SchemaSemantics
+import java.util.concurrent.ConcurrentHashMap
 
 internal class GeneratorSchemaDocument(
     val version: OpenApiVersion?,
@@ -8,12 +9,16 @@ internal class GeneratorSchemaDocument(
     private val sourceSchemasByLocation: Map<String, SourceSchema>,
     private val referencedSchemas: Map<GeneratorSchemaIdentity, GeneratorSchema>,
 ) {
+    private val semantics = ConcurrentHashMap<String, SchemaSemantics>()
+
     fun resolve(schema: GeneratorSchema): GeneratorSchema {
         val sourceSchema = schema as? SourceSchema ?: sourceSchemaAt(schema.location)
         return sourceSchema?.let { referencedSchemas[it.identity] } ?: schema
     }
 
-    fun schemaSemanticsAt(location: String): SchemaSemantics {
+    fun schemaSemanticsAt(location: String): SchemaSemantics = semantics.computeIfAbsent(location, ::computeSchemaSemanticsAt)
+
+    private fun computeSchemaSemanticsAt(location: String): SchemaSemantics {
         val schema = sourceSchemaAt(location) ?: return SchemaSemantics()
         val classification = GeneratorSchemaTypeClassifier.classify(resolve(schema), ::resolve)
         val declaredTypes =

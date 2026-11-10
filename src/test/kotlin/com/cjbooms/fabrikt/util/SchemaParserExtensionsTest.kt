@@ -4,9 +4,12 @@ import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.OpenApi3Document
 import com.cjbooms.fabrikt.model.OpenApiSchema
 import com.cjbooms.fabrikt.model.SourceApi
+import com.cjbooms.fabrikt.parser.OpenApiDocumentParser
+import com.cjbooms.fabrikt.parser.toGeneratorSchemaDocument
 import com.cjbooms.fabrikt.util.ResourceHelper.readTextResource
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.basePath
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.findOneOfSuperInterface
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isDiscriminatorProperty
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isNamedEnumUnion
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeyForSchemaName
 import org.assertj.core.api.Assertions.assertThat
@@ -15,18 +18,55 @@ import org.junit.jupiter.api.Test
 
 class SchemaParserExtensionsTest {
     @Test
+    fun `repeated discriminator queries do not rescan the document`() {
+        MutableSettings.updateSettings()
+        ModelNameRegistry.clear()
+        val parsed = OpenApiDocumentParser.parse(readTextResource("/examples/discriminatedOneOf/api.yaml"))
+        val semantics = parsed.toGeneratorSchemaDocument()
+        var classifications = 0
+        val api =
+            OpenApi3Document(
+                parsed.kaizenModel,
+                schemaSemanticsAt = {
+                    classifications++
+                    semantics.schemaSemanticsAt(it)
+                },
+            )
+        val member = api.schemas.getValue("SomeObj")
+        val property = member.properties.entries.first { it.key == "arrayOfStates" }
+
+        assertThat(member.isDiscriminatorProperty(api, property)).isFalse()
+        val initialClassifications = classifications
+        assertThat(initialClassifications).isPositive()
+        repeat(20) {
+            assertThat(member.isDiscriminatorProperty(api, property)).isFalse()
+        }
+        assertThat(classifications).isEqualTo(initialClassifications)
+        ModelNameRegistry.clear()
+    }
+
+    @Test
     fun `finds unions inside nested inline objects and array objects without following component cycles`() {
         MutableSettings.updateSettings()
         ModelNameRegistry.clear()
-        val schemas =
-            SourceApi(readTextResource("/examples/discriminatedOneOf/api.yaml"))
-                .openApi3.schemas.values
-                .toList()
-        val interfaces = schemas.first { it.name == "OneObject" }.findOneOfSuperInterface(schemas)
+        val spec = readTextResource("/examples/discriminatedOneOf/api.yaml")
+        val api = SourceApi(spec).openApi3
+        val schemas = api.schemas.values.toList()
+        val member = schemas.first { it.name == "OneObject" }
+        val interfaces = member.findOneOfSuperInterface(api)
 
         assertThat(interfaces.map { ModelNameRegistry.getBySchema(it) })
             .contains("NestedInlineContainerValue", "NestedInlineContainerSelection")
         assertThat(interfaces.map { it.jsonReference }).doesNotHaveDuplicates()
+        ModelNameRegistry.clear()
+        val cached = member.findOneOfSuperInterface(api)
+        assertThat(cached.map { ModelNameRegistry.getBySchema(it) })
+            .contains("NestedInlineContainerValue", "NestedInlineContainerSelection")
+        assertThat(cached.map { it.jsonReference }).containsExactlyElementsOf(interfaces.map { it.jsonReference })
+
+        val otherApi = SourceApi(spec.replace("/OneObject", "/TwoObject")).openApi3
+        assertThat(otherApi.schemas.getValue("OneObject").findOneOfSuperInterface(otherApi)).isEmpty()
+        assertThat(OneOfSuperInterfaceCache(listOf(member)).find(member)).isEmpty()
         ModelNameRegistry.clear()
     }
 

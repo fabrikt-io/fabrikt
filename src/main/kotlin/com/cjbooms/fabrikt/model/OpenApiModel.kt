@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.model
 
 import com.cjbooms.fabrikt.parser.OpenApi3ParserAdapter
+import com.cjbooms.fabrikt.util.OneOfSuperInterfaceCache
 import com.fasterxml.jackson.databind.JsonNode
 import com.reprezen.jsonoverlay.Overlay
 import com.reprezen.kaizen.oasparser.model3.Discriminator
@@ -136,6 +137,9 @@ class OpenApi3Document(
     private val includePolymorphicSubtypes: (Set<String>) -> Set<String> = { it },
 ) {
     private val compositionRelationships by lazy { SchemaCompositionRelationships(schemas.values) }
+    private val oneOfRelationships by lazy { OneOfSuperInterfaceCache(schemas.values.toList()) }
+
+    internal fun oneOfSuperInterfaces(schema: OpenApiSchema): List<OpenApiSchema> = oneOfRelationships.find(schema)
 
     val schemas: Map<String, OpenApiSchema>
         get() = kaizen.schemas?.mapValues { OpenApiSchema(it.value, schemaSemanticsAt) } ?: emptyMap()
