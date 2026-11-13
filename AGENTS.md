@@ -48,9 +48,9 @@ Tests compare generated code against `src/test/resources/examples/`; never edit 
 
 ## Best-effort generation
 
-The goal is always generating code that compiles, not rejecting imperfect input. When any input — a schema, a spec, or a preprocessing step applied to either — is malformed or under-specified in a way with no unambiguous correct answer, degrade safely and log a warning; never fail generation for that alone.
-Reserve throwing (`ParameterException`) for genuine same-invocation conflicts with no safe resolution — e.g. two schemas that would collide on the same generated name — not for "the input didn't give me enough information."
-A logged warning must say what was assumed and how to override it, so best-effort never becomes silent.
+The goal is always generating code that compiles, not rejecting imperfect input. When input — a schema, a spec, or a preprocessing step applied to either — is malformed, contradictory, incomplete, or unparseable, degrade safely and log a warning; never fail generation for that alone. Reserve throwing (`ParameterException`) for genuine same-invocation conflicts with no safe resolution — e.g. two schemas that would collide on the same generated name — not for "the input didn't give me enough information."
+
+A warning reports a guess Fabrikt made about the input. It must say what was assumed and how to override it. A valid, unambiguous spec whose Kotlin representation is broader than declared is not a guess: document that limitation in README and the release notes instead. Derive every warning where the decision is made; a diagnostic that needs a document-wide pre-pass or a second copy of a resolution rule belongs in documentation.
 
 ## Working in the codegen pipeline
 
