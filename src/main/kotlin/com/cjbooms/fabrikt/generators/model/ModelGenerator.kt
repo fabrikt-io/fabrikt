@@ -40,7 +40,6 @@ import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
 import com.cjbooms.fabrikt.util.OneOfSuperInterfaceCache
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.allOfAncestors
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.commonAllOfSuperType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.componentKey
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getDiscriminatorForInlinedObjectUnderAllOf
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getSuperType
@@ -68,7 +67,6 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeyForSchemaName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeys
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleAggregatedEnumAliasSchema
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleHierarchyAliasSchema
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -268,7 +266,6 @@ class ModelGenerator(
     private val compositionSchemas = linkedMapOf<String, Schema>()
     private val generatedCompositionSchemas = linkedMapOf<String, Schema>()
     private val oneOfInterfaceCaches = mutableListOf<OneOfSuperInterfaceCache>()
-    private val warnedHierarchyUnions = mutableSetOf<String>()
     private val externalCompositionRoots = linkedMapOf<String, MutableSet<String>>()
 
     private fun Schema.findOneOfSuperInterface(candidates: List<Schema>): List<Schema> {
@@ -464,53 +461,10 @@ class ModelGenerator(
         )
     }
 
-    private fun warnWidenedHierarchyUnions(
-        api: OpenApi3,
-        schemas: List<SchemaInfo>,
-    ) {
-        val pending = ArrayDeque(schemas.map { it.schema })
-        val visited = mutableSetOf<String>()
-        val families = mutableMapOf<String, Set<String>>()
-        val components = api.schemas.values.toList()
-        val ancestors by lazy {
-            components.associate { candidate ->
-                candidate.jsonReference to api.allOfComponentSchemas(candidate).map { it.jsonReference }.toSet()
-            }
-        }
-        while (pending.isNotEmpty()) {
-            val schema = pending.removeFirst()
-            if (!schema.isPresent || !visited.add(schema.jsonReference)) continue
-            pending.addAll(schema.properties.values + schema.allOfSchemas + schema.anyOfSchemas + schema.oneOfSchemas)
-            if (schema.itemsSchema.isPresent) pending.add(schema.itemsSchema)
-            if (schema.additionalPropertiesSchema.isPresent) pending.add(schema.additionalPropertiesSchema)
-            if (!schema.hasNoDiscriminator() || schema.singleHierarchyAliasSchema() != null) continue
-            val ancestor = schema.commonAllOfSuperType() ?: continue
-            val family =
-                families.getOrPut(ancestor.jsonReference) {
-                    ancestors.filterValues { ancestor.jsonReference in it }.keys +
-                        if (openAllOfParents) setOf(ancestor.jsonReference) else emptySet()
-                }
-            val members = schema.oneOfSchemas.map { it.jsonReference }.toSet()
-            if ((schema.oneOfSchemas.size != 1 && members.containsAll(family)) || !warnedHierarchyUnions.add(schema.jsonReference)) continue
-            val reason =
-                if (schema.oneOfSchemas.size == 1) {
-                    "its single alternative is not a safe concrete leaf or generated parent"
-                } else {
-                    "its alternatives do not cover the complete discriminator family"
-                }
-            logger.warning(
-                "Widening oneOf at '${schema.jsonReference}' to '${ancestor.safeName()}' because $reason. " +
-                    "The generated type can accept additional alternatives. Handle the wider type explicitly in consumer code; " +
-                    "a union with its own discriminator retains a precise generated type.",
-            )
-        }
-    }
-
     private fun createModels(
         api: OpenApi3,
         schemas: List<SchemaInfo>,
     ) = schemas
-        .also { warnWidenedHierarchyUnions(api, schemas) }
         .map { if (direction == null) it else SchemaInfo(it.name, it.schema, direction) }
         .filterNot { it.schema.isSimpleType() && !it.schema.isNamedEnumUnion() }
         .onEach { schemaInfo ->

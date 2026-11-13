@@ -459,7 +459,7 @@ The following example shows how `allOf` can be used to generate polymorphic Kotl
 
 _NOTE: [Discriminated `oneOf`](src/test/resources/examples/discriminatedOneOf) is the recommended way to model polymorphism. Fabrikt generates a Kotlin `sealed interface` for a `oneOf` with its own discriminator, so no extra option is needed; the `allOf` pattern shown here remains supported for existing hierarchies._
 
-A `oneOf` without its own discriminator that lists a single named member of an existing discriminated hierarchy uses that member's type when it is a concrete leaf or the generated parent of its descendants. Otherwise, Fabrikt retains the common ancestor type and warns that it can accept additional alternatives; this also applies when a multi-member `oneOf` covers only part of the hierarchy. A `oneOf` with its own discriminator retains its precise generated interface.
+A `oneOf` without its own discriminator that lists a single named member of an existing discriminated hierarchy uses that member's type when it is a concrete leaf or the generated parent of its descendants. Other unions sharing a discriminated `allOf` ancestor retain that ancestor type. A singleton referencing an intermediate schema or a strict subset can therefore accept registered sibling types outside the declared alternatives; the generated Kotlin type does not enforce that narrower boundary. A `oneOf` with its own discriminator retains its precise generated interface.
 
 ```yml
 openapi: 3.0.0

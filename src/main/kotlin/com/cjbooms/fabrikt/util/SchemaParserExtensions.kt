@@ -509,7 +509,7 @@ object SchemaParserExtensions {
 
     fun Schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType(): Boolean = commonAllOfSuperType() != null
 
-    internal fun Schema.commonAllOfSuperType(): Schema? =
+    private fun Schema.commonAllOfSuperType(): Schema? =
         oneOfSchemas.firstOrNull()?.let { first ->
             (listOf(first) + first.allOfAncestors()).firstOrNull { candidate ->
                 candidate.hasDiscriminator() &&
@@ -524,7 +524,7 @@ object SchemaParserExtensions {
         val member = oneOfSchemas.singleOrNull()?.takeIf { it.name != null } ?: return null
         if (hasDiscriminator() || allOfSchemas.isNotEmpty() || anyOfSchemas.isNotEmpty() || properties.isNotEmpty()) return null
         val ancestor = commonAllOfSuperType() ?: return null
-        return member.takeIf { it.jsonReference == ancestor.jsonReference || it.hasAllOfDescendants() == false }
+        return member.takeIf { it.jsonReference == ancestor.jsonReference || !it.hasAllOfDescendants() }
     }
 
     fun Schema.isInlinedOneOfSuperInterface() = isOneOfSuperInterface() && isInlinedPropertySchema()
