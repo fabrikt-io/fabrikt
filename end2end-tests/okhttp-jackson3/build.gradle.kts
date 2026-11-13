@@ -214,9 +214,29 @@ tasks {
         dependsOn(":shadowJar")
     }
 
+    val singletonHierarchyTasks = listOf(false, true).map { openParents ->
+        val variant = if (openParents) "openparents" else "sealedparents"
+        register<JavaExec>("generateSingletonHierarchy$variant") {
+            val spec = "${rootProject.projectDir}/src/test/resources/examples/singletonHierarchyUnion/api.yaml"
+            inputs.file(spec)
+            outputs.dir(generationDir)
+            classpath = rootProject.files(fabriktCliJar)
+            mainClass.set("io.fabrikt.cli.CodeGen")
+            args = listOf(
+                "--output-directory", generationDir,
+                "--base-package", "com.example.singleton.$variant",
+                "--api-file", spec,
+                "--targets", "http_models",
+                "--serialization-library", "jackson_3"
+            ) + if (openParents) listOf("--http-model-opts", "OPEN_CLASSES_FOR_ALL_OF,SHARED_COMPOSITION_CONTRACTS") else emptyList()
+            dependsOn(":shadowJar")
+        }
+    }
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         dependsOn(generateCode)
+        dependsOn(singletonHierarchyTasks)
         dependsOn(generateNullableCode)
         dependsOn(generateSecurityCode)
         dependsOn(generateCompositionCode)

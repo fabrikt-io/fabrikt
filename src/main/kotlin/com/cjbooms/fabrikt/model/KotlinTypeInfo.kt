@@ -26,6 +26,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isUnsupportedComplexInlinedDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleAggregatedAliasSchema
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleAggregatedEnumAliasSchema
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleHierarchyAliasSchema
 import com.squareup.kotlinpoet.ClassName
 import java.math.BigDecimal
 import java.net.URI
@@ -194,6 +195,9 @@ sealed class KotlinTypeInfo(
             }
             schema.singleAggregatedEnumAliasSchema()?.let {
                 return from(it, oasKey, enclosingSchema, direction = direction, seenArraySchemas = seenArraySchemas)
+            }
+            schema.singleHierarchyAliasSchema()?.let {
+                return from(it, oasKey, direction = direction, seenArraySchemas = seenArraySchemas)
             }
             if (schema.isUnsupportedComplexInlinedDefinition() && !ModelNameRegistry.hasPreRegisteredReference(schema)) {
                 /*

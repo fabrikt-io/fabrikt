@@ -116,6 +116,20 @@ class OpenApiSchema(
     internal val isUninhabitable: Boolean get() = schemaSemanticsAt(jsonPathFromRoot).isUninhabitable
     internal val hasMultipleNonNullTypes: Boolean get() = schemaSemanticsAt(jsonPathFromRoot).hasMultipleNonNullTypes
 
+    internal fun hasAllOfDescendants(): Boolean? {
+        val document = Overlay.of(kaizen).getModel<Any>() as? OpenApi3 ?: return null
+        val components =
+            document.schemas
+                .orEmpty()
+                .values
+                .map { OpenApiSchema(it, schemaSemanticsAt) }
+        val relationships = SchemaCompositionRelationships(components)
+        return components.any { candidate ->
+            candidate.jsonReference != jsonReference &&
+                relationships.allOfComponents(candidate).any { it.jsonReference == jsonReference }
+        }
+    }
+
     fun hasEnums(): Boolean = kaizen.hasEnums()
 
     fun hasAllOfSchemas(): Boolean = kaizen.hasAllOfSchemas()

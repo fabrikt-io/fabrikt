@@ -457,7 +457,9 @@ The following example shows how `allOf` can be used to generate polymorphic Kotl
 - In each child schema, `allOf` is used to merge the `ChildDefinition` with the child's custom schema. This guarantees that each child schema inherits the correct discriminator property.
 - In the `Responses` schema a `oneOf` lists only child schemas. This will be detected by Fabrikt and it will generate the list of parent types: `List<ChildDefinition>`
 
-_NOTE: [Discriminated `oneOf`](src/test/resources/examples/discriminatedOneOf) is the recommended way to model polymorphism. Fabrikt generates a Kotlin `sealed interface` for every `oneOf`, so no extra option is needed; the `allOf` pattern shown here remains supported for existing hierarchies._
+_NOTE: [Discriminated `oneOf`](src/test/resources/examples/discriminatedOneOf) is the recommended way to model polymorphism. Fabrikt generates a Kotlin `sealed interface` for a `oneOf` with its own discriminator, so no extra option is needed; the `allOf` pattern shown here remains supported for existing hierarchies._
+
+A `oneOf` without its own discriminator that lists a single named member of an existing discriminated hierarchy uses that member's type when it is a concrete leaf or the generated parent of its descendants. Otherwise, Fabrikt retains the common ancestor type and warns that it can accept additional alternatives; this also applies when a multi-member `oneOf` covers only part of the hierarchy. A `oneOf` with its own discriminator retains its precise generated interface.
 
 ```yml
 openapi: 3.0.0

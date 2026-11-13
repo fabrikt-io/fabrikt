@@ -180,6 +180,16 @@ tasks {
         listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS")
     )
 
+    val singletonHierarchyTasks = listOf(false, true).map { openParents ->
+        val variant = if (openParents) "openparents" else "sealedparents"
+        createGenerateCodeTask(
+            "generateSingletonHierarchy$variant",
+            "${rootProject.projectDir}/src/test/resources/examples/singletonHierarchyUnion/api.yaml",
+            "com.example.singleton.$variant",
+            if (openParents) listOf("--http-model-opts", "OPEN_CLASSES_FOR_ALL_OF,SHARED_COMPOSITION_CONTRACTS") else emptyList()
+        )
+    }
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         // Generated models place cascading `@Valid` on container type arguments (e.g. `List<@Valid Foo>`).
@@ -187,6 +197,7 @@ tasks {
         // Hibernate Validator to see the cascade at runtime.
         compilerOptions.freeCompilerArgs.add("-Xemit-jvm-type-annotations")
         dependsOn(generateCodeTask)
+        dependsOn(singletonHierarchyTasks)
         dependsOn(generatePrimitiveTypesCodeTask)
         dependsOn(generateStringFormatOverrideCodeTask)
         dependsOn(generateOneOfMarkerInterfaceCodeTask)

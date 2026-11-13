@@ -450,6 +450,7 @@ object SchemaParserExtensions {
     fun Schema.hasDiscriminator(): Boolean = !hasNoDiscriminator()
 
     fun Schema.safeName(): String {
+        singleHierarchyAliasSchema()?.let { return it.safeName() }
         return when {
             isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && !(isOneOfSuperInterfaceWithDiscriminator()) ->
                 checkNotNull(commonAllOfSuperType()).safeName()
@@ -508,7 +509,7 @@ object SchemaParserExtensions {
 
     fun Schema.isOneOfWhereAllTypesInheritFromACommonAllOfSuperType(): Boolean = commonAllOfSuperType() != null
 
-    private fun Schema.commonAllOfSuperType(): Schema? =
+    internal fun Schema.commonAllOfSuperType(): Schema? =
         oneOfSchemas.firstOrNull()?.let { first ->
             (listOf(first) + first.allOfAncestors()).firstOrNull { candidate ->
                 candidate.hasDiscriminator() &&
@@ -518,6 +519,13 @@ object SchemaParserExtensions {
                     }
             }
         }
+
+    internal fun Schema.singleHierarchyAliasSchema(): Schema? {
+        val member = oneOfSchemas.singleOrNull()?.takeIf { it.name != null } ?: return null
+        if (hasDiscriminator() || allOfSchemas.isNotEmpty() || anyOfSchemas.isNotEmpty() || properties.isNotEmpty()) return null
+        val ancestor = commonAllOfSuperType() ?: return null
+        return member.takeIf { it.jsonReference == ancestor.jsonReference || it.hasAllOfDescendants() == false }
+    }
 
     fun Schema.isInlinedOneOfSuperInterface() = isOneOfSuperInterface() && isInlinedPropertySchema()
 
@@ -529,15 +537,9 @@ object SchemaParserExtensions {
             anyOfSchemas.isEmpty() &&
             properties.isEmpty() &&
             oneOfSchemas.all { it.isObjectType() || it.isAggregatedObject() || it.isOneOfSuperInterface() } &&
-            !isRedundantOneOfForExistingDiscriminatedHierarchy()
+            !usesExistingDiscriminatedHierarchy()
 
-    /**
-     * A oneOf is redundant when all its members already inherit from a common allOf super type
-     * that has its own discriminator, and the oneOf itself declares no discriminator.
-     * In this case the polymorphism is fully handled by the parent type, and generating
-     * a sealed interface would create a phantom type that subtypes reference but is never emitted.
-     */
-    private fun Schema.isRedundantOneOfForExistingDiscriminatedHierarchy(): Boolean =
+    private fun Schema.usesExistingDiscriminatedHierarchy(): Boolean =
         isOneOfWhereAllTypesInheritFromACommonAllOfSuperType() && hasNoDiscriminator()
 
     fun Schema.isOneOfSuperInterfaceWithDiscriminator() = discriminator.propertyName != null && isOneOfSuperInterface()

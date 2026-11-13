@@ -1,0 +1,118 @@
+openapi: 3.0.4
+info:
+  title: Singleton hierarchy unions
+  version: '1'
+paths: {}
+components:
+  schemas:
+    Base:
+      type: object
+      required: [kind, id]
+      properties:
+        kind:
+          type: string
+        id:
+          type: string
+          minLength: 1
+        note:
+          type: string
+          nullable: true
+          default: hello
+      discriminator:
+        propertyName: kind
+        mapping:
+          middle: '#/components/schemas/Middle'
+          child: '#/components/schemas/Child'
+          sibling: '#/components/schemas/Sibling'
+          third: '#/components/schemas/Third'
+    Middle:
+      allOf:
+        - $ref: '#/components/schemas/Base'
+        - type: object
+          properties:
+            middle:
+              type: string
+              nullable: true
+    Child:
+      allOf:
+        - $ref: '#/components/schemas/Middle'
+        - type: object
+          required: [kind, label]
+          properties:
+            kind:
+              type: string
+              enum: [child]
+            label:
+              type: string
+              minLength: 1
+    Sibling:
+      allOf:
+        - $ref: '#/components/schemas/Base'
+        - type: object
+          required: [kind]
+          properties:
+            kind:
+              type: string
+              enum: [sibling]
+    Third:
+      allOf:
+        - $ref: '#/components/schemas/Base'
+        - type: object
+          required: [kind]
+          properties:
+            kind:
+              type: string
+              enum: [third]
+    Holder:
+      type: object
+      properties:
+        single:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/Child'
+        values:
+          type: array
+          nullable: true
+          minItems: 1
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/Child'
+        nullableValues:
+          type: array
+          nullable: true
+          items:
+            nullable: true
+            oneOf:
+              - $ref: '#/components/schemas/Child'
+        parent:
+          oneOf:
+            - $ref: '#/components/schemas/Base'
+        middle:
+          oneOf:
+            - $ref: '#/components/schemas/Middle'
+        subset:
+          oneOf:
+            - $ref: '#/components/schemas/Child'
+            - $ref: '#/components/schemas/Sibling'
+        family:
+          oneOf:
+            - $ref: '#/components/schemas/Base'
+            - $ref: '#/components/schemas/Middle'
+            - $ref: '#/components/schemas/Child'
+            - $ref: '#/components/schemas/Sibling'
+            - $ref: '#/components/schemas/Third'
+        childrenOnly:
+          oneOf:
+            - $ref: '#/components/schemas/Middle'
+            - $ref: '#/components/schemas/Child'
+            - $ref: '#/components/schemas/Sibling'
+            - $ref: '#/components/schemas/Third'
+        preciseSubset:
+          oneOf:
+            - $ref: '#/components/schemas/Child'
+            - $ref: '#/components/schemas/Sibling'
+          discriminator:
+            propertyName: kind
+            mapping:
+              child: '#/components/schemas/Child'
+              sibling: '#/components/schemas/Sibling'
