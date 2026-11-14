@@ -47,6 +47,7 @@ data class SchemaSemantics(
 class OpenApiSchema(
     internal val kaizen: Schema,
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
+    private val allOfParentReferences: () -> Set<String> = { emptySet() },
 ) {
     val name: String? get() = kaizen.name
     val type: String?
@@ -56,17 +57,35 @@ class OpenApiSchema(
             }
     val format: String? get() = kaizen.format
     val properties: Map<String, OpenApiSchema>
-        get() = kaizen.properties?.mapValues { OpenApiSchema(it.value, schemaSemanticsAt) } ?: emptyMap()
+        get() =
+            kaizen.properties?.mapValues { OpenApiSchema(it.value, schemaSemanticsAt, allOfParentReferences = allOfParentReferences) }
+                ?: emptyMap()
     val requiredFields: List<String> get() = kaizen.requiredFields ?: emptyList()
     val allOfSchemas: List<OpenApiSchema>
-        get() = kaizen.allOfSchemas?.map { OpenApiSchema(it, schemaSemanticsAt) } ?: emptyList()
+        get() =
+            kaizen.allOfSchemas?.map { OpenApiSchema(it, schemaSemanticsAt, allOfParentReferences = allOfParentReferences) }
+                ?: emptyList()
     val anyOfSchemas: List<OpenApiSchema>
-        get() = kaizen.anyOfSchemas?.map { OpenApiSchema(it, schemaSemanticsAt) } ?: emptyList()
+        get() =
+            kaizen.anyOfSchemas?.map { OpenApiSchema(it, schemaSemanticsAt, allOfParentReferences = allOfParentReferences) }
+                ?: emptyList()
     val oneOfSchemas: List<OpenApiSchema>
-        get() = kaizen.oneOfSchemas?.map { OpenApiSchema(it, schemaSemanticsAt) } ?: emptyList()
-    val itemsSchema: OpenApiSchema get() = OpenApiSchema(kaizen.itemsSchema, schemaSemanticsAt)
+        get() =
+            kaizen.oneOfSchemas?.map { OpenApiSchema(it, schemaSemanticsAt, allOfParentReferences = allOfParentReferences) }
+                ?: emptyList()
+    val itemsSchema: OpenApiSchema get() =
+        OpenApiSchema(
+            kaizen.itemsSchema,
+            schemaSemanticsAt,
+            allOfParentReferences = allOfParentReferences,
+        )
     val additionalProperties: Boolean? get() = kaizen.additionalProperties
-    val additionalPropertiesSchema: OpenApiSchema get() = OpenApiSchema(kaizen.additionalPropertiesSchema, schemaSemanticsAt)
+    val additionalPropertiesSchema: OpenApiSchema get() =
+        OpenApiSchema(
+            kaizen.additionalPropertiesSchema,
+            schemaSemanticsAt,
+            allOfParentReferences = allOfParentReferences,
+        )
     val discriminator: OpenApiDiscriminator get() = OpenApiDiscriminator(kaizen.discriminator)
     val default: Any? get() = kaizen.default
     val extensions: Map<String, Any> get() = kaizen.extensions ?: emptyMap()
@@ -116,6 +135,8 @@ class OpenApiSchema(
     internal val isUninhabitable: Boolean get() = schemaSemanticsAt(jsonPathFromRoot).isUninhabitable
     internal val hasMultipleNonNullTypes: Boolean get() = schemaSemanticsAt(jsonPathFromRoot).hasMultipleNonNullTypes
 
+    internal fun hasAllOfDescendants(): Boolean = jsonReference in allOfParentReferences()
+
     fun hasEnums(): Boolean = kaizen.hasEnums()
 
     fun hasAllOfSchemas(): Boolean = kaizen.hasAllOfSchemas()
@@ -137,20 +158,48 @@ class OpenApi3Document(
     private val includePolymorphicSubtypes: (Set<String>) -> Set<String> = { it },
 ) {
     private val compositionRelationships by lazy { SchemaCompositionRelationships(schemas.values) }
+    private val allOfParentReferences by lazy {
+        schemas.values
+            .flatMap { compositionRelationships.allOfComponents(it) }
+            .map { it.jsonReference }
+            .toSet()
+    }
     private val oneOfRelationships by lazy { OneOfSuperInterfaceCache(schemas.values.toList()) }
 
     internal fun oneOfSuperInterfaces(schema: OpenApiSchema): List<OpenApiSchema> = oneOfRelationships.find(schema)
 
     val schemas: Map<String, OpenApiSchema>
-        get() = kaizen.schemas?.mapValues { OpenApiSchema(it.value, schemaSemanticsAt) } ?: emptyMap()
+        get() =
+            kaizen.schemas?.mapValues { OpenApiSchema(it.value, schemaSemanticsAt, allOfParentReferences = { allOfParentReferences }) }
+                ?: emptyMap()
     val paths: Map<String, OpenApiPath>
-        get() = kaizen.paths?.mapValues { OpenApiPath(it.value, schemaSemanticsAt) } ?: emptyMap()
+        get() =
+            kaizen.paths?.mapValues { OpenApiPath(it.value, schemaSemanticsAt, allOfParentReferences = { allOfParentReferences }) }
+                ?: emptyMap()
     val parameters: Map<String, OpenApiParameter>
-        get() = kaizen.parameters?.mapValues { OpenApiParameter(it.value, schemaSemanticsAt) } ?: emptyMap()
+        get() =
+            kaizen.parameters?.mapValues {
+                OpenApiParameter(
+                    it.value,
+                    schemaSemanticsAt,
+                    allOfParentReferences = { allOfParentReferences },
+                )
+            }
+                ?: emptyMap()
     val requestBodies: Map<String, OpenApiRequestBody>
-        get() = kaizen.requestBodies?.mapValues { OpenApiRequestBody(it.value, schemaSemanticsAt) } ?: emptyMap()
+        get() =
+            kaizen.requestBodies?.mapValues {
+                OpenApiRequestBody(
+                    it.value,
+                    schemaSemanticsAt,
+                    allOfParentReferences = { allOfParentReferences },
+                )
+            }
+                ?: emptyMap()
     val responses: Map<String, OpenApiResponse>
-        get() = kaizen.responses?.mapValues { OpenApiResponse(it.value, schemaSemanticsAt) } ?: emptyMap()
+        get() =
+            kaizen.responses?.mapValues { OpenApiResponse(it.value, schemaSemanticsAt, allOfParentReferences = { allOfParentReferences }) }
+                ?: emptyMap()
     val servers: List<OpenApiServer> get() = kaizen.servers?.map(::OpenApiServer) ?: emptyList()
     val securityRequirements: List<OpenApiSecurityRequirement>
         get() = kaizen.securityRequirements?.map(::OpenApiSecurityRequirement) ?: emptyList()
@@ -178,17 +227,28 @@ class OpenApiOperation(
     private val requestContentOverride: Map<String, OpenApiMediaType>? = null,
     val requestFunctionSuffix: String = "",
     val hasDistinctRequestRepresentations: Boolean = false,
+    private val allOfParentReferences: () -> Set<String> = { emptySet() },
 ) {
     val parameters: List<OpenApiParameter>
-        get() = kaizen.parameters?.map { OpenApiParameter(it, schemaSemanticsAt) } ?: emptyList()
+        get() =
+            kaizen.parameters?.map { OpenApiParameter(it, schemaSemanticsAt, allOfParentReferences = allOfParentReferences) }
+                ?: emptyList()
     val responses: Map<String, OpenApiResponse>
-        get() = kaizen.responses?.mapValues { OpenApiResponse(it.value, schemaSemanticsAt) } ?: emptyMap()
+        get() =
+            kaizen.responses?.mapValues { OpenApiResponse(it.value, schemaSemanticsAt, allOfParentReferences = allOfParentReferences) }
+                ?: emptyMap()
     val operationId: String? get() = kaizen.operationId
     val tags: List<String> get() = kaizen.tags ?: emptyList()
     val summary: String? get() = kaizen.summary
     val description: String? get() = kaizen.description
     val isDeprecated: Boolean get() = kaizen.isDeprecated ?: false
-    val requestBody: OpenApiRequestBody get() = OpenApiRequestBody(kaizen.requestBody, schemaSemanticsAt, requestContentOverride)
+    val requestBody: OpenApiRequestBody get() =
+        OpenApiRequestBody(
+            kaizen.requestBody,
+            schemaSemanticsAt,
+            requestContentOverride,
+            allOfParentReferences,
+        )
     val securityRequirements: List<OpenApiSecurityRequirement>
         get() = kaizen.securityRequirements?.map(::OpenApiSecurityRequirement) ?: emptyList()
     val extensions: Map<String, Any> get() = kaizen.extensions ?: emptyMap()
@@ -197,7 +257,8 @@ class OpenApiOperation(
         content: Map<String, OpenApiMediaType>,
         functionSuffix: String,
         distinctRepresentations: Boolean,
-    ): OpenApiOperation = OpenApiOperation(kaizen, schemaSemanticsAt, content, functionSuffix, distinctRepresentations)
+    ): OpenApiOperation =
+        OpenApiOperation(kaizen, schemaSemanticsAt, content, functionSuffix, distinctRepresentations, allOfParentReferences)
 
     fun hasSecurityRequirements(): Boolean = kaizen.hasSecurityRequirements()
 
@@ -211,15 +272,28 @@ class OpenApiOperation(
 class OpenApiPath(
     internal val kaizen: Path,
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
+    private val allOfParentReferences: () -> Set<String> = { emptySet() },
 ) {
     private val queryOperations: Map<String, OpenApiOperation> by lazy {
-        OpenApi3ParserAdapter.parseQueryOperations(kaizen).mapValues { OpenApiOperation(it.value, schemaSemanticsAt) }
+        OpenApi3ParserAdapter.parseQueryOperations(kaizen).mapValues {
+            OpenApiOperation(it.value, schemaSemanticsAt, allOfParentReferences = allOfParentReferences)
+        }
     }
 
     val parameters: List<OpenApiParameter>
-        get() = kaizen.parameters?.map { OpenApiParameter(it, schemaSemanticsAt) } ?: emptyList()
+        get() =
+            kaizen.parameters?.map { OpenApiParameter(it, schemaSemanticsAt, allOfParentReferences = allOfParentReferences) }
+                ?: emptyList()
     val operations: Map<String, OpenApiOperation>
-        get() = kaizen.operations.orEmpty().mapValues { OpenApiOperation(it.value, schemaSemanticsAt) } + queryOperations
+        get() =
+            kaizen.operations.orEmpty().mapValues {
+                OpenApiOperation(
+                    it.value,
+                    schemaSemanticsAt,
+                    allOfParentReferences = allOfParentReferences,
+                )
+            } +
+                queryOperations
     val pathString: String get() = kaizen.pathString
 
     override fun equals(other: Any?): Boolean = other is OpenApiPath && kaizen == other.kaizen
@@ -232,10 +306,11 @@ class OpenApiPath(
 class OpenApiParameter(
     internal val kaizen: Parameter,
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
+    private val allOfParentReferences: () -> Set<String> = { emptySet() },
 ) {
     val name: String get() = kaizen.name
     val `in`: String get() = kaizen.`in`
-    val schema: OpenApiSchema get() = OpenApiSchema(kaizen.schema, schemaSemanticsAt)
+    val schema: OpenApiSchema get() = OpenApiSchema(kaizen.schema, schemaSemanticsAt, allOfParentReferences = allOfParentReferences)
     val isRequired: Boolean get() = kaizen.isRequired ?: false
     val isDeprecated: Boolean get() = kaizen.isDeprecated ?: false
     val description: String? get() = kaizen.description
@@ -251,9 +326,18 @@ class OpenApiParameter(
 class OpenApiResponse(
     internal val kaizen: Response,
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
+    private val allOfParentReferences: () -> Set<String> = { emptySet() },
 ) {
     val contentMediaTypes: Map<String, OpenApiMediaType>
-        get() = kaizen.contentMediaTypes?.mapValues { OpenApiMediaType(it.value, schemaSemanticsAt) } ?: emptyMap()
+        get() =
+            kaizen.contentMediaTypes?.mapValues {
+                OpenApiMediaType(
+                    it.value,
+                    schemaSemanticsAt,
+                    allOfParentReferences = allOfParentReferences,
+                )
+            }
+                ?: emptyMap()
     val description: String? get() = kaizen.description
 
     fun hasContentMediaTypes(): Boolean = kaizen.hasContentMediaTypes()
@@ -269,9 +353,19 @@ class OpenApiRequestBody(
     internal val kaizen: RequestBody,
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
     private val contentOverride: Map<String, OpenApiMediaType>? = null,
+    private val allOfParentReferences: () -> Set<String> = { emptySet() },
 ) {
     val contentMediaTypes: Map<String, OpenApiMediaType>
-        get() = contentOverride ?: kaizen.contentMediaTypes?.mapValues { OpenApiMediaType(it.value, schemaSemanticsAt) } ?: emptyMap()
+        get() =
+            contentOverride
+                ?: kaizen.contentMediaTypes?.mapValues {
+                    OpenApiMediaType(
+                        it.value,
+                        schemaSemanticsAt,
+                        allOfParentReferences = allOfParentReferences,
+                    )
+                }
+                ?: emptyMap()
     val description: String? get() = kaizen.description
     val isRequired: Boolean get() = kaizen.isRequired ?: false
 
@@ -286,12 +380,15 @@ class OpenApiMediaType(
     internal val kaizen: MediaType,
     private val schemaSemanticsAt: (String) -> SchemaSemantics = { SchemaSemantics() },
     private val schemaOverride: OpenApiSchema? = null,
+    private val allOfParentReferences: () -> Set<String> = { emptySet() },
 ) {
-    val schema: OpenApiSchema get() = schemaOverride ?: OpenApiSchema(kaizen.schema, schemaSemanticsAt)
+    val schema: OpenApiSchema get() =
+        schemaOverride
+            ?: OpenApiSchema(kaizen.schema, schemaSemanticsAt, allOfParentReferences = allOfParentReferences)
 
     fun encodingContentType(partName: String): String? = kaizen.getEncodingProperty(partName)?.contentType
 
-    fun withSchema(schema: OpenApiSchema): OpenApiMediaType = OpenApiMediaType(kaizen, schemaSemanticsAt, schema)
+    fun withSchema(schema: OpenApiSchema): OpenApiMediaType = OpenApiMediaType(kaizen, schemaSemanticsAt, schema, allOfParentReferences)
 
     override fun equals(other: Any?): Boolean = other is OpenApiMediaType && kaizen == other.kaizen
 
