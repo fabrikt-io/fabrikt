@@ -461,6 +461,8 @@ _NOTE: [Discriminated `oneOf`](src/test/resources/examples/discriminatedOneOf) i
 
 A `oneOf` without its own discriminator that lists a single named member of an existing discriminated hierarchy uses that member's type when it is a concrete leaf or the generated parent of its descendants. Other unions sharing a discriminated `allOf` ancestor retain that ancestor type. A singleton referencing an intermediate schema or a strict subset can therefore accept registered sibling types outside the declared alternatives; the generated Kotlin type does not enforce that narrower boundary. A `oneOf` with its own discriminator retains its precise generated interface.
 
+For Jackson 2 and 3, a direct property reference to an intermediate `allOf` schema without its own discriminator uses a sealed `<Name>Contract` interface when that schema has descendants. The interface represents the intermediate and its compatible descendants, including in collection values. It is emitted only when referenced and is independent of the unannotated `<Name>Composite` interface from `SHARED_COMPOSITION_CONTRACTS`. Adding a descendant can therefore change an existing property type from the concrete class to its contract. A `oneOf: [Intermediate]` keeps the ancestor representation described above; kotlinx.serialization keeps its existing concrete types.
+
 ```yml
 openapi: 3.0.0
 components:

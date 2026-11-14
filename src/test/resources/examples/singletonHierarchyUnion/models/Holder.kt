@@ -3,9 +3,26 @@ package examples.singletonHierarchyUnion.models
 import com.fasterxml.jackson.`annotation`.JsonProperty
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Size
+import kotlin.String
 import kotlin.collections.List
+import kotlin.collections.Map
 
 public data class Holder(
+  @param:JsonProperty("direct")
+  @get:JsonProperty("direct")
+  @get:Valid
+  public val direct: MiddleContract? = null,
+  @param:JsonProperty("directValues")
+  @get:JsonProperty("directValues")
+  @get:Size(min = 1)
+  public val directValues: List<@Valid MiddleContract>? = null,
+  @param:JsonProperty("directMap")
+  @get:JsonProperty("directMap")
+  public val directMap: Map<String, @Valid MiddleContract?>? = null,
+  @param:JsonProperty("bag")
+  @get:JsonProperty("bag")
+  @get:Valid
+  public val bag: MiddleBag? = null,
   @param:JsonProperty("single")
   @get:JsonProperty("single")
   @get:Valid

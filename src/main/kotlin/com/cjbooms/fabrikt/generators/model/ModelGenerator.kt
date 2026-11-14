@@ -96,6 +96,7 @@ class ModelGenerator(
 ) {
     private val propertySettings = PropertyInfo.httpSettings(direction)
     private val options = MutableSettings.modelOptions
+    private val intermediateContracts = IntermediateContractGenerator(packages, direction)
     private val openAllOfParents =
         run {
             val requested = ModelCodeGenOptionType.OPEN_CLASSES_FOR_ALL_OF in options
@@ -287,6 +288,7 @@ class ModelGenerator(
     }
 
     private fun generateModelSet(): Models {
+        if (MutableSettings.serializationLibrary.isJackson) intermediateContracts.prepare(sourceApi.openApi3, sourceApi.allSchemas)
         registerCompositionSchemas(sourceApi.openApi3, sourceApi.baseUri.toString())
         val models: MutableSet<TypeSpec> = createModels(sourceApi.openApi3, sourceApi.allSchemas)
 
@@ -307,6 +309,7 @@ class ModelGenerator(
                 api.schemas.entries
                     .map { (key, schema) -> SchemaInfo(key, schema) }
                     .filterByExternalRefResolutionMode(requiredSchemas)
+            if (MutableSettings.serializationLibrary.isJackson) intermediateContracts.prepare(api, schemas)
             val externalModels = createModels(api, schemas)
             if (parsed.schemas.isEmpty() && api.schemas.size == 1) {
                 val wrapped = api.schemas.values.single()
@@ -362,7 +365,7 @@ class ModelGenerator(
                 models
             }
         return Models(
-            composedModels.map { model ->
+            intermediateContracts.apply(composedModels, primaryModels).map { model ->
                 val existingAnnotationTypes = model.annotations.map { it.typeName }.toSet()
                 val annotationsToAdd = additionalModelAnnotations.filterNot { it.typeName in existingAnnotationTypes }
                 val annotatedModel =
@@ -495,7 +498,9 @@ class ModelGenerator(
                     schemaInfo.typeInfo is KotlinTypeInfo.Enum ||
                     schemaInfo.schema.findOneOfSuperInterface(schemas.map { it.schema }).isNotEmpty() -> {
                     val primaryModel = buildPrimaryModel(api, schemaInfo, properties, schemas)
-                    if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) {
+                    if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options ||
+                        intermediateContracts.referenceNames.isNotEmpty()
+                    ) {
                         primaryModels[schemaInfo.schema.jsonReference] = primaryModel
                     }
                     val inlinedModels =
@@ -1384,19 +1389,29 @@ class ModelGenerator(
                     (classType.polymorphyType != ClassSettings.PolymorphyType.SUPER || classType.isOpenSuperType) &&
                         !classType.inheritsCascadedValidation(property)
                 }
+            val referenceType = property.typeInfo.forReference(intermediateContracts.referenceNames)
+            val propertyType =
+                if (property is PropertyInfo.AdditionalProperties &&
+                    referenceType is KotlinTypeInfo.Object &&
+                    referenceType != property.typeInfo
+                ) {
+                    KotlinTypeInfo.GeneratedTypedAdditionalProperties(referenceType.simpleClassName)
+                } else {
+                    referenceType
+                }
             property.addToClass(
                 schemaName = schemaName,
                 type =
                     toModelType(
                         packages.base,
-                        property.typeInfo,
+                        propertyType,
                         property.isNullable(classType),
                         propertyValidationAnnotations,
                     ),
                 parameterizedType =
                     toClassName(
                         packages.base,
-                        property.typeInfo,
+                        propertyType,
                     ),
                 classBuilder = classBuilder,
                 constructorBuilder = constructorBuilder,

@@ -66,6 +66,19 @@ components:
     Holder:
       type: object
       properties:
+        direct:
+          $ref: '#/components/schemas/Middle'
+        directValues:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Middle'
+        directMap:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Middle'
+        bag:
+          $ref: '#/components/schemas/MiddleBag'
         single:
           nullable: true
           oneOf:
@@ -116,3 +129,10 @@ components:
             mapping:
               child: '#/components/schemas/Child'
               sibling: '#/components/schemas/Sibling'
+    MiddleBag:
+      type: object
+      properties:
+        tag:
+          type: string
+      additionalProperties:
+        $ref: '#/components/schemas/Middle'

@@ -13,7 +13,7 @@ public data class Child(
   override val id: String,
   @param:JsonProperty("middle")
   @get:JsonProperty("middle")
-  public val middle: String? = null,
+  override val middle: String? = null,
   @param:JsonProperty("label")
   @get:JsonProperty("label")
   @get:NotNull
@@ -27,4 +27,5 @@ public data class Child(
   @get:JsonProperty("note")
   override val note: String? = "hello",
 ) : Base(id, note),
-    HolderPreciseSubset
+    HolderPreciseSubset,
+    MiddleContract
