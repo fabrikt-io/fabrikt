@@ -4,11 +4,6 @@ import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.ModelDirection
 import com.cjbooms.fabrikt.model.SchemaInfo
 import com.cjbooms.fabrikt.util.NormalisedString.toModelClassName
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedEnumDefinition
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.isNamedComponent
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.isPolymorphicSuperType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
 import java.net.URL
 import com.cjbooms.fabrikt.model.OpenApiSchema as Schema
@@ -22,8 +17,8 @@ object ModelNameRegistry {
     private val allocatedNames: MutableSet<String> = mutableSetOf()
     private val tagToName: MutableMap<String, String> = mutableMapOf()
     private val referenceToName: MutableMap<String, String> = mutableMapOf()
-    private val compositionContractNames: MutableMap<Pair<String, String>, String> = mutableMapOf()
-    private val intermediateContractNames: MutableMap<Pair<String, String>, String> = mutableMapOf()
+    private val contractNames: MutableMap<Triple<String, String, String>, String> = mutableMapOf()
+    internal val intermediateReferences: MutableMap<String, String> = linkedMapOf()
     private const val SUFFIX = "Extra"
 
     /**
@@ -53,18 +48,13 @@ object ModelNameRegistry {
         return suggestion
     }
 
-    private fun allocateUniqueName(
-        modelClassName: String,
-        unavailableNames: Set<String> = emptySet(),
-        allocations: MutableSet<String> = allocatedNames,
-    ): String {
-        if (modelClassName !in unavailableNames && allocations.add(modelClassName)) return modelClassName
-
+    private fun allocateUniqueName(modelClassName: String): String {
+        if (allocatedNames.add(modelClassName)) return modelClassName
         var collisionIndex = 1
         while (true) {
             val numericSuffix = if (collisionIndex == 1) "" else collisionIndex.toString()
             val suggestion = "$modelClassName$SUFFIX$numericSuffix"
-            if (suggestion !in unavailableNames && allocations.add(suggestion)) return suggestion
+            if (allocatedNames.add(suggestion)) return suggestion
             collisionIndex++
         }
     }
@@ -214,53 +204,25 @@ object ModelNameRegistry {
     fun compositionContractName(
         schema: Schema,
         modelName: String,
-    ): String = compositionContractNames.getOrPut(schema.jsonReference to modelName) { allocateUniqueName("${modelName}Composite") }
+    ): String = contractName(schema, modelName, "Composite")
 
     fun intermediateContractName(
         schema: Schema,
         modelName: String,
-    ): String =
-        intermediateContractNames.getOrPut(schema.jsonReference to modelName) {
-            allocateUniqueName("${modelName}Contract", inlineModelNames(schema))
-        }
+    ): String = contractName(schema, modelName, "Contract")
 
-    private fun inlineModelNames(schema: Schema): Set<String> {
-        val visited = mutableSetOf<String>()
-        val allocations = allocatedNames.toMutableSet()
-        val names = mutableSetOf<String>()
-
-        fun visit(
-            current: Schema,
-            model: Boolean = false,
-            composing: Boolean = false,
-        ) {
-            if (current.jsonReference != schema.jsonReference &&
-                current.isNamedComponent() &&
-                (!composing || current.isPolymorphicSuperType())
-            ) {
-                return
-            }
-            if (!visited.add(current.jsonReference)) return
-            if (model &&
-                (current.isInlinedObjectDefinition() || current.isInlinedEnumDefinition() || current.isInlinedOneOfSuperInterface())
-            ) {
-                names.add(allocateUniqueName(register(current, schema, allocate = false), allocations = allocations))
-            }
-            current.properties.values.forEach { visit(it, true) }
-            current.allOfSchemas.forEach { visit(it, composing = true) }
-            (current.oneOfSchemas + current.anyOfSchemas).forEach { visit(it) }
-            listOf(current.itemsSchema, current.additionalPropertiesSchema).filter { it.isPresent }.forEach { visit(it, true) }
-        }
-        visit(schema)
-        return names
-    }
+    private fun contractName(
+        schema: Schema,
+        modelName: String,
+        suffix: String,
+    ): String = contractNames.getOrPut(Triple(schema.jsonReference, modelName, suffix)) { allocateUniqueName("$modelName$suffix") }
 
     fun clear() {
         allocatedNames.clear()
         tagToName.clear()
         inlineSchemaTracking.clear()
         referenceToName.clear()
-        compositionContractNames.clear()
-        intermediateContractNames.clear()
+        contractNames.clear()
+        intermediateReferences.clear()
     }
 }

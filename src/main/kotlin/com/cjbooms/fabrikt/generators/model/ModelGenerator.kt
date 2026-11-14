@@ -64,7 +64,6 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSourceDocumentRoot
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeyForSchemaName
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeys
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleAggregatedEnumAliasSchema
 import com.squareup.kotlinpoet.AnnotationSpec
@@ -277,6 +276,7 @@ class ModelGenerator(
     }
 
     fun generate(): Models {
+        ModelNameRegistry.intermediateReferences.clear()
         if (ModelCodeGenOptionType.REQUEST_RESPONSE_MODELS in options) {
             return Models(
                 ModelDirection.entries.flatMap { direction ->
@@ -352,6 +352,10 @@ class ModelGenerator(
             addExternalModels(requested)
             processed.getOrPut(next.key, ::mutableSetOf).addAll(requested.value)
         }
+        intermediateContracts.allocateNames(primaryModels)
+        val referencedModels = rewriteContractReferences(models, modelsPackage(packages.base), intermediateContracts.referenceNames)
+        val referencedByName = referencedModels.associateBy { it.name }
+        primaryModels.replaceAll { _, model -> referencedByName[model.name] ?: model }
         val composedModels =
             if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options) {
                 SharedCompositionContractGenerator(
@@ -360,9 +364,9 @@ class ModelGenerator(
                     primaryModels,
                     mappedContractModels,
                     generatedCompositionSchemas.values,
-                ).apply(models)
+                ).apply(referencedModels)
             } else {
-                models
+                referencedModels
             }
         return Models(
             intermediateContracts.apply(composedModels, primaryModels).map { model ->
@@ -499,7 +503,7 @@ class ModelGenerator(
                     schemaInfo.schema.findOneOfSuperInterface(schemas.map { it.schema }).isNotEmpty() -> {
                     val primaryModel = buildPrimaryModel(api, schemaInfo, properties, schemas)
                     if (ModelCodeGenOptionType.SHARED_COMPOSITION_CONTRACTS in options ||
-                        intermediateContracts.referenceNames.isNotEmpty()
+                        MutableSettings.serializationLibrary.isJackson
                     ) {
                         primaryModels[schemaInfo.schema.jsonReference] = primaryModel
                     }
@@ -564,6 +568,7 @@ class ModelGenerator(
 
             schemaInfo.schema.isPolymorphicSuperType() && schemaInfo.schema.isPolymorphicSubType(api) ->
                 polymorphicSuperSubType(
+                    api.allOfDescendants(schemaInfo.schema, allSchemas.map { it.schema }),
                     modelName,
                     schemaName,
                     properties,
@@ -576,6 +581,7 @@ class ModelGenerator(
 
             schemaInfo.schema.isPolymorphicSuperType() ->
                 polymorphicSuperType(
+                    api.allOfDescendants(schemaInfo.schema, allSchemas.map { it.schema }),
                     modelName,
                     schemaName,
                     properties,
@@ -1050,6 +1056,7 @@ class ModelGenerator(
     }
 
     private fun polymorphicSuperSubType(
+        descendants: List<Schema>,
         modelName: String,
         schemaName: String,
         properties: Collection<PropertyInfo>,
@@ -1070,6 +1077,7 @@ class ModelGenerator(
                     oneOfSuperInterfaces,
                     this,
                 ).buildPolymorphicSuperType(
+                    descendants,
                     modelName,
                     schemaName,
                     properties.filterNot(PropertyInfo::isInherited),
@@ -1206,6 +1214,7 @@ class ModelGenerator(
     }
 
     private fun polymorphicSuperType(
+        descendants: List<Schema>,
         modelName: String,
         schemaName: String,
         properties: Collection<PropertyInfo>,
@@ -1217,6 +1226,7 @@ class ModelGenerator(
         TypeSpec
             .classBuilder(generatedType(packages.base, modelName))
             .buildPolymorphicSuperType(
+                descendants = descendants,
                 modelName = modelName,
                 schemaName = schemaName,
                 properties = properties,
@@ -1227,6 +1237,7 @@ class ModelGenerator(
             ).build()
 
     private fun TypeSpec.Builder.buildPolymorphicSuperType(
+        descendants: List<Schema>,
         modelName: String,
         schemaName: String,
         properties: Collection<PropertyInfo>,
@@ -1248,8 +1259,10 @@ class ModelGenerator(
             this.addSuperinterface(generatedType(packages.base, interfaceName))
         }
 
+        val descendantRefs = descendants.map { it.jsonReference }.toSet()
         val subTypes =
             allSchemas
+                .filter { it.schema.jsonReference in descendantRefs }
                 .filter { model ->
                     model.schema.allOfAncestors().firstOrNull { it.isPolymorphicSuperType() }?.let { allOfRef ->
                         ModelNameRegistry.getOrRegister(allOfRef, direction = direction) == modelName &&
@@ -1389,15 +1402,14 @@ class ModelGenerator(
                     (classType.polymorphyType != ClassSettings.PolymorphyType.SUPER || classType.isOpenSuperType) &&
                         !classType.inheritsCascadedValidation(property)
                 }
-            val referenceType = property.typeInfo.forReference(intermediateContracts.referenceNames)
             val propertyType =
                 if (property is PropertyInfo.AdditionalProperties &&
-                    referenceType is KotlinTypeInfo.Object &&
-                    referenceType != property.typeInfo
+                    property.typeInfo is KotlinTypeInfo.Object &&
+                    MutableSettings.serializationLibrary.isJackson
                 ) {
-                    KotlinTypeInfo.GeneratedTypedAdditionalProperties(referenceType.simpleClassName)
+                    KotlinTypeInfo.GeneratedTypedAdditionalProperties(checkNotNull(property.typeInfo.generatedModelClassName))
                 } else {
-                    referenceType
+                    property.typeInfo
                 }
             property.addToClass(
                 schemaName = schemaName,
@@ -1440,15 +1452,11 @@ class ModelGenerator(
     }
 
     private fun Discriminator.getDiscriminatorMappings(schemaInfo: SchemaInfo): Map<String, TypeName> =
-        mappingKeys(schemaInfo.schema)
-            .filter { it.value == schemaInfo.schema.name || it.key == schemaInfo.schema.name }
-            .map {
-                it.key to
-                    toModelType(
-                        packages.base,
-                        KotlinTypeInfo.from(schemaInfo.schema, schemaInfo.name, direction = direction),
-                    )
-            }.toMap()
+        JacksonMetadata.discriminatorMappings(
+            this,
+            schemaInfo.schema,
+            toModelType(packages.base, KotlinTypeInfo.from(schemaInfo.schema, schemaInfo.name, direction = direction)),
+        )
 
     private fun Discriminator.parentTypeIds(
         schemaName: String,

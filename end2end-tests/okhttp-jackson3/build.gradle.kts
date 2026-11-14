@@ -226,7 +226,7 @@ tasks {
                 "--output-directory", generationDir,
                 "--base-package", "com.example.singleton.$variant",
                 "--api-file", spec,
-                "--targets", "http_models",
+                "--targets", "http_models,client",
                 "--serialization-library", "jackson_3"
             ) + if (openParents) listOf("--http-model-opts", "OPEN_CLASSES_FOR_ALL_OF,SHARED_COMPOSITION_CONTRACTS") else emptyList()
             dependsOn(":shadowJar")

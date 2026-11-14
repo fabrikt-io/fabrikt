@@ -26,13 +26,14 @@ internal class IntermediateContractGenerator(
     private data class Contract(
         val schema: OpenApiSchema,
         val root: OpenApiSchema,
-        val name: String,
         val members: List<OpenApiSchema>,
     )
 
     private val propertySettings = PropertyInfo.httpSettings(direction)
     private val contracts = linkedMapOf<String, Contract>()
+    private val referenced = mutableSetOf<String>()
     val referenceNames = linkedMapOf<String, String>()
+    private val namesByReference = linkedMapOf<String, String>()
 
     fun prepare(
         api: OpenApi3Document,
@@ -42,15 +43,13 @@ internal class IntermediateContractGenerator(
             api.schemas.values
                 .filter { it.isHierarchyIntermediate() }
                 .associateBy { it.jsonReference }
-        if (candidates.isEmpty()) return
-        val referenced = mutableSetOf<String>()
         val visited = mutableSetOf<Pair<String, Boolean>>()
 
         fun visit(
             schema: OpenApiSchema,
             reference: Boolean = false,
         ) {
-            if (reference && schema.jsonReference in candidates) referenced.add(schema.jsonReference)
+            if (reference) referenced.add(schema.jsonReference)
             if (!visited.add(schema.jsonReference to reference)) return
             schema.properties.values
                 .filterNot {
@@ -62,20 +61,36 @@ internal class IntermediateContractGenerator(
             (schema.allOfSchemas + schema.oneOfSchemas + schema.anyOfSchemas).forEach { visit(it) }
         }
         schemas.forEach { visit(it.schema) }
-        if (referenced.isEmpty()) return
-        schemas.forEach { ModelNameRegistry.getOrRegister(it) }
-        val descendants =
+        api.paths.values.forEach { path ->
+            path.parameters.forEach { visit(it.schema, true) }
+            path.operations.values.forEach { operation ->
+                operation.parameters.forEach { visit(it.schema, true) }
+                (operation.requestBody.contentMediaTypes.values + operation.responses.values.flatMap { it.contentMediaTypes.values })
+                    .forEach {
+                        visit(it.schema, true)
+                    }
+            }
+        }
+        val components =
             api.schemas.values
-                .flatMap { member ->
-                    member.allOfAncestors().map { it.jsonReference to member }
-                }.groupBy({ it.first }, { it.second })
-        referenced.sorted().forEach { reference ->
-            val schema = candidates.getValue(reference)
-            val type = KotlinTypeInfo.from(schema, direction = direction) as? KotlinTypeInfo.Object ?: return@forEach
-            val name = ModelNameRegistry.intermediateContractName(schema, type.simpleClassName)
-            contracts[reference] =
-                Contract(schema, checkNotNull(schema.discriminatedRoot()), name, listOf(schema) + descendants[reference].orEmpty())
-            referenceNames[type.simpleClassName] = name
+                .map { it.jsonReference }
+                .toSet()
+        val additional = schemas.map { it.schema }.filter { it.jsonReference !in components }
+        candidates.values.forEach { schema ->
+            contracts[schema.jsonReference] =
+                Contract(schema, checkNotNull(schema.discriminatedRoot()), listOf(schema) + api.allOfDescendants(schema, additional))
+        }
+    }
+
+    fun allocateNames(primaryModels: Map<String, TypeSpec>) {
+        contracts.values.filter { it.schema.jsonReference in referenced }.sortedBy { it.schema.jsonReference }.forEach { contract ->
+            val model = primaryModels[contract.schema.jsonReference] ?: return@forEach
+            if (!model.isConcreteObject()) return@forEach
+            val modelName = checkNotNull(model.name)
+            val name = ModelNameRegistry.intermediateContractName(contract.schema, modelName)
+            namesByReference[contract.schema.jsonReference] = name
+            referenceNames[modelName] = name
+            ModelNameRegistry.intermediateReferences[modelName] = name
         }
     }
 
@@ -89,11 +104,13 @@ internal class IntermediateContractGenerator(
         val overrides = mutableMapOf<String, MutableSet<String>>()
         val generated =
             contracts.values.mapNotNull { contract ->
+                val name = namesByReference[contract.schema.jsonReference] ?: return@mapNotNull null
                 val base = primaryModels[contract.schema.jsonReference] ?: return@mapNotNull null
                 val required = properties.effectiveProperties(base)
                 val compatible =
                     contract.members.filter { member ->
                         val model = primaryModels[member.jsonReference] ?: return@filter false
+                        if (!model.isConcreteObject()) return@filter false
                         val actual = properties.effectiveProperties(model)
                         val incompatible =
                             required.values.firstOrNull { expected ->
@@ -101,7 +118,7 @@ internal class IntermediateContractGenerator(
                             }
                         if (incompatible != null) {
                             logger.warning(
-                                "Omitting ${model.name} from ${contract.name}: property '${incompatible.name}' is incompatible with the contract. Align the composed property types to include this subtype.",
+                                "Omitting ${model.name} from $name: property '${incompatible.name}' is incompatible with the contract. Align the composed property types to include this subtype.",
                             )
                             false
                         } else {
@@ -109,7 +126,7 @@ internal class IntermediateContractGenerator(
                                 .getOrPut(
                                     checkNotNull(model.name),
                                     ::mutableListOf,
-                                ).add(ClassName(modelsPackage(packages.base), contract.name))
+                                ).add(ClassName(modelsPackage(packages.base), name))
                             overrides.getOrPut(checkNotNull(model.name), ::mutableSetOf).addAll(required.keys)
                             true
                         }
@@ -121,13 +138,14 @@ internal class IntermediateContractGenerator(
                     compatible
                         .flatMap { member ->
                             val model = primaryModels.getValue(member.jsonReference)
-                            val keys =
-                                discriminator.mappings
-                                    .filterValues {
-                                        it.substringAfterLast('/') == member.name
-                                    }.keys
-                                    .ifEmpty { setOf(checkNotNull(member.name)) }
-                            keys.map { it to ClassName(modelsPackage(packages.base), checkNotNull(model.name)) }
+                            JacksonMetadata
+                                .discriminatorMappings(
+                                    discriminator,
+                                    member,
+                                    ClassName(modelsPackage(packages.base), checkNotNull(model.name)),
+                                    fallbackName = member.name,
+                                ).entries
+                                .map { it.key to it.value }
                         }.toMap()
                 val enum =
                     (
@@ -138,39 +156,14 @@ internal class IntermediateContractGenerator(
                         KotlinTypeInfo.from(it, direction = direction)
                     } as? KotlinTypeInfo.Enum
                 TypeSpec
-                    .interfaceBuilder(contract.name)
+                    .interfaceBuilder(name)
                     .addModifiers(KModifier.SEALED)
                     .addAnnotation(JacksonMetadata.basePolymorphicType(checkNotNull(discriminator.propertyName)))
                     .addAnnotation(JacksonMetadata.polymorphicSubTypes(mappings, enum))
                     .addProperties(required.values.map { PropertySpec.builder(it.name, it.type.withoutTypeAnnotations()).build() })
                     .build()
             }
-        return models
-            .map { model ->
-                val implemented = interfaces[model.name].orEmpty()
-                if (implemented.isEmpty()) {
-                    model
-                } else {
-                    model
-                        .toBuilder()
-                        .apply {
-                            implemented.forEach { addSuperinterface(it) }
-                            propertySpecs.clear()
-                            addProperties(
-                                model.propertySpecs.map {
-                                    if (it.name in
-                                        overrides[model.name].orEmpty()
-                                    ) {
-                                        it.toBuilder().addModifiers(KModifier.OVERRIDE).build()
-                                    } else {
-                                        it
-                                    }
-                                },
-                            )
-                        }.build()
-                }
-            }.plus(generated)
-            .toMutableSet()
+        return applyContractInterfaces(models, interfaces, overrides).plus(generated).toMutableSet()
     }
 
     companion object {

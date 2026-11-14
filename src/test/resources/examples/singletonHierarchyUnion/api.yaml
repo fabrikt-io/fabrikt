@@ -2,7 +2,30 @@ openapi: 3.0.4
 info:
   title: Singleton hierarchy unions
   version: '1'
-paths: {}
+paths:
+  /middle:
+    post:
+      operationId: echoMiddle
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Middle'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Middle'
+      responses:
+        '200':
+          description: A middle or one of its descendants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Middle'
+
 components:
   schemas:
     Base:

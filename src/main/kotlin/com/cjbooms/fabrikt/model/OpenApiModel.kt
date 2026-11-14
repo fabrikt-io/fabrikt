@@ -135,6 +135,9 @@ class OpenApiSchema(
     internal val isUninhabitable: Boolean get() = schemaSemanticsAt(jsonPathFromRoot).isUninhabitable
     internal val hasMultipleNonNullTypes: Boolean get() = schemaSemanticsAt(jsonPathFromRoot).hasMultipleNonNullTypes
 
+    internal val forbidsAdditionalProperties: Boolean
+        get() = parsedJson?.get("additionalProperties")?.let { it.isBoolean && !it.booleanValue() } == true
+
     internal fun hasAllOfDescendants(): Boolean = jsonReference in allOfParentReferences()
 
     fun hasEnums(): Boolean = kaizen.hasEnums()
@@ -158,12 +161,7 @@ class OpenApi3Document(
     private val includePolymorphicSubtypes: (Set<String>) -> Set<String> = { it },
 ) {
     private val compositionRelationships by lazy { SchemaCompositionRelationships(schemas.values) }
-    private val allOfParentReferences by lazy {
-        schemas.values
-            .flatMap { compositionRelationships.allOfComponents(it) }
-            .map { it.jsonReference }
-            .toSet()
-    }
+    private val allOfParentReferences get() = compositionRelationships.parentReferences
     private val oneOfRelationships by lazy { OneOfSuperInterfaceCache(schemas.values.toList()) }
 
     internal fun oneOfSuperInterfaces(schema: OpenApiSchema): List<OpenApiSchema> = oneOfRelationships.find(schema)
@@ -209,6 +207,11 @@ class OpenApi3Document(
 
     /** Named components included directly or transitively through allOf, excluding the schema itself. */
     fun allOfComponentSchemas(schema: OpenApiSchema): List<OpenApiSchema> = compositionRelationships.allOfComponents(schema)
+
+    internal fun allOfDescendants(
+        schema: OpenApiSchema,
+        additionalMembers: Collection<OpenApiSchema> = emptyList(),
+    ): List<OpenApiSchema> = compositionRelationships.descendantsOf(schema, additionalMembers)
 
     internal fun conflictingAllOfPropertyKeys(schema: OpenApiSchema): Set<String> = compositionRelationships.conflictingPropertyKeys(schema)
 

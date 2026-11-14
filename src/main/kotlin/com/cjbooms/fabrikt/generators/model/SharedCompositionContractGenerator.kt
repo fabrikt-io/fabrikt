@@ -9,7 +9,6 @@ import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeType
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import java.util.logging.Logger
@@ -43,7 +42,8 @@ internal class SharedCompositionContractGenerator(
                     .build(),
             )
             val compatibleMembers = mutableSetOf<String>()
-            schemas.filter { includes(it, ancestor) }.forEach member@{ schema ->
+            val members = (listOf(ancestor) + relationships.descendantsOf(ancestor, generatedSchemas)).distinctBy { it.jsonReference }
+            members.forEach member@{ schema ->
                 val model = primaryModels[schema.jsonReference] ?: return@member
                 if (!model.isConcreteObject()) return@member
                 val memberProperties = propertyTypes.effectiveProperties(model)
@@ -70,38 +70,8 @@ internal class SharedCompositionContractGenerator(
                 interfacesByModel.getOrPut(checkNotNull(model.name), ::mutableListOf).add(contractType)
             }
         }
-        return models
-            .map { model ->
-                val interfaces = interfacesByModel[model.name].orEmpty()
-                if (interfaces.isEmpty()) {
-                    model
-                } else {
-                    model
-                        .toBuilder()
-                        .apply {
-                            interfaces.forEach { addSuperinterface(it) }
-                            propertySpecs.clear()
-                            addProperties(
-                                model.propertySpecs.map { property ->
-                                    if (property.name in overriddenProperties[model.name].orEmpty()) {
-                                        property.toBuilder().addModifiers(KModifier.OVERRIDE).build()
-                                    } else {
-                                        property
-                                    }
-                                },
-                            )
-                        }.build()
-                }
-            }.plus(contracts)
-            .toMutableSet()
+        return applyContractInterfaces(models, interfacesByModel, overriddenProperties).plus(contracts).toMutableSet()
     }
-
-    private fun includes(
-        schema: OpenApiSchema,
-        ancestor: OpenApiSchema,
-    ): Boolean =
-        schema.jsonReference == ancestor.jsonReference ||
-            relationships.allOfComponents(schema).any { it.jsonReference == ancestor.jsonReference }
 
     private fun exposesContract(
         schema: OpenApiSchema,
@@ -113,8 +83,6 @@ internal class SharedCompositionContractGenerator(
         if (primaryModels[schema.jsonReference]?.kind != TypeSpec.Kind.INTERFACE) return false
         return schema.oneOfSchemas.all { exposesContract(it, compatibleMembers, visited + schema.jsonReference) }
     }
-
-    private fun TypeSpec.isConcreteObject(): Boolean = kind == TypeSpec.Kind.CLASS || kind == TypeSpec.Kind.OBJECT
 
     companion object {
         private val logger = Logger.getGlobal()

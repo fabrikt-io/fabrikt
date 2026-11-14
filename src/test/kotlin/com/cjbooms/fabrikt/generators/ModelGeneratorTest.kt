@@ -1,8 +1,11 @@
 package com.cjbooms.fabrikt.generators
 
 import com.beust.jcommander.ParameterException
+import com.cjbooms.fabrikt.cli.ClientCodeGenTargetType
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
 import com.cjbooms.fabrikt.cli.CodeGenerationType
+import com.cjbooms.fabrikt.cli.CodeGenerator
+import com.cjbooms.fabrikt.cli.ControllerCodeGenTargetType
 import com.cjbooms.fabrikt.cli.CustomTypeMapping
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
@@ -157,12 +160,71 @@ class ModelGeneratorTest {
         }
     }
 
+    @ParameterizedTest
+    @EnumSource(ClientCodeGenTargetType::class)
+    fun `body response and parameter references use the same contracts`(target: ClientCodeGenTargetType) {
+        MutableSettings.updateSettings(genTypes = setOf(CodeGenerationType.CLIENT), clientTarget = target)
+        val mapper = YamlObjectMapper.instance
+        val tree = mapper.readTree(readTextResource("/examples/singletonHierarchyUnion/api.yaml"))
+        (tree.at("/components/schemas/Holder/properties") as ObjectNode).remove(listOf("direct", "directValues", "directMap", "bag"))
+        (tree.at("/components/schemas") as ObjectNode).remove("MiddleBag")
+        val files =
+            CodeGenerator(Packages("example"), SourceApi(mapper.writeValueAsString(tree)), Paths.get(""), Paths.get(""))
+                .generate()
+                .filterIsInstance<KotlinSourceSet>()
+                .flatMap { it.files }
+        val client = files.filter { it.packageName == "example.client" }.joinToString("\n")
+        assertThat(client).contains("filter: MiddleContract?")
+        assertThat(client).containsPattern("\\w+: MiddleContract[\\s,)]")
+        assertThat(client).doesNotContain("import example.models.Middle\n")
+        assertThat(files.map { it.name }).contains("MiddleContract")
+    }
+
+    @ParameterizedTest
+    @EnumSource(ControllerCodeGenTargetType::class)
+    fun `controller bodies and parameters share contract resolution`(target: ControllerCodeGenTargetType) {
+        MutableSettings.updateSettings(genTypes = setOf(CodeGenerationType.CONTROLLERS), controllerTarget = target)
+        val source = SourceApi(readTextResource("/examples/singletonHierarchyUnion/api.yaml"))
+        val files =
+            CodeGenerator(Packages("example"), source, Paths.get(""), Paths.get(""))
+                .generate()
+                .filterIsInstance<KotlinSourceSet>()
+                .flatMap { it.files }
+        val controllers = files.filter { it.packageName == "example.controllers" }.joinToString("\n")
+        assertThat(controllers).contains("filter: MiddleContract?")
+        assertThat(controllers).containsPattern("\\w+: MiddleContract[\\s,)]")
+        assertThat(controllers).doesNotContain("import example.models.Middle\n")
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `only the named schema can close an intermediate`(inline: Boolean) {
+        val mapper = YamlObjectMapper.instance
+        val tree = mapper.readTree(readTextResource("/examples/singletonHierarchyUnion/api.yaml"))
+        val location = if (inline) "/components/schemas/Middle/allOf/1" else "/components/schemas/Middle"
+        (tree.at(location) as ObjectNode).put("additionalProperties", false)
+        val files =
+            ModelGenerator(Packages("example"), SourceApi(mapper.writeValueAsString(tree))).generate().files.associate {
+                it.name to
+                    it.toString()
+            }
+        if (inline) {
+            assertThat(files).containsKey("MiddleContract")
+            assertThat(files.getValue("Holder")).contains("val direct: MiddleContract?")
+        } else {
+            assertThat(files).doesNotContainKey("MiddleContract")
+            assertThat(files.getValue("Holder")).contains("val direct: Middle?")
+            assertThat(files.getValue("MiddleBag")).contains("MutableMap<String, Middle?>", "Map<String, Middle?>")
+        }
+    }
+
     @Test
     fun `oneOf and inheritance alone do not emit intermediate contracts`() {
         val mapper = YamlObjectMapper.instance
         val tree = mapper.readTree(readTextResource("/examples/singletonHierarchyUnion/api.yaml"))
         (tree.at("/components/schemas/Holder/properties") as ObjectNode).remove(listOf("direct", "directValues", "directMap", "bag"))
         (tree.at("/components/schemas") as ObjectNode).remove("MiddleBag")
+        (tree as ObjectNode).set<JsonNode>("paths", mapper.createObjectNode())
         val files =
             ModelGenerator(Packages("example"), SourceApi(mapper.writeValueAsString(tree))).generate().files.associate {
                 it.name to
@@ -246,6 +308,19 @@ class ModelGeneratorTest {
             }
         assertThat(files).doesNotContainKey("MiddleContract")
         assertThat(files.getValue("Holder")).contains("val direct: Middle?")
+    }
+
+    @Test
+    fun `intermediate contracts retain implicit names alongside explicit mappings`() {
+        val mapper = YamlObjectMapper.instance
+        val tree = mapper.readTree(readTextResource("/examples/singletonHierarchyUnion/api.yaml"))
+        (tree.at("/components/schemas/Base/discriminator/mapping") as ObjectNode).remove("middle")
+        val files =
+            ModelGenerator(Packages("example"), SourceApi(mapper.writeValueAsString(tree))).generate().files.associate {
+                it.name to it.toString()
+            }
+        assertThat(files.getValue("MiddleContract")).contains("Middle::class", "name = \"Middle\"", "Child::class", "name = \"child\"")
+        assertThat(files.getValue("Base")).doesNotContain("Middle::class")
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.cjbooms.fabrikt.generators.model
 
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
@@ -63,3 +64,35 @@ internal fun TypeName.withoutTypeAnnotations(): TypeName =
     } else {
         copy(annotations = emptyList())
     }
+
+internal fun TypeSpec.isConcreteObject(): Boolean = kind == TypeSpec.Kind.CLASS || kind == TypeSpec.Kind.OBJECT
+
+internal fun applyContractInterfaces(
+    models: Collection<TypeSpec>,
+    interfaces: Map<String, List<ClassName>>,
+    overrides: Map<String, Set<String>>,
+): MutableSet<TypeSpec> =
+    models
+        .map { model ->
+            val implemented = interfaces[model.name].orEmpty()
+            val requiredOverrides = overrides[model.name].orEmpty()
+            if (implemented.isEmpty()) {
+                model
+            } else {
+                model
+                    .toBuilder()
+                    .apply {
+                        implemented.forEach { addSuperinterface(it) }
+                        propertySpecs.clear()
+                        addProperties(
+                            model.propertySpecs.map { property ->
+                                if (property.name in requiredOverrides) {
+                                    property.toBuilder().addModifiers(KModifier.OVERRIDE).build()
+                                } else {
+                                    property
+                                }
+                            },
+                        )
+                    }.build()
+            }
+        }.toMutableSet()
