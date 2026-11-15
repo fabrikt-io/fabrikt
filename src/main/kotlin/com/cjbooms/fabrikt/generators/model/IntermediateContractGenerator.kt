@@ -89,6 +89,7 @@ internal class IntermediateContractGenerator(
             val modelName = checkNotNull(model.name)
             val name = ModelNameRegistry.intermediateContractName(contract.schema, modelName)
             namesByReference[contract.schema.jsonReference] = name
+            // Property and operation reference resolution must use the same model-to-contract mapping.
             referenceNames[modelName] = name
             ModelNameRegistry.intermediateReferences[modelName] = name
         }
