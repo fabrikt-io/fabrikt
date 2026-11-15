@@ -17,7 +17,6 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedItemsSchemaUnder
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectUnderAllOf
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isRequired
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaLess
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleMapDefinition
@@ -27,6 +26,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.nestedArrayItems
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.oneOfDiscriminatorValues
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeType
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.shouldGenerateAdditionalProperties
 import java.util.logging.Logger
 import com.cjbooms.fabrikt.model.OpenApi3Document as OpenApi3
 import com.cjbooms.fabrikt.model.OpenApiSchema as Schema
@@ -124,25 +124,17 @@ sealed class PropertyInfo {
                     MutableSettings.additionalProperties == AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED &&
                     MutableSettings.serializationLibrary.isJackson
             val nodeProperties =
-                if (useNodePolicy &&
-                    forbidsAdditionalProperties
-                ) {
-                    results.filterNot { it is AdditionalProperties }
+                if (useNodePolicy) {
+                    val maps = results.filterIsInstance<AdditionalProperties>()
+                    val selected = maps.firstOrNull { it.parentSchema.jsonReference == jsonReference } ?: maps.firstOrNull()
+                    results.filterNot { it is AdditionalProperties } +
+                        if (forbidsAdditionalProperties) emptyList() else listOfNotNull(selected)
                 } else {
                     results
                 }
             val properties =
                 nodeProperties.groupBy { it.oasKey }.values.map { declarations ->
-                    val first =
-                        if (useNodePolicy && declarations.all { it is AdditionalProperties }) {
-                            declarations.filterIsInstance<AdditionalProperties>().firstOrNull {
-                                it.parentSchema.jsonReference ==
-                                    jsonReference
-                            }
-                                ?: declarations.first()
-                        } else {
-                            declarations.first()
-                        }
+                    val first = declarations.first()
                     if (first is Field && declarations.size > 1 && allOfSchemas.isNotEmpty()) {
                         refineDefault(first, declarations.filterIsInstance<Field>())
                     } else {
@@ -151,10 +143,8 @@ sealed class PropertyInfo {
                 }
             return if (
                 useNodePolicy &&
-                !declaresAdditionalProperties &&
-                !isOneOfSuperInterface() &&
-                (type == OasType.Object.type || safeType() == OasType.Object.type) &&
-                properties.none { it is AdditionalProperties }
+                properties.none { it is AdditionalProperties } &&
+                shouldGenerateAdditionalProperties(includeImplicit = true)
             ) {
                 properties +
                     AdditionalProperties(
@@ -162,7 +152,7 @@ sealed class PropertyInfo {
                         settings.markAsInherited,
                         this,
                         settings.direction,
-                        implicit = true,
+                        implicit = !hasAdditionalProperties(),
                         name =
                             generateSequence("properties") { "${it}Extra" }.first { name ->
                                 properties.none { it.name == name } &&
@@ -432,7 +422,7 @@ sealed class PropertyInfo {
                         }
                     }.filterNotNull()
 
-            return if (hasAdditionalProperties()) {
+            return if (shouldGenerateAdditionalProperties()) {
                 mainProperties
                     .plus(
                         AdditionalProperties(additionalPropertiesSchema, settings.markAsInherited, this, settings.direction),

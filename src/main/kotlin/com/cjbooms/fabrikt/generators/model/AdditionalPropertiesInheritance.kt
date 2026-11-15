@@ -8,6 +8,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 
+// Catch-all accessors must override inherited methods; closed children disable the inherited Jackson setter.
 internal fun inheritAdditionalProperties(
     models: Collection<TypeSpec>,
     modelPackage: String,
@@ -74,18 +75,9 @@ internal fun inheritAdditionalProperties(
                         constructor
                             .toBuilder()
                             .apply {
-                                parameters.clear()
-                                addParameters(
-                                    constructor.parameters.map {
-                                        if (it.name ==
-                                            map.name
-                                        ) {
-                                            it.toBuilder(name = mapName).build()
-                                        } else {
-                                            it
-                                        }
-                                    },
-                                )
+                                parameters.replaceAll {
+                                    if (it.name == map.name) it.toBuilder(name = mapName).build() else it
+                                }
                             }.build(),
                     )
                 }
@@ -125,28 +117,24 @@ internal fun inheritAdditionalProperties(
                     }.build(),
             )
         }
-        val functions = builder.funSpecs.toList()
-        builder.funSpecs.clear()
-        builder.addFunctions(
-            functions.map { function ->
-                if (function.annotated(getterAnnotation) || function.annotated(setterAnnotation)) {
-                    function
-                        .toBuilder()
-                        .apply {
-                            if (parentGetter != null && function.annotated(getterAnnotation)) addModifiers(KModifier.OVERRIDE)
-                            if (parentSetter != null &&
-                                function.annotated(setterAnnotation) &&
-                                function.parameters.last().type == parentSetter.parameters.last().type
-                            ) {
-                                addModifiers(KModifier.OVERRIDE)
-                            }
-                            if (name in parents && KModifier.OVERRIDE !in modifiers) addModifiers(KModifier.OPEN)
-                        }.build()
-                } else {
-                    function
-                }
-            },
-        )
+        builder.funSpecs.replaceAll { function ->
+            if (function.annotated(getterAnnotation) || function.annotated(setterAnnotation)) {
+                function
+                    .toBuilder()
+                    .apply {
+                        if (parentGetter != null && function.annotated(getterAnnotation)) addModifiers(KModifier.OVERRIDE)
+                        if (parentSetter != null &&
+                            function.annotated(setterAnnotation) &&
+                            function.parameters.last().type == parentSetter.parameters.last().type
+                        ) {
+                            addModifiers(KModifier.OVERRIDE)
+                        }
+                        if (name in parents && KModifier.OVERRIDE !in modifiers) addModifiers(KModifier.OPEN)
+                    }.build()
+            } else {
+                function
+            }
+        }
         if (name in parents && map != null && !sharedMap) {
             val ownMap = builder.propertySpecs.first { it.type == map.type && it.annotations == map.annotations }
             builder.propertySpecs.remove(ownMap)

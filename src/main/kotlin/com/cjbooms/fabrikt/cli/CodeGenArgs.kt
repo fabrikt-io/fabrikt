@@ -275,7 +275,8 @@ class CodeGenArgs {
         names = ["--additional-properties"],
         description =
             "Capture undeclared object properties with Jackson unless explicitly disabled by the schema. " +
-                "Default: ONLY_WHEN_REQUESTED",
+                "UNLESS_EXPLICITLY_DISABLED follows the specification's default for absent additionalProperties. " +
+                "Default: ONLY_WHEN_REQUESTED for generated-output compatibility",
         converter = AdditionalPropertiesModeConverter::class,
     )
     var additionalProperties: AdditionalPropertiesMode = AdditionalPropertiesMode.default

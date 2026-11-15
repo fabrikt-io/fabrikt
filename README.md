@@ -258,7 +258,9 @@ Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared inter
 
 ### 6. Preserve undeclared object properties
 
-For Jackson 2 and 3, `--additional-properties UNLESS_EXPLICITLY_DISABLED` captures undeclared object properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`. Explicit `additionalProperties` declarations retain their behaviour, including `false` for closed objects. The default, `ONLY_WHEN_REQUESTED`, preserves existing generated output. For composed objects the policy uses the object's own declaration, rather than restrictions on flattened inline `allOf` fragments. Other serialization libraries are unchanged.
+For Jackson 2 and 3, `--additional-properties UNLESS_EXPLICITLY_DISABLED` captures undeclared object properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`. Allowing additional properties when `additionalProperties` is absent follows the OpenAPI and JSON Schema default. Explicit `additionalProperties` declarations retain their behaviour, including `false` for closed objects. The default, `ONLY_WHEN_REQUESTED`, preserves existing generated output. For composed objects the policy uses the object's own declaration, rather than restrictions on flattened inline `allOf` fragments.
+
+Other serialization libraries are unchanged. kotlinx.serialization has no built-in equivalent of Jackson's any-getter/any-setter; `ignoreUnknownKeys` discards unknown values rather than capturing them for round-tripping. Capturing those values would require custom serialization and is outside this option's scope.
 
 ## Multipart clients
 
@@ -305,7 +307,7 @@ To add an annotation to every generated HTTP model type, repeat `--http-model-ad
 Usage: <main class> [options]
 | Parameter                               | Description |
 | --------------------------------------- | --------------------------------------- |
-|   `--additional-properties`             | Capture undeclared object properties with Jackson unless explicitly disabled by the schema. Default: ONLY_WHEN_REQUESTED |
+|   `--additional-properties`             | Capture undeclared object properties with Jackson unless explicitly disabled by the schema. UNLESS_EXPLICITLY_DISABLED follows the specification's default for absent additionalProperties. Default: ONLY_WHEN_REQUESTED for generated-output compatibility |
 |                                         | CHOOSE ONE OF: |
 |                                         |   `ONLY_WHEN_REQUESTED` - Capture additional properties only when declared by the schema |
 |                                         |   `UNLESS_EXPLICITLY_DISABLED` - Capture undeclared properties with Jackson unless the schema explicitly disables them |
