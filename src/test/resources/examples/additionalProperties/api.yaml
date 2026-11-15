@@ -9,7 +9,6 @@ components:
       properties:
         message:
           type: string
-      additionalProperties: true # allow additional properties of any type
     ResultWithoutAdditionalProperties:
       type: object
       required:

@@ -1,9 +1,7 @@
 package examples.allOfParentOrder.models
 
-import com.fasterxml.jackson.`annotation`.JsonAnySetter
 import com.fasterxml.jackson.`annotation`.JsonProperty
 import jakarta.validation.constraints.NotNull
-import kotlin.Any
 import kotlin.Int
 import kotlin.String
 
@@ -23,9 +21,4 @@ public data class OrderSibling(
   @get:NotNull
   @param:JsonProperty("kind")
   override val kind: String = "sibling",
-) : OrderX(id) {
-  @JsonAnySetter(enabled = false)
-  override fun `set`(name: String, `value`: Any?) {
-    super.`set`(name, value)
-  }
-}
+) : OrderX(id)

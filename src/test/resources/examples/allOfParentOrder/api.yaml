@@ -30,14 +30,17 @@
         }
       },
       "OrderChild": {
-        "additionalProperties": { "type": "string" },
-        "required": ["label"],
-        "properties": {
-          "label": { "type": "string" }
-        },
         "allOf": [
           {
-            "type": "object"
+            "type": "object",
+            "required": [
+              "label"
+            ],
+            "properties": {
+              "label": {
+                "type": "string"
+              }
+            }
           },
           {
             "$ref": "#/components/schemas/OrderX"
@@ -45,7 +48,6 @@
         ]
       },
       "OrderSibling": {
-        "additionalProperties": false,
         "allOf": [
           {
             "type": "object",

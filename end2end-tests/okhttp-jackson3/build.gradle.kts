@@ -57,9 +57,8 @@ dependencies {
 
 tasks {
     val generateImplicitAdditionalProperties by creating(JavaExec::class) {
-        val spec = "${rootProject.projectDir}/src/test/resources/examples/singleAllOf/api.yaml"
-        val hierarchy = "${rootProject.projectDir}/src/test/resources/examples/allOfParentOrder/api.yaml"
-        inputs.files(spec, hierarchy)
+        val spec = "${rootProject.projectDir}/src/test/resources/examples/additionalProperties/api.yaml"
+        inputs.files(spec)
         outputs.dir(generationDir)
         classpath = rootProject.files(fabriktCliJar)
         mainClass.set("io.fabrikt.cli.CodeGen")
@@ -70,7 +69,6 @@ tasks {
             "--targets", "http_models",
             "--serialization-library", "JACKSON_3",
             "--additional-properties", "UNLESS_EXPLICITLY_DISABLED",
-            "--api-fragment", hierarchy,
         )
         dependsOn(":shadowJar")
     }

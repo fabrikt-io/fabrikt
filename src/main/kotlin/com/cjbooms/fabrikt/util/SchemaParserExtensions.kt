@@ -182,17 +182,15 @@ object SchemaParserExtensions {
 
     private fun Schema.getOpenEnumValues(): List<String> = anyOfSchemas.filter { it.hasEnums() }.flatMap { it.getEnumValues() }.distinct()
 
-    fun Schema.hasAdditionalProperties(): Boolean = additionalPropertiesSchema.isPresent && additionalProperties != false
-
-    fun Schema.shouldGenerateAdditionalProperties(includeImplicit: Boolean = false): Boolean =
-        hasAdditionalProperties() ||
+    fun Schema.hasAdditionalProperties(): Boolean =
+        (additionalPropertiesSchema.isPresent && additionalProperties != false) ||
             (
-                includeImplicit &&
-                    MutableSettings.additionalProperties == AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED &&
+                MutableSettings.additionalProperties == AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED &&
                     MutableSettings.serializationLibrary.isJackson &&
+                    isPresent &&
                     !declaresAdditionalProperties &&
-                    !isOneOfSuperInterface() &&
-                    (type == OasType.Object.type || safeType() == OasType.Object.type)
+                    !isUnknownAdditionalProperties("") &&
+                    safeType() == OasType.Object.type
             )
 
     fun Schema.isUnknownAdditionalProperties(oasKey: String) =

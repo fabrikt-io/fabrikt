@@ -258,7 +258,7 @@ Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared inter
 
 ### 6. Preserve undeclared object properties
 
-For Jackson 2 and 3, `--additional-properties UNLESS_EXPLICITLY_DISABLED` captures undeclared object properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`. Allowing additional properties when `additionalProperties` is absent follows the OpenAPI and JSON Schema default. Explicit `additionalProperties` declarations retain their behaviour, including `false` for closed objects. The default, `ONLY_WHEN_REQUESTED`, preserves existing generated output. For composed objects the policy uses the object's own declaration, rather than restrictions on flattened inline `allOf` fragments.
+For Jackson 2 and 3, `--additional-properties UNLESS_EXPLICITLY_DISABLED` captures undeclared object properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`. Allowing additional properties when `additionalProperties` is absent follows the OpenAPI and JSON Schema default. Explicit `additionalProperties` declarations retain their behaviour, including `false` for closed objects. The default, `ONLY_WHEN_REQUESTED`, preserves existing generated output. The option reuses the existing handling of explicit `additionalProperties: true`, including its current limitations for inheritance (see [#860](https://github.com/fabrikt-io/fabrikt/issues/860)).
 
 Other serialization libraries are unchanged. kotlinx.serialization has no built-in equivalent of Jackson's any-getter/any-setter; `ignoreUnknownKeys` discards unknown values rather than capturing them for round-tripping. Capturing those values would require custom serialization and is outside this option's scope.
 

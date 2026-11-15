@@ -73,33 +73,18 @@ class Jackson3OkHttpClientTest {
     @Test
     fun `implicit additional properties preserve unknown values and keep explicit false strict`() {
         val mapper = this.mapper.rebuild().enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()
-        val json = """{"name":"Alice","unknown":null,"nested":{"items":[1,true,"value"]}}"""
-        val person = mapper.readValue(json, com.example.implicitadditionalproperties.models.Person::class.java)
-        assertThat(person.name).isEqualTo("Alice")
-        assertThat(person.properties).containsKey("unknown").doesNotContainKey("name")
-        assertThat(mapper.readTree(mapper.writeValueAsString(person))).isEqualTo(mapper.readTree(json))
+        val json = """{"message":"Alice","unknown":null,"nested":{"items":[1,true,"value"]}}"""
+        val result = mapper.readValue(json, com.example.implicitadditionalproperties.models.Result::class.java)
+        assertThat(result.message).isEqualTo("Alice")
+        assertThat(result.properties).containsKey("unknown").doesNotContainKey("message")
+        assertThat(mapper.readTree(mapper.writeValueAsString(result))).isEqualTo(mapper.readTree(json))
         assertThatThrownBy {
             mapper.readValue(
-                """{"wrappedRequired":{"name":"Alice"},"unknown":1}""",
-                com.example.implicitadditionalproperties.models.Example::class.java,
+                """{"message":"Alice","unknown":1}""",
+                com.example.implicitadditionalproperties.models.ResultWithoutAdditionalProperties::class.java,
             )
         }.isInstanceOf(tools.jackson.databind.exc.UnrecognizedPropertyException::class.java)
     }
 
-    @Test
-    fun `polymorphic additional properties retain typed children and closed children`() {
-        val mapper = this.mapper.rebuild().enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()
-        val json = """{"id":"1","kind":"child","label":"Alice","extra":"retained"}"""
-        val child = mapper.readValue(json, com.example.implicitadditionalproperties.models.OrderX::class.java)
-            as com.example.implicitadditionalproperties.models.OrderChild
-        val captured: Map<String, String?> = child.get()
-        assertThat(captured).containsEntry("extra", "retained")
-        assertThat(mapper.readTree(mapper.writeValueAsString(child.copy()))).isEqualTo(mapper.readTree(json))
-        assertThatThrownBy {
-            mapper.readValue(
-                """{"id":"2","kind":"sibling","count":3,"extra":1}""",
-                com.example.implicitadditionalproperties.models.OrderX::class.java,
-            )
-        }.isInstanceOf(tools.jackson.databind.exc.UnrecognizedPropertyException::class.java)
-    }
+
 }

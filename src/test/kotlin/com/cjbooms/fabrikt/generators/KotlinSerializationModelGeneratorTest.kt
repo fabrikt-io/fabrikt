@@ -15,6 +15,8 @@ import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.failGenerated
 import com.cjbooms.fabrikt.util.ModelNameRegistry
 import com.cjbooms.fabrikt.util.ResourceHelper.getFileNamesInFolder
 import com.cjbooms.fabrikt.util.ResourceHelper.readFolder
+import com.cjbooms.fabrikt.util.YamlObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -122,7 +124,10 @@ class KotlinSerializationModelGeneratorTest {
     fun `schemas configured with additionalProperties results in UnsupportedOperationException`() {
         val basePackage = "examples.additionalProperties"
         val apiLocation = javaClass.getResource("/examples/additionalProperties/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
+        val mapper = YamlObjectMapper.instance
+        val spec = mapper.readTree(apiLocation.readText())
+        (spec.at("/components/schemas/Result") as ObjectNode).put("additionalProperties", true)
+        val sourceApi = SourceApi(mapper.writeValueAsString(spec), baseUri = apiLocation.toURI())
 
         val e =
             assertThrows<UnsupportedOperationException> {

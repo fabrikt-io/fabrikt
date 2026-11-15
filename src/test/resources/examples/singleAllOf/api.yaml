@@ -33,7 +33,6 @@ components:
 
     Example:
       type: object
-      additionalProperties: false
       required: [wrappedRequired]
       properties:
         direct:
