@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.generators.model
 
+import com.cjbooms.fabrikt.cli.AdditionalPropertiesMode
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
@@ -353,7 +354,16 @@ class ModelGenerator(
             processed.getOrPut(next.key, ::mutableSetOf).addAll(requested.value)
         }
         intermediateContracts.allocateNames(primaryModels)
-        val referencedModels = rewriteContractReferences(models, modelsPackage(packages.base), intermediateContracts.referenceNames)
+        val inheritedModels =
+            if (MutableSettings.additionalProperties == AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED &&
+                MutableSettings.serializationLibrary.isJackson
+            ) {
+                inheritAdditionalProperties(models, modelsPackage(packages.base))
+            } else {
+                models
+            }
+        val referencedModels =
+            rewriteContractReferences(inheritedModels, modelsPackage(packages.base), intermediateContracts.referenceNames)
         val referencedByName = referencedModels.associateBy { it.name }
         primaryModels.replaceAll { _, model -> referencedByName[model.name] ?: model }
         val composedModels =

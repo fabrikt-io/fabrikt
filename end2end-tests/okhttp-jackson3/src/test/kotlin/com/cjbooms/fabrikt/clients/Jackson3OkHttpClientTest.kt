@@ -14,6 +14,7 @@ import com.marcinziolo.kotlin.wiremock.returns
 import java.net.ServerSocket
 import okhttp3.OkHttpClient
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -67,5 +68,38 @@ class Jackson3OkHttpClientTest {
         val result = mapper.readValue(json, TopLevelLevelMergePatchRef::class.java)
 
         assertThat(result).isEqualTo(expected)
+    }
+
+    @Test
+    fun `implicit additional properties preserve unknown values and keep explicit false strict`() {
+        val mapper = this.mapper.rebuild().enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()
+        val json = """{"name":"Alice","unknown":null,"nested":{"items":[1,true,"value"]}}"""
+        val person = mapper.readValue(json, com.example.implicitadditionalproperties.models.Person::class.java)
+        assertThat(person.name).isEqualTo("Alice")
+        assertThat(person.properties).containsKey("unknown").doesNotContainKey("name")
+        assertThat(mapper.readTree(mapper.writeValueAsString(person))).isEqualTo(mapper.readTree(json))
+        assertThatThrownBy {
+            mapper.readValue(
+                """{"wrappedRequired":{"name":"Alice"},"unknown":1}""",
+                com.example.implicitadditionalproperties.models.Example::class.java,
+            )
+        }.isInstanceOf(tools.jackson.databind.exc.UnrecognizedPropertyException::class.java)
+    }
+
+    @Test
+    fun `polymorphic additional properties retain typed children and closed children`() {
+        val mapper = this.mapper.rebuild().enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()
+        val json = """{"id":"1","kind":"child","label":"Alice","extra":"retained"}"""
+        val child = mapper.readValue(json, com.example.implicitadditionalproperties.models.OrderX::class.java)
+            as com.example.implicitadditionalproperties.models.OrderChild
+        val captured: Map<String, String?> = child.get()
+        assertThat(captured).containsEntry("extra", "retained")
+        assertThat(mapper.readTree(mapper.writeValueAsString(child.copy()))).isEqualTo(mapper.readTree(json))
+        assertThatThrownBy {
+            mapper.readValue(
+                """{"id":"2","kind":"sibling","count":3,"extra":1}""",
+                com.example.implicitadditionalproperties.models.OrderX::class.java,
+            )
+        }.isInstanceOf(tools.jackson.databind.exc.UnrecognizedPropertyException::class.java)
     }
 }

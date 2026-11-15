@@ -39,6 +39,7 @@ object CodeGen {
             serializationLibrary = codeGenArgs.serializationLibrary,
             instantLibrary = codeGenArgs.instantLibrary,
             jacksonNullabilityMode = codeGenArgs.jacksonNullabilityMode,
+            additionalProperties = codeGenArgs.additionalProperties,
             outputOptions = codeGenArgs.outputOptions,
             visibility = codeGenArgs.visibility,
             operationIdTransform = codeGenArgs.operationIdTransform,

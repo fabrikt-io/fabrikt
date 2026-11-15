@@ -56,6 +56,24 @@ dependencies {
 }
 
 tasks {
+    val generateImplicitAdditionalProperties by creating(JavaExec::class) {
+        val spec = "${rootProject.projectDir}/src/test/resources/examples/singleAllOf/api.yaml"
+        val hierarchy = "${rootProject.projectDir}/src/test/resources/examples/allOfParentOrder/api.yaml"
+        inputs.files(spec, hierarchy)
+        outputs.dir(generationDir)
+        classpath = rootProject.files(fabriktCliJar)
+        mainClass.set("io.fabrikt.cli.CodeGen")
+        args = listOf(
+            "--output-directory", generationDir,
+            "--base-package", "com.example.implicitadditionalproperties",
+            "--api-file", spec,
+            "--targets", "http_models",
+            "--serialization-library", "JACKSON_3",
+            "--additional-properties", "UNLESS_EXPLICITLY_DISABLED",
+            "--api-fragment", hierarchy,
+        )
+        dependsOn(":shadowJar")
+    }
     val generateCompositionRefinementsCode by creating(JavaExec::class) {
         val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionRefinements/api.yaml"
         inputs.files(spec)
@@ -236,6 +254,7 @@ tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         dependsOn(generateCode)
+        dependsOn(generateImplicitAdditionalProperties)
         dependsOn(singletonHierarchyTasks)
         dependsOn(generateNullableCode)
         dependsOn(generateSecurityCode)

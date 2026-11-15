@@ -138,6 +138,8 @@ class OpenApiSchema(
     internal val forbidsAdditionalProperties: Boolean
         get() = parsedJson?.get("additionalProperties")?.let { it.isBoolean && !it.booleanValue() } == true
 
+    internal val declaresAdditionalProperties: Boolean get() = parsedJson?.has("additionalProperties") == true
+
     internal fun hasAllOfDescendants(): Boolean = jsonReference in allOfParentReferences()
 
     fun hasEnums(): Boolean = kaizen.hasEnums()

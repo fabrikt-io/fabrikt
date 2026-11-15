@@ -256,6 +256,10 @@ Use a supported `oneOf` schema when a concrete polymorphic Kotlin model is neede
 
 Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared interfaces for compatible models that explicitly include a named object through `allOf`. See the [generated examples](src/test/resources/examples/sharedCompositionUnions/models).
 
+### 6. Preserve undeclared object properties
+
+For Jackson 2 and 3, `--additional-properties UNLESS_EXPLICITLY_DISABLED` captures undeclared object properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`. Explicit `additionalProperties` declarations retain their behaviour, including `false` for closed objects. The default, `ONLY_WHEN_REQUESTED`, preserves existing generated output. For composed objects the policy uses the object's own declaration, rather than restrictions on flattened inline `allOf` fragments. Other serialization libraries are unchanged.
+
 ## Multipart clients
 
 For `OK_HTTP`, `OPEN_FEIGN` and `SPRING_HTTP_INTERFACE`, `multipart/form-data` JSON object and array parts are sent as `application/json`, including when this is inferred from the schema rather than explicitly declared in `encoding`. Optional null parts are omitted; binary arrays are sent as repeated parts with the original property name. JSON parts do not receive a filename. Unsupported JSON-part encodings, such as `application/xml`, produce a warning and fall back to JSON; this does not add XML serialization or general support for multipart `encoding` options.
@@ -301,6 +305,10 @@ To add an annotation to every generated HTTP model type, repeat `--http-model-ad
 Usage: <main class> [options]
 | Parameter                               | Description |
 | --------------------------------------- | --------------------------------------- |
+|   `--additional-properties`             | Capture undeclared object properties with Jackson unless explicitly disabled by the schema. Default: ONLY_WHEN_REQUESTED |
+|                                         | CHOOSE ONE OF: |
+|                                         |   `ONLY_WHEN_REQUESTED` - Capture additional properties only when declared by the schema |
+|                                         |   `UNLESS_EXPLICITLY_DISABLED` - Capture undeclared properties with Jackson unless the schema explicitly disables them |
 |   `--api-file`                          | This must be a valid Open API v3 spec. All code generation will be based off this input. Accepts either a local file path or a resolvable http(s) URL. |
 |   `--api-fragment`                      | A partial Open API v3 fragment, to be combined with the primary API for code generation purposes. Accepts either a local file path or a resolvable http(s) URL. |
 |   `--auth`                              | Authorization header(s) sent when fetching a remote --api-file, --api-fragment, or remote `$ref`. Repeatable, format 'Name: value'. Value may contain `${ENV_VAR}` placeholders, name an env var, or contain !cmd (at start or after whitespace) to run a shell command and substitute its trimmed stdout (e.g. --auth "Authorization: Bearer !generate-fresh-auth-token"). |

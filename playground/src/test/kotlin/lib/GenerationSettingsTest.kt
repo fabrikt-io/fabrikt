@@ -1,5 +1,6 @@
 package lib
 
+import com.cjbooms.fabrikt.cli.AdditionalPropertiesMode
 import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ClientCodeGenTargetType
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
@@ -21,6 +22,14 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GenerationSettingsTest {
+    @Test
+    fun additionalPropertiesPolicy() {
+        val settings = Parameters.build { append("additionalProperties", "UNLESS_EXPLICITLY_DISABLED") }.receiveGenerationSettings()
+        assertEquals(AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED, settings.additionalProperties)
+        assertTrue(settings.toQueryParams().contains("additionalProperties=UNLESS_EXPLICITLY_DISABLED"))
+        assertEquals(AdditionalPropertiesMode.ONLY_WHEN_REQUESTED, Parameters.Empty.receiveGenerationSettings().additionalProperties)
+    }
+
     @Test
     fun internalVisibility() {
         val settings = Parameters.build { append("visibility", "INTERNAL") }.receiveGenerationSettings()
@@ -80,6 +89,7 @@ class GenerationSettingsTest {
             serializationLibrary = SerializationLibrary.KOTLINX_SERIALIZATION,
             instantLibrary = InstantLibrary.KOTLIN_TIME_INSTANT,
             jacksonNullabilityMode = JacksonNullabilityMode.STRICT,
+            additionalProperties = AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED,
             modelOptions = setOf(ModelCodeGenOptionType.INCLUDE_COMPANION_OBJECT),
             modelAdditionalAnnotations = listOf("com.example.First", "com.example.Second"),
             controllerTarget = ControllerCodeGenTargetType.KTOR,
@@ -104,6 +114,7 @@ class GenerationSettingsTest {
             &serializationLibrary=KOTLINX_SERIALIZATION
             &instantLibrary=KOTLIN_TIME_INSTANT
             &jacksonNullabilityMode=STRICT
+            &additionalProperties=UNLESS_EXPLICITLY_DISABLED
             &modelOptions=INCLUDE_COMPANION_OBJECT
             &modelAdditionalAnnotations=com.example.First
             &modelAdditionalAnnotations=com.example.Second

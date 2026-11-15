@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.generators
 
 import com.beust.jcommander.ParameterException
+import com.cjbooms.fabrikt.cli.AdditionalPropertiesMode
 import com.cjbooms.fabrikt.cli.ClientCodeGenTargetType
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
 import com.cjbooms.fabrikt.cli.CodeGenerationType
@@ -125,6 +126,53 @@ class ModelGeneratorTest {
 
     @Test
     fun `debug single test`() = `correct models are generated for different OpenApi Specifications`("discriminatedOneOf")
+
+    @ParameterizedTest
+    @EnumSource(AdditionalPropertiesMode::class)
+    fun `additional properties policy only applies when the object leaves it undeclared`(mode: AdditionalPropertiesMode) {
+        MutableSettings.updateSettings(additionalProperties = mode)
+        val mapper = YamlObjectMapper.instance
+        val tree = mapper.readTree(readTextResource("/examples/singleAllOf/api.yaml"))
+        (tree.at("/components/schemas/Person/allOf/0") as ObjectNode).put("additionalProperties", false)
+        (tree.at("/components/schemas/Person/allOf/0/properties") as ObjectNode)
+            .set<JsonNode>("properties", mapper.createObjectNode().put("type", "string"))
+        val files =
+            ModelGenerator(Packages("example"), SourceApi(mapper.writeValueAsString(tree))).generate().files.associate {
+                it.name to
+                    it.toString()
+            }
+        assertThat(files.getValue("Example")).doesNotContain("JsonAnySetter")
+        if (mode == AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED) {
+            assertThat(files.getValue("Person")).contains("propertiesExtra: MutableMap<String, Any?>", "JsonAnySetter")
+        } else {
+            assertThat(files.getValue("Person")).doesNotContain("JsonAnySetter")
+        }
+    }
+
+    @Test
+    fun `implicit additional properties do not change kotlinx models`() {
+        MutableSettings.updateSettings(
+            serializationLibrary = SerializationLibrary.KOTLINX_SERIALIZATION,
+            additionalProperties = AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED,
+        )
+        val files = ModelGenerator(Packages("example"), SourceApi(readTextResource("/examples/singleAllOf/api.yaml"))).generate().files
+        assertThat(files.joinToString("\n")).doesNotContain("JsonAnySetter", "MutableMap")
+    }
+
+    @Test
+    fun `own declarations take precedence over an explicit parent catch-all`() {
+        MutableSettings.updateSettings(additionalProperties = AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED)
+        val mapper = YamlObjectMapper.instance
+        val tree = mapper.readTree(readTextResource("/examples/allOfParentOrder/api.yaml"))
+        (tree.at("/components/schemas/OrderX") as ObjectNode).put("additionalProperties", true)
+        val files =
+            ModelGenerator(Packages("example"), SourceApi(mapper.writeValueAsString(tree))).generate().files.associate {
+                it.name to
+                    it.toString()
+            }
+        assertThat(files.getValue("OrderChild")).contains("MutableMap<String, String?>")
+        assertThat(files.getValue("OrderSibling")).contains("JsonAnySetter(enabled = false)").doesNotContain("MutableMap")
+    }
 
     @ParameterizedTest
     @EnumSource(value = SerializationLibrary::class, names = ["JACKSON_2", "JACKSON_3", "KOTLINX_SERIALIZATION"])
@@ -346,6 +394,9 @@ class ModelGeneratorTest {
     @MethodSource("testCases")
     fun `correct models are generated for different OpenApi Specifications`(testCaseName: String) {
         print("Testcase: $testCaseName")
+        if (testCaseName in setOf("allOfParentOrder", "singleAllOf")) {
+            MutableSettings.updateSettings(additionalProperties = AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED)
+        }
         if (testCaseName == "polymorphicModels") {
             MutableSettings.addOption(ModelCodeGenOptionType.OPEN_CLASSES_FOR_ALL_OF)
         }

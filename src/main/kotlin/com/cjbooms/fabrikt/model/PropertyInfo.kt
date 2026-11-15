@@ -1,10 +1,12 @@
 package com.cjbooms.fabrikt.model
 
+import com.cjbooms.fabrikt.cli.AdditionalPropertiesMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.generators.OasDefault
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.allOfAncestors
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getKeyIfSingleDiscriminatorValue
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasAdditionalProperties
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasNoDiscriminator
@@ -15,6 +17,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedItemsSchemaUnder
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectUnderAllOf
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isRequired
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaLess
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleMapDefinition
@@ -76,6 +79,7 @@ sealed class PropertyInfo {
             enclosingSchema: Schema? = null,
             additionalRequiredFields: Collection<String> = emptySet(),
             memberSchema: Schema = this,
+            includeImplicitAdditionalProperties: Boolean = true,
         ): Collection<PropertyInfo> {
             val combinedRequiredFields = this.requiredFields + additionalRequiredFields
 
@@ -95,12 +99,14 @@ sealed class PropertyInfo {
                                 },
                             additionalRequiredFields = combinedRequiredFields,
                             memberSchema = memberSchema,
+                            includeImplicitAdditionalProperties = false,
                         )
                     } +
                     (if (oneOfSchemas.isEmpty()) emptyList() else listOf(OneOfAny(oneOfSchemas.first()))) +
                     anyOfSchemas.flatMap {
                         it.topLevelProperties(
                             settings = settings.copy(markAllOptional = true),
+                            includeImplicitAdditionalProperties = false,
                             api = api,
                             enclosingSchema =
                                 if (this.isInlinedObjectDefinition() ||
@@ -113,13 +119,65 @@ sealed class PropertyInfo {
                         )
                     } +
                     getInLinedProperties(settings, api, enclosingSchema, combinedRequiredFields, memberSchema)
-            return results.groupBy { it.oasKey }.values.map { declarations ->
-                val first = declarations.first()
-                if (first is Field && declarations.size > 1 && allOfSchemas.isNotEmpty()) {
-                    refineDefault(first, declarations.filterIsInstance<Field>())
+            val useNodePolicy =
+                includeImplicitAdditionalProperties &&
+                    MutableSettings.additionalProperties == AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED &&
+                    MutableSettings.serializationLibrary.isJackson
+            val nodeProperties =
+                if (useNodePolicy &&
+                    forbidsAdditionalProperties
+                ) {
+                    results.filterNot { it is AdditionalProperties }
                 } else {
-                    first
+                    results
                 }
+            val properties =
+                nodeProperties.groupBy { it.oasKey }.values.map { declarations ->
+                    val first =
+                        if (useNodePolicy && declarations.all { it is AdditionalProperties }) {
+                            declarations.filterIsInstance<AdditionalProperties>().firstOrNull {
+                                it.parentSchema.jsonReference ==
+                                    jsonReference
+                            }
+                                ?: declarations.first()
+                        } else {
+                            declarations.first()
+                        }
+                    if (first is Field && declarations.size > 1 && allOfSchemas.isNotEmpty()) {
+                        refineDefault(first, declarations.filterIsInstance<Field>())
+                    } else {
+                        first
+                    }
+                }
+            return if (
+                useNodePolicy &&
+                !declaresAdditionalProperties &&
+                !isOneOfSuperInterface() &&
+                (type == OasType.Object.type || safeType() == OasType.Object.type) &&
+                properties.none { it is AdditionalProperties }
+            ) {
+                properties +
+                    AdditionalProperties(
+                        additionalPropertiesSchema,
+                        settings.markAsInherited,
+                        this,
+                        settings.direction,
+                        implicit = true,
+                        name =
+                            generateSequence("properties") { "${it}Extra" }.first { name ->
+                                properties.none { it.name == name } &&
+                                    api.allOfDescendants(this).none { child ->
+                                        (listOf(child) + child.allOfAncestors()).any { member ->
+                                            member.properties.keys.any {
+                                                it.camelCase() ==
+                                                    name
+                                            }
+                                        }
+                                    }
+                            },
+                    )
+            } else {
+                properties
             }
         }
 
@@ -544,10 +602,20 @@ sealed class PropertyInfo {
         override val isInherited: Boolean,
         val parentSchema: Schema,
         val direction: ModelDirection? = null,
+        val implicit: Boolean = false,
+        override val name: String = "properties",
     ) : PropertyInfo() {
-        override val name: String = "properties"
         override val oasKey: String = "properties"
-        override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, "additionalProperties", direction = direction)
+        override val typeInfo: KotlinTypeInfo =
+            if (implicit) {
+                KotlinTypeInfo.UnknownAdditionalProperties
+            } else {
+                KotlinTypeInfo.from(
+                    schema,
+                    "additionalProperties",
+                    direction = direction,
+                )
+            }
         override val isRequired: Boolean = true
     }
 

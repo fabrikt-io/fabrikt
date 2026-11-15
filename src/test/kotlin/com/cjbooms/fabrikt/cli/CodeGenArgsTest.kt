@@ -7,6 +7,21 @@ import org.junit.jupiter.api.assertThrows
 
 class CodeGenArgsTest {
     @Test
+    fun `additional properties policy defaults to explicit declarations and accepts the schema default`() {
+        assertThat(CodeGenArgs.parse(arrayOf("--base-package", "example")).additionalProperties)
+            .isEqualTo(AdditionalPropertiesMode.ONLY_WHEN_REQUESTED)
+        assertThat(
+            CodeGenArgs
+                .parse(
+                    arrayOf("--base-package", "example", "--additional-properties", "unless_explicitly_disabled"),
+                ).additionalProperties,
+        ).isEqualTo(AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED)
+        assertThrows<ParameterException> {
+            CodeGenArgs.parse(arrayOf("--base-package", "example", "--additional-properties", "invalid"))
+        }
+    }
+
+    @Test
     fun `visibility defaults to public and accepts internal`() {
         assertThat(CodeGenArgs.parse(arrayOf("--base-package", "example")).visibility).isEqualTo(GeneratedVisibility.PUBLIC)
         assertThat(CodeGenArgs.parse(arrayOf("--base-package", "example", "--visibility", "internal")).visibility)

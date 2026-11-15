@@ -55,6 +55,16 @@ fun createGenerateCodeTask(name: String, apiFilePath: String, basePackage: Strin
     }
 
 tasks {
+    val generateImplicitAdditionalProperties = createGenerateCodeTask(
+        "generateImplicitAdditionalProperties",
+        "${rootProject.projectDir}/src/test/resources/examples/singleAllOf/api.yaml",
+        "com.example.implicitadditionalproperties",
+        listOf(
+            "--additional-properties", "UNLESS_EXPLICITLY_DISABLED",
+            "--api-fragment", "${rootProject.projectDir}/src/test/resources/examples/allOfParentOrder/api.yaml"
+        )
+    )
+    generateImplicitAdditionalProperties.inputs.file("${rootProject.projectDir}/src/test/resources/examples/allOfParentOrder/api.yaml")
     val generateCodeTask = createGenerateCodeTask(
         "generateCode",
         "$projectDir/openapi/api.yaml",
@@ -197,6 +207,7 @@ tasks {
         // Hibernate Validator to see the cascade at runtime.
         compilerOptions.freeCompilerArgs.add("-Xemit-jvm-type-annotations")
         dependsOn(generateCodeTask)
+        dependsOn(generateImplicitAdditionalProperties)
         dependsOn(singletonHierarchyTasks)
         dependsOn(generatePrimitiveTypesCodeTask)
         dependsOn(generateStringFormatOverrideCodeTask)
