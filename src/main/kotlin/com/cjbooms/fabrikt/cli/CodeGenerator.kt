@@ -31,7 +31,12 @@ class CodeGenerator(
     private val srcPath: Path,
     private val resourcesPath: Path,
 ) {
-    fun generate(): Collection<GeneratedFile> = MutableSettings.generationTypes.map(::generateCode).flatten()
+    private var generatedModels: Models? = null
+
+    fun generate(): Collection<GeneratedFile> {
+        generatedModels = null
+        return MutableSettings.generationTypes.map(::generateCode).flatten()
+    }
 
     private fun generateCode(generationType: CodeGenerationType): Collection<GeneratedFile> =
         when (generationType) {
@@ -43,9 +48,13 @@ class CodeGenerator(
 
     private fun generateModels(): Collection<GeneratedFile> = sourceSet(models().files)
 
-    private fun generateControllerInterfaces(): Collection<GeneratedFile> = sourceSet(controllers()).plus(sourceSet(models().files))
+    private fun generateControllerInterfaces(): Collection<GeneratedFile> {
+        val models = models()
+        return sourceSet(controllers()).plus(sourceSet(models.files))
+    }
 
     private fun generateClient(): Collection<GeneratedFile> {
+        val models = models()
         val clientGenerator =
             when (MutableSettings.clientTarget) {
                 ClientCodeGenTargetType.OK_HTTP -> OkHttpClientGenerator(packages, sourceApi, srcPath)
@@ -62,7 +71,7 @@ class CodeGenerator(
                 emptyList()
             }
         val libFiles = clientGenerator.generateLibrary(options)
-        return sourceSet(clientFiles + securityFiles).plus(libFiles).plus(sourceSet(models().files))
+        return sourceSet(clientFiles + securityFiles).plus(libFiles).plus(sourceSet(models.files))
     }
 
     private fun generateQuarkusReflectionResource(): Collection<GeneratedFile> = resourceSet(resources(models()))
@@ -71,7 +80,7 @@ class CodeGenerator(
 
     private fun resourceSet(resFiles: Collection<ResourceFile>) = setOf(ResourceSourceSet(resFiles, resourcesPath))
 
-    private fun models(): Models = ModelGenerator(packages, sourceApi).generate()
+    private fun models(): Models = generatedModels ?: ModelGenerator(packages, sourceApi).generate().also { generatedModels = it }
 
     private fun resources(models: Models): List<ResourceFile> = listOfNotNull(QuarkusReflectionModelGenerator(models).generate())
 

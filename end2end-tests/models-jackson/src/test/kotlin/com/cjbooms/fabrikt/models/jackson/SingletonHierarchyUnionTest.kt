@@ -60,15 +60,48 @@ class SingletonHierarchyUnionTest {
     @ValueSource(booleans = [false, true])
     fun singletonCollectionsRetainCascadingAndSizeValidation(openParents: Boolean) {
         val target = holder(openParents)
-        val valid = mapper.readValue("""{"values":[$child]}""", target)
+        val valid = mapper.readValue("""{"values":[$child],"direct":$child}""", target)
         val invalid = mapper.readValue("""{"values":[{"kind":"child","id":"1","label":""}]}""", target)
+        val invalidDirect = mapper.readValue("""{"direct":{"kind":"child","id":"1","label":""}}""", target)
         val empty = mapper.readValue("""{"values":[]}""", target)
         jakarta.validation.Validation.byDefaultProvider().configure()
             .messageInterpolator(org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator())
             .buildValidatorFactory().use { factory ->
                 assertThat(factory.validator.validate(valid)).isEmpty()
                 assertThat(factory.validator.validate(invalid).map { it.propertyPath.toString() }).containsExactly("values[0].label")
+                assertThat(factory.validator.validate(invalidDirect).map { it.propertyPath.toString() }).containsExactly("direct.label")
                 assertThat(factory.validator.validate(empty).map { it.propertyPath.toString() }).containsExactly("values")
             }
     }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun intermediateReferencesAcceptTheirBranchOnly(openParents: Boolean) {
+        val target = holder(openParents)
+        val contract = target.getMethod("getDirect").returnType
+        assertThat(contract.simpleName).isEqualTo("MiddleContract")
+        for (payload in listOf(child, """{"kind":"middle","id":"2","middle":"retained"}""")) {
+            val decoded = mapper.readValue(payload, contract)
+            assertThat(decoded.javaClass.simpleName).isEqualTo(if (payload == child) "Child" else "Middle")
+            val roundTrip = mapper.readValue(mapper.writeValueAsString(decoded), contract)
+            assertThat(roundTrip).isEqualTo(decoded)
+            val result = mapper.readValue("""{"direct":$payload,"directValues":[$payload],"directMap":{"entry":$payload},"bag":{"entry":$payload}}""", target)
+            val encoded = mapper.readTree(mapper.writeValueAsString(result))
+            assertThat(encoded.at("/direct/middle").textValue()).isEqualTo("retained")
+            assertThat(encoded.at("/directValues/0/middle").textValue()).isEqualTo("retained")
+            assertThat(encoded.at("/directMap/entry/middle").textValue()).isEqualTo("retained")
+            assertThat(encoded.at("/bag/entry/middle").textValue()).isEqualTo("retained")
+            if (payload == child) {
+                for (path in listOf("/direct/label", "/directValues/0/label", "/directMap/entry/label", "/bag/entry/label")) {
+                    assertThat(encoded.at(path).textValue()).isEqualTo("Alice")
+                }
+            }
+            assertThat(mapper.readValue(mapper.writeValueAsString(result), target)).isEqualTo(result)
+        }
+        val third = """{"kind":"third","id":"3"}"""
+        for (json in listOf("""{"direct":$third}""", """{"directValues":[$third]}""", """{"directMap":{"entry":$third}}""", """{"bag":{"entry":$third}}""")) {
+            assertThatThrownBy { mapper.readValue(json, target) }.isInstanceOf(InvalidTypeIdException::class.java)
+        }
+    }
+
 }

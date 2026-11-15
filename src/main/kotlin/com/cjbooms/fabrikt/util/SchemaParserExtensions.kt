@@ -237,6 +237,15 @@ object SchemaParserExtensions {
             schema.allOfAncestors().firstOrNull { it.isPolymorphicSuperType() }
         }
 
+    internal fun Schema.discriminatedRoot(): Schema? = allOfAncestors().firstOrNull { it.isPolymorphicSuperType() }
+
+    internal fun Schema.isHierarchyIntermediate(): Boolean =
+        isNamedComponent() &&
+            !isPolymorphicSuperType() &&
+            !forbidsAdditionalProperties &&
+            discriminatedRoot() != null &&
+            hasAllOfDescendants()
+
     internal fun Schema.allOfAncestors(): List<Schema> {
         val ancestors = mutableListOf<Schema>()
         val visited = mutableSetOf(jsonReference)

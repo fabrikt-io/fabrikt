@@ -13,7 +13,7 @@ public data class Middle(
   override val id: String,
   @param:JsonProperty("middle")
   @get:JsonProperty("middle")
-  public val middle: String? = null,
+  override val middle: String? = null,
   @get:JsonProperty("kind")
   @get:NotNull
   @param:JsonProperty("kind")
@@ -21,4 +21,5 @@ public data class Middle(
   @param:JsonProperty("note")
   @get:JsonProperty("note")
   override val note: String? = "hello",
-) : Base(id, note)
+) : Base(id, note),
+    MiddleContract

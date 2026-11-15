@@ -17,7 +17,8 @@ object ModelNameRegistry {
     private val allocatedNames: MutableSet<String> = mutableSetOf()
     private val tagToName: MutableMap<String, String> = mutableMapOf()
     private val referenceToName: MutableMap<String, String> = mutableMapOf()
-    private val compositionContractNames: MutableMap<Pair<String, String>, String> = mutableMapOf()
+    private val contractNames: MutableMap<Triple<String, String, String>, String> = mutableMapOf()
+    internal val intermediateReferences: MutableMap<String, String> = linkedMapOf()
     private const val SUFFIX = "Extra"
 
     /**
@@ -49,7 +50,6 @@ object ModelNameRegistry {
 
     private fun allocateUniqueName(modelClassName: String): String {
         if (allocatedNames.add(modelClassName)) return modelClassName
-
         var collisionIndex = 1
         while (true) {
             val numericSuffix = if (collisionIndex == 1) "" else collisionIndex.toString()
@@ -204,13 +204,25 @@ object ModelNameRegistry {
     fun compositionContractName(
         schema: Schema,
         modelName: String,
-    ): String = compositionContractNames.getOrPut(schema.jsonReference to modelName) { allocateUniqueName("${modelName}Composite") }
+    ): String = contractName(schema, modelName, "Composite")
+
+    fun intermediateContractName(
+        schema: Schema,
+        modelName: String,
+    ): String = contractName(schema, modelName, "Contract")
+
+    private fun contractName(
+        schema: Schema,
+        modelName: String,
+        suffix: String,
+    ): String = contractNames.getOrPut(Triple(schema.jsonReference, modelName, suffix)) { allocateUniqueName("$modelName$suffix") }
 
     fun clear() {
         allocatedNames.clear()
         tagToName.clear()
         inlineSchemaTracking.clear()
         referenceToName.clear()
-        compositionContractNames.clear()
+        contractNames.clear()
+        intermediateReferences.clear()
     }
 }

@@ -2,7 +2,30 @@ openapi: 3.0.4
 info:
   title: Singleton hierarchy unions
   version: '1'
-paths: {}
+paths:
+  /middle:
+    post:
+      operationId: echoMiddle
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Middle'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Middle'
+      responses:
+        '200':
+          description: A middle or one of its descendants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Middle'
+
 components:
   schemas:
     Base:
@@ -66,6 +89,19 @@ components:
     Holder:
       type: object
       properties:
+        direct:
+          $ref: '#/components/schemas/Middle'
+        directValues:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Middle'
+        directMap:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Middle'
+        bag:
+          $ref: '#/components/schemas/MiddleBag'
         single:
           nullable: true
           oneOf:
@@ -116,3 +152,10 @@ components:
             mapping:
               child: '#/components/schemas/Child'
               sibling: '#/components/schemas/Sibling'
+    MiddleBag:
+      type: object
+      properties:
+        tag:
+          type: string
+      additionalProperties:
+        $ref: '#/components/schemas/Middle'

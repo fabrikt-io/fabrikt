@@ -145,17 +145,30 @@ sealed class KotlinTypeInfo(
                 else -> false
             }
 
+    internal fun forReference(contracts: kotlin.collections.Map<String, String>): KotlinTypeInfo =
+        when (this) {
+            is Object -> contracts[simpleClassName]?.let(::Object) ?: this
+            is GeneratedTypedAdditionalProperties -> contracts[simpleClassName]?.let(::GeneratedTypedAdditionalProperties) ?: this
+            is Array -> copy(parameterizedType = parameterizedType.forReference(contracts))
+            is Map -> copy(parameterizedType = parameterizedType.forReference(contracts))
+            is SimpleTypedAdditionalProperties -> copy(parameterizedType = parameterizedType.forReference(contracts))
+            is MapTypeAdditionalProperties -> copy(parameterizedType = parameterizedType.forReference(contracts))
+            else -> this
+        }
+
     companion object {
         private val logger = Logger.getGlobal()
 
-        fun fromRequest(schema: OpenApiSchema): KotlinTypeInfo = from(schema, direction = requestDirection())
+        fun fromRequest(schema: OpenApiSchema): KotlinTypeInfo =
+            from(schema, direction = requestDirection()).forReference(ModelNameRegistry.intermediateReferences)
 
-        fun fromResponse(schema: OpenApiSchema): KotlinTypeInfo = from(schema, direction = responseDirection())
+        fun fromResponse(schema: OpenApiSchema): KotlinTypeInfo =
+            from(schema, direction = responseDirection()).forReference(ModelNameRegistry.intermediateReferences)
 
         fun fromRequestParameterSchema(
             schema: OpenApiSchema,
             oasKey: String,
-        ): KotlinTypeInfo = fromParameterSchema(schema, oasKey, requestDirection())
+        ): KotlinTypeInfo = fromParameterSchema(schema, oasKey, requestDirection()).forReference(ModelNameRegistry.intermediateReferences)
 
         fun requestDirection(): ModelDirection? =
             ModelDirection.REQUEST.takeIf {

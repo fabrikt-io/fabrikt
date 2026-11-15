@@ -3,7 +3,10 @@ package com.cjbooms.fabrikt.generators.model
 import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
+import com.cjbooms.fabrikt.model.OpenApiDiscriminator
+import com.cjbooms.fabrikt.model.OpenApiSchema
 import com.cjbooms.fabrikt.util.NormalisedString.pascalCase
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeys
 import com.cjbooms.fabrikt.util.toLowerCase
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
@@ -114,6 +117,19 @@ object JacksonMetadata {
             ).addMember("property = %S", discriminatorFieldName)
             .addMember("visible = true")
             .build()
+
+    fun discriminatorMappings(
+        discriminator: OpenApiDiscriminator,
+        schema: OpenApiSchema,
+        type: TypeName,
+        fallbackName: String? = null,
+    ): Map<String, TypeName> =
+        discriminator
+            .mappingKeys(schema)
+            .filter { it.value == schema.name || it.key == schema.name }
+            .keys
+            .ifEmpty { fallbackName?.let(::setOf).orEmpty() }
+            .associateWith { type }
 
     fun polymorphicSubTypes(
         typePairs: Map<String, TypeName>,
