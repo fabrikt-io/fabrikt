@@ -80,6 +80,7 @@ class OpenApiSchema(
             allOfParentReferences = allOfParentReferences,
         )
     val additionalProperties: Boolean? get() = kaizen.additionalProperties
+    internal val declaresAdditionalProperties: Boolean get() = parsedJson?.has("additionalProperties") == true
     val additionalPropertiesSchema: OpenApiSchema get() =
         OpenApiSchema(
             kaizen.additionalPropertiesSchema,

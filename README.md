@@ -260,7 +260,7 @@ Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared inter
 
 `--additional-properties UNLESS_EXPLICITLY_DISABLED` applies the OpenAPI and JSON Schema default for an absent `additionalProperties` to all serialization libraries, using their existing handling of explicit `additionalProperties: true`. Explicit typed declarations and `false` retain their behaviour. The default, `ONLY_WHEN_REQUESTED`, preserves existing generated output.
 
-Jackson 2 and 3 capture undeclared properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`; current inheritance limitations are tracked in [#860](https://github.com/fabrikt-io/fabrikt/issues/860). Existing serializer limitations also apply when opting in: kotlinx.serialization currently rejects additional-properties capture just as it does for an explicit `true`. Its `ignoreUnknownKeys` setting discards values rather than capturing them for round-tripping; this policy option does not add custom serialization support.
+Jackson 2 and 3 capture undeclared properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`. Existing serializer limitations also apply when opting in: kotlinx.serialization currently rejects additional-properties capture just as it does for an explicit `true`. Its `ignoreUnknownKeys` setting discards values rather than capturing them for round-tripping; this policy option does not add custom serialization support.
 
 ## Multipart clients
 

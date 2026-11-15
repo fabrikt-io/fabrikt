@@ -14,6 +14,7 @@ import com.marcinziolo.kotlin.wiremock.returns
 import java.net.ServerSocket
 import okhttp3.OkHttpClient
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -68,4 +69,28 @@ class Jackson3OkHttpClientTest {
 
         assertThat(result).isEqualTo(expected)
     }
+
+    @Test
+    fun `inherited additional properties retain compatible and typed maps and keep closed children strict`() {
+        val mapper = this.mapper.rebuild().enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()
+        val json = """{"id":"1","kind":"child","label":"Alice","extra":null,"nested":{"items":[1,true]}}"""
+        val child = mapper.readValue(json, com.example.inheritedadditionalproperties.models.OrderX::class.java)
+            as com.example.inheritedadditionalproperties.models.OrderChild
+        assertThat(child.properties).containsKey("extra").containsKey("nested").doesNotContainKey("label")
+        assertThat(mapper.readTree(mapper.writeValueAsString(child.copy()))).isEqualTo(mapper.readTree(json))
+
+        val typedJson = """{"id":"2","kind":"typed","label":"Bob","extra":"retained"}"""
+        val typed = mapper.readValue(typedJson, com.example.inheritedadditionalproperties.models.OrderX::class.java)
+            as com.example.inheritedadditionalproperties.models.OrderTypedChild
+        val captured: Map<String, String?> = typed.get()
+        assertThat(captured).containsEntry("extra", "retained")
+        assertThat(mapper.readTree(mapper.writeValueAsString(typed.copy()))).isEqualTo(mapper.readTree(typedJson))
+        assertThatThrownBy {
+            mapper.readValue(
+                """{"id":"3","kind":"sibling","count":3,"extra":1}""",
+                com.example.inheritedadditionalproperties.models.OrderX::class.java,
+            )
+        }.isInstanceOf(tools.jackson.databind.exc.UnrecognizedPropertyException::class.java)
+    }
+
 }

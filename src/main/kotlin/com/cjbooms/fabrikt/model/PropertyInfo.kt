@@ -113,7 +113,17 @@ sealed class PropertyInfo {
                         )
                     } +
                     getInLinedProperties(settings, api, enclosingSchema, combinedRequiredFields, memberSchema)
-            return results.groupBy { it.oasKey }.values.map { declarations ->
+            val nodeProperties =
+                if (MutableSettings.serializationLibrary.isJackson && declaresAdditionalProperties) {
+                    val localMap =
+                        results.filterIsInstance<AdditionalProperties>().firstOrNull {
+                            it.parentSchema.jsonReference == jsonReference
+                        }
+                    results.filterNot { it is AdditionalProperties } + listOfNotNull(localMap)
+                } else {
+                    results
+                }
+            return nodeProperties.groupBy { it.oasKey }.values.map { declarations ->
                 val first = declarations.first()
                 if (first is Field && declarations.size > 1 && allOfSchemas.isNotEmpty()) {
                     refineDefault(first, declarations.filterIsInstance<Field>())

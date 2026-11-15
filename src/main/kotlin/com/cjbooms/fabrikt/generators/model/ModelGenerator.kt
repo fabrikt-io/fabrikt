@@ -353,7 +353,14 @@ class ModelGenerator(
             processed.getOrPut(next.key, ::mutableSetOf).addAll(requested.value)
         }
         intermediateContracts.allocateNames(primaryModels)
-        val referencedModels = rewriteContractReferences(models, modelsPackage(packages.base), intermediateContracts.referenceNames)
+        val inheritedModels =
+            if (MutableSettings.serializationLibrary.isJackson) {
+                inheritAdditionalProperties(models, modelsPackage(packages.base))
+            } else {
+                models
+            }
+        val referencedModels =
+            rewriteContractReferences(inheritedModels, modelsPackage(packages.base), intermediateContracts.referenceNames)
         val referencedByName = referencedModels.associateBy { it.name }
         primaryModels.replaceAll { _, model -> referencedByName[model.name] ?: model }
         val composedModels =

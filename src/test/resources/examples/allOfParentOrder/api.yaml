@@ -25,26 +25,29 @@
           "propertyName": "kind",
           "mapping": {
             "child": "#/components/schemas/OrderChild",
-            "sibling": "#/components/schemas/OrderSibling"
+            "sibling": "#/components/schemas/OrderSibling",
+            "typed": "#/components/schemas/OrderTypedChild"
           }
-        }
+        },
+        "additionalProperties": true
       },
       "OrderChild": {
         "allOf": [
           {
-            "type": "object",
-            "required": [
-              "label"
-            ],
-            "properties": {
-              "label": {
-                "type": "string"
-              }
-            }
+            "type": "object"
           },
           {
             "$ref": "#/components/schemas/OrderX"
           }
+        ],
+        "additionalProperties": true,
+        "properties": {
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "label"
         ]
       },
       "OrderSibling": {
@@ -64,7 +67,8 @@
           {
             "$ref": "#/components/schemas/OrderX"
           }
-        ]
+        ],
+        "additionalProperties": false
       },
       "OrderHolder": {
         "type": "object",
@@ -83,6 +87,9 @@
               },
               {
                 "$ref": "#/components/schemas/OrderSibling"
+              },
+              {
+                "$ref": "#/components/schemas/OrderTypedChild"
               }
             ]
           },
@@ -95,11 +102,32 @@
                 },
                 {
                   "$ref": "#/components/schemas/OrderSibling"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderTypedChild"
                 }
               ]
             }
           }
         }
+      },
+      "OrderTypedChild": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "required": [
+          "label"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/OrderX"
+          }
+        ]
       }
     }
   }

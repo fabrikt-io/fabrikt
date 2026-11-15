@@ -55,6 +55,12 @@ fun createGenerateCodeTask(name: String, apiFilePath: String, basePackage: Strin
     }
 
 tasks {
+    val generateInheritedAdditionalProperties = createGenerateCodeTask(
+        "generateInheritedAdditionalProperties",
+        "${rootProject.projectDir}/src/test/resources/examples/allOfParentOrder/api.yaml",
+        "com.example.inheritedadditionalproperties",
+        listOf("--serialization-library", "JACKSON_2")
+    )
     val generateCodeTask = createGenerateCodeTask(
         "generateCode",
         "$projectDir/openapi/api.yaml",
@@ -197,6 +203,7 @@ tasks {
         // Hibernate Validator to see the cascade at runtime.
         compilerOptions.freeCompilerArgs.add("-Xemit-jvm-type-annotations")
         dependsOn(generateCodeTask)
+        dependsOn(generateInheritedAdditionalProperties)
         dependsOn(singletonHierarchyTasks)
         dependsOn(generatePrimitiveTypesCodeTask)
         dependsOn(generateStringFormatOverrideCodeTask)

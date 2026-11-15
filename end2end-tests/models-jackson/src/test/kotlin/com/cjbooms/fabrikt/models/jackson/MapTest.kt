@@ -3,11 +3,35 @@ package com.cjbooms.fabrikt.models.jackson
 import com.cjbooms.fabrikt.models.jackson.Helpers.mapper
 import com.example.models.*
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 class MapTest {
     private val objectMapper = mapper()
     private val writer = objectMapper.writerWithDefaultPrettyPrinter()
+
+    @Test
+    fun `inherited additional properties retain compatible and typed maps and keep closed children strict`() {
+        val mapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
+        val json = """{"id":"1","kind":"child","label":"Alice","extra":null,"nested":{"items":[1,true]}}"""
+        val child = mapper.readValue(json, com.example.inheritedadditionalproperties.models.OrderX::class.java)
+            as com.example.inheritedadditionalproperties.models.OrderChild
+        assertThat(child.properties).containsKey("extra").containsKey("nested").doesNotContainKey("label")
+        assertThat(mapper.readTree(mapper.writeValueAsString(child.copy()))).isEqualTo(mapper.readTree(json))
+
+        val typedJson = """{"id":"2","kind":"typed","label":"Bob","extra":"retained"}"""
+        val typed = mapper.readValue(typedJson, com.example.inheritedadditionalproperties.models.OrderX::class.java)
+            as com.example.inheritedadditionalproperties.models.OrderTypedChild
+        val captured: Map<String, String?> = typed.get()
+        assertThat(captured).containsEntry("extra", "retained")
+        assertThat(mapper.readTree(mapper.writeValueAsString(typed.copy()))).isEqualTo(mapper.readTree(typedJson))
+        assertThatThrownBy {
+            mapper.readValue(
+                """{"id":"3","kind":"sibling","count":3,"extra":1}""",
+                com.example.inheritedadditionalproperties.models.OrderX::class.java,
+            )
+        }.isInstanceOf(com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException::class.java)
+    }
 
     @Test
     fun `must serialize string map`() {
