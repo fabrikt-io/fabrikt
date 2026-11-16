@@ -103,6 +103,7 @@ Follow these conventions when adding or updating tests:
 1. **Adjust or extend the nearest existing fixture.** Add only the schemas that differ, or update existing schemas to exercise the behavior. Reference existing schemas with `$ref` instead of redefining them. Existing golden files must stay byte-identical unless changing them is the intended bug fix.
 2. **In-memory unit tests.** Use only for pure string assertions on generated code for isolated generator logic or edge cases where golden files provide no value (for example, uninhabitable schemas). Never run in-memory compilation (`K2JVMCompiler`) or reflection tests in root generator tests.
 3. **New parameterized example directory.** Use only for a new OpenAPI pattern that does not fit an existing fixture, a new CLI option, a new generator, or a global setting that no existing fixture configures. Never copy an existing `api.yaml` or duplicate shapes that existing fixtures already cover. Put all permutations of one scenario in one `api.yaml`.
+4. **Variant-specific output goes in a `models/<variant>/` sub-folder** containing the full set of expected files for that variant (e.g. `models/kotlinx/`).
 
 When adding a new example directory, add at most one, explain why in the "Solution" section, and ask first.
 
