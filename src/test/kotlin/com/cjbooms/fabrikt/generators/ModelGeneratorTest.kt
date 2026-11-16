@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.generators
 
 import com.beust.jcommander.ParameterException
+import com.cjbooms.fabrikt.cli.AdditionalPropertiesMode
 import com.cjbooms.fabrikt.cli.ClientCodeGenTargetType
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
 import com.cjbooms.fabrikt.cli.CodeGenerationType
@@ -125,6 +126,28 @@ class ModelGeneratorTest {
 
     @Test
     fun `debug single test`() = `correct models are generated for different OpenApi Specifications`("discriminatedOneOf")
+
+    @Test
+    fun `undeclared additional properties open only in UNLESS_EXPLICITLY_DISABLED mode`() {
+        fun generate(mode: AdditionalPropertiesMode): Map<String, String> {
+            MutableSettings.updateSettings(additionalProperties = mode)
+            return ModelGenerator(Packages("example"), SourceApi(readTextResource("/examples/additionalProperties/api.yaml")))
+                .generate()
+                .files
+                .associate { it.name to it.toString() }
+        }
+
+        val defaults = generate(AdditionalPropertiesMode.ONLY_WHEN_REQUESTED)
+        assertThat(defaults.getValue("Result")).contains("JsonAnySetter")
+        assertThat(defaults.getValue("ResultWithoutAdditionalProperties")).doesNotContain("JsonAnySetter")
+        assertThat(defaults.getValue("ResultWithImplicitAdditionalProperties")).doesNotContain("JsonAnySetter")
+
+        val implicit = generate(AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED)
+        assertThat(implicit.getValue("Result")).isEqualTo(defaults.getValue("Result"))
+        assertThat(implicit.getValue("ResultWithoutAdditionalProperties")).isEqualTo(defaults.getValue("ResultWithoutAdditionalProperties"))
+        assertThat(implicit.getValue("ResultWithImplicitAdditionalProperties"))
+            .contains("JsonAnySetter", "MutableMap<String, Any?>")
+    }
 
     @ParameterizedTest
     @EnumSource(value = SerializationLibrary::class, names = ["JACKSON_2", "JACKSON_3", "KOTLINX_SERIALIZATION"])

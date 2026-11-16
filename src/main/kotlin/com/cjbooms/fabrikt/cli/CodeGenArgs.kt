@@ -272,6 +272,16 @@ class CodeGenArgs {
     var jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.NONE
 
     @Parameter(
+        names = ["--additional-properties"],
+        description =
+            "Control undeclared object properties when additionalProperties is absent. " +
+                "UNLESS_EXPLICITLY_DISABLED follows the specification's default for absent additionalProperties. " +
+                "Default: ONLY_WHEN_REQUESTED for generated-output compatibility",
+        converter = AdditionalPropertiesModeConverter::class,
+    )
+    var additionalProperties: AdditionalPropertiesMode = AdditionalPropertiesMode.default
+
+    @Parameter(
         names = ["--dependencies-generation-mode"],
         description = "Configure generation of file containing dependencies of the generated source code. Default: NONE",
         converter = DependenciesGenerationModeConverter::class,
@@ -333,6 +343,10 @@ class SerializationLibraryOptionConverter : IStringConverter<SerializationLibrar
 
 class JacksonNullabilityModeOptionConverter : IStringConverter<JacksonNullabilityMode> {
     override fun convert(value: String): JacksonNullabilityMode = convertToEnumValue(value)
+}
+
+class AdditionalPropertiesModeConverter : IStringConverter<AdditionalPropertiesMode> {
+    override fun convert(value: String): AdditionalPropertiesMode = convertToEnumValue(value)
 }
 
 class DependenciesGenerationModeConverter : IStringConverter<DependenciesGenerationMode> {

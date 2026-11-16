@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.generators
 
+import com.cjbooms.fabrikt.cli.AdditionalPropertiesMode
 import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ClientCodeGenTargetType
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
@@ -56,6 +57,8 @@ object MutableSettings {
         private set
     var jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.default
         private set
+    var additionalProperties: AdditionalPropertiesMode = AdditionalPropertiesMode.default
+        private set
     var outputOptions: Set<OutputOptionType> = mutableSetOf()
         private set
     var visibility: GeneratedVisibility = GeneratedVisibility.PUBLIC
@@ -100,6 +103,7 @@ object MutableSettings {
         serializationLibrary: SerializationLibrary = SerializationLibrary.default,
         instantLibrary: InstantLibrary = InstantLibrary.default,
         jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.default,
+        additionalProperties: AdditionalPropertiesMode = AdditionalPropertiesMode.default,
         outputOptions: Set<OutputOptionType> = emptySet(),
         operationIdTransform: Pair<Regex, String>? = null,
         generationMetadata: GenerationMetadata = GenerationMetadata(),
@@ -124,6 +128,7 @@ object MutableSettings {
         this.serializationLibrary = serializationLibrary
         this.instantLibrary = instantLibrary
         this.jacksonNullabilityMode = jacksonNullabilityMode
+        this.additionalProperties = additionalProperties
         this.outputOptions = outputOptions
         this.operationIdTransform = operationIdTransform
     }

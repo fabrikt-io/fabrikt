@@ -1,5 +1,6 @@
 package com.cjbooms.fabrikt.util
 
+import com.cjbooms.fabrikt.cli.AdditionalPropertiesMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.OasType
@@ -181,7 +182,16 @@ object SchemaParserExtensions {
 
     private fun Schema.getOpenEnumValues(): List<String> = anyOfSchemas.filter { it.hasEnums() }.flatMap { it.getEnumValues() }.distinct()
 
-    fun Schema.hasAdditionalProperties(): Boolean = additionalPropertiesSchema.isPresent && additionalProperties != false
+    fun Schema.isAdditionalPropertiesBooleanFlagEnabled(): Boolean =
+        when {
+            additionalProperties == true -> true
+            additionalProperties == false -> false
+            else -> isObjectType() && MutableSettings.additionalProperties == AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED
+        }
+
+    fun Schema.hasAdditionalProperties(): Boolean =
+        (additionalPropertiesSchema.isPresent && additionalProperties != false) ||
+            isAdditionalPropertiesBooleanFlagEnabled()
 
     fun Schema.isUnknownAdditionalProperties(oasKey: String) =
         type == null &&
