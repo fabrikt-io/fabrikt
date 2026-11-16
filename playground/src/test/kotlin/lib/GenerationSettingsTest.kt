@@ -104,6 +104,7 @@ class GenerationSettingsTest {
             &serializationLibrary=KOTLINX_SERIALIZATION
             &instantLibrary=KOTLIN_TIME_INSTANT
             &jacksonNullabilityMode=STRICT
+            &additionalProperties=ONLY_WHEN_REQUESTED
             &modelOptions=INCLUDE_COMPANION_OBJECT
             &modelAdditionalAnnotations=com.example.First
             &modelAdditionalAnnotations=com.example.Second

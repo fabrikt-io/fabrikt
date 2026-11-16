@@ -18,4 +18,11 @@ components:
         message:
           type: string
       additionalProperties: false # explicitly disallow additional properties
+    ResultWithImplicitAdditionalProperties:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
     # ... we could add more examples here for additionalProperties with a schema

@@ -1,5 +1,6 @@
 package lib
 
+import com.cjbooms.fabrikt.cli.AdditionalPropertiesMode
 import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ClientCodeGenTargetType
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
@@ -23,6 +24,7 @@ data class GenerationSettings(
     val serializationLibrary: SerializationLibrary = SerializationLibrary.default,
     val instantLibrary: InstantLibrary = InstantLibrary.default,
     val jacksonNullabilityMode: JacksonNullabilityMode = JacksonNullabilityMode.default,
+    val additionalProperties: AdditionalPropertiesMode = AdditionalPropertiesMode.default,
     val modelOptions: Set<ModelCodeGenOptionType>,
     val modelAdditionalAnnotations: List<String> = emptyList(),
     val controllerTarget: ControllerCodeGenTargetType = ControllerCodeGenTargetType.default,
@@ -59,6 +61,9 @@ data class GenerationSettings(
 
             jacksonNullabilityMode = this["jacksonNullabilityMode"]?.let { JacksonNullabilityMode.valueOf(it) }
                 ?: JacksonNullabilityMode.default,
+
+            additionalProperties = this["additionalProperties"]?.let { AdditionalPropertiesMode.valueOf(it) }
+                ?: AdditionalPropertiesMode.default,
 
             modelOptions = this.getAll("modelOptions")?.map { ModelCodeGenOptionType.valueOf(it) }?.toSet() ?: emptySet(),
 
@@ -117,6 +122,7 @@ data class GenerationSettings(
             .plus(serializationLibrary.let { "serializationLibrary=${it.name}" })
             .plus(instantLibrary.let { "instantLibrary=${it.name}" })
             .plus(jacksonNullabilityMode.let { "jacksonNullabilityMode=${it.name}" })
+            .plus(additionalProperties.let { "additionalProperties=${it.name}" })
             .plus(modelOptions.map { "modelOptions=${it.name}" })
             .plus(modelAdditionalAnnotations.map { "modelAdditionalAnnotations=${it.encodeURLParameter()}" })
             .plus(controllerTarget.let { "controllerTarget=${it.name}" })

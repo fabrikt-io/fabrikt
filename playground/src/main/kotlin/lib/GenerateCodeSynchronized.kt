@@ -28,6 +28,7 @@ fun generateCodeSynchronized(
         serializationLibrary = generationSettings.serializationLibrary,
         instantLibrary = generationSettings.instantLibrary,
         jacksonNullabilityMode = generationSettings.jacksonNullabilityMode,
+        additionalProperties = generationSettings.additionalProperties,
         outputOptions = generationSettings.outputOptions,
         visibility = generationSettings.visibility,
         operationIdTransform = generationSettings.parseOperationIdTransform(),

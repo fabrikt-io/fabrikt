@@ -1,5 +1,6 @@
 package views.elements
 
+import com.cjbooms.fabrikt.cli.AdditionalPropertiesMode
 import com.cjbooms.fabrikt.cli.ClientCodeGenOptionType
 import com.cjbooms.fabrikt.cli.ClientCodeGenTargetType
 import com.cjbooms.fabrikt.cli.CodeGenTypeOverride
@@ -60,6 +61,7 @@ fun FlowContent.specForm(settings: GenerationSettings) = div {
         enumSelectBox("serializationLibrary", SerializationLibrary.values(), settings.serializationLibrary.name)
         enumSelectBox("instantLibrary", InstantLibrary.values(), settings.instantLibrary.name)
         enumSelectBox("jacksonNullabilityMode", JacksonNullabilityMode.values(), settings.jacksonNullabilityMode.name)
+        enumSelectBox("additionalProperties", AdditionalPropertiesMode.values(), settings.additionalProperties.name)
         enumCheckboxes("modelOptions", ModelCodeGenOptionType.values(), settings.modelOptions.map { it.name }.toSet())
         textAreaBox(
             "modelAdditionalAnnotations",
