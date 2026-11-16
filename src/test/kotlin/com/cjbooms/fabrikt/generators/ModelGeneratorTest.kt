@@ -128,25 +128,21 @@ class ModelGeneratorTest {
     fun `debug single test`() = `correct models are generated for different OpenApi Specifications`("discriminatedOneOf")
 
     @Test
-    fun `undeclared additional properties open only in UNLESS_EXPLICITLY_DISABLED mode`() {
-        fun generate(mode: AdditionalPropertiesMode): Map<String, String> {
-            MutableSettings.updateSettings(additionalProperties = mode)
-            return ModelGenerator(Packages("example"), SourceApi(readTextResource("/examples/additionalProperties/api.yaml")))
-                .generate()
-                .files
-                .associate { it.name to it.toString() }
-        }
+    fun `undeclared additional properties open in UNLESS_EXPLICITLY_DISABLED mode`() {
+        MutableSettings.updateSettings(additionalProperties = AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED)
+        val models =
+            ModelGenerator(
+                Packages("examples.additionalProperties"),
+                SourceApi(readTextResource("/examples/additionalProperties/api.yaml")),
+            ).generate()
+        val files = models.files.associate { it.name to it.toString() }
 
-        val defaults = generate(AdditionalPropertiesMode.ONLY_WHEN_REQUESTED)
-        assertThat(defaults.getValue("Result")).contains("JsonAnySetter")
-        assertThat(defaults.getValue("ResultWithoutAdditionalProperties")).doesNotContain("JsonAnySetter")
-        assertThat(defaults.getValue("ResultWithImplicitAdditionalProperties")).doesNotContain("JsonAnySetter")
-
-        val implicit = generate(AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED)
-        assertThat(implicit.getValue("Result")).isEqualTo(defaults.getValue("Result"))
-        assertThat(implicit.getValue("ResultWithoutAdditionalProperties")).isEqualTo(defaults.getValue("ResultWithoutAdditionalProperties"))
-        assertThat(implicit.getValue("ResultWithImplicitAdditionalProperties"))
-            .contains("JsonAnySetter", "MutableMap<String, Any?>")
+        assertThatGenerated(files.getValue("Result"))
+            .isEqualTo("/examples/additionalProperties/models/unless_explicitly_disabled/Result.kt")
+        assertThatGenerated(files.getValue("ResultWithoutAdditionalProperties"))
+            .isEqualTo("/examples/additionalProperties/models/unless_explicitly_disabled/ResultWithoutAdditionalProperties.kt")
+        assertThatGenerated(files.getValue("ResultWithImplicitAdditionalProperties"))
+            .isEqualTo("/examples/additionalProperties/models/unless_explicitly_disabled/ResultWithImplicitAdditionalProperties.kt")
     }
 
     @ParameterizedTest
