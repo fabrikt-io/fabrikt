@@ -155,17 +155,25 @@ class ModelGeneratorTest {
     }
 
     @Test
-    fun `implicit additional properties do not change kotlinx models`() {
+    fun `implicit additional properties use the existing kotlinx handling of explicit declarations`() {
+        val mapper = YamlObjectMapper.instance
+        val spec = mapper.readTree(readTextResource("/examples/additionalProperties/api.yaml"))
         MutableSettings.updateSettings(
             serializationLibrary = SerializationLibrary.KOTLINX_SERIALIZATION,
             additionalProperties = AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED,
         )
-        val files =
-            ModelGenerator(
-                Packages("example"),
-                SourceApi(readTextResource("/examples/additionalProperties/api.yaml")),
-            ).generate().files
-        assertThat(files.joinToString("\n")).doesNotContain("JsonAnySetter", "MutableMap")
+        val implicit =
+            assertThrows<UnsupportedOperationException> {
+                ModelGenerator(Packages("example"), SourceApi(mapper.writeValueAsString(spec))).generate()
+            }
+        (spec.at("/components/schemas/Result") as ObjectNode).put("additionalProperties", true)
+        MutableSettings.updateSettings(serializationLibrary = SerializationLibrary.KOTLINX_SERIALIZATION)
+        ModelNameRegistry.clear()
+        val explicit =
+            assertThrows<UnsupportedOperationException> {
+                ModelGenerator(Packages("example"), SourceApi(mapper.writeValueAsString(spec))).generate()
+            }
+        assertThat(implicit.message).isEqualTo(explicit.message)
     }
 
     @ParameterizedTest

@@ -186,7 +186,6 @@ object SchemaParserExtensions {
         (additionalPropertiesSchema.isPresent && additionalProperties != false) ||
             (
                 MutableSettings.additionalProperties == AdditionalPropertiesMode.UNLESS_EXPLICITLY_DISABLED &&
-                    MutableSettings.serializationLibrary.isJackson &&
                     isPresent &&
                     !declaresAdditionalProperties &&
                     !isUnknownAdditionalProperties("") &&

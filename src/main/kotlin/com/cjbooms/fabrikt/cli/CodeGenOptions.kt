@@ -404,8 +404,8 @@ enum class SerializationLibrary(
 enum class AdditionalPropertiesMode(
     val description: String,
 ) {
-    ONLY_WHEN_REQUESTED("Capture additional properties only when declared by the schema"),
-    UNLESS_EXPLICITLY_DISABLED("Capture undeclared properties with Jackson unless the schema explicitly disables them"),
+    ONLY_WHEN_REQUESTED("Use additional properties only when declared by the schema"),
+    UNLESS_EXPLICITLY_DISABLED("Allow additional properties unless explicitly disabled by the schema"),
     ;
 
     override fun toString() = "`${super.toString()}` - $description"

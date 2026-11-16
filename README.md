@@ -258,9 +258,9 @@ Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared inter
 
 ### 6. Preserve undeclared object properties
 
-For Jackson 2 and 3, `--additional-properties UNLESS_EXPLICITLY_DISABLED` captures undeclared object properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`. Allowing additional properties when `additionalProperties` is absent follows the OpenAPI and JSON Schema default. Explicit `additionalProperties` declarations retain their behaviour, including `false` for closed objects. The default, `ONLY_WHEN_REQUESTED`, preserves existing generated output. The option reuses the existing handling of explicit `additionalProperties: true`, including its current limitations for inheritance (see [#860](https://github.com/fabrikt-io/fabrikt/issues/860)).
+`--additional-properties UNLESS_EXPLICITLY_DISABLED` applies the OpenAPI and JSON Schema default for an absent `additionalProperties` to all serialization libraries, using their existing handling of explicit `additionalProperties: true`. Explicit typed declarations and `false` retain their behaviour. The default, `ONLY_WHEN_REQUESTED`, preserves existing generated output.
 
-Other serialization libraries are unchanged. kotlinx.serialization has no built-in equivalent of Jackson's any-getter/any-setter; `ignoreUnknownKeys` discards unknown values rather than capturing them for round-tripping. Capturing those values would require custom serialization and is outside this option's scope.
+Jackson 2 and 3 capture undeclared properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`; current inheritance limitations are tracked in [#860](https://github.com/fabrikt-io/fabrikt/issues/860). Existing serializer limitations also apply when opting in: kotlinx.serialization currently rejects additional-properties capture just as it does for an explicit `true`. Its `ignoreUnknownKeys` setting discards values rather than capturing them for round-tripping; this policy option does not add custom serialization support.
 
 ## Multipart clients
 
@@ -307,10 +307,10 @@ To add an annotation to every generated HTTP model type, repeat `--http-model-ad
 Usage: <main class> [options]
 | Parameter                               | Description |
 | --------------------------------------- | --------------------------------------- |
-|   `--additional-properties`             | Capture undeclared object properties with Jackson unless explicitly disabled by the schema. UNLESS_EXPLICITLY_DISABLED follows the specification's default for absent additionalProperties. Default: ONLY_WHEN_REQUESTED for generated-output compatibility |
+|   `--additional-properties`             | Control undeclared object properties when additionalProperties is absent. UNLESS_EXPLICITLY_DISABLED follows the specification's default for absent additionalProperties. Default: ONLY_WHEN_REQUESTED for generated-output compatibility |
 |                                         | CHOOSE ONE OF: |
-|                                         |   `ONLY_WHEN_REQUESTED` - Capture additional properties only when declared by the schema |
-|                                         |   `UNLESS_EXPLICITLY_DISABLED` - Capture undeclared properties with Jackson unless the schema explicitly disables them |
+|                                         |   `ONLY_WHEN_REQUESTED` - Use additional properties only when declared by the schema |
+|                                         |   `UNLESS_EXPLICITLY_DISABLED` - Allow additional properties unless explicitly disabled by the schema |
 |   `--api-file`                          | This must be a valid Open API v3 spec. All code generation will be based off this input. Accepts either a local file path or a resolvable http(s) URL. |
 |   `--api-fragment`                      | A partial Open API v3 fragment, to be combined with the primary API for code generation purposes. Accepts either a local file path or a resolvable http(s) URL. |
 |   `--auth`                              | Authorization header(s) sent when fetching a remote --api-file, --api-fragment, or remote `$ref`. Repeatable, format 'Name: value'. Value may contain `${ENV_VAR}` placeholders, name an env var, or contain !cmd (at start or after whitespace) to run a shell command and substitute its trimmed stdout (e.g. --auth "Authorization: Bearer !generate-fresh-auth-token"). |
