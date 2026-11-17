@@ -5,26 +5,29 @@ import com.example.models.*
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
 
 class DeepNestedPolymorphismTest {
     private val objectMapper = mapper()
     private val writer = objectMapper.writerWithDefaultPrettyPrinter()
 
-    @ParameterizedTest
-    @ValueSource(strings = ["third_level_child11.json", "third_level_child12.json"])
-    fun `inherits fields declared beside a parent's allOf`(resource: String) {
-        val json = objectMapper.readTree(javaClass.getResource("/deep_nested_polymorphic/$resource")!!.readText())
+    @Test
+    fun `inherits fields declared beside a parent's allOf in ThirdLevelChild11`() {
+        val json = objectMapper.readTree(javaClass.getResource("/deep_nested_polymorphic/third_level_child11.json")!!.readText())
             .deepCopy<ObjectNode>()
             .put("firstLevelField2", 42)
-        val result = objectMapper.treeToValue(json, SecondLevelChild1::class.java)
+        val result = objectMapper.treeToValue(json, SecondLevelChild1::class.java) as ThirdLevelChild11
         assertThat(result.firstLevelField2).isEqualTo(42)
-        val copy = when (result) {
-            is ThirdLevelChild11 -> result.copy()
-            is ThirdLevelChild12 -> result.copy()
-        }
-        assertThat(objectMapper.readTree(writer.writeValueAsString(copy))).isEqualTo(json)
+        assertThat(objectMapper.readTree(writer.writeValueAsString(result.copy()))).isEqualTo(json)
+    }
+
+    @Test
+    fun `inherits fields declared beside a parent's allOf in ThirdLevelChild12`() {
+        val json = objectMapper.readTree(javaClass.getResource("/deep_nested_polymorphic/third_level_child12.json")!!.readText())
+            .deepCopy<ObjectNode>()
+            .put("firstLevelField2", 42)
+        val result = objectMapper.treeToValue(json, SecondLevelChild1::class.java) as ThirdLevelChild12
+        assertThat(result.firstLevelField2).isEqualTo(42)
+        assertThat(objectMapper.readTree(writer.writeValueAsString(result.copy()))).isEqualTo(json)
     }
 
     @Test
