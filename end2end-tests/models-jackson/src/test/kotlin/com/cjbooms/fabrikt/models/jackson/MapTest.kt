@@ -33,6 +33,65 @@ class MapTest {
     }
 
     @Test
+    fun `typed parent map widens across allOf hierarchy when descendant declares different type`() {
+        val mapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
+        val intJson = """{"id":"1","kind":"intChild","count":5,"extraInt":42,"extraString":"hello"}"""
+        val intChild = mapper.readValue(intJson, com.example.inheritedadditionalproperties.models.WidenedParent::class.java)
+            as com.example.inheritedadditionalproperties.models.WidenedIntChild
+        assertThat(intChild.properties).containsEntry("extraInt", 42).containsEntry("extraString", "hello")
+        assertThat(mapper.readTree(mapper.writeValueAsString(intChild.copy()))).isEqualTo(mapper.readTree(intJson))
+
+        val plainJson = """{"id":"2","kind":"plainSibling","name":"Bob","extra":true}"""
+        val plainSibling = mapper.readValue(plainJson, com.example.inheritedadditionalproperties.models.WidenedParent::class.java)
+            as com.example.inheritedadditionalproperties.models.WidenedPlainChild
+        assertThat(plainSibling.properties).containsEntry("extra", true)
+        assertThat(mapper.readTree(mapper.writeValueAsString(plainSibling.copy()))).isEqualTo(mapper.readTree(plainJson))
+    }
+
+    @Test
+    fun `typed parent map stays typed when descendants do not disagree`() {
+        val mapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
+        val plainJson = """{"id":"1","kind":"plainChild","name":"Alice","extraString":"hello"}"""
+        val plainChild = mapper.readValue(plainJson, com.example.inheritedadditionalproperties.models.TypedParent::class.java)
+            as com.example.inheritedadditionalproperties.models.TypedPlainChild
+        assertThat(plainChild.properties).containsEntry("extraString", "hello")
+        assertThat(mapper.readTree(mapper.writeValueAsString(plainChild.copy()))).isEqualTo(mapper.readTree(plainJson))
+
+        val stringJson = """{"id":"2","kind":"stringChild","label":"Bob","otherString":"world"}"""
+        val stringChild = mapper.readValue(stringJson, com.example.inheritedadditionalproperties.models.TypedParent::class.java)
+            as com.example.inheritedadditionalproperties.models.TypedStringChild
+        assertThat(stringChild.properties).containsEntry("otherString", "world")
+        assertThat(mapper.readTree(mapper.writeValueAsString(stringChild.copy()))).isEqualTo(mapper.readTree(stringJson))
+    }
+
+    @Test
+    fun `intermediate without discriminator shares root map`() {
+        val mapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
+        val leafJson = """{"id":"1","kind":"leaf","leafProp":"lp","intermediateProp":"ip","extra":"val"}"""
+        val leaf = mapper.readValue(leafJson, com.example.inheritedadditionalproperties.models.RootOrder::class.java)
+            as com.example.inheritedadditionalproperties.models.LeafOrder
+        assertThat(leaf.properties).containsEntry("extra", "val")
+        assertThat(mapper.readTree(mapper.writeValueAsString(leaf.copy()))).isEqualTo(mapper.readTree(leafJson))
+    }
+
+    @Test
+    fun `unconfigured parent leaves map on child that declares it`() {
+        val mapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
+        val explicitJson = """{"id":"1","kind":"explicit","label":"exp","extra":123}"""
+        val explicit = mapper.readValue(explicitJson, com.example.inheritedadditionalproperties.models.UnconfiguredParent::class.java)
+            as com.example.inheritedadditionalproperties.models.ExplicitChild
+        assertThat(explicit.properties).containsEntry("extra", 123)
+        assertThat(mapper.readTree(mapper.writeValueAsString(explicit.copy()))).isEqualTo(mapper.readTree(explicitJson))
+
+        assertThatThrownBy {
+            mapper.readValue(
+                """{"id":"2","kind":"quiet","name":"q","extra":123}""",
+                com.example.inheritedadditionalproperties.models.UnconfiguredParent::class.java,
+            )
+        }.isInstanceOf(com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException::class.java)
+    }
+
+    @Test
     fun `must serialize string map`() {
         val wrapper = MapHolder(stringMap = mapOf("Key 1" to "Value 1", "Key 2" to "Value 2"))
         val result = writer.writeValueAsString(wrapper)
