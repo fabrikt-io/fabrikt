@@ -31,6 +31,9 @@ class GeneratorSchemaTypeClassifierTest {
             "Map",
             "Anything",
             "Enum",
+            "ComposedObject",
+            "DeepComposedObject",
+            "ComposedMap",
         ],
     )
     fun `matches legacy classification for basic OpenAPI 3_0 schemas`(name: String) {
@@ -76,6 +79,9 @@ class GeneratorSchemaTypeClassifierTest {
         assertResolved(schemas, "Enum", OasType.Enum)
         assertResolved(schemas, "InferredObject", OasType.Object)
         assertResolved(schemas, "InferredArray", OasType.Array)
+        assertResolved(schemas, "ComposedObject", OasType.Object)
+        assertResolved(schemas, "DeepComposedObject", OasType.Object)
+        assertResolved(schemas, "ComposedMap", OasType.Map)
     }
 
     @ParameterizedTest
@@ -163,6 +169,22 @@ class GeneratorSchemaTypeClassifierTest {
         Enum: { type: string, enum: [one, two] }
         InferredObject: { properties: { value: { type: string } } }
         InferredArray: { items: { type: string } }
+        ComposedObject:
+          additionalProperties: true
+          allOf:
+            - type: object
+              properties: { value: { type: string } }
+        DeepComposedObject:
+          additionalProperties: true
+          allOf:
+            - allOf:
+                - type: object
+                  properties: { value: { type: string } }
+        ComposedMap:
+          additionalProperties: { type: string }
+          allOf:
+            - type: object
+              additionalProperties: { type: string }
         """.trimIndent()
 
     private val jsonSchemaForms =
