@@ -124,7 +124,7 @@ internal class GeneratorSchemaTypeClassifier private constructor(
 
     private fun GeneratorObjectSchema.classifyObject(): OasType =
         when {
-            properties.isEmpty() && hasAdditionalProperties() -> OasType.Map
+            properties.isEmpty() && hasAdditionalProperties() && !hasAllOfProperties() -> OasType.Map
             properties.isEmpty() && additionalProperties == null && compositionSchemas().none() -> OasType.UntypedObject
             else -> OasType.Object
         }
@@ -135,6 +135,18 @@ internal class GeneratorSchemaTypeClassifier private constructor(
             is GeneratorBooleanSchema -> value.allowsAnyValue
             else -> true
         }
+
+    private fun GeneratorObjectSchema.hasAllOfProperties(): Boolean {
+        val pending = ArrayDeque(allOf)
+        val visited = mutableSetOf<GeneratorSchemaIdentity>()
+        while (pending.isNotEmpty()) {
+            val member = resolve(pending.removeFirst())
+            if (!visited.add(member.identity) || member !is GeneratorObjectSchema) continue
+            if (member.properties.isNotEmpty()) return true
+            pending.addAll(member.allOf)
+        }
+        return false
+    }
 
     private fun GeneratorObjectSchema.hasInconsistentCompositionTypes(): Boolean {
         val schemas = compositionSchemas().toList()

@@ -1,9 +1,15 @@
 package examples.polymorphicModels.models
 
+import com.fasterxml.jackson.`annotation`.JsonAnyGetter
+import com.fasterxml.jackson.`annotation`.JsonAnySetter
+import com.fasterxml.jackson.`annotation`.JsonIgnore
 import com.fasterxml.jackson.`annotation`.JsonProperty
 import jakarta.validation.constraints.NotNull
+import kotlin.Any
 import kotlin.String
 import kotlin.collections.List
+import kotlin.collections.Map
+import kotlin.collections.MutableMap
 
 public data class PolymorphicTypeOneAnotherRef(
   @param:JsonProperty("first_name")
@@ -25,5 +31,15 @@ public data class PolymorphicTypeOneAnotherRef(
   @get:NotNull
   @param:JsonProperty("generation")
   override val generation: String = "PolymorphicTypeOne",
+  @get:JsonIgnore
+  public val properties: MutableMap<String, Any?> = mutableMapOf(),
 ) : PolymorphicSuperType(generation = generation, firstName = firstName, lastName = lastName, pets = pets),
-    PolymorphicType
+    PolymorphicType {
+  @JsonAnyGetter
+  public fun `get`(): Map<String, Any?> = properties
+
+  @JsonAnySetter
+  public fun `set`(name: String, `value`: Any?) {
+    properties[name] = value
+  }
+}

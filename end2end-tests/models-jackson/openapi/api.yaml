@@ -237,6 +237,7 @@ components:
         last_name:
           type: string
     PolymorphicTypeOne:
+      additionalProperties: true
       allOf:
         - $ref: "#/components/schemas/PolymorphicSuperType"
         - type: object
@@ -244,6 +245,8 @@ components:
             child_one_name:
               type: string
     PolymorphicTypeTwo:
+      additionalProperties:
+        type: string
       allOf:
         - $ref: "#/components/schemas/PolymorphicSuperType"
         - type: object

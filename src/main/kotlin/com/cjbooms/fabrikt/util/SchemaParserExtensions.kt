@@ -109,7 +109,8 @@ object SchemaParserExtensions {
 
     fun Schema.isSet(): Boolean = isArrayType() && this.isUniqueItems
 
-    fun Schema.isSimpleMapDefinition() = hasAdditionalProperties() && properties.isEmpty()
+    fun Schema.isSimpleMapDefinition() =
+        hasAdditionalProperties() && properties.isEmpty() && allOfAncestors().none { it.properties.isNotEmpty() }
 
     fun Schema.isSimpleOneOfAnyDefinition() =
         oneOfSchemas.isNotEmpty() &&

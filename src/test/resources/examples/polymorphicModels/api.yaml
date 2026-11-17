@@ -35,6 +35,7 @@ components:
           items:
             $ref: "#/components/schemas/Pet"
     PolymorphicTypeOne:
+      additionalProperties: true
       allOf:
         - $ref: "#/components/schemas/PolymorphicSuperType"
         - type: object
@@ -42,6 +43,8 @@ components:
             child_one_name:
               type: string
     polymorphic_type_two:
+      additionalProperties:
+        type: string
       allOf:
         - $ref: "#/components/schemas/PolymorphicSuperType"
         - $ref: "#/components/schemas/AnotherObject"
