@@ -24,6 +24,8 @@ object JacksonAnnotations : SerializationAnnotations {
 
     override fun addSetter(funSpecBuilder: FunSpec.Builder) = funSpecBuilder.addAnnotation(JacksonMetadata.anySetter)
 
+    override fun addDisabledSetter(funSpecBuilder: FunSpec.Builder) = funSpecBuilder.addAnnotation(JacksonMetadata.disabledAnySetter)
+
     override fun addProperty(
         propertySpecBuilder: PropertySpec.Builder,
         oasKey: String,

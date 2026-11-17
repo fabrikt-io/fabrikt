@@ -71,7 +71,7 @@ class Jackson3OkHttpClientTest {
     }
 
     @Test
-    fun `inherited additional properties retain compatible and typed maps and keep closed children strict`() {
+    fun `subtypes share the parent's additional properties map and closed subtypes stay strict`() {
         val mapper = this.mapper.rebuild().enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()
         val json = """{"id":"1","kind":"child","label":"Alice","extra":null,"nested":{"items":[1,true]}}"""
         val child = mapper.readValue(json, com.example.inheritedadditionalproperties.models.OrderX::class.java)
@@ -82,8 +82,7 @@ class Jackson3OkHttpClientTest {
         val typedJson = """{"id":"2","kind":"typed","label":"Bob","extra":"retained"}"""
         val typed = mapper.readValue(typedJson, com.example.inheritedadditionalproperties.models.OrderX::class.java)
             as com.example.inheritedadditionalproperties.models.OrderTypedChild
-        val captured: Map<String, String?> = typed.get()
-        assertThat(captured).containsEntry("extra", "retained")
+        assertThat(typed.properties).containsEntry("extra", "retained")
         assertThat(mapper.readTree(mapper.writeValueAsString(typed.copy()))).isEqualTo(mapper.readTree(typedJson))
         assertThatThrownBy {
             mapper.readValue(

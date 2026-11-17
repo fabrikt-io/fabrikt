@@ -30,6 +30,9 @@ sealed interface SerializationAnnotations {
 
     fun addSetter(funSpecBuilder: FunSpec.Builder): FunSpec.Builder
 
+    /** Stops an inherited additional-properties setter from capturing unknown properties. */
+    fun addDisabledSetter(funSpecBuilder: FunSpec.Builder): FunSpec.Builder
+
     fun addProperty(
         propertySpecBuilder: PropertySpec.Builder,
         oasKey: String,

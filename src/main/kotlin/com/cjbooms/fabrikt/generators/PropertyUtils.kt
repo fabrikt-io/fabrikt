@@ -3,7 +3,6 @@ package com.cjbooms.fabrikt.generators
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.generators.GeneratorUtils.addDeprecation
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKDoc
-import com.cjbooms.fabrikt.generators.TypeFactory.maybeMakeMapValueNullable
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata
 import com.cjbooms.fabrikt.model.JacksonAnnotations
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
@@ -20,7 +19,6 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.asTypeName
 
 data class ClassSettings(
     val polymorphyType: PolymorphyType,
@@ -92,45 +90,21 @@ object PropertyUtils {
                 throw UnsupportedOperationException("Additional properties not supported by selected serialization library")
             }
 
-            property.initializer(name)
-            serializationAnnotations.addIgnore(property)
-            val constructorParameter: ParameterSpec.Builder = ParameterSpec.builder(name, wrappedType)
-            constructorParameter.defaultValue("mutableMapOf()")
-            constructorBuilder.addParameter(constructorParameter.build())
-
-            val value =
-                when (typeInfo) {
-                    is KotlinTypeInfo.MapTypeAdditionalProperties -> {
-                        Map::class
-                            .asTypeName()
-                            .parameterizedBy(String::class.asTypeName(), parameterizedType.maybeMakeMapValueNullable())
-                    }
-                    is KotlinTypeInfo.SimpleTypedAdditionalProperties -> {
-                        typeInfo.parameterizedType.modelKClass
-                            .asTypeName()
-                            .maybeMakeMapValueNullable()
-                    }
-                    else -> {
-                        parameterizedType
-                    }
-                }.maybeMakeMapValueNullable()
-
-            val getterSpecBuilder =
-                FunSpec
-                    .builder("get")
-                    .returns(Map::class.asTypeName().parameterizedBy(String::class.asTypeName(), value))
-                    .addStatement("return $name")
-            serializationAnnotations.addGetter(getterSpecBuilder)
-            classBuilder.addFunction(getterSpecBuilder.build())
-
-            val setterSpecBuilder =
-                FunSpec
-                    .builder("set")
-                    .addParameter("name", String::class)
-                    .addParameter("value", value)
-                    .addStatement("$name[name] = value")
-            serializationAnnotations.addSetter(setterSpecBuilder)
-            classBuilder.addFunction(setterSpecBuilder.build())
+            val valueType = AdditionalPropertiesUtils.valueType(this, parameterizedType)
+            if (closed) {
+                classBuilder.addFunction(AdditionalPropertiesUtils.disabledParentSetter(valueType, serializationAnnotations))
+                return
+            }
+            AdditionalPropertiesUtils.add(
+                this,
+                property,
+                wrappedType,
+                valueType,
+                classSettings.polymorphyType,
+                classBuilder,
+                constructorBuilder,
+                serializationAnnotations,
+            )
         } else {
             when (classSettings.polymorphyType) {
                 ClassSettings.PolymorphyType.SUPER -> {

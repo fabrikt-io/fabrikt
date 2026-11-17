@@ -15,6 +15,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedItemsSchemaUnder
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectUnderAllOf
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isPolymorphicSuperType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isRequired
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaLess
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleMapDefinition
@@ -113,17 +114,7 @@ sealed class PropertyInfo {
                         )
                     } +
                     getInLinedProperties(settings, api, enclosingSchema, combinedRequiredFields, memberSchema)
-            val nodeProperties =
-                if (MutableSettings.serializationLibrary.isJackson && declaresAdditionalProperties) {
-                    val localMap =
-                        results.filterIsInstance<AdditionalProperties>().firstOrNull {
-                            it.parentSchema.jsonReference == jsonReference
-                        }
-                    results.filterNot { it is AdditionalProperties } + listOfNotNull(localMap)
-                } else {
-                    results
-                }
-            return nodeProperties.groupBy { it.oasKey }.values.map { declarations ->
+            return resolveAdditionalProperties(results, api).groupBy { it.oasKey }.values.map { declarations ->
                 val first = declarations.first()
                 if (first is Field && declarations.size > 1 && allOfSchemas.isNotEmpty()) {
                     refineDefault(first, declarations.filterIsInstance<Field>())
@@ -144,6 +135,38 @@ sealed class PropertyInfo {
                     PropertyRefinement(declaredPropertyDefault(key), property.enums.mapNotNull { it?.toString() })
                 },
             ) + allOfSchemas.filter { it.name == null }.flatMap { it.localPropertyRefinements(key) }
+
+        // Follows the intent of the author, not the strict `allOf` semantics of JSON Schema (see README).
+        private fun Schema.resolveAdditionalProperties(
+            properties: List<PropertyInfo>,
+            api: OpenApi3,
+        ): List<PropertyInfo> {
+            if (!MutableSettings.serializationLibrary.isJackson) return properties
+            val maps = properties.filterIsInstance<AdditionalProperties>()
+            val resolved =
+                inheritedAdditionalProperties(maps)?.let { if (forbidsAdditionalProperties) it.copy(closed = true) else it }
+                    ?: ownAdditionalProperties(maps)?.takeIf { isPolymorphicSuperType() }?.widenedAcross(api.allOfDescendants(this))
+                    ?: return properties
+            return properties.filterNot { it is AdditionalProperties } + resolved
+        }
+
+        private fun Schema.inheritedAdditionalProperties(maps: List<AdditionalProperties>) =
+            maps.firstOrNull {
+                it.isInherited &&
+                    !it.isDeclaredBy(this)
+            }
+
+        private fun Schema.ownAdditionalProperties(maps: List<AdditionalProperties>) = maps.firstOrNull { it.isDeclaredBy(this) }
+
+        private fun AdditionalProperties.isDeclaredBy(schema: Schema) = parentSchema.jsonReference == schema.jsonReference
+
+        private fun AdditionalProperties.widenedAcross(descendants: List<Schema>) =
+            if (descendants.any { valueTypeDiffersIn(it) }) copy(widened = true) else this
+
+        private fun AdditionalProperties.valueTypeDiffersIn(descendant: Schema) =
+            descendant.declaresAdditionalProperties &&
+                !descendant.forbidsAdditionalProperties &&
+                AdditionalProperties.typeInfoOf(descendant.additionalPropertiesSchema, direction) != typeInfo
 
         private fun Schema.refineDefault(
             first: Field,
@@ -554,11 +577,21 @@ sealed class PropertyInfo {
         override val isInherited: Boolean,
         val parentSchema: Schema,
         val direction: ModelDirection? = null,
+        val closed: Boolean = false,
+        val widened: Boolean = false,
     ) : PropertyInfo() {
         override val name: String = "properties"
         override val oasKey: String = "properties"
-        override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, "additionalProperties", direction = direction)
+        override val typeInfo: KotlinTypeInfo =
+            if (widened) KotlinTypeInfo.UnknownAdditionalProperties else typeInfoOf(schema, direction)
         override val isRequired: Boolean = true
+
+        companion object {
+            fun typeInfoOf(
+                schema: Schema,
+                direction: ModelDirection?,
+            ): KotlinTypeInfo = KotlinTypeInfo.from(schema, "additionalProperties", direction = direction)
+        }
     }
 
     data class OneOfAny(

@@ -1,13 +1,10 @@
 package examples.allOfParentOrder.models
 
-import com.fasterxml.jackson.`annotation`.JsonAnyGetter
-import com.fasterxml.jackson.`annotation`.JsonAnySetter
 import com.fasterxml.jackson.`annotation`.JsonIgnore
 import com.fasterxml.jackson.`annotation`.JsonProperty
 import jakarta.validation.constraints.NotNull
 import kotlin.Any
 import kotlin.String
-import kotlin.collections.Map
 import kotlin.collections.MutableMap
 
 public data class OrderTypedChild(
@@ -24,18 +21,5 @@ public data class OrderTypedChild(
   @param:JsonProperty("kind")
   override val kind: String = "typed",
   @get:JsonIgnore
-  public val propertiesExtra: MutableMap<String, String?> = mutableMapOf(),
-) : OrderX(id) {
-  @JsonAnyGetter
-  override fun `get`(): Map<String, String?> = propertiesExtra
-
-  @JsonAnySetter
-  public fun `set`(name: String, `value`: String?) {
-    propertiesExtra[name] = value
-  }
-
-  @JsonAnySetter(enabled = false)
-  override fun `set`(name: String, `value`: Any?) {
-    super.`set`(name, value)
-  }
-}
+  override val properties: MutableMap<String, Any?> = mutableMapOf(),
+) : OrderX(id, properties = properties)

@@ -26,6 +26,6 @@ public data class OrderSibling(
 ) : OrderX(id) {
   @JsonAnySetter(enabled = false)
   override fun `set`(name: String, `value`: Any?) {
-    super.`set`(name, value)
+    super.set(name, value)
   }
 }
