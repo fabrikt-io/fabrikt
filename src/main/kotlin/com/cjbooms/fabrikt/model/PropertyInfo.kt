@@ -3,6 +3,7 @@ package com.cjbooms.fabrikt.model
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.generators.OasDefault
+import com.cjbooms.fabrikt.model.AdditionalPropertiesResolver.resolveAdditionalProperties
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getKeyIfSingleDiscriminatorValue
@@ -15,7 +16,6 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedItemsSchemaUnder
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectUnderAllOf
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.isPolymorphicSuperType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isRequired
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaLess
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleMapDefinition
@@ -135,38 +135,6 @@ sealed class PropertyInfo {
                     PropertyRefinement(declaredPropertyDefault(key), property.enums.mapNotNull { it?.toString() })
                 },
             ) + allOfSchemas.filter { it.name == null }.flatMap { it.localPropertyRefinements(key) }
-
-        // Follows the intent of the author, not the strict `allOf` semantics of JSON Schema (see README).
-        private fun Schema.resolveAdditionalProperties(
-            properties: List<PropertyInfo>,
-            api: OpenApi3,
-        ): List<PropertyInfo> {
-            if (!MutableSettings.serializationLibrary.isJackson) return properties
-            val maps = properties.filterIsInstance<AdditionalProperties>()
-            val resolved =
-                inheritedAdditionalProperties(maps)?.let { if (forbidsAdditionalProperties) it.copy(closed = true) else it }
-                    ?: ownAdditionalProperties(maps)?.takeIf { isPolymorphicSuperType() }?.widenedAcross(api.allOfDescendants(this))
-                    ?: return properties
-            return properties.filterNot { it is AdditionalProperties } + resolved
-        }
-
-        private fun Schema.inheritedAdditionalProperties(maps: List<AdditionalProperties>) =
-            maps.firstOrNull {
-                it.isInherited &&
-                    !it.isDeclaredBy(this)
-            }
-
-        private fun Schema.ownAdditionalProperties(maps: List<AdditionalProperties>) = maps.firstOrNull { it.isDeclaredBy(this) }
-
-        private fun AdditionalProperties.isDeclaredBy(schema: Schema) = parentSchema.jsonReference == schema.jsonReference
-
-        private fun AdditionalProperties.widenedAcross(descendants: List<Schema>) =
-            if (descendants.any { valueTypeDiffersIn(it) }) copy(widened = true) else this
-
-        private fun AdditionalProperties.valueTypeDiffersIn(descendant: Schema) =
-            descendant.declaresAdditionalProperties &&
-                !descendant.forbidsAdditionalProperties &&
-                AdditionalProperties.typeInfoOf(descendant.additionalPropertiesSchema, direction) != typeInfo
 
         private fun Schema.refineDefault(
             first: Field,

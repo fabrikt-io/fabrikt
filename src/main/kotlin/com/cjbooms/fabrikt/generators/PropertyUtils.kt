@@ -1,6 +1,7 @@
 package com.cjbooms.fabrikt.generators
 
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
+import com.cjbooms.fabrikt.generators.AdditionalPropertiesUtils.addAdditionalPropertiesToClass
 import com.cjbooms.fabrikt.generators.GeneratorUtils.addDeprecation
 import com.cjbooms.fabrikt.generators.GeneratorUtils.toKDoc
 import com.cjbooms.fabrikt.generators.model.JacksonMetadata
@@ -86,175 +87,166 @@ object PropertyUtils {
                 }
 
         if (this is PropertyInfo.AdditionalProperties) {
-            if (!serializationAnnotations.supportsAdditionalProperties) {
-                throw UnsupportedOperationException("Additional properties not supported by selected serialization library")
-            }
-
-            val valueType = AdditionalPropertiesUtils.valueType(this, parameterizedType)
-            if (closed) {
-                classBuilder.addFunction(AdditionalPropertiesUtils.disabledParentSetter(valueType, serializationAnnotations))
-                return
-            }
-            AdditionalPropertiesUtils.add(
-                this,
+            addAdditionalPropertiesToClass(
                 property,
                 wrappedType,
-                valueType,
-                classSettings.polymorphyType,
+                parameterizedType,
+                classSettings,
                 classBuilder,
                 constructorBuilder,
                 serializationAnnotations,
             )
-        } else {
-            when (classSettings.polymorphyType) {
-                ClassSettings.PolymorphyType.SUPER -> {
-                    if (classSettings.isOpenSuperType) {
-                        property.addModifiers(KModifier.OPEN)
-                        serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
-                        serializationAnnotations.addProperty(property, oasKey, typeInfo)
-                        property.addValidationAnnotations(this, validationAnnotations, classSettings)
-                    } else if (this is PropertyInfo.Field && isPolymorphicDiscriminator) {
-                        if (!serializationAnnotations.supportsBackingPropertyForDiscriminator) {
-                            return // the serializer emits the discriminator, so it must not be a class property
-                        }
-                        property.addModifiers(KModifier.ABSTRACT)
-                    } else if (!serializationAnnotations.supportsInheritedBackingProperties) {
-                        property.addModifiers(KModifier.ABSTRACT)
-                    } else {
-                        property.addModifiers(KModifier.OPEN)
-                    }
-                }
+            return
+        }
 
-                ClassSettings.PolymorphyType.SUB -> {
-                    if (this is PropertyInfo.Field && isPolymorphicDiscriminator) {
-                        if (!serializationAnnotations.supportsBackingPropertyForDiscriminator) {
-                            return // the serializer emits the discriminator, so it must not be a class property
-                        }
-                        property.addModifiers(KModifier.OVERRIDE)
-                        if (classSettings.hasOpenSuperType) {
-                            classBuilder.addSuperclassConstructorParameter("%N = %N", name, name)
-                        }
-                    } else {
-                        if (isInherited) {
-                            property.addModifiers(KModifier.OVERRIDE)
-                            if (serializationAnnotations.supportsInheritedBackingProperties) {
-                                if (classSettings.hasOpenSuperType) {
-                                    classBuilder.addSuperclassConstructorParameter("%N = %N", name, name)
-                                } else {
-                                    classBuilder.addSuperclassConstructorParameter(name)
-                                }
-                            }
-                        }
-                        serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
-                    }
-                    serializationAnnotations.addProperty(property, oasKey, typeInfo)
-                    property.addValidationAnnotations(this, validationAnnotations, classSettings)
-                }
-
-                ClassSettings.PolymorphyType.NONE -> {
+        when (classSettings.polymorphyType) {
+            ClassSettings.PolymorphyType.SUPER -> {
+                if (classSettings.isOpenSuperType) {
+                    property.addModifiers(KModifier.OPEN)
                     serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
                     serializationAnnotations.addProperty(property, oasKey, typeInfo)
                     property.addValidationAnnotations(this, validationAnnotations, classSettings)
-                }
-
-                ClassSettings.PolymorphyType.ONE_OF -> {
-                    if (!isDiscriminatorFieldWithSingleKnownValue(classSettings, schemaName)) {
-                        serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
-                    }
-                    serializationAnnotations.addProperty(property, oasKey, typeInfo)
-                    property.addValidationAnnotations(this, validationAnnotations, classSettings)
-                }
-            }
-
-            if (isDiscriminatorFieldWithSingleKnownValue(classSettings, schemaName)) {
-                this as PropertyInfo.Field
-                if (classSettings.polymorphyType in listOf(ClassSettings.PolymorphyType.SUB, ClassSettings.PolymorphyType.ONE_OF)) {
+                } else if (this is PropertyInfo.Field && isPolymorphicDiscriminator) {
                     if (!serializationAnnotations.supportsBackingPropertyForDiscriminator) {
-                        return // Skip adding the property to the class
-                    } else {
-                        property.initializer(name)
-                        serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
-                        val constructorParameter: ParameterSpec.Builder = ParameterSpec.builder(name, wrappedType)
-                        val discriminators = maybeDiscriminator.getDiscriminatorMappings(schemaName)
-                        when (val discriminator = discriminators.single()) {
-                            is PropertyInfo.DiscriminatorKey.EnumKey ->
-                                constructorParameter.defaultValue("%T.%L", wrappedType, discriminator.enumKey)
-
-                            is PropertyInfo.DiscriminatorKey.StringKey ->
-                                constructorParameter.defaultValue("%S", discriminator.stringValue)
-                        }
-                        constructorBuilder.addParameter(constructorParameter.build())
+                        return // the serializer emits the discriminator, so it must not be a class property
                     }
+                    property.addModifiers(KModifier.ABSTRACT)
+                } else if (!serializationAnnotations.supportsInheritedBackingProperties) {
+                    property.addModifiers(KModifier.ABSTRACT)
+                } else {
+                    property.addModifiers(KModifier.OPEN)
                 }
-            } else if (!property.modifiers.contains(KModifier.ABSTRACT)) {
-                property.initializer(name)
-                val constructorParameter: ParameterSpec.Builder = ParameterSpec.builder(name, wrappedType)
-                val oasDefault = getDefaultValue(this, parameterizedType)
-
-                val enforceNonNull =
-                    jacksonNullabilityMode in
-                        setOf(
-                            JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL,
-                            JacksonNullabilityMode.STRICT,
-                        )
-
-                val enforceRequiredNullable =
-                    jacksonNullabilityMode in
-                        setOf(
-                            JacksonNullabilityMode.ENFORCE_REQUIRED_NULLABLE,
-                            JacksonNullabilityMode.STRICT,
-                        )
-
-                val isSchemaNullable = isSchemaNullable(classSettings)
-
-                if (enforceRequiredNullable && isRequired && isSchemaNullable) {
-                    property.addAnnotation(JacksonMetadata.JSON_INCLUDE_ALWAYS)
-                }
-
-                if (classSettings.isOpenSuperType && this is PropertyInfo.Field && isPolymorphicDiscriminator) {
-                    classSettings.parentDiscriminatorValue?.let { value ->
-                        when (typeInfo) {
-                            is KotlinTypeInfo.Enum ->
-                                constructorParameter.defaultValue(
-                                    "%T.%L",
-                                    wrappedType.copy(nullable = false),
-                                    value.toEnumName(),
-                                )
-                            else -> constructorParameter.defaultValue("%S", value)
-                        }
-                    }
-                } else if (!isRequired) {
-                    if (classSettings.addJsonIncludeNonNullAnnotation || (enforceNonNull && !isSchemaNullable)) {
-                        property.addAnnotation(JacksonMetadata.JSON_INCLUDE_NON_NULL)
-                    }
-                    if (oasDefault != null) {
-                        val wrappedDefault =
-                            if (classSettings.isMergePatchPattern) {
-                                OasDefault.JsonNullableValue(oasDefault)
-                            } else {
-                                oasDefault
-                            }
-                        constructorParameter.defaultValue(wrappedDefault.getDefault())
-                    } else {
-                        val undefinedDefault =
-                            if (classSettings.isMergePatchPattern) {
-                                "JsonNullable.undefined()"
-                            } else {
-                                "null"
-                            }
-                        constructorParameter.defaultValue(undefinedDefault)
-                    }
-                } else if (this is PropertyInfo.Field && compositionDefault != null) {
-                    oasDefault?.let {
-                        constructorParameter.defaultValue(it.getDefault())
-                        serializationAnnotations.addRequiredDefault(property)
-                    }
-                } else if (this is PropertyInfo.Field) {
-                    memberDiscriminatorDefault(wrappedType.copy(nullable = false), classSettings, serializationAnnotations)
-                        ?.let { constructorParameter.defaultValue(it) }
-                }
-                constructorBuilder.addParameter(constructorParameter.build())
             }
+
+            ClassSettings.PolymorphyType.SUB -> {
+                if (this is PropertyInfo.Field && isPolymorphicDiscriminator) {
+                    if (!serializationAnnotations.supportsBackingPropertyForDiscriminator) {
+                        return // the serializer emits the discriminator, so it must not be a class property
+                    }
+                    property.addModifiers(KModifier.OVERRIDE)
+                    if (classSettings.hasOpenSuperType) {
+                        classBuilder.addSuperclassConstructorParameter("%N = %N", name, name)
+                    }
+                } else {
+                    if (isInherited) {
+                        property.addModifiers(KModifier.OVERRIDE)
+                        if (serializationAnnotations.supportsInheritedBackingProperties) {
+                            if (classSettings.hasOpenSuperType) {
+                                classBuilder.addSuperclassConstructorParameter("%N = %N", name, name)
+                            } else {
+                                classBuilder.addSuperclassConstructorParameter(name)
+                            }
+                        }
+                    }
+                    serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
+                }
+                serializationAnnotations.addProperty(property, oasKey, typeInfo)
+                property.addValidationAnnotations(this, validationAnnotations, classSettings)
+            }
+
+            ClassSettings.PolymorphyType.NONE -> {
+                serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
+                serializationAnnotations.addProperty(property, oasKey, typeInfo)
+                property.addValidationAnnotations(this, validationAnnotations, classSettings)
+            }
+
+            ClassSettings.PolymorphyType.ONE_OF -> {
+                if (!isDiscriminatorFieldWithSingleKnownValue(classSettings, schemaName)) {
+                    serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
+                }
+                serializationAnnotations.addProperty(property, oasKey, typeInfo)
+                property.addValidationAnnotations(this, validationAnnotations, classSettings)
+            }
+        }
+
+        if (isDiscriminatorFieldWithSingleKnownValue(classSettings, schemaName)) {
+            this as PropertyInfo.Field
+            if (classSettings.polymorphyType in listOf(ClassSettings.PolymorphyType.SUB, ClassSettings.PolymorphyType.ONE_OF)) {
+                if (!serializationAnnotations.supportsBackingPropertyForDiscriminator) {
+                    return // Skip adding the property to the class
+                } else {
+                    property.initializer(name)
+                    serializationAnnotations.addParameter(property, oasKey, isRequired, typeInfo)
+                    val constructorParameter: ParameterSpec.Builder = ParameterSpec.builder(name, wrappedType)
+                    val discriminators = maybeDiscriminator.getDiscriminatorMappings(schemaName)
+                    when (val discriminator = discriminators.single()) {
+                        is PropertyInfo.DiscriminatorKey.EnumKey ->
+                            constructorParameter.defaultValue("%T.%L", wrappedType, discriminator.enumKey)
+
+                        is PropertyInfo.DiscriminatorKey.StringKey ->
+                            constructorParameter.defaultValue("%S", discriminator.stringValue)
+                    }
+                    constructorBuilder.addParameter(constructorParameter.build())
+                }
+            }
+        } else if (!property.modifiers.contains(KModifier.ABSTRACT)) {
+            property.initializer(name)
+            val constructorParameter: ParameterSpec.Builder = ParameterSpec.builder(name, wrappedType)
+            val oasDefault = getDefaultValue(this, parameterizedType)
+
+            val enforceNonNull =
+                jacksonNullabilityMode in
+                    setOf(
+                        JacksonNullabilityMode.ENFORCE_OPTIONAL_NON_NULL,
+                        JacksonNullabilityMode.STRICT,
+                    )
+
+            val enforceRequiredNullable =
+                jacksonNullabilityMode in
+                    setOf(
+                        JacksonNullabilityMode.ENFORCE_REQUIRED_NULLABLE,
+                        JacksonNullabilityMode.STRICT,
+                    )
+
+            val isSchemaNullable = isSchemaNullable(classSettings)
+
+            if (enforceRequiredNullable && isRequired && isSchemaNullable) {
+                property.addAnnotation(JacksonMetadata.JSON_INCLUDE_ALWAYS)
+            }
+
+            if (classSettings.isOpenSuperType && this is PropertyInfo.Field && isPolymorphicDiscriminator) {
+                classSettings.parentDiscriminatorValue?.let { value ->
+                    when (typeInfo) {
+                        is KotlinTypeInfo.Enum ->
+                            constructorParameter.defaultValue(
+                                "%T.%L",
+                                wrappedType.copy(nullable = false),
+                                value.toEnumName(),
+                            )
+                        else -> constructorParameter.defaultValue("%S", value)
+                    }
+                }
+            } else if (!isRequired) {
+                if (classSettings.addJsonIncludeNonNullAnnotation || (enforceNonNull && !isSchemaNullable)) {
+                    property.addAnnotation(JacksonMetadata.JSON_INCLUDE_NON_NULL)
+                }
+                if (oasDefault != null) {
+                    val wrappedDefault =
+                        if (classSettings.isMergePatchPattern) {
+                            OasDefault.JsonNullableValue(oasDefault)
+                        } else {
+                            oasDefault
+                        }
+                    constructorParameter.defaultValue(wrappedDefault.getDefault())
+                } else {
+                    val undefinedDefault =
+                        if (classSettings.isMergePatchPattern) {
+                            "JsonNullable.undefined()"
+                        } else {
+                            "null"
+                        }
+                    constructorParameter.defaultValue(undefinedDefault)
+                }
+            } else if (this is PropertyInfo.Field && compositionDefault != null) {
+                oasDefault?.let {
+                    constructorParameter.defaultValue(it.getDefault())
+                    serializationAnnotations.addRequiredDefault(property)
+                }
+            } else if (this is PropertyInfo.Field) {
+                memberDiscriminatorDefault(wrappedType.copy(nullable = false), classSettings, serializationAnnotations)
+                    ?.let { constructorParameter.defaultValue(it) }
+            }
+            constructorBuilder.addParameter(constructorParameter.build())
         }
 
         classBuilder.addProperty(property.build())
