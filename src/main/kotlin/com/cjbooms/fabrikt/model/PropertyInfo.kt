@@ -8,14 +8,13 @@ import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getKeyIfSingleDiscriminatorValue
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasAdditionalProperties
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.hasNoDiscriminator
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isDiscriminatorProperty
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedDiscriminatedOneOfSuperInterface
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedEnumDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedItemsSchemaUnderTopLevelArrayDefinition
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectDefinition
-import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedObjectUnderAllOf
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isInlinedOneOfSuperInterface
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.isPolymorphicSuperType
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isRequired
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSchemaLess
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSimpleMapDefinition
@@ -182,8 +181,7 @@ sealed class PropertyInfo {
             val isInherited =
                 when {
                     it.safeName() == enclosingSchema?.name -> false
-                    it.hasNoDiscriminator() -> settings.markAsInherited
-                    it.isInlinedObjectUnderAllOf() && it.hasNoDiscriminator() -> settings.markAsInherited
+                    !it.isPolymorphicSuperType() -> settings.markAsInherited
                     else -> true
                 }
             return settings.copy(markAsInherited = isInherited)
