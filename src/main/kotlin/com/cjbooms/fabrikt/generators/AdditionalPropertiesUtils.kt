@@ -1,6 +1,8 @@
 package com.cjbooms.fabrikt.generators
 
+import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.generators.TypeFactory.maybeMakeMapValueNullable
+import com.cjbooms.fabrikt.generators.model.KotlinxAdditionalProperties
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.PropertyInfo.AdditionalProperties
 import com.cjbooms.fabrikt.model.SerializationAnnotations
@@ -24,8 +26,9 @@ internal object AdditionalPropertiesUtils {
         constructorBuilder: FunSpec.Builder,
         serializationAnnotations: SerializationAnnotations,
     ) {
-        if (!serializationAnnotations.supportsAdditionalProperties) {
-            throw UnsupportedOperationException("Additional properties not supported by selected serialization library")
+        if (!MutableSettings.serializationLibrary.isJackson) {
+            addJsonElementMap(classSettings, classBuilder, constructorBuilder, serializationAnnotations)
+            return
         }
         val valueType = valueType(parameterizedType)
         if (closed) {
@@ -61,6 +64,25 @@ internal object AdditionalPropertiesUtils {
 
     private fun AdditionalProperties.sharesParentMap(classSettings: ClassSettings) =
         classSettings.polymorphyType == ClassSettings.PolymorphyType.SUB && isInherited
+
+    private fun AdditionalProperties.addJsonElementMap(
+        classSettings: ClassSettings,
+        classBuilder: TypeSpec.Builder,
+        constructorBuilder: FunSpec.Builder,
+        serializationAnnotations: SerializationAnnotations,
+    ) {
+        val mapType = KotlinxAdditionalProperties.mutableMapOfJsonElement
+        val map = PropertySpec.builder(name, mapType)
+        if (classSettings.polymorphyType == ClassSettings.PolymorphyType.SUPER) {
+            classBuilder.addProperty(map.addModifiers(KModifier.ABSTRACT).build())
+            return
+        }
+        serializationAnnotations.addIgnore(map)
+        map.initializer(name)
+        if (sharesParentMap(classSettings)) map.addModifiers(KModifier.OVERRIDE)
+        constructorBuilder.addParameter(ParameterSpec.builder(name, mapType).defaultValue("mutableMapOf()").build())
+        classBuilder.addProperty(map.build())
+    }
 
     private fun AdditionalProperties.forwardToParent(
         property: PropertySpec.Builder,

@@ -40,17 +40,10 @@ object KotlinxSerializationAnnotations : SerializationAnnotations {
      */
     override val supportsInheritedBackingProperties = false
 
-    /**
-     * Supporting "additionalProperties: true" for kotlinx serialization requires additional
-     * research and work due to Any type in the map (val properties: MutableMap<String, Any?>)
-     *
-     * Currently, the generated code does not support additional properties.
-     *
-     * See also https://github.com/Kotlin/kotlinx.serialization/issues/1978
-     */
     override val supportsAdditionalProperties = false
 
-    override fun addIgnore(propertySpecBuilder: PropertySpec.Builder) = propertySpecBuilder // not applicable
+    override fun addIgnore(propertySpecBuilder: PropertySpec.Builder) =
+        propertySpecBuilder.addAnnotation(ClassName("kotlinx.serialization", "Transient"))
 
     override fun addGetter(funSpecBuilder: FunSpec.Builder) = funSpecBuilder // not applicable
 

@@ -42,6 +42,8 @@ class KotlinSerializationModelGeneratorTest {
             "mixedTypeUnion",
             "arrays",
             "untypedObject",
+            "additionalProperties",
+            "allOfParentOrder",
         )
 
     @BeforeEach
@@ -116,19 +118,6 @@ class KotlinSerializationModelGeneratorTest {
             .areContainedInGenerated(tempFolderContents)
 
         tempDirectory.toFile().deleteRecursively()
-    }
-
-    @Test
-    fun `schemas configured with additionalProperties results in UnsupportedOperationException`() {
-        val basePackage = "examples.additionalProperties"
-        val apiLocation = javaClass.getResource("/examples/additionalProperties/api.yaml")!!
-        val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
-
-        val e =
-            assertThrows<UnsupportedOperationException> {
-                ModelGenerator(Packages(basePackage), sourceApi).generate()
-            }
-        assertThat(e.message).isEqualTo("Additional properties not supported by selected serialization library")
     }
 
     @Test

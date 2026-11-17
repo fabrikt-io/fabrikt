@@ -126,6 +126,22 @@ tasks {
         "com.example.composition",
         listOf("--http-model-opts", "SHARED_COMPOSITION_CONTRACTS")
     )
+    val generateAdditionalPropertiesCodeTask = createGenerateCodeTask(
+        "generateAdditionalPropertiesCode",
+        "${rootProject.projectDir}/src/test/resources/examples/additionalProperties/api.yaml",
+        "com.example.additionalproperties"
+    )
+    val generateAdditionalPropertiesPolicyCodeTask = createGenerateCodeTask(
+        "generateAdditionalPropertiesPolicyCode",
+        "${rootProject.projectDir}/src/test/resources/examples/additionalProperties/api.yaml",
+        "com.example.additionalpropertiespolicy",
+        listOf("--additional-properties", "UNLESS_EXPLICITLY_DISABLED")
+    )
+    val generateAllOfParentOrderCodeTask = createGenerateCodeTask(
+        "generateAllOfParentOrderCode",
+        "${rootProject.projectDir}/src/test/resources/examples/allOfParentOrder/api.yaml",
+        "com.example.allofparentorder"
+    )
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
@@ -144,6 +160,9 @@ tasks {
         dependsOn(generateCompositionRefinementsCodeTask)
         dependsOn(generateCompositionRequestProjectionCodeTask)
         dependsOn(generateCompositionResponseProjectionCodeTask)
+        dependsOn(generateAdditionalPropertiesCodeTask)
+        dependsOn(generateAdditionalPropertiesPolicyCodeTask)
+        dependsOn(generateAllOfParentOrderCodeTask)
     }
 
     withType<Test> {
