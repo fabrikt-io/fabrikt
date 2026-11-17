@@ -135,6 +135,8 @@ class OpenApiSchema(
     internal val isUninhabitable: Boolean get() = schemaSemanticsAt(jsonPathFromRoot).isUninhabitable
     internal val hasMultipleNonNullTypes: Boolean get() = schemaSemanticsAt(jsonPathFromRoot).hasMultipleNonNullTypes
 
+    internal val declaresAdditionalProperties: Boolean get() = parsedJson?.has("additionalProperties") == true
+
     internal val forbidsAdditionalProperties: Boolean
         get() = parsedJson?.get("additionalProperties")?.let { it.isBoolean && !it.booleanValue() } == true
 

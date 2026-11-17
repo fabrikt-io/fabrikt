@@ -98,6 +98,7 @@ object JacksonMetadata {
         .build()
 
     val anySetter = AnnotationSpec.builder(JSON_ANY_SETTER).build()
+    val disabledAnySetter = AnnotationSpec.builder(JSON_ANY_SETTER).addMember("enabled = false").build()
     val anyGetter = AnnotationSpec.builder(JSON_ANY_GETTER).build()
     val ignore =
         AnnotationSpec

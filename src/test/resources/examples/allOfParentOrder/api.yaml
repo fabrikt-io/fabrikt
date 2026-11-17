@@ -1,106 +1,194 @@
-{
-  "openapi": "3.0.3",
-  "info": {
-    "title": "reordered",
-    "version": "1"
-  },
-  "paths": {},
-  "components": {
-    "schemas": {
-      "OrderX": {
-        "type": "object",
-        "required": [
-          "id",
-          "kind"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "kind": {
-            "type": "string"
-          }
-        },
-        "discriminator": {
-          "propertyName": "kind",
-          "mapping": {
-            "child": "#/components/schemas/OrderChild",
-            "sibling": "#/components/schemas/OrderSibling"
-          }
-        }
-      },
-      "OrderChild": {
-        "allOf": [
-          {
-            "type": "object",
-            "required": [
-              "label"
-            ],
-            "properties": {
-              "label": {
-                "type": "string"
-              }
-            }
-          },
-          {
-            "$ref": "#/components/schemas/OrderX"
-          }
-        ]
-      },
-      "OrderSibling": {
-        "allOf": [
-          {
-            "type": "object",
-            "required": [
-              "count"
-            ],
-            "properties": {
-              "count": {
-                "type": "integer",
-                "format": "int32"
-              }
-            }
-          },
-          {
-            "$ref": "#/components/schemas/OrderX"
-          }
-        ]
-      },
-      "OrderHolder": {
-        "type": "object",
-        "required": [
-          "value",
-          "choice"
-        ],
-        "properties": {
-          "value": {
-            "$ref": "#/components/schemas/OrderX"
-          },
-          "choice": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/OrderChild"
-              },
-              {
-                "$ref": "#/components/schemas/OrderSibling"
-              }
-            ]
-          },
-          "choices": {
-            "type": "array",
-            "items": {
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/OrderChild"
-                },
-                {
-                  "$ref": "#/components/schemas/OrderSibling"
-                }
-              ]
-            }
-          }
-        }
-      }
-    }
-  }
-}
+openapi: 3.0.3
+info:
+  title: reordered
+  version: "1"
+paths: {}
+components:
+  schemas:
+    OrderX:
+      type: object
+      required:
+        - id
+        - kind
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+      discriminator:
+        propertyName: kind
+        mapping:
+          child: '#/components/schemas/OrderChild'
+          sibling: '#/components/schemas/OrderSibling'
+          typed: '#/components/schemas/OrderTypedChild'
+      additionalProperties: true
+    OrderChild:
+      allOf:
+        - type: object
+        - $ref: '#/components/schemas/OrderX'
+      additionalProperties: true
+      properties:
+        label:
+          type: string
+      required:
+        - label
+    OrderSibling:
+      allOf:
+        - type: object
+          required:
+            - count
+          properties:
+            count:
+              type: integer
+              format: int32
+        - $ref: '#/components/schemas/OrderX'
+      additionalProperties: false
+    OrderHolder:
+      type: object
+      required:
+        - value
+        - choice
+      properties:
+        value:
+          $ref: '#/components/schemas/OrderX'
+        choice:
+          oneOf:
+            - $ref: '#/components/schemas/OrderChild'
+            - $ref: '#/components/schemas/OrderSibling'
+            - $ref: '#/components/schemas/OrderTypedChild'
+        choices:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/OrderChild'
+              - $ref: '#/components/schemas/OrderSibling'
+              - $ref: '#/components/schemas/OrderTypedChild'
+    OrderTypedChild:
+      additionalProperties:
+        type: string
+      required:
+        - label
+      properties:
+        label:
+          type: string
+      allOf:
+        - $ref: '#/components/schemas/OrderX'
+    WidenedParent:
+      type: object
+      required:
+        - id
+        - kind
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+      discriminator:
+        propertyName: kind
+        mapping:
+          intChild: '#/components/schemas/WidenedIntChild'
+          plainSibling: '#/components/schemas/WidenedPlainChild'
+      additionalProperties:
+        type: string
+    WidenedIntChild:
+      allOf:
+        - $ref: '#/components/schemas/WidenedParent'
+      additionalProperties:
+        type: integer
+      properties:
+        count:
+          type: integer
+    WidenedPlainChild:
+      allOf:
+        - $ref: '#/components/schemas/WidenedParent'
+      properties:
+        name:
+          type: string
+    TypedParent:
+      type: object
+      required:
+        - id
+        - kind
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+      discriminator:
+        propertyName: kind
+        mapping:
+          plainChild: '#/components/schemas/TypedPlainChild'
+          stringChild: '#/components/schemas/TypedStringChild'
+      additionalProperties:
+        type: string
+    TypedPlainChild:
+      allOf:
+        - $ref: '#/components/schemas/TypedParent'
+      properties:
+        name:
+          type: string
+    TypedStringChild:
+      allOf:
+        - $ref: '#/components/schemas/TypedParent'
+      additionalProperties:
+        type: string
+      properties:
+        label:
+          type: string
+    RootOrder:
+      type: object
+      required:
+        - id
+        - kind
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+      discriminator:
+        propertyName: kind
+        mapping:
+          leaf: '#/components/schemas/LeafOrder'
+      additionalProperties: true
+    IntermediateOrder:
+      allOf:
+        - $ref: '#/components/schemas/RootOrder'
+      additionalProperties:
+        type: string
+      properties:
+        intermediateProp:
+          type: string
+    LeafOrder:
+      allOf:
+        - $ref: '#/components/schemas/IntermediateOrder'
+      properties:
+        leafProp:
+          type: string
+    UnconfiguredParent:
+      type: object
+      required:
+        - id
+        - kind
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+      discriminator:
+        propertyName: kind
+        mapping:
+          explicit: '#/components/schemas/ExplicitChild'
+          quiet: '#/components/schemas/QuietSibling'
+    ExplicitChild:
+      allOf:
+        - $ref: '#/components/schemas/UnconfiguredParent'
+      additionalProperties: true
+      properties:
+        label:
+          type: string
+    QuietSibling:
+      allOf:
+        - $ref: '#/components/schemas/UnconfiguredParent'
+      properties:
+        name:
+          type: string

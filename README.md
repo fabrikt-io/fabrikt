@@ -260,7 +260,23 @@ Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared inter
 
 `--additional-properties UNLESS_EXPLICITLY_DISABLED` applies the OpenAPI and JSON Schema default for an absent `additionalProperties` to all serialization libraries, using their existing handling of explicit `additionalProperties: true`. Explicit typed declarations and `false` retain their behaviour. The default, `ONLY_WHEN_REQUESTED`, preserves existing generated output.
 
-Jackson 2 and 3 capture undeclared properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`; current inheritance limitations are tracked in [#860](https://github.com/fabrikt-io/fabrikt/issues/860). Existing serializer limitations also apply when opting in: kotlinx.serialization currently rejects additional-properties capture just as it does for an explicit `true`. Its `ignoreUnknownKeys` setting discards values rather than capturing them for round-tripping; this policy option does not add custom serialization support.
+Jackson 2 and 3 capture undeclared properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`. Existing serializer limitations also apply when opting in: kotlinx.serialization currently rejects additional-properties capture just as it does for an explicit `true`. Its `ignoreUnknownKeys` setting discards values rather than capturing them for round-tripping; this policy option does not add custom serialization support.
+
+#### Additional properties maps in `allOf` hierarchies
+
+Below a parent with a discriminator, children share the parent's additional properties map. Fabrikt follows the intent of the author, not the strict `allOf` semantics of JSON Schema.
+
+| Shape | Parent declares | Child declares | Generated | Strict JSON Schema |
+|---|---|---|---|---|
+| Plain `allOf` | any | any | Unchanged | Same |
+| Discriminated parent | `true` | nothing or `true` | Child shares and forwards the parent's map, so `copy()` keeps extras | Same |
+| Discriminated parent | `true` | `false` | No map. The inherited any-setter is disabled (`@JsonAnySetter(enabled = false)`), so extras are rejected | Also rejects the parent's keys: `additionalProperties` ignores other `allOf` members |
+| Discriminated parent | `true` | `{type: string}` | Child shares the parent's `Any?` map | Extras must be strings |
+| Discriminated parent | `{type: string}` | `{type: integer}` or `true`, on any descendant | Map widens to `Any?` for the whole hierarchy. Typed extras (models, enums, lists) bind as generic JSON | Both rules apply |
+| Discriminated parent | `{type: string}` | nothing | Child shares the typed map | Same |
+| `allOf` intermediate without a discriminator | any | any | Intermediate and leaf share the root's map. Their own declarations are ignored | Same |
+| Discriminated parent | nothing, `ONLY_WHEN_REQUESTED` | `true` | Child owns its map | Same |
+| Discriminated parent | nothing, `UNLESS_EXPLICITLY_DISABLED` | nothing or `true` | Parent owns the map, child shares it | Same |
 
 ## Multipart clients
 

@@ -56,6 +56,22 @@ dependencies {
 }
 
 tasks {
+    val generateInheritedAdditionalProperties by creating(JavaExec::class) {
+        val spec = "${rootProject.projectDir}/src/test/resources/examples/allOfParentOrder/api.yaml"
+        inputs.file(spec)
+        outputs.dir(generationDir)
+        classpath = rootProject.files(fabriktCliJar)
+        mainClass.set("io.fabrikt.cli.CodeGen")
+        args = listOf(
+            "--output-directory", generationDir,
+            "--base-package", "com.example.inheritedadditionalproperties",
+            "--api-file", spec,
+            "--targets", "http_models",
+            "--serialization-library", "JACKSON_3",
+            "--http-model-opts", "OPEN_CLASSES_FOR_ALL_OF",
+        )
+        dependsOn(":shadowJar")
+    }
     val generateCompositionRefinementsCode by creating(JavaExec::class) {
         val spec = "${rootProject.projectDir}/src/test/resources/examples/sharedCompositionRefinements/api.yaml"
         inputs.files(spec)
@@ -236,6 +252,7 @@ tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         dependsOn(generateCode)
+        dependsOn(generateInheritedAdditionalProperties)
         dependsOn(singletonHierarchyTasks)
         dependsOn(generateNullableCode)
         dependsOn(generateSecurityCode)

@@ -3,6 +3,7 @@ package com.cjbooms.fabrikt.model
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
 import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.generators.OasDefault
+import com.cjbooms.fabrikt.model.AdditionalPropertiesResolver.resolveAdditionalProperties
 import com.cjbooms.fabrikt.util.NormalisedString.camelCase
 import com.cjbooms.fabrikt.util.NormalisedString.toEnumName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.getKeyIfSingleDiscriminatorValue
@@ -113,7 +114,7 @@ sealed class PropertyInfo {
                         )
                     } +
                     getInLinedProperties(settings, api, enclosingSchema, combinedRequiredFields, memberSchema)
-            return results.groupBy { it.oasKey }.values.map { declarations ->
+            return resolveAdditionalProperties(results, api).groupBy { it.oasKey }.values.map { declarations ->
                 val first = declarations.first()
                 if (first is Field && declarations.size > 1 && allOfSchemas.isNotEmpty()) {
                     refineDefault(first, declarations.filterIsInstance<Field>())
@@ -544,11 +545,21 @@ sealed class PropertyInfo {
         override val isInherited: Boolean,
         val parentSchema: Schema,
         val direction: ModelDirection? = null,
+        val closed: Boolean = false,
+        val widened: Boolean = false,
     ) : PropertyInfo() {
         override val name: String = "properties"
         override val oasKey: String = "properties"
-        override val typeInfo: KotlinTypeInfo = KotlinTypeInfo.from(schema, "additionalProperties", direction = direction)
+        override val typeInfo: KotlinTypeInfo =
+            if (widened) KotlinTypeInfo.UnknownAdditionalProperties else typeInfoOf(schema, direction)
         override val isRequired: Boolean = true
+
+        companion object {
+            fun typeInfoOf(
+                schema: Schema,
+                direction: ModelDirection?,
+            ): KotlinTypeInfo = KotlinTypeInfo.from(schema, "additionalProperties", direction = direction)
+        }
     }
 
     data class OneOfAny(
