@@ -111,8 +111,9 @@ components:
               $ref: '#/components/schemas/FirstLevelDiscriminator'
             firstLevelField1:
               type: string
-            firstLevelField2:
-              type: integer
+      properties:
+        firstLevelField2:
+          type: integer
 
     SecondLevelChild1:
       allOf:
