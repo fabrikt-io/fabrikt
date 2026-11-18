@@ -63,6 +63,9 @@ components:
       type: array
       items:
         type: string
+        minLength: 2
+        maxLength: 10
+        pattern: '^[a-zA-Z]+$'
       minItems: 0
       maxItems: 10
     Bio:

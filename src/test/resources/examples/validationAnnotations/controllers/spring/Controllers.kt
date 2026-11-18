@@ -34,7 +34,11 @@ public interface ExamplePath1Controller {
     )
     public fun `get`(
         @Pattern(regexp = "[\\s\\S]*(?:[a-zA-Z])[\\s\\S]*") @RequestParam(value = "user_name", required = true) userName: String,
-        @RequestParam(value = "friends", required = true) friends: List<String>,
+        @RequestParam(value = "friends", required = true) friends: List<
+            @Pattern(regexp = "[\\s\\S]*(?:^[a-zA-Z]+\\z)[\\s\\S]*")
+            @Size(min = 2, max = 10)
+            String,
+        >,
         @Min(0) @Max(100) @RequestParam(value = "age", required = false) age: Int?,
         @Size(min = 20, max = 200) @RequestParam(value = "bio", required = false) bio: String?,
     ): ResponseEntity<String>

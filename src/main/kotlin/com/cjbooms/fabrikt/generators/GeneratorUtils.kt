@@ -288,6 +288,7 @@ object GeneratorUtils {
                                 partTypeInfo,
                                 !multipartSchema.requiredFields.contains(partName),
                                 validationAnnotations,
+                                partSchema,
                             )
                         val contentType =
                             when {
@@ -321,7 +322,13 @@ object GeneratorUtils {
                                     .toKotlinParameterName()
                                     .ifEmpty { it.schema.toVarName() },
                             description = requestBody.description,
-                            type = toModelType(basePackage, bodyTypeInfo, validationAnnotations = validationAnnotations),
+                            type =
+                                toModelType(
+                                    basePackage,
+                                    bodyTypeInfo,
+                                    validationAnnotations = validationAnnotations,
+                                    schema = it.schema,
+                                ),
                             typeInfo = bodyTypeInfo,
                             schema = it.schema,
                             isRequired = requestBody.isRequired,
@@ -354,6 +361,7 @@ object GeneratorUtils {
                             KotlinTypeInfo.fromRequestParameterSchema(it.schema, ""),
                             isNullable(it),
                             validationAnnotations,
+                            it.schema,
                         ),
                         it,
                     )

@@ -46,5 +46,6 @@ public data class ValidationAnnotations(
     min = 0,
     max = 10,
   )
-  public val friends: List<String>,
+  public val friends:
+      List<@Pattern(regexp = "[\\s\\S]*(?:^[a-zA-Z]+\\z)[\\s\\S]*") @Size(min = 2, max = 10) String>,
 )
