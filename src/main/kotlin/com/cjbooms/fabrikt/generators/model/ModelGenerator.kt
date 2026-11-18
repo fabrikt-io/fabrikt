@@ -65,6 +65,7 @@ import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSourceDocumentRoot
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isSubTypeDeductionEnabled
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.mappingKeyForSchemaName
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.safeName
+import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleAggregatedAliasSchema
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.singleAggregatedEnumAliasSchema
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
@@ -144,6 +145,7 @@ class ModelGenerator(
             typeInfo: KotlinTypeInfo,
             isNullable: Boolean = false,
             validationAnnotations: ValidationAnnotations? = null,
+            schema: Schema? = null,
         ): TypeName {
             val className =
                 toClassName(
@@ -153,17 +155,19 @@ class ModelGenerator(
             val typeName =
                 when (typeInfo) {
                     is KotlinTypeInfo.Array -> {
+                        val elementSchema = (schema?.singleAggregatedAliasSchema() ?: schema)?.itemsSchema
                         val elementType =
                             toModelType(
                                 basePackage,
                                 typeInfo.parameterizedType,
                                 typeInfo.isParameterizedTypeNullable,
                                 validationAnnotations,
+                                elementSchema,
                             )
                         val annotatedElementType =
                             MutableSettings.serializationLibrary.serializationAnnotations
                                 .annotateArrayElementType(elementType, typeInfo.parameterizedType)
-                                .withContainerElementAnnotations(typeInfo.parameterizedType, validationAnnotations)
+                                .withContainerElementAnnotations(typeInfo.parameterizedType, validationAnnotations, elementSchema)
                         if (typeInfo.hasUniqueItems) {
                             createSet(annotatedElementType)
                         } else {
@@ -194,7 +198,12 @@ class ModelGenerator(
                                 createMapOfStringToType(
                                     MutableSettings.serializationLibrary.serializationAnnotations
                                         .annotateMapValueType(
-                                            toModelType(basePackage, paramType, validationAnnotations = validationAnnotations),
+                                            toModelType(
+                                                basePackage,
+                                                paramType,
+                                                validationAnnotations = validationAnnotations,
+                                                schema = schema?.additionalPropertiesSchema,
+                                            ),
                                             paramType,
                                         ).withContainerElementAnnotations(paramType, validationAnnotations),
                                 )
@@ -228,8 +237,18 @@ class ModelGenerator(
         private fun TypeName.withContainerElementAnnotations(
             elementInfo: KotlinTypeInfo,
             validationAnnotations: ValidationAnnotations?,
+            schema: Schema? = null,
         ): TypeName {
-            val extra = validationAnnotations?.containerElementAnnotations(elementInfo).orEmpty()
+            val extra =
+                validationAnnotations
+                    ?.run {
+                        containerElementAnnotations(elementInfo) +
+                            if (elementInfo == KotlinTypeInfo.Text && schema != null) {
+                                stringConstraints(schema.pattern, schema.minLength, schema.maxLength)
+                            } else {
+                                emptyList()
+                            }
+                    }.orEmpty()
             return if (extra.isEmpty()) this else copy(annotations = annotations + extra)
         }
 
@@ -1419,6 +1438,7 @@ class ModelGenerator(
                         propertyType,
                         property.isNullable(classType),
                         propertyValidationAnnotations,
+                        property.schema,
                     ),
                 parameterizedType =
                     toClassName(

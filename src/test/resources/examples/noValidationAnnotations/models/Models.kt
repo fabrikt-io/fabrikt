@@ -7,6 +7,9 @@ import kotlin.collections.List
 import kotlin.collections.Map
 
 public data class ValidationAnnotations(
+    @param:JsonProperty("checksums")
+    @get:JsonProperty("checksums")
+    public val checksums: List<String>? = null,
     @param:JsonProperty("user_name")
     @get:JsonProperty("user_name")
     public val userName: String,

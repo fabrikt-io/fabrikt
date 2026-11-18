@@ -13,6 +13,13 @@ import kotlin.collections.List
 import kotlin.collections.Map
 
 public data class ValidationAnnotations(
+    @param:JsonProperty("checksums")
+    @get:JsonProperty("checksums")
+    public val checksums: List<
+        @Pattern(regexp = "[\\s\\S]*(?:^[A-Za-z0-9+/]+={0,2}\\z)[\\s\\S]*")
+        @Size(max = 200)
+        String,
+    >? = null,
     @param:JsonProperty("user_name")
     @get:JsonProperty("user_name")
     @get:NotNull

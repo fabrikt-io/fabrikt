@@ -349,13 +349,8 @@ object PropertyUtils {
         when (info) {
             is PropertyInfo.Field -> {
                 if (info.typeInfo == KotlinTypeInfo.Text) {
-                    info.pattern?.let { maybeAddAnnotation(validationAnnotations.regexPattern(it)) }
-
-                    val (min, max) = Pair(info.minLength, info.maxLength)
-                    if (min != null || max != null) {
-                        maybeAddAnnotation(
-                            validationAnnotations.lengthRestriction(min, max),
-                        )
+                    validationAnnotations.stringConstraints(info.pattern, info.minLength, info.maxLength).forEach {
+                        addAnnotation(it.toBuilder().useSiteTarget(AnnotationSpec.UseSiteTarget.GET).build())
                     }
                 }
 

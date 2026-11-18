@@ -107,7 +107,12 @@ class ModelValidationTest {
 
     @Test
     fun `list size accepts a valid list`() {
-        val model = ListValue(value = listOf("ready"))
+        val model = ListValue(
+            value = listOf("aa", "ready"),
+            nullableValues = listOf(null, "ok"),
+            setValues = linkedSetOf("ready"),
+            nestedValues = listOf(listOf("aa")),
+        )
 
         assertThat(factory.validator.validate(model)).isEmpty()
     }
@@ -128,7 +133,7 @@ class ModelValidationTest {
 
     @Test
     fun `referenced enum with string constraints validates without exceptions`() {
-        val model = DirectEnumValue(value = ConstrainedEnum.READY)
+        val model = DirectEnumValue(value = ConstrainedEnum.READY, values = listOf(ConstrainedEnum.READY))
 
         assertThat(factory.validator.validate(model)).isEmpty()
     }
@@ -163,7 +168,8 @@ class ModelValidationTest {
 
     @Test
     fun `UUID with string constraints validates without exceptions`() {
-        val model = UuidValue(value = UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
+        val value = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+        val model = UuidValue(value = value, values = listOf(value))
 
         assertThat(factory.validator.validate(model)).isEmpty()
     }
@@ -318,9 +324,60 @@ class ModelValidationTest {
     @Test
     fun `list enforces maximum size`() {
         assertViolation(
-            model = ListValue(value = listOf("a", "b", "c")),
+            model = ListValue(value = listOf("aa", "bb", "cc")),
             propertyPath = "value",
             constraint = Size::class,
+        )
+    }
+
+    @Test
+    fun `string array elements enforce minimum length`() {
+        assertViolation(ListValue(value = listOf("a")), "value[0].<list element>", Size::class)
+    }
+
+    @Test
+    fun `string array elements enforce maximum length`() {
+        assertViolation(ListValue(value = listOf("abcdef")), "value[0].<list element>", Size::class)
+    }
+
+    @Test
+    fun `string array elements enforce their pattern`() {
+        assertViolation(ListValue(value = listOf("READY")), "value[0].<list element>", Pattern::class)
+    }
+
+    @Test
+    fun `nullable string array elements still validate non-null values`() {
+        assertViolation(
+            ListValue(value = listOf("ready"), nullableValues = listOf(null, "a")),
+            "nullableValues[1].<list element>",
+            Size::class,
+        )
+    }
+
+    @Test
+    fun `string set elements enforce their pattern`() {
+        assertViolation(
+            ListValue(value = listOf("ready"), setValues = linkedSetOf("READY")),
+            "setValues[].<iterable element>",
+            Pattern::class,
+        )
+    }
+
+    @Test
+    fun `nested string array elements enforce maximum length`() {
+        assertViolation(
+            ListValue(value = listOf("ready"), nestedValues = listOf(listOf("abcdef"))),
+            "nestedValues[0].<list element>[0].<list element>",
+            Size::class,
+        )
+    }
+
+    @Test
+    fun `UUID array elements generated as strings enforce string constraints`() {
+        assertViolation(
+            UuidStringValue(value = "123e4567-e89b-12d3-a456-426614174000", values = listOf("abc")),
+            "values[0].<list element>",
+            Size::class,
         )
     }
 

@@ -10,10 +10,12 @@ components:
       required: [value]
       properties:
         value:
-          type: string
-          minLength: 2
-          maxLength: 5
-          pattern: '^[a-z]+$'
+          $ref: '#/components/schemas/ConstrainedString'
+    ConstrainedString:
+      type: string
+      minLength: 2
+      maxLength: 5
+      pattern: '^[a-z]+$'
     IntegerValue:
       type: object
       required: [value]
@@ -42,7 +44,26 @@ components:
           minItems: 1
           maxItems: 2
           items:
+            $ref: '#/components/schemas/ConstrainedString'
+        nullableValues:
+          type: array
+          items:
             type: string
+            nullable: true
+            minLength: 2
+            maxLength: 5
+            pattern: '^[a-z]+$'
+        setValues:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/ConstrainedString'
+        nestedValues:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/ConstrainedString'
     NestedValue:
       type: object
       required: [value]
@@ -95,6 +116,10 @@ components:
       properties:
         value:
           $ref: '#/components/schemas/ConstrainedEnum'
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConstrainedEnum'
     InlineEnumValue:
       type: object
       required: [value]
@@ -135,6 +160,10 @@ components:
           minLength: 36
           maxLength: 36
           pattern: '^[0-9a-f-]+$'
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/UuidValue/properties/value'
     CustomTypeValue:
       type: object
       required: [value, values]
