@@ -25,4 +25,11 @@ components:
       properties:
         message:
           type: string
-    # ... we could add more examples here for additionalProperties with a schema
+    AdditionalPropertiesSerializer:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+      additionalProperties: true

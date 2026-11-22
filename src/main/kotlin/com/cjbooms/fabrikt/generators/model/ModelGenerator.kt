@@ -3,6 +3,7 @@ package com.cjbooms.fabrikt.generators.model
 import com.cjbooms.fabrikt.cli.ExternalReferencesResolutionMode
 import com.cjbooms.fabrikt.cli.JacksonNullabilityMode
 import com.cjbooms.fabrikt.cli.ModelCodeGenOptionType
+import com.cjbooms.fabrikt.cli.SerializationLibrary
 import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.ClassSettings
 import com.cjbooms.fabrikt.generators.GeneratorUtils.addDeprecation
@@ -22,6 +23,7 @@ import com.cjbooms.fabrikt.generators.TypeFactory.createSet
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
 import com.cjbooms.fabrikt.generators.model.RelativeSchemaHandler.maybeConvertRelativeSchemaFile
 import com.cjbooms.fabrikt.model.Destinations.modelsPackage
+import com.cjbooms.fabrikt.model.Destinations.modelsUtilsPackage
 import com.cjbooms.fabrikt.model.GeneratedType
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
 import com.cjbooms.fabrikt.model.ModelDirection
@@ -387,15 +389,16 @@ class ModelGenerator(
             } else {
                 referencedModels
             }
-        return Models(
+        val modelTypes =
             intermediateContracts.apply(composedModels, primaryModels).map { model ->
                 val existingAnnotationTypes = model.annotations.map { it.typeName }.toSet()
                 val annotationsToAdd = additionalModelAnnotations.filterNot { it.typeName in existingAnnotationTypes }
                 val annotatedModel =
                     if (annotationsToAdd.isEmpty()) model else model.toBuilder().addAnnotations(annotationsToAdd).build()
                 ModelType(annotatedModel, packages.base)
-            },
-        )
+            }
+        val helper = KotlinxAdditionalProperties.helperSpec().takeIf { modelTypes.any { KotlinxAdditionalProperties.usesHelper(it.spec) } }
+        return Models(modelTypes + listOfNotNull(helper?.let { ModelType(it, packages.base, modelsUtilsPackage(packages.base)) }))
     }
 
     private fun addParameterModel(
@@ -1063,6 +1066,11 @@ class ModelGenerator(
         }
 
         serializationAnnotations.addClassAnnotation(classBuilder)
+        classBuilder.addAdditionalPropertiesSerializer(
+            modelName,
+            properties,
+            oneOfInterfaces.firstNotNullOfOrNull { it.discriminator.propertyName },
+        )
 
         val classTypeSpec = classBuilder.build()
 
@@ -1342,7 +1350,14 @@ class ModelGenerator(
         TypeSpec
             .classBuilder(generatedType(packages.base, modelName))
             .buildPolymorphicSubType(schemaName, properties, superType, extensions, oneOfSuperInterfaces)
-            .build()
+            .also {
+                val discriminator =
+                    superType.schema.discriminator
+                        .takeIf { it.propertyName != null }
+                        ?.propertyName
+                        ?: superType.schema.getDiscriminatorForInlinedObjectUnderAllOf()?.propertyName
+                it.addAdditionalPropertiesSerializer(modelName, properties, discriminator)
+            }.build()
 
     private fun TypeSpec.Builder.buildPolymorphicSubType(
         schemaName: String,
@@ -1593,6 +1608,22 @@ class ModelGenerator(
             this.addType(TypeSpec.companionObjectBuilder().build())
         }
         return this
+    }
+
+    private fun TypeSpec.Builder.addAdditionalPropertiesSerializer(
+        modelName: String,
+        properties: Collection<PropertyInfo>,
+        discriminator: String?,
+    ) {
+        if (MutableSettings.serializationLibrary != SerializationLibrary.KOTLINX_SERIALIZATION) return
+        val openMap = properties.filterIsInstance<PropertyInfo.AdditionalProperties>().firstOrNull { !it.closed } ?: return
+        KotlinxAdditionalProperties.addSerializer(
+            this,
+            generatedType(packages.base, modelName),
+            modelsUtilsPackage(packages.base),
+            openMap.name,
+            discriminator,
+        )
     }
 
     private fun TypeSpec.Builder.addOptionalAnnotation(

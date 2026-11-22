@@ -1,6 +1,5 @@
 package com.cjbooms.fabrikt.model
 
-import com.cjbooms.fabrikt.generators.MutableSettings
 import com.cjbooms.fabrikt.model.PropertyInfo.AdditionalProperties
 import com.cjbooms.fabrikt.util.SchemaParserExtensions.isPolymorphicSuperType
 import com.cjbooms.fabrikt.model.OpenApi3Document as OpenApi3
@@ -12,7 +11,6 @@ internal object AdditionalPropertiesResolver {
         properties: List<PropertyInfo>,
         api: OpenApi3,
     ): List<PropertyInfo> {
-        if (!MutableSettings.serializationLibrary.isJackson) return properties
         val maps = properties.filterIsInstance<AdditionalProperties>()
         val resolved =
             inheritedMap(maps)?.let { if (forbidsAdditionalProperties) it.copy(closed = true) else it }
