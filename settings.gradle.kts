@@ -11,6 +11,7 @@ include(
     "end2end-tests:ktor-client-jackson",
     "end2end-tests:spring-http-interface",
     "end2end-tests:spring",
+    "end2end-tests:spring-query",
     "end2end-tests:spring-controller-multipart",
     "end2end-tests:models-jackson",
     "end2end-tests:models-kotlinx",

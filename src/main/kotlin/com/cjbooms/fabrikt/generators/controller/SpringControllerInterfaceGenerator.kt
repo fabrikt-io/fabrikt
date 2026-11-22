@@ -76,18 +76,6 @@ class SpringControllerInterfaceGenerator(
 
     override fun generateLibrary(): Collection<ControllerLibraryType> = emptySet()
 
-    override fun supportsOperation(
-        verb: String,
-        path: String,
-    ): Boolean {
-        if (!verb.equals("query", ignoreCase = true)) return true
-        Logger.getGlobal().warning(
-            "Skipping QUERY $path for Spring controllers because the supported stable Spring versions lack RequestMethod.QUERY. " +
-                "Implement this route separately or select the Ktor or Micronaut controller target.",
-        )
-        return false
-    }
-
     override fun controllerBuilder(
         className: String,
         basePath: String,
