@@ -40,6 +40,16 @@ interface ValidationAnnotations {
     ): AnnotationSpec?
 
     fun containerElementAnnotations(elementInfo: KotlinTypeInfo): List<AnnotationSpec>
+
+    fun stringConstraints(
+        pattern: String?,
+        minLength: Int?,
+        maxLength: Int?,
+    ): List<AnnotationSpec> =
+        listOfNotNull(
+            pattern?.let { this.pattern(it) },
+            if (minLength != null || maxLength != null) size(minLength, maxLength) else null,
+        )
 }
 
 abstract class PackageValidationAnnotations(

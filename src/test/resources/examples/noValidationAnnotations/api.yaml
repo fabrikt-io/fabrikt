@@ -9,6 +9,12 @@ components:
         - bio
         - friends
       properties:
+        checksums:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+            pattern: '^[A-Za-z0-9+/]+={0,2}$'
         user_name:
           type: string
           pattern: '[a-zA-Z]'

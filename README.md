@@ -641,6 +641,8 @@ Nested containers keep `@Valid` on the innermost element only (e.g.
 > `-Xemit-jvm-type-annotations`. Enable that flag in consumer projects so Hibernate Validator
 > can see the cascading `@Valid` at runtime.
 
+String array elements also receive `@Pattern` and `@Size` for their `pattern`, `minLength` and `maxLength` constraints, including in sets and nested lists. These annotations require the same compiler flag. Collection `minItems` and `maxItems` remain constraints on the collection itself.
+
 ## Contributing
 
 ### Building Locally
