@@ -1,5 +1,6 @@
 package examples.additionalProperties.models
 
+import examples.additionalProperties.models.utils.AdditionalPropertiesSerializer
 import jakarta.validation.constraints.NotNull
 import kotlin.OptIn
 import kotlin.String

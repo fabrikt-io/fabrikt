@@ -9,11 +9,9 @@ import com.cjbooms.fabrikt.configurations.Packages
 import com.cjbooms.fabrikt.generators.model.ModelGenerator
 import com.cjbooms.fabrikt.model.KotlinSourceSet
 import com.cjbooms.fabrikt.model.SourceApi
-import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatExpectedFiles
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.assertThatGenerated
 import com.cjbooms.fabrikt.util.GeneratedCodeAsserter.Companion.failGenerated
 import com.cjbooms.fabrikt.util.ModelNameRegistry
-import com.cjbooms.fabrikt.util.ResourceHelper.getFileNamesInFolder
 import com.cjbooms.fabrikt.util.ResourceHelper.readFolder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -45,6 +43,33 @@ class KotlinSerializationModelGeneratorTest {
             "additionalProperties",
             "allOfParentOrder",
         )
+
+    private fun readRelativeFiles(root: Path): Map<String, String> =
+        Files.walk(root).use { paths ->
+            paths
+                .filter { Files.isRegularFile(it) }
+                .toList()
+                .associate { root.relativize(it).joinToString("/") to Files.readString(it) }
+        }
+
+    private fun assertDirectoryMatches(
+        generatedRoot: Path,
+        expectedResourcePath: String,
+    ) {
+        val expectedRoot = Path.of("src/test/resources$expectedResourcePath")
+        val generated = if (Files.exists(generatedRoot)) readRelativeFiles(generatedRoot) else emptyMap()
+        val expected = if (Files.exists(expectedRoot)) readRelativeFiles(expectedRoot) else emptyMap()
+        generated.forEach { (name, code) ->
+            if (expected.containsKey(name)) {
+                assertThatGenerated(code).isEqualTo("$expectedResourcePath$name")
+            } else {
+                failGenerated(code).asFileNotFound("$expectedResourcePath$name", "File not found in expected files")
+            }
+        }
+        assertThat(expected.keys - generated.keys)
+            .`as`("Expected files missing from generated output in $expectedResourcePath")
+            .isEmpty()
+    }
 
     @BeforeEach
     fun init() {
@@ -89,8 +114,6 @@ class KotlinSerializationModelGeneratorTest {
         val basePackage = "examples.${testCaseName.replace("/", ".")}"
         val apiLocation = javaClass.getResource("/examples/$testCaseName/api.yaml")!!
         val sourceApi = SourceApi(apiLocation.readText(), baseUri = apiLocation.toURI())
-        val expectedModelsPath = "/examples/$testCaseName/models/kotlinx/"
-        val expectedModels = getFileNamesInFolder(Path.of("src/test/resources$expectedModelsPath"))
 
         val models =
             ModelGenerator(
@@ -104,18 +127,8 @@ class KotlinSerializationModelGeneratorTest {
             it.writeFileTo(tempDirectory.toFile())
         }
 
-        val tempFolderContents =
-            readFolder(tempDirectory.resolve(basePackage.replace(".", File.separator)).resolve("models"))
-        tempFolderContents.forEach {
-            if (expectedModels.contains(it.key)) {
-                assertThatGenerated(it.value)
-                    .isEqualTo("$expectedModelsPath${it.key}")
-            } else {
-                failGenerated(it.value).asFileNotFound("$expectedModelsPath${it.key}", "File not found in expected models")
-            }
-        }
-        assertThatExpectedFiles(Path.of("src/test/resources$expectedModelsPath"))
-            .areContainedInGenerated(tempFolderContents)
+        val baseDirectory = tempDirectory.resolve(basePackage.replace(".", File.separator))
+        assertDirectoryMatches(baseDirectory.resolve("models"), "/examples/$testCaseName/models/kotlinx/")
 
         tempDirectory.toFile().deleteRecursively()
     }

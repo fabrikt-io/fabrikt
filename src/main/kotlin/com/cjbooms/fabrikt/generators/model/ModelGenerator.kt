@@ -22,6 +22,7 @@ import com.cjbooms.fabrikt.generators.TypeFactory.createMutableMapOfStringToType
 import com.cjbooms.fabrikt.generators.TypeFactory.createSet
 import com.cjbooms.fabrikt.generators.ValidationAnnotations
 import com.cjbooms.fabrikt.generators.model.RelativeSchemaHandler.maybeConvertRelativeSchemaFile
+import com.cjbooms.fabrikt.model.Destinations.modelsUtilsPackage
 import com.cjbooms.fabrikt.model.Destinations.modelsPackage
 import com.cjbooms.fabrikt.model.GeneratedType
 import com.cjbooms.fabrikt.model.KotlinTypeInfo
@@ -378,7 +379,7 @@ class ModelGenerator(
                 ModelType(annotatedModel, packages.base)
             }
         val helper = KotlinxAdditionalProperties.helperSpec().takeIf { modelTypes.any { KotlinxAdditionalProperties.usesHelper(it.spec) } }
-        return Models(modelTypes + listOfNotNull(helper?.let { ModelType(it, packages.base) }))
+        return Models(modelTypes + listOfNotNull(helper?.let { ModelType(it, packages.base, modelsUtilsPackage(packages.base)) }))
     }
 
     private fun addParameterModel(
@@ -1596,7 +1597,13 @@ class ModelGenerator(
     ) {
         if (MutableSettings.serializationLibrary != SerializationLibrary.KOTLINX_SERIALIZATION) return
         val openMap = properties.filterIsInstance<PropertyInfo.AdditionalProperties>().firstOrNull { !it.closed } ?: return
-        KotlinxAdditionalProperties.addSerializer(this, generatedType(packages.base, modelName), openMap.name, discriminator)
+        KotlinxAdditionalProperties.addSerializer(
+            this,
+            generatedType(packages.base, modelName),
+            modelsUtilsPackage(packages.base),
+            openMap.name,
+            discriminator,
+        )
     }
 
     private fun TypeSpec.Builder.addOptionalAnnotation(

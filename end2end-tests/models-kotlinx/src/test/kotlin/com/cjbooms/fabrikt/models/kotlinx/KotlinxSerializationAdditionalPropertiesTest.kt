@@ -1,9 +1,10 @@
 package com.cjbooms.fabrikt.models.kotlinx
 
-import com.example.additionalproperties.models.AdditionalPropertiesSerializer
+import com.example.additionalproperties.models.AdditionalPropertiesSerializer as CollisionModel
 import com.example.additionalproperties.models.Result
 import com.example.additionalproperties.models.ResultWithImplicitAdditionalProperties
 import com.example.additionalproperties.models.ResultWithoutAdditionalProperties
+import com.example.additionalproperties.models.utils.AdditionalPropertiesSerializer
 import com.example.additionalpropertiespolicy.models.ResultWithImplicitAdditionalProperties as PolicyImplicitResult
 import com.example.allofparentorder.models.ExplicitChild
 import com.example.allofparentorder.models.LeafOrder
@@ -73,6 +74,37 @@ class KotlinxSerializationAdditionalPropertiesTest {
 
         val reSerialized = json.encodeToString(deserialized)
         assertThat(json.parseToJsonElement(reSerialized)).isEqualTo(json.parseToJsonElement(serialized))
+    }
+
+    @Test
+    fun `declared field cannot be supplied by extras when its value is omitted`() {
+        val child =
+            WidenedIntChild(
+                id = "1",
+                properties =
+                    mutableMapOf(
+                        "count" to JsonPrimitive(99),
+                        "kind" to JsonPrimitive("intChild"),
+                    ),
+            )
+        val encoded = json.encodeToString(child)
+        val encodedObject = json.parseToJsonElement(encoded).jsonObject
+
+        assertThat(encodedObject).doesNotContainKey("count")
+        assertThat(encodedObject).doesNotContainKey("kind")
+
+        val decoded = json.decodeFromString<WidenedIntChild>(encoded)
+        assertThat(decoded.count).isNull()
+    }
+
+    @Test
+    fun `model named like the helper keeps its own serializer`() {
+        val input = """{"id":"1","x":2}"""
+        val model = json.decodeFromString<CollisionModel>(input)
+
+        assertThat(model.id).isEqualTo("1")
+        assertThat(model.properties).containsEntry("x", JsonPrimitive(2))
+        assertThat(json.parseToJsonElement(json.encodeToString(model))).isEqualTo(json.parseToJsonElement(input))
     }
 
     @Test
@@ -212,7 +244,7 @@ class KotlinxSerializationAdditionalPropertiesTest {
             }
 
         val orderStrategy =
-            object : com.example.allofparentorder.models.AdditionalPropertiesSerializer.Strategy {
+            object : com.example.allofparentorder.models.utils.AdditionalPropertiesSerializer.Strategy {
                 override fun <T : Any> deserialize(
                     decoder: JsonDecoder,
                     generated: KSerializer<T>,
@@ -241,7 +273,7 @@ class KotlinxSerializationAdditionalPropertiesTest {
                 ignoreUnknownKeys = true
                 serializersModule =
                     AdditionalPropertiesSerializer.module(customStrategy) +
-                    com.example.allofparentorder.models.AdditionalPropertiesSerializer.module(orderStrategy)
+                    com.example.allofparentorder.models.utils.AdditionalPropertiesSerializer.module(orderStrategy)
             }
 
         val result = customJson.decodeFromString<Result>("""{"message":"m","extra":1}""")

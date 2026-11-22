@@ -10,6 +10,8 @@ object Destinations {
 
     fun modelsPackage(basePackage: String): String = "$basePackage.models"
 
+    fun modelsUtilsPackage(basePackage: String): String = "${modelsPackage(basePackage)}.utils"
+
     fun controllersPackage(basePackage: String): String = "$basePackage.controllers"
 
     fun clientPackage(basePackage: String) = "$basePackage.client"

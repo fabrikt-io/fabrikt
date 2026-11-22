@@ -1,5 +1,6 @@
 package examples.allOfParentOrder.models
 
+import examples.allOfParentOrder.models.utils.AdditionalPropertiesSerializer
 import jakarta.validation.constraints.NotNull
 import kotlin.OptIn
 import kotlin.String

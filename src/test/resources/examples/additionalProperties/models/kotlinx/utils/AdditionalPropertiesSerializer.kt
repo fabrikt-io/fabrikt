@@ -1,4 +1,4 @@
-package examples.allOfParentOrder.models
+package examples.additionalProperties.models.utils
 
 import kotlin.Any
 import kotlin.OptIn
@@ -63,7 +63,8 @@ public class AdditionalPropertiesSerializer<T : Any>(
       return
     }
     val declared = output.json.encodeToJsonElement(generated, value).jsonObject
-    output.encodeJsonElement(JsonObject(additionalProperties(value) + declared))
+    val known = knownKeys(output.json)
+    output.encodeJsonElement(JsonObject(additionalProperties(value).filterKeys { it !in known } + declared))
   }
 
   public interface Strategy {

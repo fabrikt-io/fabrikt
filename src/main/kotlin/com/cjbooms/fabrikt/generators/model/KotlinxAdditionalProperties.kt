@@ -243,8 +243,9 @@ internal object KotlinxAdditionalProperties {
                 .addStatement(
                     "val declared = output.json.encodeToJsonElement(generated, value).%M",
                     MemberName("kotlinx.serialization.json", "jsonObject"),
-                ).addStatement(
-                    "output.encodeJsonElement(%T(additionalProperties(value) + declared))",
+                ).addStatement("val known = knownKeys(output.json)")
+                .addStatement(
+                    "output.encodeJsonElement(%T(additionalProperties(value).filterKeys { it !in known } + declared))",
                     ClassName("kotlinx.serialization.json", "JsonObject"),
                 ).build()
 
@@ -275,6 +276,7 @@ internal object KotlinxAdditionalProperties {
     fun addSerializer(
         builder: TypeSpec.Builder,
         model: ClassName,
+        helperPackage: String,
         mapProperty: String,
         discriminator: String?,
     ): TypeSpec.Builder {
@@ -303,7 +305,7 @@ internal object KotlinxAdditionalProperties {
                 .objectBuilder("Serializer")
                 .addSuperinterface(
                     ClassName("kotlinx.serialization", "KSerializer").parameterizedBy(model),
-                    CodeBlock.of("%T(%L)", ClassName(model.packageName, "AdditionalPropertiesSerializer"), arguments),
+                    CodeBlock.of("%T(%L)", ClassName(helperPackage, "AdditionalPropertiesSerializer"), arguments),
                 ).build()
         builder.addType(serializerObject)
         return builder

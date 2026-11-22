@@ -260,7 +260,7 @@ Enable `--http-model-opts SHARED_COMPOSITION_CONTRACTS` to generate shared inter
 
 `--additional-properties UNLESS_EXPLICITLY_DISABLED` applies the OpenAPI and JSON Schema default for an absent `additionalProperties` to every serialization library. Explicit typed declarations and `false` retain their behaviour. The default, `ONLY_WHEN_REQUESTED`, preserves existing generated output.
 
-Jackson 2 and 3 capture undeclared properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`. kotlinx.serialization captures them in a `@Transient MutableMap<String, JsonElement>` through a generated `AdditionalPropertiesSerializer`, which supports `Json` only.
+Jackson 2 and 3 capture undeclared properties in a `MutableMap<String, Any?>` through `@JsonAnyGetter` and `@JsonAnySetter`. kotlinx.serialization captures them in a `@Transient MutableMap<String, JsonElement>` through a generated `AdditionalPropertiesSerializer` in the `models.utils` package, which supports `Json` only.
 
 #### Additional properties maps in `allOf` hierarchies
 

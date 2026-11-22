@@ -38,7 +38,8 @@ abstract class KotlinTypes(
 class ModelType(
     spec: TypeSpec,
     basePackage: String,
-) : GeneratedType(spec, modelsPackage(basePackage))
+    destinationPackage: String = modelsPackage(basePackage),
+) : GeneratedType(spec, destinationPackage)
 
 class ClientType(
     spec: TypeSpec,
