@@ -22,4 +22,7 @@ open class ExampleControllerImpl : ExampleController {
         filter: String?,
     ): ResponseEntity<ParameterEcho> =
         ResponseEntity.ok(ParameterEcho(param1 = param1, limit = limit, filter = filter))
+
+    override fun queryExample(parameterEcho: ParameterEcho): ResponseEntity<ParameterEcho> =
+        ResponseEntity.ok(parameterEcho)
 }

@@ -26,15 +26,16 @@ dependencies {
     implementation(libs.jackson.core)
     implementation(libs.jackson.annotations)
 
-    // Spring Boot 4 / Spring Framework 7
-    implementation(libs.spring.boot.starter.web)
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:4.2.0"))
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    testImplementation(libs.jackson3.module.kotlin)
 
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.bundles.junit)
     testImplementation(libs.assertj.core)
     testImplementation(libs.hibernate.validator)
-    testImplementation(libs.spring.boot.starter.test)
-    testImplementation(libs.spring.boot.webmvc.test)
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-webmvc-test")
 }
 
 tasks {
