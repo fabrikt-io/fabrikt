@@ -77,7 +77,7 @@ The library currently has support for generating:
 
 Client generators can emit an opt-in security declaration through `--http-client-opts OPENAPI_SECURITY`: a scheme dictionary, the effective requirement of every operation, and a pure header resolver. See [Client authentication](#client-authentication).
 
-OpenAPI 3.2 `query` operations are supported by all client targets and by Ktor and Micronaut controllers, including JSON request bodies. OpenFeign requires 13.14 or later and a transport that supports `QUERY`, such as `feign-okhttp`; its default `HttpURLConnection` transport does not. Spring HTTP Interface clients likewise require a suitable transport, such as `JdkClientHttpRequestFactory`. Spring controllers skip `QUERY` operations with a warning because the supported stable Spring versions lack `RequestMethod.QUERY`; implement those routes separately or use another controller target.
+OpenAPI 3.2 `query` operations are supported by all client and controller targets, including JSON request bodies. OpenFeign requires 13.14 or later and a transport that supports `QUERY`, such as `feign-okhttp`; its default `HttpURLConnection` transport does not. Spring HTTP Interface clients likewise require a suitable transport, such as `JdkClientHttpRequestFactory`. Generated Spring controllers for `QUERY` operations require Spring Framework 7.1 or later.
 
 Spring controllers read the operation extension `x-spring-api-version` and add its value as the `version` attribute of `@RequestMapping`. A string or a number gives the attribute, and a number is emitted as its text. An empty string, any other value, or no extension gives no attribute. Quote the value in YAML, so that `1.10` stays `1.10`.
 
